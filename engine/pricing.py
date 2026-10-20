@@ -30,6 +30,37 @@ from .sources import MY_VENUES
 from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
 BREAK_EVEN_110 = 110 / 210
+
+# 2-season replay of every system split by whether the players model agreed (engine/backtest_og.py)
+try:
+    import json as _json
+    from .personnel import STATIC as _STATIC
+    SYSTEM_PLAYERS_HISTORY = _json.loads((_STATIC / "og_personnel.json").read_text())
+except Exception:
+    SYSTEM_PLAYERS_HISTORY = {}
+AGREE = [("players model disagrees", -99, 0), ("agrees by 0-3", 0, 3), ("agrees by 3-5", 3, 5),
+         ("agrees by 5+", 5, 99)]
+
+
+def agree_bucket(gap_on_side: float) -> str:
+    for name, lo, hi in AGREE:
+        if lo <= gap_on_side < hi:
+            return name
+    return AGREE[-1][0]
+
+
+def players_gap(pick: dict, slate: list[dict]) -> float | None:
+    """How many points the players model likes this side by, vs the market (negative = it likes the
+    other side). Spreads only; the personnel model has no edge on totals."""
+    if pick["bet"] != "spread":
+        return None
+    for g in slate:
+        if g.get("game_id") == pick["game_id"]:
+            gap = (g.get("personnel") or {}).get("gap")
+            if gap is None:
+                return None
+            return round(gap if pick["side"] == g.get("home") else -gap, 1)
+    return None
 SPREAD_SD = 14.14        # measured: home margin minus spread, 979 games 2025-26
 TOTAL_SD = 18.18         # measured: actual total minus closing total, 1,194 games 2025-26
 MIN_SIZE = 10            # skip a quote with less than this much available
@@ -174,6 +205,8 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
         at_line = min(kalshi, key=lambda q: (abs(q["line"] - p["line"]), -q["ev"])) if kalshi else None
         cap = max_price(at_line["max_cost"]) if at_line else None
+        pg = players_gap(p, slate) if p["system"] != 113 else None      # T13 IS the players model
+        pb = agree_bucket(pg) if pg is not None else None
         level = confidence(p, slate) if p["system"] == 113 else None
         if level == "Low":
             verdict = "PASS"
@@ -206,6 +239,9 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "price": at_line["price"] if at_line else k.get("price"),
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
+                     "players": pg, "players_bucket": pb,
+                     "players_history": ((SYSTEM_PLAYERS_HISTORY.get(group(p["system"])) or {}).get(pb) or {}).get("open")
+                                        if pb else None,
                      "contract": at_line["contract"] if at_line else k.get("contract"),
                      "url": (best or {}).get("url") or k.get("url"),
                      "best": best, "shop": quotes[:8],

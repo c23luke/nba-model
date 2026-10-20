@@ -147,3 +147,11 @@ def test_low_confidence_personnel_bet_is_a_pass():
     slate[0]["personnel"]["case"]["level"] = "Medium"
     c = build_card([pk(113, "MEM", [xq("prophetx", "MEM", 1.0, -116)], line=-1.0)], slate, now=NOW)[0]
     assert c["verdict"] == "BET" and c["confidence"] == "Medium"
+
+
+def test_card_shows_how_much_the_players_model_agrees():
+    slate = [{"game_id": "g1", "home": "H", "home_spread": -3.0, "personnel": {"gap": -5.6}}]   # likes the away side
+    c = build_card([pk(1, "A", [kq("A", 3.0, 0.45)], line=3.0)], slate, now=NOW)[0]
+    assert c["players"] == 5.6 and c["players_bucket"] == "agrees by 5+"
+    c = build_card([pk(1, "H", [kq("H", -3.0, 0.45)], line=-3.0)], slate, now=NOW)[0]
+    assert c["players"] == -5.6 and c["players_bucket"] == "players model disagrees"

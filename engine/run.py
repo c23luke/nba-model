@@ -404,13 +404,15 @@ def tracking(picks: list[dict]) -> dict:
         per_game.setdefault((gid, bet), set()).add(side)
     conflicts = sum(len(v) > 1 for v in per_game.values())
 
-    # each system's spread picks: did the personnel line agree?
+    # each system's spread picks: did the players model agree, and by how much?
+    from .pricing import agree_bucket
     vs_pers = {}
     for p in real:
         sh = shadow.get(p["game_id"])
         if p["bet"] != "spread" or not sh or p["system"] == 113:
             continue
-        k = f"{group(p['system'])} + personnel {'agrees' if sh['side'] == p['side'] else 'disagrees'}"
+        gap = _meta(sh, "gap_first") or _meta(sh, "gap") or 0
+        k = f"{group(p['system'])} + {agree_bucket(gap if sh['side'] == p['side'] else -gap)}"
         vs_pers.setdefault(k, []).append(p["result"])
 
     pers_gap, pers_call = {}, {}

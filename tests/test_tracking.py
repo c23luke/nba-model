@@ -34,8 +34,8 @@ def test_system_vs_personnel_and_personnel_buckets():
              pk(301, "g3", "H", "W", meta={"gap": 3.1, "call": "waiting"}),
              pk(202, "g1", "H", "W"), pk(202, "g2", "H", "W")]
     t = tracking(picks)
-    assert t["system_vs_personnel"]["EARLY + personnel agrees"]["w"] == 1
-    assert t["system_vs_personnel"]["EARLY + personnel disagrees"]["w"] == 1
+    assert t["system_vs_personnel"]["EARLY + agrees by 3-5"]["w"] == 1          # same side, players model by 3.4
+    assert t["system_vs_personnel"]["EARLY + players model disagrees"]["w"] == 1
     assert t["personnel_by_gap"]["3–4"]["w"] == 2 and t["personnel_by_gap"]["0–1"]["l"] == 1
     assert t["personnel_by_call"]["waiting"]["w"] == 1
 

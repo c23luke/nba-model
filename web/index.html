@@ -50,11 +50,13 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .verdict.BET { background: var(--win); color: #fff; } .verdict.LOSS { background: var(--loss, #b3261e); color: #fff; } .verdict.LIMIT { background: var(--amber); color: var(--amber-ink); } .verdict.PASS { border: 1.5px solid var(--line); color: var(--muted); }
 .cardrow .pick { font-family: var(--cond); font-size: 24px; font-weight: 700; }
 .cardrow .num { text-align: right; font-family: var(--cond); font-size: 17px; white-space: nowrap; }
+.stackflag { font-family: var(--cond); color: var(--win); letter-spacing: .02em; }
 .conf { font-family: var(--cond); font-weight: 700; font-size: 13px; padding: 2px 6px; border-radius: 4px; border: 1.5px solid var(--line); }
 .conf.High { border-color: var(--win); color: var(--win); } .conf.Medium { border-color: var(--amber); color: var(--amber); } .conf.Low { border-color: var(--loss); color: var(--loss); }
 tr.strong td { border-top: 1.5px solid var(--line); }
 .cardrow .shop { grid-column: 2 / -1; font-size: 13px; line-height: 1.6; }
-@media (max-width: 560px) { .conf { font-family: var(--cond); font-weight: 700; font-size: 13px; padding: 2px 6px; border-radius: 4px; border: 1.5px solid var(--line); }
+@media (max-width: 560px) { .stackflag { font-family: var(--cond); color: var(--win); letter-spacing: .02em; }
+.conf { font-family: var(--cond); font-weight: 700; font-size: 13px; padding: 2px 6px; border-radius: 4px; border: 1.5px solid var(--line); }
 .conf.High { border-color: var(--win); color: var(--win); } .conf.Medium { border-color: var(--amber); color: var(--amber); } .conf.Low { border-color: var(--loss); color: var(--loss); }
 tr.strong td { border-top: 1.5px solid var(--line); }
 .cardrow .shop { grid-column: 1 / -1; } .cardrow { grid-template-columns: 64px 1fr; } .cardrow .num { grid-column: 2; text-align: left; } }
@@ -221,6 +223,7 @@ function render(b) {
       <div><div class="pick">${esc(c.label)}</div>
         <div class="ctx">${c.away} @ ${c.home} · ${tipDay(c.tip_utc)} ${tipTime(c.tip_utc)}</div>
         <div>${badge(c.group)}<b>${c.tag}</b> <span class="ctx">${esc(c.name)}${c.with.length ? " · also on it: " + c.with.join(", ") : ""}</span>${c.confidence ? ` <span class="conf ${c.confidence}">Confidence: ${c.confidence}</span>` : ""}</div>
+        ${c.players != null ? `<div class="ctx"><span class="conf ${c.players >= 3 ? "High" : c.players >= 0 ? "Medium" : "Low"}">Players model ${c.players >= 0 ? "agrees +" + c.players : "disagrees " + c.players}</span>${c.players >= 5 ? ` <b class="stackflag">STACK: ${esc(c.tag)} + players model 5+</b>` : ""}${c.players_history && (c.players_history[0] + c.players_history[1]) ? ` · 2 seasons, ${esc(c.group)} when the players model ${esc(c.players_bucket.replace("players model ", ""))}: ${c.players_history[0]}-${c.players_history[1]} (${(c.players_history[0] / (c.players_history[0] + c.players_history[1]) * 100).toFixed(0)}%) at the open` : ""}</div>` : ""}
         <div class="ctx">${esc(c.why)}</div></div>
       <div class="num">${(c.win * 100).toFixed(1)}% expected<br>${c.best ? `<b>${esc(c.best.venue_name)} ${esc(c.best.contract)} ${esc(c.best.price_txt)}</b><br>${(c.best.ev * 100).toFixed(1)}% exp. return` : "book −110 or better"}${c.max != null ? `<br>Kalshi max ${Math.round(c.max * 100)}¢` : ""}
         ${c.best && c.best.url ? `<br><a href="${esc(c.best.url)}" target="_blank" rel="noopener">Open ${esc(c.best.venue_name)}</a>`
