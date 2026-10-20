@@ -1,0 +1,22 @@
+name: How the NBA has changed (6 seasons)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  trends:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy
+      - run: |
+          set +e
+          python -m engine.league_trends > report.txt 2>&1
+          status=$?
+          cat report.txt
+          { echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
