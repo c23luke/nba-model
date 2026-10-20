@@ -5,8 +5,9 @@ Runs ~55 minutes per launch (Supabase starts it every hour, 10am-2am ET):
                Kalshi spread / total events (a new game's lines just listed)
   on a change  rerun the model right away
   every 5 min  rerun anyway (lines move without news)
-After every run, any NEW bet in an alert group (OG, FAV) is pushed to your phone via ntfy with the
-pick, the best Kalshi contract, the most to pay for it, and a link. Each bet alerts once.
+After every run, any new BET or LIMIT on today's card (OG and FAV systems) is pushed to your phone via
+ntfy: the best venue and price after line shopping, the most to pay on Kalshi, and a link. Each bet alerts
+once, plus once more if a LIMIT turns into a BET.
 Bets are never placed automatically — the alert gets you there, you place it.
 """
 from __future__ import annotations
@@ -57,37 +58,28 @@ from .pricing import kalshi_fee, max_price  # noqa: E402  (shared with the board
 
 
 def win_rate(pick: dict, board: dict) -> float | None:
-    if pick["system"] < 100:
-        rec = board["systems"].get(pick["system"]) or board["systems"].get(str(pick["system"])) or {}
-        return rec.get("card_win_rate")
-    from .systems import TEST_SYSTEMS
-    if (TEST_SYSTEMS.get(pick["system"]) or {}).get("win_est"):
-        return TEST_SYSTEMS[pick["system"]]["win_est"]
-    for g in board.get("slate", []):
-        c = ((g.get("personnel") or {}).get("case") or {})
-        if g["game_id"] == pick["game_id"] and c.get("side") == pick["side"]:
-            return c.get("win_est")
-    return None
+    from .pricing import win_estimate
+    return win_estimate(pick, board.get("slate", []))
 
 
-def message(pick: dict, board: dict) -> tuple[str, str, str]:
-    k = pick.get("kalshi") or {}
-    win = win_rate(pick, board)
-    cap = max_price(win) if win else None
-    price = k.get("price")
-    good = price is not None and cap is not None and price <= cap + 1e-9
-    verb = "BET" if good or price is None else "LIMIT"
-    title = f"{verb}: {pick['label']} — {pick['away']} @ {pick['home']}"
-    lines = [f"{pick['tag']} ({pick['group']})"]
-    if price is not None:
-        lines.append(f"Kalshi: {k['contract']} at {round(price * 100)}¢")
-    if cap:
-        lines.append(f"Max price {round(cap * 100)}¢ incl. fee (expected win rate {win:.1%})")
-        if price is not None and not good:
-            lines.append(f"Too pricey right now — set a limit order at {round(cap * 100)}¢"
-                         + (f", or take {pick['label']} at -110 or better at a book" if win > 110 / 210 else ""))
+def message(c: dict, pick: dict) -> tuple[str, str, str]:
+    """Phone alert for one card row: where to bet, at what price, and the most to pay."""
+    b = c.get("best")
+    if c["verdict"] == "BET" and b:
+        title = f"BET: {c['label']} — {c['away']} @ {c['home']} — {b['venue_name']} {b['price_txt']}"
+    else:
+        title = f"{c['verdict']}: {c['label']} — {c['away']} @ {c['home']}"
+    lines = [f"{c['tag']} ({c['group']}) · expected win rate {c['win']:.1%}", c["why"]]
+    if c.get("max") is not None:
+        lines.append(f"Max price on Kalshi {round(c['max'] * 100)}¢ incl. fee"
+                     + (f" ({c['contract']})" if c.get("contract") else ""))
+    others = [q for q in c.get("shop", []) if q.get("mine") and q is not b and q != b][:3]
+    if others:
+        lines.append("Also: " + "; ".join(f"{q['venue_name']} {q['contract']} {q['price_txt']} ({q['ev']:+.1%})"
+                                          for q in others))
     lines += pick.get("evidence", [])[:2]
-    return title, "\n".join(lines), k.get("url") or BOARD_URL
+    click = (b or {}).get("url") or c.get("url") or (pick.get("kalshi") or {}).get("url") or BOARD_URL
+    return title, "\n".join(lines), click
 
 
 def push(topic: str, title: str, body: str, click: str) -> None:
@@ -98,12 +90,23 @@ def push(topic: str, title: str, body: str, click: str) -> None:
 
 
 def alert_new(board: dict, store, topic: str | None, log) -> int:
-    live = [p for p in board.get("bets", []) + board.get("tests", []) + board.get("totals", [])
-            if p.get("group") in ALERT_GROUPS and p.get("line") is not None
-            and not (p.get("meta") or {}).get("alerted")]
+    """Alert every BET/LIMIT on today's card once, and once more if a LIMIT turns into a BET."""
+    picks = {p["key"]: p for p in board.get("bets", []) + board.get("tests", []) + board.get("totals", [])
+             if p.get("group") in ALERT_GROUPS and p.get("line") is not None}
+    card = board.get("card")
+    if card is None:
+        from .pricing import build_card
+        card = build_card(list(picks.values()), board.get("slate", []))
     sent = []
-    for p in live:
-        title, body, click = message(p, board)
+    for c in card:
+        p = picks.get(c["key"])
+        if p is None or c["verdict"] == "PASS":
+            continue
+        meta = p.get("meta") or {}
+        told = meta.get("alerted_verdict") or ("BET" if meta.get("alerted") else None)
+        if told == "BET" or (told and c["verdict"] != "BET"):
+            continue
+        title, body, click = message(c, p)
         if topic:
             try:
                 push(topic, title, body, click)
@@ -112,7 +115,8 @@ def alert_new(board: dict, store, topic: str | None, log) -> int:
                 continue
         log(f"ALERT {title} | {body.splitlines()[0]}")
         sent.append({**{k: v for k, v in p.items() if k not in ("tag", "group")},
-                     "meta": {**(p.get("meta") or {}), "alerted": datetime.now(timezone.utc).isoformat()}})
+                     "meta": {**meta, "alerted": datetime.now(timezone.utc).isoformat(),
+                              "alerted_verdict": c["verdict"]}})
     if sent:
         store.save_picks(sent)
     return len(sent)

@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import statistics
+import time
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -94,6 +95,68 @@ def odds_api_lines(api_key: str) -> tuple[dict, dict]:
     lines = parse_odds_events(events)
     usage = {"remaining": meta.get("x-requests-remaining"), "used": meta.get("x-requests-used")}
     return lines, usage
+
+
+# Exchanges: one call covers every venue Caden uses (3 credits: spreads, totals, moneyline).
+EXCHANGE_ODDS = ("https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
+                 "?apiKey={key}&regions=us_ex&markets=spreads,totals,h2h&oddsFormat=american&includeBetLimits=true")
+VENUES = {"kalshi": "Kalshi", "polymarket_us": "Polymarket US", "polymarket": "Polymarket",
+          "prophetx": "ProphetX", "betopenly": "BetOpenly", "novig": "Novig"}
+MY_VENUES = {"kalshi", "polymarket_us", "polymarket", "prophetx", "betopenly"}   # where Caden has accounts
+EXCHANGE_CACHE_SECONDS = 180
+_exchange_cache: dict = {}
+
+
+def american_cost(a) -> float:
+    """What $1 of payout costs at American odds (= implied probability, vig included)."""
+    a = float(a)
+    return 100 / (a + 100) if a > 0 else -a / (-a + 100)
+
+
+def parse_exchange_events(events: list) -> dict:
+    """Every exchange price, keyed by (ET date, away, home). Kalshi is skipped here: it comes straight
+    from Kalshi with every strike and the exact fee."""
+    out = {}
+    for ev in events:
+        try:
+            home, away = code(ev["home_team"]), code(ev["away_team"])
+        except KeyError:
+            continue
+        qs = []
+        for bk in ev.get("bookmakers", []):
+            if bk["key"] == "kalshi" or bk["key"] not in VENUES:
+                continue
+            for m in bk.get("markets", []):
+                for o in m.get("outcomes", []):
+                    try:
+                        if m["key"] == "totals":
+                            bet, side, line, ml = "total", o["name"].upper(), float(o["point"]), False
+                            contract = f"{o['name']} {line:g}"
+                        else:
+                            bet, side, ml = "spread", code(o["name"]), m["key"] == "h2h"
+                            line = -0.5 if ml else float(o["point"])
+                            contract = f"{side} to win" if ml else f"{side} {line:+g}"
+                        out_q = {"venue": bk["key"], "venue_name": VENUES[bk["key"]], "bet": bet, "side": side,
+                                 "line": line, "ml": ml, "american": int(o["price"]),
+                                 "cost": round(american_cost(o["price"]), 4), "fee_counted": False,
+                                 "size": o.get("bet_limit"), "contract": contract, "url": None, "ticker": None}
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                    qs.append(out_q)
+        out[(et_date(ev["commence_time"]), away, home)] = qs
+    return out
+
+
+def exchange_quotes(api_key: str, clock=time.time) -> tuple[dict, dict]:
+    """Exchange prices for every game, cached a few minutes so a busy news hour doesn't burn credits."""
+    if _exchange_cache and clock() - _exchange_cache["at"] < EXCHANGE_CACHE_SECONDS:
+        return _exchange_cache["data"], _exchange_cache["usage"]
+    meta: dict = {}
+    events = get_json(EXCHANGE_ODDS.format(key=api_key), meta=meta)
+    data = parse_exchange_events(events)
+    usage = {"remaining": meta.get("x-requests-remaining"), "used": meta.get("x-requests-used")}
+    _exchange_cache.update(at=clock(), data=data, usage=usage)
+    return data, usage
 
 
 ODDS_HIST = ("https://api.the-odds-api.com/v4/historical/sports/basketball_nba/odds"
@@ -221,6 +284,53 @@ def kalshi_quote(pick, g: Game, fetch=kalshi_markets) -> dict | None:
         price = round(1 - _px(best, "yes_bid"), 4)
     return _quote(best["ticker"], f"NO · {opp} wins by over {best['floor_strike']:g}  (= {team} +{best['floor_strike']:g})",
                   price, float(best["floor_strike"]) == strike, url)
+
+
+def _no_price(m: dict) -> float | None:
+    p = _px(m, "no_ask")
+    if p is None and _px(m, "yes_bid") is not None:
+        p = round(1 - _px(m, "yes_bid"), 4)
+    return p
+
+
+def kalshi_ladder(pick, g: Game, fetch=kalshi_markets) -> list[dict]:
+    """Every Kalshi contract that pays on the pick's side, at every strike (so +4.5 at 45c can be
+    weighed against +3.5 at 50c), with the fee counted. Moneyline counts as -0.5."""
+    url = f"https://kalshi.com/markets/kxnbagame/nba-game/{kalshi_event('KXNBAGAME', g).lower()}"
+    out: list[dict] = []
+
+    def add(m, contract, side, line, price, bet, ml=False):
+        if price is None:
+            return
+        fee = kalshi_fee(price)
+        out.append({"venue": "kalshi", "venue_name": "Kalshi", "bet": bet, "side": side, "line": line, "ml": ml,
+                    "price": price, "fee": fee, "cost": round(price + fee, 4), "fee_counted": True,
+                    "size": None, "contract": contract, "url": url, "ticker": m["ticker"]})
+
+    if pick.bet == "total":
+        for m in fetch("KXNBATOTAL", g):
+            if m.get("floor_strike") is None:
+                continue
+            x = float(m["floor_strike"])
+            if pick.side == "OVER":
+                add(m, f"YES · Over {x:g}", "OVER", x, _px(m, "yes_ask"), "total")
+            else:
+                add(m, f"NO · Over {x:g}  (= Under {x:g})", "UNDER", x, _no_price(m), "total")
+        return out
+    team = pick.side
+    opp = g.away if team == g.home else g.home
+    for m in fetch("KXNBAGAME", g):
+        if m["ticker"].endswith("-" + team):
+            add(m, f"YES · {team} to win", team, -0.5, _px(m, "yes_ask"), "spread", ml=True)
+    for m in fetch("KXNBASPREAD", g):
+        if m.get("floor_strike") is None:
+            continue
+        x, who = float(m["floor_strike"]), m["ticker"].rsplit("-", 1)[-1]
+        if who.startswith(team):
+            add(m, f"YES · {team} wins by over {x:g}", team, -x, _px(m, "yes_ask"), "spread")
+        elif who.startswith(opp):
+            add(m, f"NO · {opp} wins by over {x:g}  (= {team} +{x:g})", team, x, _no_price(m), "spread")
+    return out
 
 
 def _closest(markets, target, key, prefer_low=True):

@@ -45,6 +45,15 @@ class LocalStore:
     def save_board(self, board):
         self._write("board", board)
 
+    def save_feed(self, rows, now):
+        old = {r["key"]: r for r in self._read("bet_feed", [])}
+        keep = {r["key"] for r in rows}
+        for k, r in old.items():
+            if k not in keep:
+                r.update(status="off", updated_at=now.isoformat())
+        old.update({r["key"]: r for r in rows})
+        self._write("bet_feed", list(old.values()))
+
     def get_config(self, key):
         return self._read("config", {}).get(key)
 
@@ -114,6 +123,16 @@ class SupabaseStore:
 
     def save_board(self, board):
         self._upsert("board", [{"id": 1, "data": board}], "id")
+
+    def save_feed(self, rows, now):
+        """Upsert today's card into bet_feed; anything no longer on the card is switched to 'off'."""
+        if rows:
+            self._upsert("bet_feed", rows, "key")
+        keep = {r["key"] for r in rows}
+        stale = [o["key"] for o in (self._req("GET", "/bet_feed?select=key&status=neq.off") or [])
+                 if o["key"] not in keep]
+        if stale:
+            self._upsert("bet_feed", [{"key": k, "status": "off", "updated_at": now.isoformat()} for k in stale], "key")
 
     def get_config(self, key):
         """Private settings (e.g. the phone-alert channel). Table has no public read policy."""

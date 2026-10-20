@@ -50,7 +50,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .verdict.BET { background: var(--win); color: #fff; } .verdict.LIMIT { background: var(--amber); color: var(--amber-ink); } .verdict.PASS { border: 1.5px solid var(--line); color: var(--muted); }
 .cardrow .pick { font-family: var(--cond); font-size: 24px; font-weight: 700; }
 .cardrow .num { text-align: right; font-family: var(--cond); font-size: 17px; white-space: nowrap; }
-@media (max-width: 560px) { .cardrow { grid-template-columns: 64px 1fr; } .cardrow .num { grid-column: 2; text-align: left; } }
+.cardrow .shop { grid-column: 2 / -1; font-size: 13px; line-height: 1.6; }
+@media (max-width: 560px) { .cardrow .shop { grid-column: 1 / -1; } .cardrow { grid-template-columns: 64px 1fr; } .cardrow .num { grid-column: 2; text-align: left; } }
 .stack { border: 1.5px solid var(--amber); border-radius: 8px; padding: 10px 12px; margin: 6px 0; }
 
 .answer { font-family: var(--cond); font-weight: 700; font-size: clamp(44px, 11vw, 88px); line-height: .92; margin: 28px 0 8px; letter-spacing: -.01em; }
@@ -207,15 +208,16 @@ function render(b) {
     a.className = "answer";
   }
   document.title = toBet.length ? `(${toBet.length}) NBA Systems Board` : "NBA Systems Board";
-  $("card").innerHTML = card.length ? `<h2>Today's card <small>main systems + top picks, best first · BET = take it now · LIMIT = set a limit order at the max · PASS = skip</small></h2>` +
+  $("card").innerHTML = card.length ? `<h2>Today's card <small>main systems + top picks, best first · line-shopped across Kalshi, Polymarket, ProphetX, BetOpenly · BET = take the best price now · LIMIT = set a limit order at the Kalshi max · PASS = skip</small></h2>` +
     card.map(c => `<div class="cardrow">
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="ctx">${c.away} @ ${c.home} · ${tipDay(c.tip_utc)} ${tipTime(c.tip_utc)}</div>
         <div>${badge(c.group)}<b>${c.tag}</b> <span class="ctx">${esc(c.name)}${c.with.length ? " · also on it: " + c.with.join(", ") : ""}</span></div>
         <div class="ctx">${esc(c.why)}</div></div>
-      <div class="num">${(c.win * 100).toFixed(1)}% expected<br>${c.price != null ? `Kalshi ${Math.round(c.price * 100)}¢ · max ${c.max != null ? Math.round(c.max * 100) + "¢" : "—"}` : "book −110 or better"}
-        ${c.url ? `<br><a href="${esc(c.url)}" target="_blank" rel="noopener">Open on Kalshi</a>` : ""}</div>
+      <div class="num">${(c.win * 100).toFixed(1)}% expected<br>${c.best ? `<b>${esc(c.best.venue_name)} ${esc(c.best.contract)} ${esc(c.best.price_txt)}</b><br>${(c.best.ev * 100).toFixed(1)}% exp. return` : "book −110 or better"}${c.max != null ? `<br>Kalshi max ${Math.round(c.max * 100)}¢` : ""}
+        ${c.url ? `<br><a href="${esc(c.url)}" target="_blank" rel="noopener">Open ${c.best ? esc(c.best.venue_name) : "Kalshi"}</a>` : ""}</div>
+      ${(c.shop || []).length > 1 ? `<div class="shop">${c.shop.map(q => `<span class="${q.mine ? "" : "ctx"}">${esc(q.venue_name)} ${esc(q.contract)} <b>${esc(q.price_txt)}</b> ${(q.ev * 100).toFixed(1)}%${q.fee_counted ? "" : "*"}${q.mine ? "" : " (no account)"}</span>`).join(" · ")}<span class="ctx"> · * fees not counted</span></div>` : ""}
     </div>`).join("") : "";
   $("sub").textContent = games
     ? `${games} game${games > 1 ? "s" : ""} on the board today and tomorrow. Lines are out on ${withLines}. ` +

@@ -61,7 +61,7 @@ def tipped(g: Game, now: datetime) -> bool:
 
 
 def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.espn_day,
-        fetch_lines=None, fetch_kalshi=sources.kalshi_markets, store=None,
+        fetch_lines=None, fetch_kalshi=sources.kalshi_markets, store=None, fetch_exchanges=None,
         season_start: date = SEASON_START, personnel_fetch="default", fetch_box=boxscore.fetch_box) -> dict:
     now = now or datetime.now(timezone.utc)
     today = now.astimezone(sources.ET).date()
@@ -98,6 +98,21 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             odds_lines, usage = fetch_lines()
         except Exception as e:
             log.append(f"Odds API: {e}")
+
+    # exchange prices (Polymarket, ProphetX, BetOpenly, Novig) — fetched only once a pick needs shopping
+    if fetch_exchanges is None and key:
+        fetch_exchanges = lambda: sources.exchange_quotes(key)
+    exch: dict = {}
+
+    def exchange_for(g):
+        if "data" not in exch:
+            exch["data"] = {}
+            if fetch_exchanges:
+                try:
+                    exch["data"], exch["usage"] = fetch_exchanges()
+                except Exception as e:
+                    log.append(f"Exchange prices: {e}")
+        return exch["data"].get((g.game_date, g.away, g.home), [])
 
     upcoming = sorted([g for g in games if g.game_date in (today, today + timedelta(1)) and not tipped(g, now)],
                       key=lambda g: (g.tip_utc or "", g.id))
@@ -188,8 +203,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         for p in picks:
             prev = old.get(p.key, {})
             # Kalshi prices only for the 4 main systems
-            quote = (sources.kalshi_quote(p, g, fetch=fetch_kalshi)
-                     if p.line is not None and (p.system < 100 or p.system in PRICED) else None)
+            priced = p.line is not None and (p.system < 100 or p.system in PRICED)
+            quote = sources.kalshi_quote(p, g, fetch=fetch_kalshi) if priced else None
+            shop = (sources.kalshi_ladder(p, g, fetch=fetch_kalshi) + exchange_for(g)) if priced else None
             locked = p.system in LOCK_ON_FIRE and prev.get("first_line") is not None
             if locked:                                   # bet stays at the line it fired at
                 p.line = prev["first_line"]
@@ -200,6 +216,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 "bet": p.bet, "side": p.side,
                 "label": p.label(), "line": p.line, "evidence": p.evidence, "active": True,
                 "kalshi": quote or prev.get("kalshi"),
+                "shop": shop,
                 "first_seen": prev.get("first_seen") or now.isoformat(),
                 "first_line": prev.get("first_line") if prev.get("first_line") is not None else p.line,
                 "last_checked": now.isoformat(),
@@ -282,6 +299,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"))
     board["scoring"] = scoring
     store.save_board(board)
+    try:
+        from .pricing import feed_rows
+        store.save_feed(feed_rows(board["card"], now), now)
+    except Exception as e:
+        board["notes"].append(f"bet feed: {e}")
     return board
 
 
@@ -411,8 +433,11 @@ def build_board(now, today, slate, picks, usage, log, source):
     test = lambda p: 100 <= p["system"] < 200
     early = lambda p: 200 <= p["system"] < 300
     from .pricing import build_card
+    card = build_card(live, slate, now)
+    for p in picks:
+        p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
     return {
-        "card": build_card(live, slate),
+        "card": card,
         "tracking": tracking(picks), "stacks": live_stacks(live),
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
