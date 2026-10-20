@@ -2,16 +2,22 @@ name: Probe market APIs
 
 on:
   workflow_dispatch:
+    inputs:
+      module:
+        description: which probe to run
+        default: engine.probe_markets
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    env:
+      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: |
-          python -m engine.probe_markets > report.txt 2>&1
+          python -m ${{ inputs.module || 'engine.probe_markets' }} > report.txt 2>&1
           { echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
