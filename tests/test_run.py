@@ -222,3 +222,18 @@ def test_tipped_card_bets_stay_up_with_their_result(tmp_path):
 def test_units_risk_one_point_one_to_win_one():
     from engine.run import _wl
     assert _wl(["W"])["units"] == 1.0 and _wl(["W", "L"])["units"] == -0.1
+
+
+def test_gap_tracker_splits_every_game_by_gap_and_confidence():
+    from engine.run import gap_tracker
+    def x1(gid, gap, res, level=None):
+        return {"system": 301, "active": True, "game_id": gid, "result": res,
+                "meta": {"gap_first": gap, "result_first": res, "clv": 0.5, "level_first": level}}
+    picks = [x1("a", 1.0, "W"), x1("b", 3.2, "W", "Medium"), x1("c", 3.6, "L", "Low"), x1("d", 5.5, "W", "High"),
+             x1("e", 2.5, None)]
+    t = gap_tracker(picks, season_day=1)
+    assert t["by_gap"]["0-2"]["w"] == 1 and t["by_gap"]["3-4"]["w"] == 1 and t["by_gap"]["3-4"]["l"] == 1
+    assert t["by_gap"]["5+"]["w"] == 1 and t["by_gap"]["3+"]["n"] == 3
+    assert t["by_confidence"]["Low"]["l"] == 1 and t["by_confidence"]["High"]["w"] == 1
+    assert t["pending"] == 1 and t["window"] == "days 0-30"
+    assert "3+" in t["history_by_gap"]["whole season"]

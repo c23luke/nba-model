@@ -71,6 +71,15 @@ def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | N
     return None, None
 
 
+def confidence(pick: dict, slate: list[dict]) -> str | None:
+    """High / Medium / Low from the personnel case (how well the edge survives the stress tests)."""
+    for g in slate:
+        c = ((g.get("personnel") or {}).get("case") or {})
+        if g.get("game_id") == pick["game_id"] and c.get("side") == pick["side"]:
+            return c.get("level")
+    return None
+
+
 def market_line(pick: dict, slate: list[dict]) -> float | None:
     """The consensus number for the pick's side right now (median of US books)."""
     for g in slate:
@@ -165,7 +174,12 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
         at_line = min(kalshi, key=lambda q: (abs(q["line"] - p["line"]), -q["ev"])) if kalshi else None
         cap = max_price(at_line["max_cost"]) if at_line else None
-        if best and best["ev"] > 0:
+        level = confidence(p, slate) if p["system"] == 113 else None
+        if level == "Low":
+            verdict = "PASS"
+            why = ("Low confidence: the edge drops under 3 points in at least one version of the model. "
+                   "Tracked on the every-game tracker, not bet")
+        elif best and best["ev"] > 0:
             verdict = "BET"
             why = f"Best price: {_desc(best)}, {best['ev']:+.1%} expected return"
             runner = next((q for q in mine[1:] if q["venue"] != best["venue"]), None)
@@ -191,7 +205,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "group": group(p["system"]), "name": name, "win": round(win, 3),
                      "price": at_line["price"] if at_line else k.get("price"),
                      "cost": at_line["cost"] if at_line else None, "max": cap,
-                     "verdict": verdict, "why": why, "edge": round(edge, 4),
+                     "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
                      "contract": at_line["contract"] if at_line else k.get("contract"),
                      "url": (best or {}).get("url") or k.get("url"),
                      "best": best, "shop": quotes[:8],

@@ -50,8 +50,14 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .verdict.BET { background: var(--win); color: #fff; } .verdict.LOSS { background: var(--loss, #b3261e); color: #fff; } .verdict.LIMIT { background: var(--amber); color: var(--amber-ink); } .verdict.PASS { border: 1.5px solid var(--line); color: var(--muted); }
 .cardrow .pick { font-family: var(--cond); font-size: 24px; font-weight: 700; }
 .cardrow .num { text-align: right; font-family: var(--cond); font-size: 17px; white-space: nowrap; }
+.conf { font-family: var(--cond); font-weight: 700; font-size: 13px; padding: 2px 6px; border-radius: 4px; border: 1.5px solid var(--line); }
+.conf.High { border-color: var(--win); color: var(--win); } .conf.Medium { border-color: var(--amber); color: var(--amber); } .conf.Low { border-color: var(--loss); color: var(--loss); }
+tr.strong td { border-top: 1.5px solid var(--line); }
 .cardrow .shop { grid-column: 2 / -1; font-size: 13px; line-height: 1.6; }
-@media (max-width: 560px) { .cardrow .shop { grid-column: 1 / -1; } .cardrow { grid-template-columns: 64px 1fr; } .cardrow .num { grid-column: 2; text-align: left; } }
+@media (max-width: 560px) { .conf { font-family: var(--cond); font-weight: 700; font-size: 13px; padding: 2px 6px; border-radius: 4px; border: 1.5px solid var(--line); }
+.conf.High { border-color: var(--win); color: var(--win); } .conf.Medium { border-color: var(--amber); color: var(--amber); } .conf.Low { border-color: var(--loss); color: var(--loss); }
+tr.strong td { border-top: 1.5px solid var(--line); }
+.cardrow .shop { grid-column: 1 / -1; } .cardrow { grid-template-columns: 64px 1fr; } .cardrow .num { grid-column: 2; text-align: left; } }
 .stack { border: 1.5px solid var(--amber); border-radius: 8px; padding: 10px 12px; margin: 6px 0; }
 
 .answer { font-family: var(--cond); font-weight: 700; font-size: clamp(44px, 11vw, 88px); line-height: .92; margin: 28px 0 8px; letter-spacing: -.01em; }
@@ -127,6 +133,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <div id="answer" class="answer">…</div>
   <p id="sub" class="sub"></p>
   <section id="card"></section>
+  <section id="gaps"></section>
   <section id="bets"></section>
 
   <div id="scoring" class="ctx" style="margin:8px 0 4px"></div>
@@ -213,7 +220,7 @@ function render(b) {
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="ctx">${c.away} @ ${c.home} · ${tipDay(c.tip_utc)} ${tipTime(c.tip_utc)}</div>
-        <div>${badge(c.group)}<b>${c.tag}</b> <span class="ctx">${esc(c.name)}${c.with.length ? " · also on it: " + c.with.join(", ") : ""}</span></div>
+        <div>${badge(c.group)}<b>${c.tag}</b> <span class="ctx">${esc(c.name)}${c.with.length ? " · also on it: " + c.with.join(", ") : ""}</span>${c.confidence ? ` <span class="conf ${c.confidence}">Confidence: ${c.confidence}</span>` : ""}</div>
         <div class="ctx">${esc(c.why)}</div></div>
       <div class="num">${(c.win * 100).toFixed(1)}% expected<br>${c.best ? `<b>${esc(c.best.venue_name)} ${esc(c.best.contract)} ${esc(c.best.price_txt)}</b><br>${(c.best.ev * 100).toFixed(1)}% exp. return` : "book −110 or better"}${c.max != null ? `<br>Kalshi max ${Math.round(c.max * 100)}¢` : ""}
         ${c.best && c.best.url ? `<br><a href="${esc(c.best.url)}" target="_blank" rel="noopener">Open ${esc(c.best.venue_name)}</a>`
@@ -232,6 +239,21 @@ function render(b) {
     </div>`;
   $("card").innerHTML += (hold.length ? `<h2>Line moved — no longer a bet <small>only counts if you got the earlier number</small></h2>` + hold.map(doneRow).join("") : "")
     + (done.length ? `<h2>Tipped · last 30 hours <small>card bets that started or finished</small></h2>` + done.map(doneRow).join("") : "");
+  const G = b.gap_tracker;
+  if (G) {
+    const live = r => r && r.n ? `${r.w}-${r.l}${r.p ? "-" + r.p : ""} · ${r.win_pct == null ? "—" : (r.win_pct * 100).toFixed(0) + "%"} · ${r.units > 0 ? "+" : ""}${r.units}u${r.avg_clv == null ? "" : " · CLV " + (r.avg_clv > 0 ? "+" : "") + r.avg_clv}` : `<span class="ctx">—</span>`;
+    const hist = g => g && (g.w + g.l) ? `${g.w}-${g.l} · ${(g.w / (g.w + g.l) * 100).toFixed(0)}% · CLV ${g.clv > 0 ? "+" : ""}${g.clv.toFixed(2)}` : `<span class="ctx">—</span>`;
+    const W = G.window, hw = G.history_by_gap || {}, hc = G.history_by_confidence || {};
+    const head = `<tr><td></td><td class="r ctx">This season</td><td class="r ctx">2 seasons · ${esc(W)}</td><td class="r ctx">2 seasons · whole season</td></tr>`;
+    const gapRows = ["0-2", "2-3", "3-4", "4-5", "5+", "3+"].map(k => `<tr${k === "3+" ? ' class="strong"' : ""}><td>${k === "3+" ? "<b>3+ (T13)</b>" : "gap " + k}</td>
+      <td class="r">${live(G.by_gap[k])}</td><td class="r">${hist((hw[W] || {})[k])}</td><td class="r">${hist((hw["whole season"] || {})[k])}</td></tr>`).join("");
+    const confRows = ["High", "Medium", "Low"].map(k => `<tr><td><span class="conf ${k}">${k}</span></td>
+      <td class="r">${live(G.by_confidence[k])}</td><td class="r">${hist((hc[W] || {})[k])}</td><td class="r">${hist((hc["whole season"] || {})[k])}</td></tr>`).join("");
+    $("gaps").innerHTML = `<h2>Every game tracker <small>the side our player ratings like in every game, graded at the first line we saw · ${G.pending} waiting on results</small></h2>
+      <div class="track"><div><h3>By gap size (points off the market)</h3><table>${head}${gapRows}</table></div>
+      <div><h3>By confidence (gap 3+)</h3><table>${head}${confRows}</table>
+      <p class="ctx">Low = the edge drops under 3 in at least one version. Low bets are tracked here, not bet.${Object.keys(hc).length ? "" : " Two-season numbers by confidence fill in when the replay finishes."}</p></div></div>`;
+  }
   $("sub").textContent = games
     ? `${games} game${games > 1 ? "s" : ""} on the board today and tomorrow. Lines are out on ${withLines}. ` +
       (waiting.length ? `${waiting.length} system${waiting.length > 1 ? "s have" : " has"} fired and ${waiting.length > 1 ? "are" : "is"} waiting on a line.` : "The model checks again every 15 minutes.")

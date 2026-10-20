@@ -137,3 +137,13 @@ def test_quote_far_off_the_market_is_treated_as_bad_data():
             xq("prophetx", "H", -1.5, +104)]
     c = build_card([pk(112, "H", shop, line=-1.5)], slate, now=NOW)[0]
     assert [q["venue"] for q in c["shop"]] == ["prophetx"]
+
+
+def test_low_confidence_personnel_bet_is_a_pass():
+    slate = [{"game_id": "g1", "home": "H", "home_spread": 1.0,
+              "personnel": {"case": {"side": "MEM", "win_est": 0.529, "line": -1.0, "level": "Low"}}}]
+    c = build_card([pk(113, "MEM", [xq("prophetx", "MEM", 1.0, -116)], line=-1.0)], slate, now=NOW)[0]
+    assert c["verdict"] == "PASS" and c["confidence"] == "Low" and "Low confidence" in c["why"]
+    slate[0]["personnel"]["case"]["level"] = "Medium"
+    c = build_card([pk(113, "MEM", [xq("prophetx", "MEM", 1.0, -116)], line=-1.0)], slate, now=NOW)[0]
+    assert c["verdict"] == "BET" and c["confidence"] == "Medium"

@@ -222,6 +222,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 "last_checked": now.isoformat(),
                 "meta": {**(prev.get("meta") or {}), **p.meta},
             }
+            if p.system == 301 and r["meta"].get("gap") is not None:
+                r["meta"].setdefault("gap_first", r["meta"]["gap"])     # the gap when the line was first seen
             pick_rows.append(r)
             seen_now.add(p.key)
             if p.system < 300:
@@ -239,6 +241,16 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                                                     (g.game_date - season_start).days)
             except Exception as e:
                 log.append(f"Case for {g.away} @ {g.home} failed: {e}")
+        level = ((pview or {}).get("case") or {}).get("level")
+        lside = ((pview or {}).get("case") or {}).get("side")
+        for r in pick_rows:
+            if r["game_id"] == g.id and r["system"] in (113, 301):
+                m = r["meta"]
+                if level and r["side"] == lside:
+                    m["level"] = level
+                    m.setdefault("level_first", level)
+                elif r["system"] == 301:
+                    m["level"] = None
         slate.append({
             "game_id": g.id, "date": g.game_date.isoformat(), "tip_utc": g.tip_utc,
             "away": g.away, "home": g.home,
@@ -302,7 +314,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     scoring = {"season": drift(tot_rows),
                "last7": drift([(g, t) for g, t in tot_rows if (today - g.game_date).days <= 7])}
     board = build_board(now, today, slate, list(all_picks.values()), usage, log,
-                        source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"))
+                        source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days))
     board["scoring"] = scoring
     store.save_board(board)
     try:
@@ -412,6 +424,48 @@ def tracking(picks: list[dict]) -> dict:
             "personnel_by_gap": t(pers_gap), "personnel_by_call": t(pers_call)}
 
 
+GAP_BUCKETS = [("0-2", 0, 2), ("2-3", 2, 3), ("3-4", 3, 4), ("4-5", 4, 5), ("5+", 5, 99)]
+
+
+def gap_tracker(picks: list[dict], season_day: int) -> dict:
+    """Every game, the side the personnel line likes, graded at the line it was first seen
+    (the opener — how Caden bets), split by gap size and by confidence. Next to it, the same
+    split from the two-season replay at the opening line."""
+    x1 = [p for p in picks if p["system"] == 301 and p.get("active")]
+    def res(p):
+        return _meta(p, "result_first") or p.get("result")
+    rows = {}
+    for name, lo, hi in GAP_BUCKETS + [("3+", 3, 99), ("5+ only", 5, 99)]:
+        ps = [p for p in x1 if res(p) and lo <= (_meta(p, "gap_first") or _meta(p, "gap") or 0) < hi]
+        if name == "5+ only":
+            continue
+        clv = [c for c in (_meta(p, "clv") for p in ps) if c is not None]
+        rows[name] = {**_wl([res(p) for p in ps]), "avg_clv": round(sum(clv) / len(clv), 2) if clv else None}
+    conf = {}
+    for lv in ("High", "Medium", "Low"):
+        ps = [p for p in x1 if res(p) and (_meta(p, "gap_first") or 0) >= 3
+              and (_meta(p, "level_first") or _meta(p, "level")) == lv]
+        clv = [c for c in (_meta(p, "clv") for p in ps) if c is not None]
+        conf[lv] = {**_wl([res(p) for p in ps]), "avg_clv": round(sum(clv) / len(clv), 2) if clv else None}
+    window = next(n for n, lo, hi in case_mod.WINDOWS if lo <= season_day <= hi)
+    def hist(src, keys):
+        out = {}
+        for wname in (window, "whole season"):
+            t = src.get(wname) or {}
+            out[wname] = {k: t[k] for k in keys if k in t}
+        return out
+    # 3+ from the cumulative tiers the replay already had
+    bt = case_mod.BACKTEST
+    buckets_hist = hist(case_mod.BACKTEST_BUCKETS, [b[0] for b in GAP_BUCKETS])
+    for wname in buckets_hist:
+        if (bt.get(wname) or {}).get("3"):
+            buckets_hist[wname]["3+"] = bt[wname]["3"]
+    pending = sum(1 for p in x1 if not res(p))
+    return {"by_gap": rows, "by_confidence": conf, "window": window, "pending": pending,
+            "history_by_gap": buckets_hist,
+            "history_by_confidence": hist(case_mod.BACKTEST_CONFIDENCE, ["High", "Medium", "Low"])}
+
+
 def live_stacks(live: list[dict]) -> list[dict]:
     """Tonight's games where 2+ systems are on the same side."""
     st = {}
@@ -427,7 +481,7 @@ def live_stacks(live: list[dict]) -> list[dict]:
     return sorted(out, key=lambda x: (-len(x["systems"]), x["tip_utc"] or ""))
 
 
-def build_board(now, today, slate, picks, usage, log, source):
+def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0):
     picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks]
     t = today.isoformat()
     open_ = lambda p: p.get("result") is None and p["game_date"] >= t
@@ -468,6 +522,7 @@ def build_board(now, today, slate, picks, usage, log, source):
         p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
     return {
         "card": card, "card_done": card_done, "card_holding": holding,
+        "gap_tracker": gap_tracker(picks, season_day),
         "tracking": tracking(picks), "stacks": live_stacks(live),
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
