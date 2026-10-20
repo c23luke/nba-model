@@ -29,10 +29,14 @@ from . import personnel as P
 from . import sources
 from .teams import miles_between
 
-SEASONS = {"2023-24": ("2023-10-24", "2024-04-14"), "2024-25": ("2024-10-22", "2025-04-13"),
-           "2025-26": ("2025-10-21", "2026-04-12")}
-MIN_SEASON_N, MIN_TOTAL_N = 15, 60
-MIN_SEASON_PCT, MIN_TOTAL_PCT = 0.53, 0.56
+SEASONS = {"2020-21": ("2020-12-22", "2021-05-16"), "2021-22": ("2021-10-19", "2022-04-10"),
+           "2022-23": ("2022-10-18", "2023-04-09"), "2023-24": ("2023-10-24", "2024-04-14"),
+           "2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
+ALL_STAR = {"2020-21": "2021-03-07", "2021-22": "2022-02-20", "2022-23": "2023-02-19",
+            "2023-24": "2024-02-18", "2024-25": "2025-02-16", "2025-26": "2026-02-15"}
+MIN_SEASON_N, MIN_TOTAL_N = 8, 100
+MIN_SEASON_PCT, MIN_TOTAL_PCT = 0.52, 0.56
+SEASONS_ALLOWED_TO_MISS = 1          # one losing season out of six is allowed (no system wins every year)
 SHUFFLES = 5
 
 
@@ -127,7 +131,7 @@ def team_flags(hist, team, day, game, opp):
     return f
 
 
-def build(season, games, lines, start):
+def build(season, games, lines, start, end=None):
     hist = defaultdict(list)
     spread_rows, total_rows = [], []
     totals_all = sorted(v["total"] for v in lines.values() if v.get("total"))
@@ -136,10 +140,11 @@ def build(season, games, lines, start):
     by_day = defaultdict(list)
     for g in games:
         by_day[g.game_date].append(g)
-    allstar = date(start.year + 1, 2, 15)
+    allstar = date.fromisoformat(ALL_STAR[season])
+    end = end or max(by_day)
     for day in sorted(by_day):
         stage = {"first14": (day - start).days < 14, "pre_jan": day < date(start.year + 1, 1, 1),
-                 "post_asb": day >= allstar, "last21": day >= date(start.year + 1, 3, 24)}
+                 "post_asb": day >= allstar, "last21": day >= end - timedelta(21)}
         for g in by_day[day]:
             ln = lines.get(f"{day.isoformat()}|{g.away}|{g.home}") or {}
             hs, tot = ln.get("spread"), ln.get("total")
@@ -194,7 +199,7 @@ def search(rows, label, shuffle_seed=None, max_k=3):
             idx = np.where(S == i)[0]
             y[idx] = y[rng.permutation(idx)]
     smask = [S == i for i in range(len(seasons))]
-    useful = [j for j in range(len(names)) if 15 * 3 <= X[:, j].sum() <= len(rows) * 0.6]
+    useful = [j for j in range(len(names)) if MIN_TOTAL_N <= X[:, j].sum() <= len(rows) * 0.6]
     found = []
     for k in range(1, max_k + 1):
         for combo in itertools.combinations(useful, k):
@@ -206,16 +211,17 @@ def search(rows, label, shuffle_seed=None, max_k=3):
             if n < MIN_TOTAL_N:
                 continue
             for side, yy in (("bet", y), ("fade", ~y)):
-                ok, recs = True, []
+                misses, recs = 0, []
                 for sm in smask:
                     mm = m & sm
                     ns = int(mm.sum())
                     w = int((mm & yy).sum())
                     if ns < MIN_SEASON_N or w / ns < MIN_SEASON_PCT:
-                        ok = False
-                        break
+                        misses += 1
+                        if misses > SEASONS_ALLOWED_TO_MISS:
+                            break
                     recs.append((w, ns - w))
-                if not ok:
+                if misses > SEASONS_ALLOWED_TO_MISS:
                     continue
                 W = sum(a for a, _ in recs)
                 if W / n < MIN_TOTAL_PCT:
@@ -246,12 +252,12 @@ def main():
     for season in SEASONS:
         games, start, end, days = games_for(season)
         lines, how = closing_lines(season, days, key)
-        sr, tr = build(season, games, lines, start)
+        sr, tr = build(season, games, lines, start, end)
         spread_rows += sr
         total_rows += tr
         print(f"{season}: {len(games)} games, lines {how}; {len(sr)} spread rows, {len(tr)} totals rows")
-    print(f"\nRules: 1-3 flags; {MIN_SEASON_N}+ games and {MIN_SEASON_PCT:.0%}+ in EVERY season; "
-          f"{MIN_TOTAL_N}+ games and {MIN_TOTAL_PCT:.0%}+ overall; graded vs the closing line.\n")
+    print(f"\nRules: 1-3 flags; {MIN_SEASON_N}+ games and {MIN_SEASON_PCT:.0%}+ in every season but at most "
+          f"{SEASONS_ALLOWED_TO_MISS}; {MIN_TOTAL_N}+ games and {MIN_TOTAL_PCT:.0%}+ overall; vs the closing line.\n")
     out = {}
     for kind, rows in (("spread", spread_rows), ("total", total_rows)):
         real = search(rows, kind)
