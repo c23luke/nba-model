@@ -254,9 +254,12 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     for k, p in old.items():
         if p["game_id"] in upcoming_ids and k not in seen_now and p.get("active"):
             if p["system"] in LOCK_ON_FIRE and p.get("first_line") is not None:
-                # already bet at the first line: keep it; note where the line has gone since
-                pick_rows.append({**p, "last_checked": now.isoformat(),
-                                  "dropped_reason": None})
+                # already bet at the first line: keep it; note where the line has gone since.
+                # Still shop it — if the model still likes the side, a better number may be out there.
+                g = next(x for x in upcoming if x.id == p["game_id"])
+                pk = Pick(p["system"], p["game_id"], p["bet"], p["side"], p["line"])
+                pick_rows.append({**p, "last_checked": now.isoformat(), "dropped_reason": None,
+                                  "shop": sources.kalshi_ladder(pk, g, fetch=fetch_kalshi) + exchange_for(g)})
                 continue
             pick_rows.append({**p, "active": False, "last_checked": now.isoformat(),
                               "dropped_reason": "No longer qualifies at the current line"})
