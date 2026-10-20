@@ -196,6 +196,48 @@ def grade(rows, b2b_coef=0.0):
     return out
 
 
+PERIODS = [("Oct-Nov", date(2025, 10, 1), date(2025, 12, 1)), ("Dec", date(2025, 12, 1), date(2026, 1, 1)),
+           ("Jan-Feb", date(2026, 1, 1), date(2026, 3, 1)), ("Mar-Apr", date(2026, 3, 1), date(2026, 5, 1))]
+
+
+def calibrated(rows):
+    """Exactly what the board does: each day, fit market = a + b*model over that day's games (6+),
+    gap = market line vs calibrated model line."""
+    by = defaultdict(list)
+    for r in rows:
+        if r["spread"] is not None:
+            by[r["date"]].append(r)
+    out = []
+    for day, rs in by.items():
+        if len(rs) < 6:
+            continue
+        a, b, _ = ols([r["pred"] for r in rs], [-r["spread"] for r in rs])
+        for r in rs:
+            out.append({**r, "cal_gap": (a + b * r["pred"]) - (-r["spread"])})
+    return out
+
+
+def ats_table(rows, key):
+    lines = []
+    for name, lo_d, hi_d in PERIODS:
+        rs = [r for r in rows if lo_d <= r["date"] < hi_d]
+        cells = []
+        for lo in (0, 2, 3, 4, 5):
+            w = l = 0
+            for r in rs:
+                g = key(r)
+                res = r["actual"] + r["spread"]
+                if res == 0 or abs(g) < lo or g == 0:
+                    continue
+                if (res > 0) == (g > 0):
+                    w += 1
+                else:
+                    l += 1
+            cells.append(f"{lo}+: {w}-{l}" + (f" ({w/(w+l):.0%})" if w + l else ""))
+        lines.append(f"    {name:8} " + "  ".join(cells))
+    return lines
+
+
 def main():
     data = fetch_season()
     base = {"minutes": "prop", "prior_scale": 1.0, "recent": True, "prior_games": 3, "hc": 2.0, "fill": 0.0}
@@ -226,13 +268,24 @@ def main():
     b2b = -b2b
     print(f"back-to-back effect the model misses (train half, actual - model on B2B diff): {b2b:+.2f} pts (t {tb:.1f})")
     print()
-    print(f"{'version':28} {'RMSE model':>10} {'RMSE mkt':>9} {'w all':>6} {'t':>5} {'w train':>8} {'w test':>7} {'t test':>6}   ATS out of sample (test half) by raw gap: W-L")
+    print(f"{'version':28} {'RMSE model':>10} {'RMSE mkt':>9} {'w all':>6} {'t':>5} {'w train':>8} {'t':>5} {'w test':>7} {'t test':>6}   ATS out of sample (test half) by raw gap: W-L")
     for name, rows in preds.items():
         for tag, coef in (("", 0.0), (" +B2B", b2b)):
             gr = grade(rows, coef)
             ats = "  ".join(f"{k}+: {w}-{l} ({w/(w+l):.1%})" if w + l else f"{k}+: -" for k, (w, l) in gr["ats_test_by_raw_gap"].items())
             print(f"{(name + tag):28} {gr['rmse_model']:10.2f} {gr['rmse_market']:9.2f} {gr['w_all']:6.2f} {gr['t_all']:5.1f} "
-                  f"{gr['w_train']:8.2f} {gr['w_test']:7.2f} {gr['t_test']:6.1f}   {ats}")
+                  f"{gr['w_train']:8.2f} {gr['t_train']:5.1f} {gr['w_test']:7.2f} {gr['t_test']:6.1f}   {ats}")
+    print()
+    print("ATS by month, betting the side the model likes (no fitting needed: sign of the gap only)")
+    for name in ("board (prop minutes)", "top-down, bench fill", "top-down + prior half", "prior only (no in-season)"):
+        rows = [r for r in preds[name] if r["spread"] is not None]
+        print(f"  {name} — raw gap (model margin vs market margin)")
+        for ln in ats_table(rows, lambda r: r["pred"] + r["spread"]):
+            print(ln)
+        cal = calibrated(rows)
+        print(f"  {name} — calibrated gap, exactly like the board's T13 ({len(cal)} games on 6+ game days)")
+        for ln in ats_table(cal, lambda r: r["cal_gap"]):
+            print(ln)
 
 
 if __name__ == "__main__":
