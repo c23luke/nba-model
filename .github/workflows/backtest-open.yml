@@ -35,4 +35,4 @@ jobs:
           for f in data_static/players_2023_24.csv data_static/drafts_2023.csv data_static/odds_openclose_*.json data_static/backtest_open.json; do
             [ -f "$f" ] && git add "$f"
           done
-          if ! git diff --cached --quiet; then git commit -m "Backtest data: 2023-24 players, 2023 draft, opening/closing lines" && git push; fi
+          if ! git diff --cached --quiet; then git commit -m "Backtest data: 2023-24 players, 2023 draft, opening/closing lines" && git pull --rebase && git push; fi
