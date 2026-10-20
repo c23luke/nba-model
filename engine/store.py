@@ -81,5 +81,7 @@ class SupabaseStore:
 
 
 def get_store():
-    url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY")
+    # .strip(): pasted secrets often carry a trailing newline or space
+    url = (os.environ.get("SUPABASE_URL") or "").strip()
+    key = (os.environ.get("SUPABASE_SERVICE_KEY") or "").strip()
     return SupabaseStore(url, key) if url and key else LocalStore(os.environ.get("DATA_DIR", "data"))
