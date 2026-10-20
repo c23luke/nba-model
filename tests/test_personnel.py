@@ -124,3 +124,14 @@ def test_t13_fires_on_clean_gap_only():
     assert evaluate_personnel(g, -1.0, {**clean, "blind": ["CHA: Kon Knueppel (24 mpg) is day-to-day"]}) == []
     home = evaluate_personnel(g, -1.0, {**clean, "gap": +4.0})
     assert [(p.side, p.line) for p in home] == [("BKN", -1.0)]
+
+
+
+def test_lottery_rookie_makes_game_blind():
+    roster = [ath("Star Guard"), ath("Role Wing"), {**ath("Top Pick", 0), "id": 99}]
+    tr = P.rate_team("WAS", roster, LAST)
+    P.add_draft_info({"WAS": tr}, fetch=lambda url: {"draft": {"year": 2026, "selection": 1}})
+    assert any("#1 pick" in r for r in P.blind_reasons(tr))
+    tr2 = P.rate_team("WAS", [ath("Star Guard"), ath("Role Wing"), {**ath("Late Pick", 0), "id": 98}], LAST)
+    P.add_draft_info({"WAS": tr2}, fetch=lambda url: {"draft": {"year": 2026, "selection": 41}})
+    assert not any("pick" in r for r in P.blind_reasons(tr2))

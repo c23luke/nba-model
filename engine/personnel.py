@@ -49,6 +49,8 @@ DATA_PREV = STATIC / "players_2024_25.csv"     # season before (100+ minutes onl
 PREV_WEIGHT = 0.5                              # the older season counts half
 ESPN_TEAMS = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
 ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{}/roster"
+ESPN_ATHLETE = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{}"
+LOTTERY = 14         # an unknown player picked this high will play real minutes → blind spot
 
 
 def norm(name: str) -> str:
@@ -152,6 +154,8 @@ class Player:
     last: dict | None                # last season line, or None = unknown
     minutes: float = 0.0
     bpm_used: float | None = None
+    espn_id: str | None = None
+    draft: dict | None = None        # {"year", "pick"} for unknown players, looked up on ESPN
 
     @property
     def known(self) -> bool:
@@ -202,7 +206,7 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
     for a in athletes:
         name = a.get("displayName") or a.get("fullName") or ""
         exp = (a.get("experience") or {}).get("years")
-        tr.players.append(Player(name, _status(a), exp, last.get(norm(name))))
+        tr.players.append(Player(name, _status(a), exp, last.get(norm(name)), espn_id=str(a.get("id") or "") or None))
 
     avail = [p for p in tr.players if p.status != "out" and p.known]
     for p in avail:
@@ -250,16 +254,33 @@ def evidence(tr: TeamRead) -> list[str]:
         lines.append("Day-to-day: " + ", ".join(p.name for p in tr.dtd))
     if tr.unknown:
         lines.append(f"UNKNOWN (no NBA minutes in either of the last two seasons): {len(tr.unknown)} — "
-                     + ", ".join(p.name for p in tr.unknown))
+                     + ", ".join(p.name + (f" (#{p.draft['pick']} pick {p.draft['year']})" if p.draft else "")
+                                 for p in tr.unknown))
     if tr.unknown_minutes > 0.5:
         lines.append(f"{tr.unknown_minutes:.0f} of 240 minutes can't be filled by known players "
                      f"(rated league-average){' — LOW CONFIDENCE' if tr.low_confidence else ''}")
     return lines
 
 
+def add_draft_info(reads: dict[str, TeamRead], fetch=get_json) -> None:
+    """For players with no NBA numbers, look up where they were drafted (ESPN)."""
+    for tr in reads.values():
+        for p in tr.unknown:
+            if not p.espn_id:
+                continue
+            try:
+                d = fetch(ESPN_ATHLETE.format(p.espn_id)).get("draft") or {}
+                if d.get("selection"):
+                    p.draft = {"year": d.get("year"), "pick": int(d["selection"])}
+            except Exception:
+                pass
+
+
 def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, TeamRead]:
     last = load_last_season(path, prev_path)
-    return {t: rate_team(t, ath, last) for t, ath in fetch_rosters(fetch).items()}
+    reads = {t: rate_team(t, ath, last) for t, ath in fetch_rosters(fetch).items()}
+    add_draft_info(reads, fetch)
+    return reads
 
 
 def report(reads: dict[str, TeamRead], games: list[tuple[str, str, float | None, float | None]]) -> str:
@@ -343,6 +364,9 @@ def blind_reasons(tr: TeamRead) -> list[str]:
     """Where this model can't see what the market sees. A gap here is not an edge."""
     top8 = tr.rotation[:8]
     out = []
+    for p in tr.unknown:
+        if p.draft and p.draft["pick"] <= LOTTERY:
+            out.append(f"{tr.team}: {p.name} (#{p.draft['pick']} pick {p.draft['year']}) has no NBA numbers")
     if tr.unknown_minutes > BLIND_UNKNOWN_MIN:
         out.append(f"{tr.team}: {tr.unknown_minutes:.0f} minutes from players with no NBA numbers")
     for p in top8:
