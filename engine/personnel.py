@@ -238,6 +238,7 @@ class Player:
 
     prior: dict | None = None         # rookie prior from draft slot (measured)
     live: dict | None = None          # this season so far: min, games, mpg, bpm_live
+    wanted: float = 0.0               # projected role minutes before fitting the team into 240
 
     @property
     def known(self) -> bool:
@@ -357,6 +358,8 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
             p.steps.append(f"this season: {p.live['min']:.0f} min in {p.live['games']} g, box impact "
                            f"{p.live['bpm_live']:+.1f} → blended {p.bpm_used:+.2f} (prior worth {w} min)")
     want = {id(p): wanted(p) for p in avail}
+    for p in avail:
+        p.wanted = want[id(p)]
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
     for p in avail:

@@ -17,5 +17,5 @@ jobs:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
           set -o pipefail
-          python -m engine.personnel | tee report.txt
+          python -m engine.case_study IND NOP | tee report.txt
           { echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
