@@ -45,6 +45,9 @@ class LocalStore:
     def save_board(self, board):
         self._write("board", board)
 
+    def get_config(self, key):
+        return self._read("config", {}).get(key)
+
 
 # Columns in supabase/schema.sql. Every row sent in one batch must have the same keys,
 # and unknown keys are rejected, so rows are shaped to exactly these.
@@ -111,6 +114,11 @@ class SupabaseStore:
 
     def save_board(self, board):
         self._upsert("board", [{"id": 1, "data": board}], "id")
+
+    def get_config(self, key):
+        """Private settings (e.g. the phone-alert channel). Table has no public read policy."""
+        rows = self._req("GET", f"/config?key=eq.{key}&select=value") or []
+        return rows[0]["value"] if rows else None
 
 
 def get_store():

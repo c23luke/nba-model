@@ -82,3 +82,7 @@ alter table board enable row level security;
 alter table player_games enable row level security;
 drop policy if exists "public read board" on board;
 create policy "public read board" on board for select using (true);
+
+-- Private settings read by the watcher with the secret key (no public policy = not readable by the site)
+create table if not exists config (key text primary key, value text);
+alter table config enable row level security;

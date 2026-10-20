@@ -26,6 +26,7 @@ from . import personnel as personnel_mod
 from . import boxscore
 from . import case as case_mod
 
+PRICED = {113}          # test systems that also get a live Kalshi price (the main 4 always do)
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 
 
@@ -174,7 +175,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             prev = old.get(p.key, {})
             # Kalshi prices only for the 4 main systems
             quote = (sources.kalshi_quote(p, g, fetch=fetch_kalshi)
-                     if p.line is not None and p.system < 100 else None)
+                     if p.line is not None and (p.system < 100 or p.system in PRICED) else None)
             locked = p.system in LOCK_ON_FIRE and prev.get("first_line") is not None
             if locked:                                   # bet stays at the line it fired at
                 p.line = prev["first_line"]
