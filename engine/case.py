@@ -34,6 +34,17 @@ def measured(season_day: int, cushion: float) -> dict:
             "all_pos": allg["clv_pos"], "all_neg": allg["clv_neg"]}
 
 
+# Each point of closing-line value is worth about 2.8% in cover rate (normal density at 0 / 14.14).
+PCT_PER_POINT = 0.0282
+
+
+def win_estimate(m: dict) -> float:
+    """Conservative expected win rate at the line we bet: what the measured line movement implies
+    (the market's later number is the best judge), never the raw W-L of a small sample."""
+    implied = 0.5 + PCT_PER_POINT * (m.get("clv") or 0)
+    return min(implied, m["pct"]) if m.get("pct") is not None else implied
+
+
 # Measured 2025-26 regular season: home margin minus closing spread (DraftKings via ESPN),
 # 979 games: mean -0.28, SD 14.14. Used as how far a result lands from a fair line.
 RESULT_SD = 14.14
@@ -163,7 +174,9 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
          f"({m['pct']:.0%}) against the opening line, average line move +{m['clv']:.2f} our way "
          f"({m['clv_pos']} for us, {m['clv_neg']} against).") if m["pct"] is not None else
         "No games from the last two seasons at this stage and gap size.",
-        f"Break-even at −110 is {BREAK_EVEN:.1%}; on Kalshi or BetOpenly near even money it's about 50-51%.",
+        f"Expected win rate at this number: {win_estimate(m):.1%} (what that line movement is worth — "
+        f"the conservative read). Break-even at −110 is {BREAK_EVEN:.1%}; on Kalshi at 50¢ with the fee "
+        f"it's about 51.8%.",
         f"Pure math if our line were exactly right: {p_cover:.0%} ({p_worst:.0%} in the weakest version). "
         f"The measured record is the better guide.",
     ]
@@ -226,7 +239,7 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
     sections.append({"title": "Confidence", "lines": conf})
     return {"side": side, "line": bet_line, "level": level, "cushion": round(cushion, 1),
             "worst": round(low, 1), "p_cover": round(p_cover, 3), "p_worst": round(p_worst, 3),
-            "measured": m, "sections": sections}
+            "measured": m, "win_est": round(win_estimate(m), 4), "sections": sections}
 
 
 def _rank_at(reads: dict, rating: float) -> str:

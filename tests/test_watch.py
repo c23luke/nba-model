@@ -16,7 +16,7 @@ def test_alerts_once_and_only_alert_groups(tmp_path):
     test_pick = {**pick, "key": "g1-S106-NOP", "system": 106, "tag": "T6", "group": "TEST"}
     store.save_picks([pick, test_pick])
     board = {"bets": [], "tests": [pick, test_pick], "systems": {},
-             "slate": [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "measured": {"pct": 0.6}}}}]}
+             "slate": [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.6}}}]}
     sent = []
     W.push = lambda *a: sent.append(a)
     assert W.alert_new(board, store, "topic", print) == 1

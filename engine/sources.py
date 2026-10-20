@@ -192,11 +192,15 @@ def kalshi_quote(pick, g: Game, fetch=kalshi_markets) -> dict | None:
                       float(best["floor_strike"]) == want, url)
 
     team, opp = pick.side, (g.away if pick.side == g.home else g.home)
-    if pick.line == 0:                                         # pick'em → straight win market
+    if -1.0 <= pick.line <= 0:          # pick'em or -1: winning outright is the same or better bet
+        pick_line_ml = True
+    else:
+        pick_line_ml = False
+    if pick_line_ml:                                           # straight win market
         mk = [m for m in fetch("KXNBAGAME", g) if m["ticker"].endswith("-" + team)]
         if not mk:
             return None
-        return _quote(mk[0]["ticker"], f"YES · {team} to win", _px(mk[0], "yes_ask"), True, url)
+        return _quote(mk[0]["ticker"], f"YES · {team} to win", _px(mk[0], "yes_ask"), pick.line == 0, url)
 
     mk = fetch("KXNBASPREAD", g)
     strike = abs(pick.line)

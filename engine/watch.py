@@ -74,7 +74,7 @@ def win_rate(pick: dict, board: dict) -> float | None:
     for g in board.get("slate", []):
         c = ((g.get("personnel") or {}).get("case") or {})
         if g["game_id"] == pick["game_id"] and c.get("side") == pick["side"]:
-            return (c.get("measured") or {}).get("pct")
+            return c.get("win_est")
     return None
 
 
@@ -87,7 +87,7 @@ def message(pick: dict, board: dict) -> tuple[str, str, str]:
     if k.get("price") is not None:
         lines.append(f"Kalshi: {k['contract']} at {round(k['price'] * 100)}¢")
     if cap:
-        lines.append(f"Pay up to {round(cap * 100)}¢ on Kalshi (expected win rate {win:.0%})")
+        lines.append(f"Pay up to {round(cap * 100)}¢ on Kalshi incl. fee (expected win rate {win:.1%})")
     lines += pick.get("evidence", [])[:2]
     return title, "\n".join(lines), k.get("url") or BOARD_URL
 
