@@ -45,6 +45,7 @@ class TeamState:
     lose_streak: int = 0
     last_game: Game | None = None
     days_rest: int | None = None   # None = no game yet this season
+    games_last3: int = 0           # games played in the 3 days before this one
 
     @property
     def games(self) -> int:
@@ -61,6 +62,20 @@ class TeamState:
     @property
     def last_ot(self) -> bool:
         return bool(self.last_game and self.last_game.went_ot)
+
+    @property
+    def last_margin(self) -> int | None:
+        """Points this team won (+) or lost (-) its last game by."""
+        g = self.last_game
+        if g is None:
+            return None
+        mine, theirs = (g.home_score, g.away_score) if g.home == self.team else (g.away_score, g.home_score)
+        return mine - theirs
+
+    @property
+    def last_opponent(self) -> str | None:
+        g = self.last_game
+        return None if g is None else (g.away if g.home == self.team else g.home)
 
     @property
     def record(self) -> str:
@@ -94,4 +109,5 @@ def team_state(team: str, finals: list[Game], on_date: date) -> TeamState:
     if played:
         st.last_game = played[-1]
         st.days_rest = (on_date - played[-1].game_date).days - 1
+        st.games_last3 = sum(1 for g in played if 1 <= (on_date - g.game_date).days <= 3)
     return st

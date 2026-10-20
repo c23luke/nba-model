@@ -69,6 +69,10 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 .dim { color: var(--muted); }
 
 .records td:first-child { width: 48%; }
+.test-row { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.tag { font-family: var(--cond); font-weight: 700; font-size: 18px; color: var(--muted); }
+.test-pick { font-family: var(--cond); font-weight: 600; font-size: 20px; }
+.intro { color: var(--muted); margin: -4px 0 12px; max-width: 64ch; font-size: 15px; }
 .rec { font-family: var(--cond); font-size: 22px; font-weight: 600; }
 .W { color: var(--win); } .L { color: var(--loss); } .P { color: var(--push); }
 
@@ -96,6 +100,12 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 
   <h2>Graded bets</h2>
   <div id="history"></div>
+
+  <h2>Testing <small>12 systems being forward-tested</small></h2>
+  <p class="intro">Tracked and graded live, not bets to take. One moves up to the main board only after it builds a real record.</p>
+  <div id="tests"></div>
+  <h2>Testing records</h2>
+  <table class="records" id="test-records"></table>
 </main>
 
 <script src="config.js" onerror="void 0"></script>
@@ -173,6 +183,21 @@ function render(b) {
   $("records").innerHTML = Object.entries(b.systems).map(([id, s]) => `<tr>
       <td><b>${id}. ${esc(s.name)}</b><div class="ctx">Card: ${esc(s.card)}</div></td>
       <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span></td>
+      <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
+    </tr>`).join("");
+
+  // forward tests
+  const tests = b.tests || [];
+  $("tests").innerHTML = tests.length ? tests.map(p => `<div class="test-row">
+      <div class="tag">${p.tag}</div>
+      <div><div class="test-pick">${esc(p.label)} <span class="ctx">${esc(b.test_systems?.[p.system]?.name || "")}</span></div>
+        <div class="ctx">${p.away} @ ${p.home} · ${tipDay(p.tip_utc)} ${tipTime(p.tip_utc)}</div>
+        <div class="ctx">${p.evidence.map(esc).join(". ")}</div></div>
+    </div>`).join("") : `<div class="empty">No test systems have fired on today's or tomorrow's games.</div>`;
+  $("test-records").innerHTML = Object.entries(b.test_systems || {}).map(([id, s]) => `<tr>
+      <td><b>${s.tag}. ${esc(s.name)}</b><div class="ctx">${esc(s.rule)}</div></td>
+      <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span>
+        <div class="ctx">${s.win_pct == null ? "no results yet" : (s.win_pct * 100).toFixed(1) + "%"}</div></td>
       <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
     </tr>`).join("");
 
