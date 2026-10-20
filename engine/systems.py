@@ -67,10 +67,25 @@ SHADOW_SYSTEMS = {
 # line moves (moving toward us IS the point — that's CLV) and it's graded at the line it fired at.
 LOCK_ON_FIRE = {113}
 
+# Found by the six-season search (engine/mine.py, 2020-21 to 2025-26, vs the closing line). Each won
+# in at least 5 of 6 seasons, and the top of the search beat shuffled-results luck (totals: 11 systems
+# with a 58%+ floor vs 1 by luck). Simple, logical versions picked, not the narrowest.
+# win_est = halfway between 50% and the six-season rate: a search always flatters its winners.
+TEST_SYSTEMS.update({
+    121: {"win_est": 0.555, "name": "Late-season mismatch over", "bet": "total", "idea": "late season",
+          "rule": "Last 3 weeks of the season, favorite by 10+ → over. 6 seasons: 194-124 (61.0%), every season up"},
+    122: {"win_est": 0.56, "name": "Late-season low total over", "bet": "total", "idea": "late season",
+          "rule": "Last 3 weeks, total in the lowest quarter of the season's totals → over. 149-91 (62.1%)"},
+    123: {"win_est": 0.567, "name": "Post-All-Star mismatch, tired home team over", "bet": "total", "idea": "fatigue",
+          "rule": "After the All-Star break, favorite by 10+, home team on its 4th game in 6 nights → over. 149-86 (63.4%)"},
+    124: {"win_est": 0.595, "name": "Fade the OT winner on 4 games in 6 nights", "bet": "spread", "idea": "fatigue",
+          "rule": "Team won its last game in overtime and is on its 4th game in 6 nights → bet against. 69-31 (69.0%)"},
+})
+
 # FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
 #   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
 # T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
-FAVORITES = {102, 112, 113}
+FAVORITES = {102, 112, 113, 121, 122, 123, 124}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
@@ -406,3 +421,32 @@ def evaluate_personnel_shadow(game: Game, home_spread: float | None, view: dict 
         "call": "blind" if view.get("blind") else c["call"],
         "dtd": len(view.get("waiting_on") or []),
     })]
+
+
+def evaluate_mined(game: Game, home: TeamState, away: TeamState, home_spread: float | None,
+                   total: float | None, ctx: dict) -> list[Pick]:
+    """T21-T24 from the six-season search. ctx: last21, post_asb, tot_low_cut, home_4in6, away_4in6."""
+    picks: list[Pick] = []
+    mismatch = home_spread is not None and abs(home_spread) >= 10
+    if total is not None:
+        if ctx.get("last21") and mismatch:
+            picks.append(Pick(121, game.id, "total", "OVER", total, [
+                "Last 3 weeks of the regular season", f"Favorite by {abs(home_spread):g} (10+)",
+                "6 seasons: 194-124 (61.0%) vs the close"]))
+        if ctx.get("last21") and ctx.get("tot_low_cut") is not None and total <= ctx["tot_low_cut"]:
+            picks.append(Pick(122, game.id, "total", "OVER", total, [
+                "Last 3 weeks of the regular season",
+                f"Total {total:g} is in the lowest quarter of this season's totals (≤ {ctx['tot_low_cut']:g})",
+                "6 seasons: 149-91 (62.1%) vs the close"]))
+        if ctx.get("post_asb") and mismatch and ctx.get("home_4in6"):
+            picks.append(Pick(123, game.id, "total", "OVER", total, [
+                "After the All-Star break", f"Favorite by {abs(home_spread):g} (10+)",
+                f"{game.home} is playing its 4th game in 6 nights", "6 seasons: 149-86 (63.4%) vs the close"]))
+    for team, t, o, spread, o4 in ((game.home, home, away, home_spread, ctx.get("away_4in6")),
+                                   (game.away, away, home, None if home_spread is None else -home_spread,
+                                    ctx.get("home_4in6"))):
+        if o4 and o.last_won and o.last_ot:
+            picks.append(Pick(124, game.id, "spread", team, spread, [
+                f"{o.team} won last game in overtime: {o.last_game.score_line()}",
+                f"{o.team} is playing its 4th game in 6 nights", "6 seasons: 69-31 (69.0%) vs the close"]))
+    return picks

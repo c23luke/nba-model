@@ -21,13 +21,20 @@ from .state import Game, team_state
 from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
                       evaluate_early, evaluate_personnel, evaluate_personnel_shadow, personnel_call, LOCK_ON_FIRE,
+                      evaluate_mined,
                       SHADOW_SYSTEMS, grade, label, group)
 from . import personnel as personnel_mod
 from . import boxscore
 from . import case as case_mod
 
-PRICED = {113}          # test systems that also get a live Kalshi price (the main 4 always do)
+PRICED = {113, 121, 122, 123, 124}          # test systems that also get a live Kalshi price (the main 4 always do)
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
+SEASON_END = date.fromisoformat(os.environ.get("SEASON_END", "2027-04-11"))      # NBA release
+ALL_STAR = date.fromisoformat(os.environ.get("ALL_STAR", "2027-02-21"))          # All-Star Sunday
+
+
+def games_in(team, finals, day, back):
+    return sum(1 for g in finals if team in (g.home, g.away) and 1 <= (day - g.game_date).days <= back)
 
 
 def game_from_row(r: dict) -> Game:
@@ -160,16 +167,23 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     seen_now = set()
     pick_rows = []
     slate = []
+    totals_seen = sorted(r["total"] for r in stored.values() if r.get("total") is not None)
+    tot_low_cut = totals_seen[len(totals_seen) // 4] if len(totals_seen) >= 100 else None
     for g in upcoming:
         row = stored[g.id]
         hs, at = team_state(g.home, finals, g.game_date), team_state(g.away, finals, g.game_date)
+        ctx = {"last21": g.game_date >= SEASON_END - timedelta(21), "post_asb": g.game_date > ALL_STAR,
+               "tot_low_cut": tot_low_cut,
+               "home_4in6": games_in(g.home, finals, g.game_date, 5) >= 3,
+               "away_4in6": games_in(g.away, finals, g.game_date, 5) >= 3}
         picks = (evaluate(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_tests(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_early(g, hs, at, row.get("home_spread"), row.get("total"),
                                   (g.game_date - season_start).days)
                  + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
                                       season_day=(g.game_date - season_start).days)
-                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id)))
+                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
+                 + evaluate_mined(g, hs, at, row.get("home_spread"), row.get("total"), ctx))
         keys = []
         for p in picks:
             prev = old.get(p.key, {})

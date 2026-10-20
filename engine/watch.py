@@ -71,6 +71,9 @@ def win_rate(pick: dict, board: dict) -> float | None:
     if pick["system"] < 100:
         rec = board["systems"].get(pick["system"]) or board["systems"].get(str(pick["system"])) or {}
         return rec.get("card_win_rate")
+    from .systems import TEST_SYSTEMS
+    if (TEST_SYSTEMS.get(pick["system"]) or {}).get("win_est"):
+        return TEST_SYSTEMS[pick["system"]]["win_est"]
     for g in board.get("slate", []):
         c = ((g.get("personnel") or {}).get("case") or {})
         if g["game_id"] == pick["game_id"] and c.get("side") == pick["side"]:
