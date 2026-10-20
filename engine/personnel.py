@@ -52,6 +52,24 @@ ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/team
 ESPN_ATHLETE = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{}"
 LOTTERY = 14         # an unknown player picked this high will play real minutes → blind spot
 
+# ---- Returning from a major injury (first season back) -----------------------
+# Research (NBA players, first season after surgery vs their own pre-injury level):
+#   ACL      DeFroda et al., ISAKOS 2021 (n=26): PER -19.3%; 48% of games vs 78.5% pre.
+#            Second season back: no significant difference from pre-injury.
+#   Achilles Khalil et al., Orthop J Sports Med 2020 (n=27): PER 80% of baseline vs 96% for
+#            matched healthy players (16% excess drop); minutes 83% vs 103% (about 0.81x).
+# PER -> BPM: measured on 2024-25 (270 players, 1000+ min): BPM = 0.597*PER - 8.86, r=0.90.
+PER_TO_BPM = 0.597
+INJURY_PER_DROP = {"ACL": 0.193, "Achilles": 0.16}
+INJURY_MINUTES = {"ACL": 0.81, "Achilles": 0.81}   # ACL study gave no minutes figure; Achilles' used
+# Who is coming back from what (injury as reported at the time), with last healthy PER (2024-25).
+RETURNS = {
+    "tyrese haliburton": {"injury": "Achilles", "per": 21.8, "when": "June 2025"},
+    "damian lillard":    {"injury": "Achilles", "per": 21.3, "when": "April 2025"},
+    "kyrie irving":      {"injury": "ACL",      "per": 19.9, "when": "March 2025"},
+    "fred vanvleet":     {"injury": "ACL",      "per": 12.8, "when": "September 2025"},
+}
+
 
 def norm(name: str) -> str:
     s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
@@ -156,6 +174,8 @@ class Player:
     bpm_used: float | None = None
     espn_id: str | None = None
     draft: dict | None = None        # {"year", "pick"} for unknown players, looked up on ESPN
+    age_now: int | None = None       # ESPN age today
+    steps: list[str] = field(default_factory=list)   # how this player's number was built
 
     @property
     def known(self) -> bool:
@@ -206,15 +226,22 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
     for a in athletes:
         name = a.get("displayName") or a.get("fullName") or ""
         exp = (a.get("experience") or {}).get("years")
-        tr.players.append(Player(name, _status(a), exp, last.get(norm(name)), espn_id=str(a.get("id") or "") or None))
+        tr.players.append(Player(name, _status(a), exp, last.get(norm(name)),
+                                 espn_id=str(a.get("id") or "") or None,
+                                 age_now=int(a["age"]) if a.get("age") else None))
 
     avail = [p for p in tr.players if p.status != "out" and p.known]
     for p in avail:
         # last two seasons + the measured age curve (young players improve, the oldest decline)
         p.bpm_used = p.last["bpm_blend"] + p.last.get("age_delta", 0.0)
+        if p.last.get("missed_last"):
+            adjust_return(p)
     # Minutes per game only counts as a real role if he played enough games (over two
     # seasons) to earn it: 15 games at 29 mpg is mostly garbage time, not a rotation spot.
-    want = {id(p): min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES) for p in avail}
+    want = {id(p): min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES)
+                   * (INJURY_MINUTES[RETURNS[norm(p.name)]["injury"]]
+                      if p.last.get("missed_last") and norm(p.name) in RETURNS else 1.0)
+            for p in avail}
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
     for p in avail:
@@ -226,6 +253,31 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
     same = sum(p.minutes for p in avail if p.last["team"] == team)
     tr.continuity = same / 240
     return tr
+
+
+def adjust_return(p: Player) -> None:
+    """A player who missed all of last season: age him two years on the measured curve, and if
+    it was a major injury, apply the first-season-back drop from the research above."""
+    base = p.last["bpm_blend"]
+    b25 = p.last["bpm25"] if p.last.get("bpm25") is not None else p.last["bpm"]
+    p.steps.append(f"last healthy season 2024-25: BPM {b25:+.1f} in {p.last['mp25']} min "
+                   f"→ {base:+.2f} after the small-sample pull")
+    if p.age_now:
+        a1, a2 = p.age_now - 2, p.age_now - 1            # ages during 2024-25 and 2025-26
+        d = age_delta(a1, AGE_CURVE) + age_delta(a2, AGE_CURVE)
+        p.bpm_used += d
+        p.steps.append(f"two years of aging (ages {a1}→{a2 + 1}, measured curve): {d:+.2f}")
+    else:
+        p.steps.append("age not on file: no aging applied")
+    r = RETURNS.get(norm(p.name))
+    if r:
+        drop = INJURY_PER_DROP[r["injury"]] * r["per"] * PER_TO_BPM
+        p.bpm_used -= drop
+        p.steps.append(f"first season back from {r['injury']} ({r['when']}): PER {r['per']} x "
+                       f"{INJURY_PER_DROP[r['injury']]:.1%} x 0.597 = {-drop:+.2f}; minutes x{INJURY_MINUTES[r['injury']]}")
+    else:
+        p.steps.append("missed season, no major injury on file: aging only")
+    p.steps.append(f"= {p.bpm_used:+.2f}")
 
 
 def fair_home_spread(home: TeamRead, away: TeamRead) -> float:
@@ -245,11 +297,9 @@ def evidence(tr: TeamRead) -> list[str]:
         lines.append("OUT: " + ", ".join(
             f"{p.name}" + (f" ({p.last['mpg']:.0f} mpg, BPM {p.last['bpm']:+.1f})" if p.known else " (no NBA log)")
             for p in tr.out))
-    back = [p for p in tr.rotation if p.last and p.last["missed_last"]]
-    if back:
-        lines.append("Back from a missed season (rated on 2024-25): " + ", ".join(
-            f"{p.name} ({p.last['mp25']} min, BPM {p.last['bpm25']:+.1f}, projected {p.minutes:.0f} mpg)"
-            for p in back))
+    for p in [p for p in tr.rotation if p.last and p.last["missed_last"]]:
+        lines.append(f"Back from a missed season — {p.name}, rated {p.bpm_used:+.2f}, "
+                     f"{p.minutes:.0f} mpg: " + "; ".join(p.steps))
     if tr.dtd:
         lines.append("Day-to-day: " + ", ".join(p.name for p in tr.dtd))
     if tr.unknown:
@@ -372,8 +422,8 @@ def blind_reasons(tr: TeamRead) -> list[str]:
     for p in top8:
         if p.status == "day-to-day":
             out.append(f"{tr.team}: {p.name} ({p.minutes:.0f} mpg) is day-to-day")
-        if p.last and p.last.get("missed_last"):
-            out.append(f"{tr.team}: {p.name} is back from a missed season")
+        if p.last and p.last.get("missed_last") and norm(p.name) not in RETURNS and p.minutes >= 20:
+            out.append(f"{tr.team}: {p.name} ({p.minutes:.0f} mpg) missed last season, cause not on file")
     return out
 
 

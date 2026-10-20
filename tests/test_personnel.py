@@ -112,7 +112,7 @@ def test_blind_when_starter_day_to_day_or_back_from_missed_season():
     r = rec("Back Star", "BOS", 60, 2100, 4.0); r["missed_last"] = True
     last[P.norm("Back Star")] = r
     tr = P.rate_team("BOS", [ath("Back Star"), ath("Role Wing")], last)
-    assert any("missed season" in x for x in P.blind_reasons(tr))
+    assert any("missed last season, cause not on file" in x for x in P.blind_reasons(tr))
 
 
 def test_t13_fires_on_clean_gap_only():
@@ -135,3 +135,19 @@ def test_lottery_rookie_makes_game_blind():
     tr2 = P.rate_team("WAS", [ath("Star Guard"), ath("Role Wing"), {**ath("Late Pick", 0), "id": 98}], LAST)
     P.add_draft_info({"WAS": tr2}, fetch=lambda url: {"draft": {"year": 2026, "selection": 41}})
     assert not any("pick" in r for r in P.blind_reasons(tr2))
+
+
+
+def test_returning_star_gets_a_number_with_steps():
+    last = dict(LAST)
+    r = rec("Kyrie Irving", "DAL", 50, 1804, 3.4)
+    r.update(missed_last=True, mp25=1804, bpm25=3.4, mp26=0, bpm26=None,
+             bpm_blend=(3.4 * 902 + P.BASELINE * P.PULL) / (902 + P.PULL))
+    last[P.norm("Kyrie Irving")] = r
+    P.AGE_CURVE.clear(); P.AGE_CURVE.update({(19, 21): (1.0, 1), (32, 33): (0.3, 1), (34, 45): (-0.4, 1)})
+    tr = P.rate_team("DAL", [{**ath("Kyrie Irving"), "age": 34}, ath("Role Wing")], last)
+    k = tr.players[0]
+    acl = 0.193 * 19.9 * 0.597
+    assert abs(k.bpm_used - (r["bpm_blend"] + 0.3 + 0.3 - acl)) < 1e-9     # ages 32 and 33, then ACL
+    assert any("ACL" in s for s in k.steps) and k.minutes < 36 * 0.82
+    assert not any("Kyrie" in b for b in P.blind_reasons(tr))              # rated, so not blind
