@@ -11,7 +11,7 @@ Method (every step is shown in the output)
   1. Match each rostered player to his own line from last season.
   2. Players listed OUT get no minutes. Day-to-day players stay in, flagged.
   3. Minutes: split 240 among available players in proportion to last season's
-     minutes per game (capped at 38).
+     minutes per game (capped at 38), scaled down for players with under 50 games.
   4. Small samples are pulled toward a bench-level baseline:
         bpm_used = (bpm * minutes + BASELINE * PULL) / (minutes + PULL)
   5. Players with no NBA minutes last season are UNKNOWN: listed by name, counted,
@@ -35,6 +35,7 @@ BASELINE = -1.5      # typical bench-level BPM a small sample is pulled toward
 PULL = 400           # minutes of "baseline" blended in
 HOME_COURT = 2.0     # points; assumption, stated on the board
 MIN_CAP = 38.0
+ROLE_GAMES = 50      # games needed for last season's minutes per game to count in full
 UNKNOWN_FLAG_MIN = 30  # unknown minutes above this → low-confidence rating
 
 DATA = Path(__file__).resolve().parent.parent / "data_static" / "players_2025_26.csv"
@@ -127,7 +128,9 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
     for p in avail:
         mp = p.last["mp"]
         p.bpm_used = (p.last["bpm"] * mp + BASELINE * PULL) / (mp + PULL)
-    want = {id(p): min(p.last["mpg"], MIN_CAP) for p in avail}
+    # Minutes per game only counts as a real role if he played enough games to earn it:
+    # 15 games at 29 mpg is mostly garbage time / tanking, not a rotation spot.
+    want = {id(p): min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES) for p in avail}
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
     for p in avail:

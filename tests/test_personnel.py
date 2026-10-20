@@ -51,3 +51,11 @@ def test_fair_spread_sign():
     good = P.rate_team("BOS", [ath("Star Guard")] * 7, LAST)
     meh = P.rate_team("NYK", [ath("Role Wing")] * 10, LAST)
     assert P.fair_home_spread(good, meh) < -2      # good home team is favored
+
+
+def test_few_games_shrinks_role():
+    last = dict(LAST)
+    last[P.norm("Garbage Time")] = {"name": "Garbage Time", "team": "BOS", "g": 15, "mp": 435, "mpg": 29.0, "bpm": -5.0}
+    tr = P.rate_team("BOS", [ath("Star Guard"), ath("Garbage Time")], last)
+    gt = [p for p in tr.players if p.name == "Garbage Time"][0]
+    assert gt.minutes < 10
