@@ -1,0 +1,33 @@
+name: Run NBA model
+
+on:
+  schedule:
+    # every 15 minutes, 10am–2am Eastern (14:00–06:00 UTC)
+    - cron: "*/15 14-23 * * *"
+    - cron: "*/15 0-5 * * *"
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Reload every day since opening night"
+        type: boolean
+        default: false
+
+concurrency:
+  group: nba-model
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run one pass
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python -m engine.run ${{ inputs.backfill && '--backfill' || '' }}

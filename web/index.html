@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NBA Systems Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #14213A; --panel: #1D2E4D; --line: #2C4068; --text: #EEF2F7; --muted: #8FA0BA;
+  --amber: #F2A93B; --amber-ink: #1A1206; --win: #4CC38A; --loss: #E5604F; --push: #A9B4C6;
+  --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Barlow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #EEF2F7; --panel: #FFFFFF; --line: #D3DBE7; --text: #14213A; --muted: #5B6B85;
+    --amber: #C77D0A; --amber-ink: #FFFFFF; --win: #198754; --loss: #C2412F; --push: #6B778A;
+  }
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 var(--body); }
+main { max-width: 860px; margin: 0 auto; padding: 20px 16px 64px; }
+a { color: inherit; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: var(--muted); font-size: 14px; }
+.top b { font-family: var(--cond); font-size: 18px; color: var(--text); letter-spacing: .02em; font-weight: 600; }
+.stale { color: var(--loss); }
+
+.answer { font-family: var(--cond); font-weight: 700; font-size: clamp(44px, 11vw, 88px); line-height: .92; margin: 28px 0 8px; letter-spacing: -.01em; }
+.answer.live { color: var(--amber); }
+.sub { color: var(--muted); margin: 0 0 28px; max-width: 60ch; }
+
+h2 { font-family: var(--cond); font-weight: 600; font-size: 26px; margin: 44px 0 12px; }
+h2 small { font-family: var(--body); font-size: 14px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+
+/* bet slip: the one loud element */
+.slip { background: var(--panel); border-left: 6px solid var(--amber); border-radius: 4px 12px 12px 4px; padding: 16px 18px; margin-bottom: 14px; }
+.slip.waiting { border-left-color: var(--muted); }
+.slip-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.pick { font-family: var(--cond); font-weight: 700; font-size: 40px; line-height: 1; }
+.slip.waiting .pick { color: var(--muted); }
+.when { color: var(--muted); font-size: 14px; }
+.sys { margin: 6px 0 10px; font-weight: 600; }
+.sys span { color: var(--muted); font-weight: 400; }
+.why { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+.why li { margin: 2px 0; }
+.price { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.price div { font-size: 13px; color: var(--muted); }
+.price strong { display: block; font-family: var(--cond); font-size: 24px; color: var(--text); font-weight: 600; }
+.edge-pos strong { color: var(--win); } .edge-neg strong { color: var(--loss); }
+.note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.btn { display: inline-block; margin-top: 12px; background: var(--amber); color: var(--amber-ink); font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 6px; }
+
+.empty { background: var(--panel); border-radius: 12px; padding: 18px; color: var(--muted); }
+
+/* slate */
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.team { font-family: var(--cond); font-weight: 600; font-size: 20px; }
+.ctx { color: var(--muted); font-size: 13px; }
+.b2b { color: var(--amber); font-weight: 600; }
+.fired { font-family: var(--cond); font-weight: 700; color: var(--amber); white-space: nowrap; }
+.num { font-family: var(--cond); font-size: 19px; white-space: nowrap; }
+.dim { color: var(--muted); }
+
+.records td:first-child { width: 48%; }
+.rec { font-family: var(--cond); font-size: 22px; font-weight: 600; }
+.W { color: var(--win); } .L { color: var(--loss); } .P { color: var(--push); }
+
+@media (max-width: 620px) {
+  .slate thead { display: none; }
+  .slate tr { display: grid; grid-template-columns: 1fr auto; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .slate td { border: 0; padding: 2px 0; }
+  .slate td.lines { text-align: right; }
+  .slate td.sysc { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><b>NBA Systems Board</b><span id="updated">Loading…</span></div>
+  <div id="answer" class="answer">…</div>
+  <p id="sub" class="sub"></p>
+  <section id="bets"></section>
+
+  <h2>Today and tomorrow <small id="slate-note"></small></h2>
+  <div id="slate"></div>
+
+  <h2>System records this season <small>graded at the closing line, 1 unit at −110</small></h2>
+  <table class="records" id="records"></table>
+
+  <h2>Graded bets</h2>
+  <div id="history"></div>
+</main>
+
+<script src="config.js" onerror="void 0"></script>
+<script>
+const cfg = window.BOARD_CONFIG || {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const tipTime = iso => iso ? new Date(iso.replace("Z", "+00:00")).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+const tipDay = iso => iso ? new Date(iso.replace("Z", "+00:00")).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) : "";
+const sgn = n => n == null ? "—" : (n === 0 ? "PK" : (n > 0 ? "+" : "−") + Math.abs(n));
+const ago = iso => { const m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`; };
+
+async function load() {
+  if (cfg.supabaseUrl && cfg.anonKey) {
+    const r = await fetch(`${cfg.supabaseUrl}/rest/v1/board?id=eq.1&select=data`,
+      { headers: { apikey: cfg.anonKey, Authorization: `Bearer ${cfg.anonKey}` }, cache: "no-store" });
+    if (!r.ok) throw new Error(`Supabase answered ${r.status}`);
+    const rows = await r.json();
+    if (!rows.length) throw new Error("The model hasn't written a board yet. Run the GitHub Action once.");
+    return rows[0].data;
+  }
+  const r = await fetch("data/board.json", { cache: "no-store" });
+  if (!r.ok) throw new Error("No board found. Add config.js with your Supabase keys, or run the model locally.");
+  return r.json();
+}
+
+function render(b) {
+  const mins = (Date.now() - new Date(b.generated_at)) / 60000;
+  $("updated").innerHTML = `Model ran ${ago(b.generated_at)}` + (mins > 45 ? ` · <span class="stale">check the GitHub Action</span>` : "");
+
+  const priced = b.bets.filter(p => p.line != null);
+  const waiting = b.bets.filter(p => p.line == null);
+  const games = b.slate.length, withLines = b.slate.filter(g => g.home_spread != null || g.total != null).length;
+  document.title = priced.length ? `(${priced.length}) NBA Systems Board` : "NBA Systems Board";
+
+  const a = $("answer");
+  if (priced.length) {
+    a.textContent = `${priced.length} bet${priced.length > 1 ? "s" : ""} to take`;
+    a.className = "answer live";
+  } else {
+    a.textContent = "No bets yet";
+    a.className = "answer";
+  }
+  $("sub").textContent = games
+    ? `${games} game${games > 1 ? "s" : ""} on the board today and tomorrow. Lines are out on ${withLines}. ` +
+      (waiting.length ? `${waiting.length} system${waiting.length > 1 ? "s have" : " has"} fired and ${waiting.length > 1 ? "are" : "is"} waiting on a line.` : "The model checks again every 15 minutes.")
+    : "No games on the schedule today or tomorrow.";
+
+  const sysName = id => b.systems[id]?.name || `System ${id}`;
+  $("bets").innerHTML = b.bets.map(p => slip(p, b.systems[p.system])).join("") ||
+    (games ? `<div class="empty">Nothing qualifies right now. When a line posts or moves into a system's range, the bet shows up here.</div>` : "");
+
+  // slate
+  if (!b.slate.length) { $("slate").innerHTML = `<div class="empty">No games scheduled.</div>`; }
+  else {
+    $("slate-note").textContent = `lines from ${b.line_source}`;
+    $("slate").innerHTML = `<table class="slate"><thead><tr><th>Game</th><th>Spread · total</th><th>Systems</th></tr></thead><tbody>` +
+      b.slate.map(g => {
+        const fired = g.picks.map(k => b.bets.find(p => p.key === k)).filter(Boolean);
+        const hs = g.home_spread;
+        const line = hs == null ? `<span class="dim">no line</span>` :
+          `${hs < 0 ? g.home : hs > 0 ? g.away : "PK"} ${hs === 0 ? "" : "−" + Math.abs(hs)}`;
+        return `<tr>
+          <td><div class="team">${g.away} @ ${g.home}</div>
+            <div class="ctx">${tipDay(g.tip_utc)} ${tipTime(g.tip_utc)}</div>
+            <div class="ctx">${ctx(g.away, g.away_state)}<br>${ctx(g.home, g.home_state)}</div></td>
+          <td class="lines"><div class="num">${line}</div><div class="num dim">${g.total ?? "—"}</div></td>
+          <td class="sysc">${fired.length ? fired.map(p => `<span class="fired">S${p.system} ${esc(p.label)}</span>`).join("<br>") : `<span class="dim">—</span>`}</td>
+        </tr>`;
+      }).join("") + `</tbody></table>`;
+  }
+
+  // records
+  $("records").innerHTML = Object.entries(b.systems).map(([id, s]) => `<tr>
+      <td><b>${id}. ${esc(s.name)}</b><div class="ctx">Card: ${esc(s.card)}</div></td>
+      <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span></td>
+      <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
+    </tr>`).join("");
+
+  // history
+  $("history").innerHTML = b.history.length ? `<table><tbody>` + b.history.map(p => `<tr>
+      <td><span class="${p.result}" style="font-family:var(--cond);font-weight:700;font-size:20px">${p.result}</span></td>
+      <td><b>${esc(p.label)}</b> <span class="ctx">S${p.system}</span><div class="ctx">${esc(p.final_score)} · ${p.game_date}</div></td>
+    </tr>`).join("") + `</tbody></table>` : `<div class="empty">No graded bets yet. Results post the morning after each game.</div>`;
+}
+
+function ctx(team, s) {
+  if (!s) return "";
+  const rest = s.rest === "B2B" ? `<span class="b2b">B2B</span>` : s.rest;
+  const last = s.last ? `last: ${s.last.won ? "W" : "L"}${s.last.ot ? " in OT" : ""}` : "";
+  return `${team} ${s.record} · ${s.streak} · ${rest}${last ? " · " + last : ""}`;
+}
+
+function slip(p, sys) {
+  const waiting = p.line == null;
+  const k = p.kalshi;
+  let price = "";
+  if (k && k.price != null) {
+    const edge = sys.card_win_rate - k.cost;
+    price = `<div class="price">
+      <div>Kalshi price<strong>${Math.round(k.price * 100)}¢</strong></div>
+      <div>With fee<strong>${Math.round(k.cost * 100)}¢</strong></div>
+      <div>Card win rate<strong>${(sys.card_win_rate * 100).toFixed(1)}%</strong></div>
+      <div class="${edge > 0 ? "edge-pos" : "edge-neg"}">Edge vs card<strong>${edge > 0 ? "+" : ""}${(edge * 100).toFixed(1)}%</strong></div>
+    </div>
+    <div class="note">${esc(k.contract)}${k.exact ? "" : " · closest Kalshi strike, not the exact line"}</div>
+    <a class="btn" href="${esc(k.url)}" target="_blank" rel="noopener">Open on Kalshi</a>`;
+  } else if (!waiting) {
+    price = `<div class="note">No matching Kalshi market found. Check BetOpenly or your book.</div>`;
+  }
+  const moved = p.first_line != null && p.line != null && p.first_line !== p.line
+    ? ` · first fired at ${p.bet === "total" ? p.first_line : sgn(p.first_line)}` : "";
+  return `<article class="slip ${waiting ? "waiting" : ""}">
+    <div class="slip-head"><div class="pick">${esc(p.label)}</div>
+      <div class="when">${p.away} @ ${p.home} · ${tipDay(p.tip_utc)} ${tipTime(p.tip_utc)}</div></div>
+    <div class="sys">System ${p.system}: ${esc(sys?.name)} <span>(${esc(sys?.card)})</span></div>
+    <ul class="why">${p.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul>
+    ${waiting ? `<div class="note">Fires regardless of the number. Waiting for the line to post.</div>` : ""}
+    ${price}
+    <div class="note">Found ${ago(p.first_seen)}${moved}</div>
+  </article>`;
+}
+
+async function tick() {
+  try { render(await load()); }
+  catch (e) { $("answer").textContent = "Can't load the board"; $("sub").textContent = e.message; }
+}
+tick();
+setInterval(tick, 60000);
+</script>
+</body>
+</html>
