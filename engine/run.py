@@ -77,7 +77,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 2. lines
     odds_lines, usage = {}, {}
-    key = (os.environ.get("ODDS_API_KEY") or "").strip()
+    key = "".join((os.environ.get("ODDS_API_KEY") or "").split())
     if fetch_lines is None and key:
         fetch_lines = lambda: sources.odds_api_lines(key)
     if fetch_lines:

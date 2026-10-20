@@ -81,14 +81,11 @@ class SupabaseStore:
 
 
 def get_store():
-    # .strip(): pasted secrets often carry a trailing newline or space
-    url = (os.environ.get("SUPABASE_URL") or "").strip()
-    key = (os.environ.get("SUPABASE_SERVICE_KEY") or "").strip()
-    if key and (any(c in key for c in "\r\n\t ") or not key.isascii()):
-        lines = [ln.strip() for ln in key.splitlines() if ln.strip()]
+    # Keys never contain whitespace; a copy from a wrapped line can insert a line break mid-key.
+    url = "".join((os.environ.get("SUPABASE_URL") or "").split())
+    key = "".join((os.environ.get("SUPABASE_SERVICE_KEY") or "").split())
+    if key and not (key.startswith(("sb_secret_", "eyJ")) and key.isascii()):
         raise SystemExit(
-            "SUPABASE_SERVICE_KEY looks mis-pasted: "
-            f"{len(lines)} non-empty line(s), lengths {[len(ln) for ln in lines]}, "
-            f"starts with sb_secret_: {[ln.startswith('sb_secret_') for ln in lines]}, "
-            f"plain ASCII: {key.isascii()}. Re-paste just the one key in GitHub → Settings → Secrets.")
+            f"SUPABASE_SERVICE_KEY doesn't look like a Supabase secret key (length {len(key)}, "
+            f"starts with sb_secret_: {key.startswith('sb_secret_')}). Re-paste it in GitHub → Settings → Secrets.")
     return SupabaseStore(url, key) if url and key else LocalStore(os.environ.get("DATA_DIR", "data"))
