@@ -54,6 +54,13 @@ def fetch_season():
     key = "".join((os.environ.get("ODDS_API_KEY") or "").split())
     if not key:
         return espn, "ESPN pickcenter only"
+    import json
+    from pathlib import Path
+    cache = Path(P.STATIC) / "odds_hist_2025_26.json"
+    if cache.exists():
+        raw = json.loads(cache.read_text())
+        snap = {(date.fromisoformat(k.split("|")[0]), k.split("|")[1], k.split("|")[2]): v for k, v in raw.items()}
+        return _merge(espn, snap, "cached file")
     snap = {}
     left = None
     def day_lines(d):
@@ -65,6 +72,12 @@ def fetch_season():
         for lines, meta in ex.map(day_lines, days):
             snap.update(lines)
             left = meta.get("remaining") or left
+    cache.write_text(json.dumps({f"{k[0].isoformat()}|{k[1]}|{k[2]}": {"home_spread": v.get("home_spread"),
+                                 "books": v.get("books")} for k, v in snap.items()}))
+    return _merge(espn, snap, f"fetched now, credits left {left}")
+
+
+def _merge(espn, snap, how):
     out, n_odds = [], 0
     for g, spread, rows in espn:
         ln = snap.get((g.game_date, g.away, g.home))
@@ -73,7 +86,7 @@ def fetch_season():
             n_odds += 1
         else:
             out.append((g, spread, rows))
-    return out, f"Odds API consensus at 6:30pm ET on {n_odds} games, ESPN pickcenter on the rest (credits left {left})"
+    return out, f"Odds API consensus at 6:30pm ET on {n_odds} games ({how}), ESPN pickcenter on the rest"
 
 
 def _safe(f, *a):
@@ -330,7 +343,9 @@ def main():
             print(f"{(name + tag):28} {gr['rmse_model']:10.2f} {gr['rmse_market']:9.2f} {gr['w_all']:6.2f} {gr['t_all']:5.1f} "
                   f"{gr['w_train']:8.2f} {gr['t_train']:5.1f} {gr['w_test']:7.2f} {gr['t_test']:6.1f}   {ats}")
     print()
-    season_windows(preds, ["board (prop minutes)", "top-down, bench fill", "top-down + prior half",
+    preds["NEW: top-down, bench fill, B2B"] = [
+        {**r, "pred": r["pred"] - b2b * (r["b2b_home"] - r["b2b_away"])} for r in preds["top-down, bench fill"]]
+    season_windows(preds, ["board (prop minutes)", "top-down, bench fill", "NEW: top-down, bench fill, B2B",
                            "prior only (no in-season)"])
     print()
     print("ATS by month, betting the side the model likes (no fitting needed: sign of the gap only)")
@@ -344,9 +359,6 @@ def main():
         for ln in ats_table(cal, lambda r: r["cal_gap"]):
             print(ln)
 
-
-if __name__ == "__main__":
-    main()
 
 
 def season_windows(preds, names):
@@ -364,3 +376,7 @@ def season_windows(preds, names):
             print(ln)
     print()
     print("JSON " + json.dumps(blob))
+
+
+if __name__ == "__main__":
+    main()
