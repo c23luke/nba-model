@@ -14,6 +14,7 @@ Verdict:
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 
 from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
@@ -53,9 +54,12 @@ def build_card(live: list[dict], slate: list[dict]) -> list[dict]:
     for p in live:
         if p["system"] < 300 and p.get("line") is not None:
             stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(label(p["system"]))
+    now = datetime.now(timezone.utc).isoformat()
     for p in live:
         if group(p["system"]) not in ("OG", "FAV") or p.get("line") is None:
             continue
+        if p.get("tip_utc") and p["tip_utc"] < now:
+            continue  # already tipped: nothing left to bet
         win = win_estimate(p, slate)
         if win is None:
             continue
@@ -64,7 +68,7 @@ def build_card(live: list[dict], slate: list[dict]) -> list[dict]:
         cap = max_price(win)
         cost = None if price is None else round(price + kalshi_fee(price), 2)
         if price is not None and cap is not None and price <= cap + 1e-9:
-            verdict, why = "BET", f"Kalshi {round(price * 100)}¢ (+{round(kalshi_fee(price) * 100)}¢ fee) is under the {round(cap * 100)}¢ max"
+            verdict, why = "BET", f"Kalshi {round(price * 100)}¢ is within the {round(cap * 100)}¢ max (fee counted): take it now"
         elif price is None and win > BREAK_EVEN_110:
             verdict, why = "BET", "No Kalshi market: take it at -110 or better at a book"
         elif price is not None and cap is not None and (win > BREAK_EVEN_110 or cap >= 0.45):
