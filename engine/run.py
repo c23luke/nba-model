@@ -410,7 +410,9 @@ def build_board(now, today, slate, picks, usage, log, source):
     main = lambda p: p["system"] < 100
     test = lambda p: 100 <= p["system"] < 200
     early = lambda p: 200 <= p["system"] < 300
+    from .pricing import build_card
     return {
+        "card": build_card(live, slate),
         "tracking": tracking(picks), "stacks": live_stacks(live),
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,

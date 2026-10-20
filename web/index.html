@@ -45,6 +45,12 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .case summary { cursor: pointer; font-weight: 600; }
 .case .cl { font-size: 14px; margin: 3px 0; line-height: 1.45; }
 .case .cl.sub { padding-left: 14px; color: var(--muted); }
+.cardrow { display: grid; grid-template-columns: 72px 1fr auto; gap: 4px 14px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.verdict { font-family: var(--cond); font-weight: 700; font-size: 16px; text-align: center; padding: 6px 0; border-radius: 6px; }
+.verdict.BET { background: var(--win); color: #fff; } .verdict.LIMIT { background: var(--amber); color: var(--amber-ink); } .verdict.PASS { border: 1.5px solid var(--line); color: var(--muted); }
+.cardrow .pick { font-family: var(--cond); font-size: 24px; font-weight: 700; }
+.cardrow .num { text-align: right; font-family: var(--cond); font-size: 17px; white-space: nowrap; }
+@media (max-width: 560px) { .cardrow { grid-template-columns: 64px 1fr; } .cardrow .num { grid-column: 2; text-align: left; } }
 .stack { border: 1.5px solid var(--amber); border-radius: 8px; padding: 10px 12px; margin: 6px 0; }
 
 .answer { font-family: var(--cond); font-weight: 700; font-size: clamp(44px, 11vw, 88px); line-height: .92; margin: 28px 0 8px; letter-spacing: -.01em; }
@@ -119,6 +125,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <div class="top"><b>NBA Systems Board</b><span id="updated">Loading…</span></div>
   <div id="answer" class="answer">…</div>
   <p id="sub" class="sub"></p>
+  <section id="card"></section>
   <section id="bets"></section>
 
   <div id="scoring" class="ctx" style="margin:8px 0 4px"></div>
@@ -185,19 +192,31 @@ function render(b) {
   $("updated").innerHTML = `Model ran ${ago(b.generated_at)}` + (running && mins > 45 ? ` · <span class="stale">check the GitHub Action</span>` : "")
     + (warn.length ? ` · <span class="stale" title="${esc(warn.join(" | "))}">${warn.length} warning${warn.length > 1 ? "s" : ""}: ${esc(warn[0]).slice(0, 80)}</span>` : "");
 
+  const card = b.card || [];
+  const toBet = card.filter(c => c.verdict === "BET");
   const priced = b.bets.filter(p => p.line != null);
   const waiting = b.bets.filter(p => p.line == null);
   const games = b.slate.length, withLines = b.slate.filter(g => g.home_spread != null || g.total != null).length;
-  document.title = priced.length ? `(${priced.length}) NBA Systems Board` : "NBA Systems Board";
 
   const a = $("answer");
-  if (priced.length) {
-    a.textContent = `${priced.length} bet${priced.length > 1 ? "s" : ""} to take`;
+  if (toBet.length) {
+    a.textContent = `${toBet.length} bet${toBet.length > 1 ? "s" : ""} to take`;
     a.className = "answer live";
   } else {
-    a.textContent = "No bets yet";
+    a.textContent = card.length ? "No bets at today's prices" : "No bets yet";
     a.className = "answer";
   }
+  document.title = toBet.length ? `(${toBet.length}) NBA Systems Board` : "NBA Systems Board";
+  $("card").innerHTML = card.length ? `<h2>Today's card <small>main systems + top picks, best first · BET = take it now · LIMIT = set a limit order at the max · PASS = skip</small></h2>` +
+    card.map(c => `<div class="cardrow">
+      <div class="verdict ${c.verdict}">${c.verdict}</div>
+      <div><div class="pick">${esc(c.label)}</div>
+        <div class="ctx">${c.away} @ ${c.home} · ${tipDay(c.tip_utc)} ${tipTime(c.tip_utc)}</div>
+        <div>${badge(c.group)}<b>${c.tag}</b> <span class="ctx">${esc(c.name)}${c.with.length ? " · also on it: " + c.with.join(", ") : ""}</span></div>
+        <div class="ctx">${esc(c.why)}</div></div>
+      <div class="num">${(c.win * 100).toFixed(1)}% expected<br>${c.price != null ? `Kalshi ${Math.round(c.price * 100)}¢ · max ${c.max != null ? Math.round(c.max * 100) + "¢" : "—"}` : "book −110 or better"}
+        ${c.url ? `<br><a href="${esc(c.url)}" target="_blank" rel="noopener">Open on Kalshi</a>` : ""}</div>
+    </div>`).join("") : "";
   $("sub").textContent = games
     ? `${games} game${games > 1 ? "s" : ""} on the board today and tomorrow. Lines are out on ${withLines}. ` +
       (waiting.length ? `${waiting.length} system${waiting.length > 1 ? "s have" : " has"} fired and ${waiting.length > 1 ? "are" : "is"} waiting on a line.` : "The model checks again every 15 minutes.")

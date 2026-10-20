@@ -53,18 +53,7 @@ def kalshi_fingerprint() -> tuple[str, list[str]]:
     return hashlib.sha1("\n".join(tickers).encode()).hexdigest(), tickers
 
 
-def kalshi_fee(p: float) -> float:
-    return math.ceil(0.07 * p * (1 - p) * 100) / 100
-
-
-def max_price(win: float) -> float | None:
-    """Highest Kalshi ask (dollars) where the bet still has value after the fee, given a win rate."""
-    best = None
-    for c in range(1, 100):
-        p = c / 100
-        if p + kalshi_fee(p) <= win:
-            best = p
-    return best
+from .pricing import kalshi_fee, max_price  # noqa: E402  (shared with the board's daily card)
 
 
 def win_rate(pick: dict, board: dict) -> float | None:

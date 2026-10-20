@@ -82,6 +82,10 @@ TEST_SYSTEMS.update({
           "rule": "Team won its last game in overtime and is on its 4th game in 6 nights → bet against. 69-31 (69.0%)"},
 })
 
+# Conservative expected win rates (halfway to 50% from the two-season replay) for the card/alerts
+TEST_SYSTEMS[102]["win_est"] = 0.53       # T2: 55-43 (56.1%)
+TEST_SYSTEMS[112]["win_est"] = 0.525      # T12: 86-70 (55.1%)
+
 # FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
 #   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
 # T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
