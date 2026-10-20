@@ -51,7 +51,8 @@ def _player_line(p: P.Player, team: str) -> str:
     impact = p.bpm_used * p.minutes / 48
     live = (f"; this season {p.live['games']} g, {p.live['mpg']:.0f} mpg, box impact {p.live['bpm_live']:+.1f}"
             if p.live and p.live.get("games") else "")
-    return (f"{p.name}: rated {p.bpm_used:+.1f} (BPM scale), projected {p.wanted:.0f} min role → "
+    return (f"{p.name}: rated {p.bpm_used:+.1f} (BPM scale), {p.minutes:.0f} projected min "
+            f"({p.wanted:.0f}-min role before fitting the roster into 240) → "
             f"{impact:+.2f} pts/100 for {team} ({_src(p, team)}{live})")
 
 
@@ -117,15 +118,17 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
     if cal and cal[1]:
         need = cushion / cal[1]
         opp_tr = reads[opp]
-        key = "away" if opp == away else "home"
-        swings = ([(k, v[key] - stress["base"][key]) for k, v in stress.items() if k != "base"]
-                  if stress and "base" in stress else [])
-        best = max(swings, key=lambda s: s[1]) if swings else None
+        base_c = cushion_stress.get("base", cushion)
+        swings = [(k, c - base_c) for k, c in cushion_stress.items() if k != "base"]
+        best = min(swings, key=lambda s: s[1]) if swings else None
         lines.append(f"For the market's number to be right, {opp} has to be about {need:.1f} pts per 100 better "
                      f"than our read (that's {opp} going from {rank[opp]} of {len(ranked)} to roughly a "
                      f"{_rank_at(reads, opp_tr.rating + need)} team).")
-        if best:
-            lines.append(f"The most any stress test helps {opp} is {best[1]:+.1f} ({best[0]}).")
+        if best and best[1] < 0:
+            lines.append(f"The stress test that hurts our side most is '{best[0]}': the edge goes from "
+                         f"{base_c:+.1f} to {base_c + best[1]:+.1f}.")
+        elif best:
+            lines.append(f"None of the stress tests moves the line toward {opp}.")
     sections.append({"title": "Why we think we're right", "lines": lines})
 
     # 4. value
@@ -142,10 +145,12 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
         "ceiling, not the expectation.",
     ]})
 
+    low_s = min(list(cushion_stress.values()) + cushion_dtd)
     # 5. why we took it
     sections.append({"title": "Why we took it", "lines": [
         f"T13 fires only when our line is 3+ points off the market in every day-to-day version and the "
-        f"model has no blind spots on either team. This game: {min(cushion_dtd):+.1f} at the worst, no blind spots.",
+        f"model has no blind spots on either team. This game: {min(cushion_dtd):+.1f} at the worst across the "
+        f"day-to-day versions, {low_s:+.1f} at the worst across every check, no blind spots.",
     ]})
 
     # 6. what could make us wrong
@@ -160,8 +165,11 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
                          f"({', '.join(p.name for p in rk)}).")
         for p in tr.rotation:
             if p.last and p.last.get("missed_last"):
-                risks.append(f"{t}: {p.name} is back from a missed season — rated {p.bpm_used:+.1f}; "
-                             f"that number is a judgement, not a measurement.")
+                np_ = cushion_stress.get("no injury penalty")
+                cover = (f" With no injury penalty at all the edge is {np_:+.1f}." if np_ is not None
+                         and P.norm(p.name) in P.RETURNS else "")
+                risks.append(f"{t}: {p.name} is back from a missed season — rated {p.bpm_used:+.1f} "
+                             f"(pre-injury level minus the measured first-year drop).{cover}")
         unk = [p for p in tr.unknown]
         if unk:
             risks.append(f"{t}: {len(unk)} player(s) with no NBA numbers ({', '.join(p.name for p in unk)}), "
