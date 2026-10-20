@@ -105,9 +105,30 @@ def test_calibrate_needs_six_and_fits_line():
     assert abs(a - 1.0) < 1e-9 and abs(b - 0.5) < 1e-9
 
 
-def test_blind_when_starter_day_to_day_or_back_from_missed_season():
-    tr = P.rate_team("BOS", [ath("Star Guard", injury="Day-To-Day"), ath("Role Wing")], LAST)
-    assert any("day-to-day" in r for r in P.blind_reasons(tr))
+def test_day_to_day_priced_both_ways_not_blind():
+    roster = [ath("Star Guard", injury="Day-To-Day")] + [ath("Role Wing")] * 8
+    play = P.rate_team("BOS", roster, LAST)
+    play.sit = P.rate_team("BOS", roster, LAST, dtd_sit=True)
+    assert not P.blind_reasons(play)
+    assert play.sit.rating < play.rating               # losing the star makes them worse
+    opp = P.rate_team("NYK", [ath("Role Wing")] * 9, LAST)
+    v = P.game_view(opp, play, -3.0, None)
+    assert len(v["scenarios"]) == 2 and v["waiting_on"] == ["BOS: Star Guard"]
+    assert v["scenarios"][0]["fair"] < v["scenarios"][1]["fair"]   # BOS bigger favorite if he plays
+
+
+def test_personnel_call_now_waiting_none():
+    from engine.systems import personnel_call
+    both = {"gap": 4.0, "blind": [], "scenarios": [{"gap": 4.0}, {"gap": 3.2}]}
+    assert personnel_call(both)["call"] == "now"
+    one = {"gap": 4.0, "blind": [], "scenarios": [{"gap": 4.0}, {"gap": 0.5}]}
+    c = personnel_call(one)
+    assert c["call"] == "waiting" and c["side"] == "home"
+    assert personnel_call({"gap": 1.0, "blind": [], "scenarios": [{"gap": 1.0}]})["call"] == "none"
+    assert personnel_call({"gap": 6.0, "blind": ["x"], "scenarios": []})["call"] == "none"
+
+
+def test_blind_when_back_from_missed_season():
     last = dict(LAST)
     r = rec("Back Star", "BOS", 60, 2100, 4.0); r["missed_last"] = True
     last[P.norm("Back Star")] = r
@@ -121,7 +142,9 @@ def test_t13_fires_on_clean_gap_only():
     picks = evaluate_personnel(g, -1.0, clean)
     assert [(p.system, p.side, p.line) for p in picks] == [(113, "CHA", 1.0)]
     assert evaluate_personnel(g, -1.0, {**clean, "gap": -2.5}) == []
-    assert evaluate_personnel(g, -1.0, {**clean, "blind": ["CHA: Kon Knueppel (24 mpg) is day-to-day"]}) == []
+    assert evaluate_personnel(g, -1.0, {**clean, "blind": ["CHA: someone missed last season"]}) == []
+    # gap only exists if a day-to-day player sits → waiting, no bet yet
+    assert evaluate_personnel(g, -1.0, {**clean, "scenarios": [{"gap": -5.0}, {"gap": -1.0}]}) == []
     home = evaluate_personnel(g, -1.0, {**clean, "gap": +4.0})
     assert [(p.side, p.line) for p in home] == [("BKN", -1.0)]
 

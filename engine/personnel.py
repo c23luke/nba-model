@@ -51,6 +51,11 @@ ESPN_TEAMS = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams
 ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{}/roster"
 ESPN_ATHLETE = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{}"
 LOTTERY = 14         # an unknown player picked this high will play real minutes → blind spot
+# In-season updating: a player's prior counts as this many minutes of real play; this season's
+# box-score impact (engine/boxscore.py, measured formula) takes over as real minutes pile up.
+PRIOR_MIN = {"veteran": 1000, "returner": 600, "rookie": 400, "none": 300}
+PRIOR_GAMES = 3      # projected minutes per game count as this many games vs real minutes played
+                     # (minutes are a coaching decision and change fast, so real games take over fast)
 ROOKIE_SINCE = 2023  # draft-slot prior only for players drafted this year or later (stashed
                      # picks included); an older draftee with no recent NBA minutes stays UNKNOWN
 
@@ -232,16 +237,19 @@ class Player:
     steps: list[str] = field(default_factory=list)   # how this player's number was built
 
     prior: dict | None = None         # rookie prior from draft slot (measured)
+    live: dict | None = None          # this season so far: min, games, mpg, bpm_live
 
     @property
     def known(self) -> bool:
-        return bool(self.last and self.last["mp"] > 0) or self.prior is not None
+        return (bool(self.last and self.last["mp"] > 0) or self.prior is not None
+                or bool(self.live and self.live["min"] > 0))
 
 
 @dataclass
 class TeamRead:
     team: str
     players: list[Player] = field(default_factory=list)
+    sit: "TeamRead | None" = None    # same team if every day-to-day player sits
     rating: float = 0.0
     unknown_minutes: float = 0.0
     continuity: float = 0.0          # share of minutes from players who ended last season here
@@ -278,7 +286,9 @@ def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
 
 
 def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
-              drafts: dict[str, dict] | None = None) -> TeamRead:
+              drafts: dict[str, dict] | None = None, live: dict[str, dict] | None = None,
+              dtd_sit: bool = False) -> TeamRead:
+    """dtd_sit=True prices the version of tonight where every day-to-day player sits."""
     tr = TeamRead(team)
     for a in athletes:
         name = a.get("displayName") or a.get("fullName") or ""
@@ -296,22 +306,56 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
                                f"averaged BPM {pr['bpm']:+.1f} and {pr['mpg']:.0f} min per team game as rookies "
                                f"({pr['share']:.0%} of {pr['n']} played)")
 
-    avail = [p for p in tr.players if p.status != "out" and p.known]
+    for p in tr.players:
+        if live and p.espn_id in live:
+            p.live = live[p.espn_id]
+
+    avail = [p for p in tr.players if p.status != "out" and p.known
+             and not (dtd_sit and p.status == "day-to-day")]
     for p in [p for p in avail if p.prior]:
         p.bpm_used = p.prior["bpm"]
-    for p in [p for p in avail if not p.prior]:
+    for p in [p for p in avail if not p.prior and p.last]:
         # last two seasons + the measured age curve (young players improve, the oldest decline)
         p.bpm_used = p.last["bpm_blend"] + p.last.get("age_delta", 0.0)
         if p.last.get("missed_last"):
             adjust_return(p)
     # Minutes per game only counts as a real role if he played enough games (over two
     # seasons) to earn it: 15 games at 29 mpg is mostly garbage time, not a rotation spot.
-    def wanted(p):
+    for p in avail:
+        if p.bpm_used is None:                        # only this season's games to go on
+            p.bpm_used = BASELINE
+            p.steps.append(f"no prior: starts at bench level {BASELINE:+.1f}")
+
+    def prior_wanted(p):
         if p.prior:
             return min(p.prior["mpg"], MIN_CAP)
+        if not p.last:
+            return 0.0
         return (min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES)
                 * (INJURY_MINUTES[RETURNS[norm(p.name)]["injury"]]
                    if p.last.get("missed_last") and norm(p.name) in RETURNS else 1.0))
+
+    def wanted(p):
+        base = prior_wanted(p)
+        if p.live and p.live["games"]:
+            m = p.live.get("w_min", p.live["min"])
+            g = p.live.get("w_games", p.live["games"])
+            return min((base * PRIOR_GAMES + m) / (PRIOR_GAMES + g), MIN_CAP)
+        return base
+
+    # this season's box-score impact takes over as real minutes pile up
+    for p in avail:
+        if p.live and p.live["min"] > 0:
+            kind = ("rookie" if p.prior else "returner" if (p.last and p.last.get("missed_last"))
+                    else "veteran" if p.last else "none")
+            w = PRIOR_MIN[kind]
+            before = p.bpm_used
+            p.bpm_used = (before * w + p.live["bpm_live"] * p.live["min"]) / (w + p.live["min"])
+            if p.live.get("last3"):
+                p.steps.append("last games minutes: " + ", ".join(f"{m:.0f}" for m in p.live["last3"]) +
+                               " (latest 3 count double for the role)")
+            p.steps.append(f"this season: {p.live['min']:.0f} min in {p.live['games']} g, box impact "
+                           f"{p.live['bpm_live']:+.1f} → blended {p.bpm_used:+.2f} (prior worth {w} min)")
     want = {id(p): wanted(p) for p in avail}
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
@@ -376,6 +420,11 @@ def evidence(tr: TeamRead) -> list[str]:
     for p in [p for p in tr.rotation if p.last and p.last["missed_last"]]:
         lines.append(f"Back from a missed season — {p.name}, rated {p.bpm_used:+.2f}, "
                      f"{p.minutes:.0f} mpg: " + "; ".join(p.steps))
+    moved = [p for p in tr.rotation if p.live and p.live["min"] > 0]
+    if moved:
+        lines.append("This season so far: " + ", ".join(
+            f"{p.name} {p.live['min']:.0f} min, box {p.live['bpm_live']:+.1f} → now {p.bpm_used:+.1f}"
+            for p in sorted(moved, key=lambda p: -p.live["min"])[:5]))
     if tr.dtd:
         lines.append("Day-to-day: " + ", ".join(p.name for p in tr.dtd))
     if tr.unknown:
@@ -419,11 +468,17 @@ def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) ->
     return out
 
 
-def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, TeamRead]:
+def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
+             live: dict[str, dict] | None = None) -> dict[str, TeamRead]:
     last = load_last_season(path, prev_path)
     rosters = fetch_rosters(fetch)
     drafts = lookup_drafts(rosters, last, fetch)
-    return {t: rate_team(t, ath, last, drafts) for t, ath in rosters.items()}
+    reads = {}
+    for t, ath in rosters.items():
+        tr = rate_team(t, ath, last, drafts, live)
+        tr.sit = rate_team(t, ath, last, drafts, live, dtd_sit=True) if tr.dtd else None
+        reads[t] = tr
+    return reads
 
 
 def report(reads: dict[str, TeamRead], games: list[tuple[str, str, float | None, float | None]]) -> str:
@@ -519,8 +574,6 @@ def blind_reasons(tr: TeamRead) -> list[str]:
     if tr.unknown_minutes > BLIND_UNKNOWN_MIN:
         out.append(f"{tr.team}: {tr.unknown_minutes:.0f} minutes from players with no NBA numbers")
     for p in top8:
-        if p.status == "day-to-day":
-            out.append(f"{tr.team}: {p.name} ({p.minutes:.0f} mpg) is day-to-day")
         if p.last and p.last.get("missed_last") and norm(p.name) not in RETURNS and p.minutes >= 20:
             out.append(f"{tr.team}: {p.name} ({p.minutes:.0f} mpg) missed last season, cause not on file")
     return out
@@ -541,14 +594,29 @@ def calibrate(pairs: list[tuple[float, float]]) -> tuple[float, float] | None:
     return mx - b * fx, b
 
 
+def _cal(raw, cal):
+    return raw if cal is None else cal[0] + cal[1] * raw
+
+
 def game_view(away: TeamRead, home: TeamRead, market: float | None, cal) -> dict:
     raw = fair_home_spread(home, away)
-    fair = raw if cal is None else cal[0] + cal[1] * raw
+    fair = _cal(raw, cal)
     gap = None if market is None else market - fair
     blind = blind_reasons(away) + blind_reasons(home)
+    # Day-to-day players: price every version of tonight (each team's DTD all play / all sit)
+    scenarios = []
+    for a_ver, a_lbl in ((away, "play"), (away.sit, "sit")):
+        for h_ver, h_lbl in ((home, "play"), (home.sit, "sit")):
+            if a_ver is None or h_ver is None:
+                continue
+            f = _cal(fair_home_spread(h_ver, a_ver), cal)
+            scenarios.append({"away": a_lbl, "home": h_lbl, "fair": round(f * 2) / 2,
+                              "gap": None if market is None else round(market - f, 1)})
+    waiting = [f"{away.team}: {p.name}" for p in away.dtd if p.minutes > 0] + \
+              [f"{home.team}: {p.name}" for p in home.dtd if p.minutes > 0]
     return {
         "raw": round(raw, 1), "fair": round(fair * 2) / 2, "gap": None if gap is None else round(gap, 1),
-        "calibrated": cal is not None, "blind": blind,
+        "calibrated": cal is not None, "blind": blind, "scenarios": scenarios, "waiting_on": waiting,
         "away_rating": round(away.rating, 2), "home_rating": round(home.rating, 2),
         "evidence": evidence(away) + evidence(home),
     }

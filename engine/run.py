@@ -20,8 +20,9 @@ from . import sources
 from .state import Game, team_state
 from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
-                      evaluate_early, evaluate_personnel, grade, label, group)
+                      evaluate_early, evaluate_personnel, personnel_call, grade, label, group)
 from . import personnel as personnel_mod
+from . import boxscore
 
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 
@@ -51,7 +52,7 @@ def tipped(g: Game, now: datetime) -> bool:
 
 def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.espn_day,
         fetch_lines=None, fetch_kalshi=sources.kalshi_markets, store=None,
-        season_start: date = SEASON_START, personnel_fetch="default") -> dict:
+        season_start: date = SEASON_START, personnel_fetch="default", fetch_box=boxscore.fetch_box) -> dict:
     now = now or datetime.now(timezone.utc)
     today = now.astimezone(sources.ET).date()
     store = store or get_store()
@@ -101,10 +102,29 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             changed.append(row)
     store.save_games(list({r["id"]: r for r in changed}.values()))
 
-    # ---- 2b. personnel read (current rosters x each player's own last two seasons)
+    # ---- 2a. this season's box scores (only games not stored yet)
+    live = {}
+    try:
+        box_rows = store.load_player_games()
+        have = {r["game_id"] for r in box_rows}
+        new_rows = []
+        for g in finals:
+            if g.id not in have and fetch_box:
+                try:
+                    new_rows += fetch_box(g.id, g.game_date.isoformat())
+                except Exception as e:
+                    log.append(f"Box score {g.id}: {e}")
+        if new_rows:
+            store.save_player_games(new_rows)
+            log.append(f"Box scores: {len({r['game_id'] for r in new_rows})} new games stored")
+        live = boxscore.season_impact(box_rows + new_rows)
+    except Exception as e:
+        log.append(f"Box score step failed: {e}")
+
+    # ---- 2b. personnel read (current rosters x each player's own last two seasons + this season)
     views = {}
     if personnel_fetch == "default":
-        personnel_fetch = personnel_mod.read_all
+        personnel_fetch = lambda: personnel_mod.read_all(live=live)
     if personnel_fetch:
         try:
             reads = personnel_fetch()
@@ -160,7 +180,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             "home_spread": row.get("home_spread"), "total": row.get("total"),
             "line_source": row.get("line_source"), "line_books": row.get("line_books"),
             "line_updated": row.get("line_updated"), "picks": keys,
-            "personnel": views.get(g.id),
+            "personnel": ({**views[g.id], "call": personnel_call(views[g.id])} if g.id in views else None),
         })
 
     # bets that fired earlier but no longer qualify (line moved) — keep, mark inactive

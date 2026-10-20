@@ -36,6 +36,12 @@ class LocalStore:
         cur.update({r["key"]: r for r in rows})
         self._write("picks", list(cur.values()))
 
+    def load_player_games(self):  return self._read("player_games", [])
+    def save_player_games(self, rows):
+        cur = {r["id"]: r for r in self.load_player_games()}
+        cur.update({r["id"]: r for r in rows})
+        self._write("player_games", list(cur.values()))
+
     def save_board(self, board):
         self._write("board", board)
 
@@ -48,6 +54,9 @@ COLUMNS = {
     "picks": ["key", "game_id", "game_date", "tip_utc", "away", "home", "system", "bet", "side",
               "label", "line", "first_line", "first_seen", "last_checked", "active", "dropped_reason",
               "evidence", "kalshi", "result", "final_score", "graded_at"],
+    "player_games": ["id", "game_id", "game_date", "team", "espn_id", "name", "min", "pts", "fgm", "fga",
+                     "fg3m", "fg3a", "ftm", "fta", "orb", "drb", "ast", "stl", "blk", "tov", "pf", "pm",
+                     "team_poss", "game_min"],
 }
 
 
@@ -95,6 +104,10 @@ class SupabaseStore:
     def load_picks(self):  return self._all("picks")
     def save_picks(self, rows):
         if rows: self._upsert("picks", shape("picks", rows), "key")
+
+    def load_player_games(self):  return self._all("player_games")
+    def save_player_games(self, rows):
+        if rows: self._upsert("player_games", shape("player_games", rows), "id")
 
     def save_board(self, board):
         self._upsert("board", [{"id": 1, "data": board}], "id")

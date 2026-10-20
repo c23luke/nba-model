@@ -80,6 +80,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 .pers { margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--text); }
 .pers.hot { color: var(--amber); }
 .blind { color: var(--muted); font-style: italic; }
+.waiting { color: var(--amber, #f5a623); font-weight: 600; }
 .ev { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .ev summary { cursor: pointer; color: var(--muted); }
 .ev div { margin: 3px 0 0 10px; }
@@ -256,9 +257,13 @@ function pers(g) {
   if (!v) return "";
   const fav = v.fair < 0 ? `${g.home} −${Math.abs(v.fair)}` : v.fair > 0 ? `${g.away} −${Math.abs(v.fair)}` : "PK";
   const gap = v.gap == null ? "" : ` · gap ${v.gap > 0 ? "+" : ""}${v.gap}`;
-  const big = v.gap != null && Math.abs(v.gap) >= 3;
+  const call = (v.call || {}).call;
+  const big = call === "now";
   const blind = v.blind.length ? `<div class="ctx blind">Blind spot: ${v.blind.map(esc).join("; ")}</div>` : "";
-  return `<div class="pers ${big && !v.blind.length ? "hot" : ""}">Personnel: ${fav}${gap}</div>${blind}
+  const sc = (v.scenarios || []).length > 1 ? `<div class="ctx">If day-to-day players: ${v.scenarios.map(x =>
+      `${g.away} ${x.away} / ${g.home} ${x.home} → fair ${x.fair < 0 ? g.home + " −" + Math.abs(x.fair) : x.fair > 0 ? g.away + " −" + x.fair : "PK"}${x.gap == null ? "" : " (gap " + (x.gap > 0 ? "+" : "") + x.gap + ")"}`).join(" · ")}</div>` : "";
+  const wait = call === "waiting" ? `<div class="ctx waiting">⏳ Waiting on status: ${(v.waiting_on || []).map(esc).join(", ")} — edge only exists in some versions; re-checked every 15 min</div>` : "";
+  return `<div class="pers ${big ? "hot" : ""}">Personnel: ${fav}${gap}</div>${wait}${sc}${blind}
     <details class="ev"><summary>Why</summary>${v.evidence.map(e => `<div>${esc(e)}</div>`).join("")}</details>`;
 }
 

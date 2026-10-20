@@ -327,20 +327,40 @@ def grade(pick: Pick, game: Game) -> str | None:
     return "P" if diff == 0 else ("W" if diff > 0 else "L")
 
 
+def personnel_call(view: dict | None, gap_to_fire: float = 3.0) -> dict:
+    """Decide what the personnel line says, across every day-to-day version of tonight.
+    now      → the gap is 3+ the same way whether the day-to-day players play or sit
+    waiting  → the gap is 3+ only in some versions: hold, the 15-minute runs will catch the news
+    none     → no edge in any version (or the model is blind on this game)"""
+    if not view or view.get("gap") is None or view.get("blind"):
+        return {"call": "none"}
+    gaps = [s["gap"] for s in view.get("scenarios") or [] if s["gap"] is not None] or [view["gap"]]
+    pos = [g for g in gaps if g >= gap_to_fire]
+    neg = [g for g in gaps if g <= -gap_to_fire]
+    if len(pos) == len(gaps) or len(neg) == len(gaps):
+        side = "home" if pos else "away"
+        return {"call": "now", "side": side, "worst_gap": min(gaps, key=abs)}
+    if pos and not neg:
+        return {"call": "waiting", "side": "home", "best_gap": max(pos)}
+    if neg and not pos:
+        return {"call": "waiting", "side": "away", "best_gap": min(neg)}
+    return {"call": "none"}
+
+
 def evaluate_personnel(game: Game, home_spread: float | None, view: dict | None,
                        gap_to_fire: float = 3.0) -> list[Pick]:
-    """T13: bet the side the personnel line likes when the gap is big and the model isn't blind."""
-    if not view or home_spread is None or view.get("gap") is None or view["blind"]:
+    """T13: bet the side the personnel line likes when the gap is 3+ in every day-to-day version
+    of tonight and the model isn't blind on the game."""
+    if home_spread is None:
         return []
-    gap = view["gap"]                       # market - fair, home perspective
-    if abs(gap) < gap_to_fire:
+    c = personnel_call(view, gap_to_fire)
+    if c["call"] != "now":
         return []
-    if gap > 0:                             # market makes home worse than personnel does → bet home
-        side, line = game.home, home_spread
-    else:
-        side, line = game.away, -home_spread
+    side, line = (game.home, home_spread) if c["side"] == "home" else (game.away, -home_spread)
+    either = (f"Holds whether day-to-day players play or sit (smallest gap {c['worst_gap']:+.1f})"
+              if view.get("waiting_on") else "No day-to-day players in either rotation")
     return [Pick(113, game.id, "spread", side, line, [
-        f"Personnel fair line: {game.home} {view['fair']:+g} vs market {game.home} {home_spread:+g} (gap {gap:+.1f})",
+        f"Personnel fair line: {game.home} {view['fair']:+g} vs market {game.home} {home_spread:+g} (gap {view['gap']:+.1f})",
         f"Ratings from current players: {game.away} {view['away_rating']:+.1f}, {game.home} {view['home_rating']:+.1f} per 100",
-        "No blind spots: no day-to-day starters, no stars back from a missed season, minutes all known",
+        either,
     ])]

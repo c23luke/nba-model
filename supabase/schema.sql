@@ -41,6 +41,33 @@ create table if not exists picks (
   graded_at      text
 );
 
+create table if not exists player_games (
+  id         text primary key,            -- <game>-<espn player id>
+  game_id    text,
+  game_date  date,
+  team       text,
+  espn_id    text,
+  name       text,
+  min        int,
+  pts        int,
+  fgm        int,
+  fga        int,
+  fg3m       int,
+  fg3a       int,
+  ftm        int,
+  fta        int,
+  orb        int,
+  drb        int,
+  ast        int,
+  stl        int,
+  blk        int,
+  tov        int,
+  pf         int,
+  pm         int,
+  team_poss  numeric,
+  game_min   numeric
+);
+
 create table if not exists board (
   id    int primary key,
   data  jsonb
@@ -50,5 +77,6 @@ create table if not exists board (
 alter table games enable row level security;
 alter table picks enable row level security;
 alter table board enable row level security;
+alter table player_games enable row level security;
 drop policy if exists "public read board" on board;
 create policy "public read board" on board for select using (true);
