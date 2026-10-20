@@ -1,0 +1,10 @@
+{
+  "what": "2025-26 replay of the personnel model (top-down minutes, bench fill, back-to-back adjustment), calibrated gap like the board's T13, side the model likes, graded vs Odds API consensus line at 6:30pm ET. Records are W-L.",
+  "source": "engine/backtest.py, GitHub Actions run 39459391244",
+  "windows": [
+    {"name": "first 30 days", "lo": 0, "hi": 30, "rec": {"0": [101, 89], "2": [37, 29], "3": [22, 16], "4": [12, 8], "5": [6, 3]}},
+    {"name": "days 31-50", "lo": 31, "hi": 50, "rec": {"0": [67, 51], "2": [28, 22], "3": [20, 13], "4": [12, 6], "5": [6, 3]}},
+    {"name": "days 51-71 (to Dec 31)", "lo": 51, "hi": 71, "rec": {"0": [57, 47], "2": [32, 24], "3": [18, 20], "4": [11, 11], "5": [6, 4]}},
+    {"name": "January on", "lo": 72, "hi": 999, "rec": {"0": [323, 343], "2": [177, 198], "3": [126, 148], "4": [80, 103], "5": [51, 65]}}
+  ]
+}

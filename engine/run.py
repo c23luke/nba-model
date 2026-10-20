@@ -130,16 +130,21 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     if personnel_fetch:
         try:
             reads = personnel_fetch()
-            raw = {g.id: personnel_mod.fair_home_spread(reads[g.home], reads[g.away])
+            rest = {}
+            for g in upcoming:
+                hs_, as_ = team_state(g.home, finals, g.game_date), team_state(g.away, finals, g.game_date)
+                rest[g.id] = (hs_.days_rest == 0, as_.days_rest == 0)
+            raw = {g.id: personnel_mod.fair_home_spread(reads[g.home], reads[g.away], *rest[g.id])
                    for g in upcoming if g.home in reads and g.away in reads}
             cal = personnel_mod.calibrate([(stored[gid].get("home_spread"), f) for gid, f in raw.items()])
             for g in upcoming:
                 if g.id in raw:
                     views[g.id] = personnel_mod.game_view(reads[g.away], reads[g.home],
-                                                          stored[g.id].get("home_spread"), cal)
+                                                          stored[g.id].get("home_spread"), cal, *rest[g.id])
             try:
                 stress = personnel_mod.stress_lines(
-                    reads, [(g.id, g.away, g.home, stored[g.id].get("home_spread")) for g in upcoming if g.id in raw])
+                    reads, [(g.id, g.away, g.home, stored[g.id].get("home_spread")) for g in upcoming if g.id in raw],
+                    rest)
             except Exception as e:
                 log.append(f"Stress tests failed: {e}")
             log.append(f"Personnel: {len(views)} games rated"
@@ -161,7 +166,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                  + evaluate_tests(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_early(g, hs, at, row.get("home_spread"), row.get("total"),
                                   (g.game_date - season_start).days)
-                 + evaluate_personnel(g, row.get("home_spread"), views.get(g.id))
+                 + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
+                                      season_day=(g.game_date - season_start).days)
                  + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id)))
         keys = []
         for p in picks:
@@ -194,7 +200,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 others = sorted({f"{label(p.system)} {names[p.system]['name']} ({group(p.system)})" for p in picks
                                  if p.side == side and p.bet == "spread" and p.system not in (113, 301)})
                 pview["case"] = case_mod.build_case(g.away, g.home, side, bet_line, row["home_spread"], pview,
-                                                    reads, stress.get(g.id), cal, others, t13_record)
+                                                    reads, stress.get(g.id), cal, others, t13_record,
+                                                    (g.game_date - season_start).days)
             except Exception as e:
                 log.append(f"Case for {g.away} @ {g.home} failed: {e}")
         slate.append({

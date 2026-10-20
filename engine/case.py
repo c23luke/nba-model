@@ -12,9 +12,24 @@ Built from numbers only (no hand-written opinions), in this order:
 """
 from __future__ import annotations
 
+import json
 import math
 
 from . import personnel as P
+
+BACKTEST = json.loads((P.STATIC / "backtest_2025_26.json").read_text())
+
+
+def measured(season_day: int, cushion: float) -> dict:
+    """Last season's record for the same stage of the season and the same size of gap."""
+    win = next(w for w in BACKTEST["windows"] if w["lo"] <= season_day <= w["hi"])
+    early = [w for w in BACKTEST["windows"] if w["hi"] <= P.T13_LAST_DAY]
+    tier = max([t for t in (3, 4, 5) if cushion >= t] or [0])
+    w, l = win["rec"][str(tier)]
+    ew = sum(x["rec"]["3"][0] for x in early)
+    el = sum(x["rec"]["3"][1] for x in early)
+    return {"window": win["name"], "tier": tier, "w": w, "l": l, "pct": w / (w + l) if w + l else None,
+            "early_w": ew, "early_l": el, "early_pct": ew / (ew + el)}
 
 # Measured 2025-26 regular season: home margin minus closing spread (DraftKings via ESPN),
 # 979 games: mean -0.28, SD 14.14. Used as how far a result lands from a fair line.
@@ -58,7 +73,7 @@ def _player_line(p: P.Player, team: str) -> str:
 
 def build_case(away: str, home: str, side: str, bet_line: float, market_home: float,
                view: dict, reads: dict, stress: dict, cal, systems_on_side: list[str],
-               t13_record: dict | None = None) -> dict:
+               t13_record: dict | None = None, season_day: int = 0) -> dict:
     a, h = reads[away], reads[home]
     us_home = side == home
     opp = away if us_home else home
@@ -131,19 +146,23 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
             lines.append(f"None of the stress tests moves the line toward {opp}.")
     sections.append({"title": "Why we think we're right", "lines": lines})
 
-    # 4. value
+    # 4. value — measured first, the pure math second
     exp_margin = -fair_home if us_home else fair_home        # our expected margin for the side we bet
     p_cover = _phi((exp_margin + bet_line) / RESULT_SD)
     worst = min(list(cushion_stress.values()) + cushion_dtd + [cushion])
     p_worst = _phi(worst / RESULT_SD)
-    sections.append({"title": "Where the value is", "lines": [
-        f"If our line is right, {_line(side, bet_line)} covers about {p_cover:.0%} of the time "
-        f"(results land around a fair line with a spread of ±{RESULT_SD:.1f} points, {RESULT_SD_NOTE}).",
-        f"Using the weakest version above ({worst:+.1f}), it's still about {p_worst:.0%}.",
+    m = measured(season_day, cushion)
+    lines = [
+        f"Last season, same stage ({m['window']}), gaps of {m['tier']}+ points on the model's side went "
+        f"{m['w']}-{m['l']} ({m['pct']:.0%}) against the closing consensus line."
+        if m["pct"] is not None else "No games from last season at this stage and gap size.",
+        f"Every 3+ gap before January last season: {m['early_w']}-{m['early_l']} ({m['early_pct']:.0%}). "
+        f"From January on the same signal lost (42-46%), which is why T13 stops betting after Dec 31.",
         f"Break-even at −110 is {BREAK_EVEN:.1%}.",
-        "Those percentages assume our number is right. It has no live record yet, so read them as the "
-        "ceiling, not the expectation.",
-    ]})
+        f"Pure math if our line were exactly right: {p_cover:.0%} ({p_worst:.0%} in the weakest version). "
+        f"The measured record is the better guide — it's one season, so treat it as a lean, not a lock.",
+    ]
+    sections.append({"title": "Where the value is", "lines": lines})
 
     low_s = min(list(cushion_stress.values()) + cushion_dtd)
     # 5. why we took it
@@ -192,17 +211,22 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
         level = "Medium"
     else:
         level = "Low"
+    if season_day > P.T13_LAST_DAY:
+        level = "Off"
     graded = (t13_record or {}).get("w", 0) + (t13_record or {}).get("l", 0)
     why = (f"the edge held 3+ in all {len(checks)} versions we tried, smallest {low:+.1f}" if all_held
            else f"the edge dropped under 3 in at least one version (smallest {low:+.1f})")
-    sections.append({"title": "Confidence", "lines": [
-        f"{level}: {why}.",
-        ("The model has no graded games yet, so this is confidence in the read, not a proven record."
-         if graded < 20 else f"T13 has {graded} graded games live."),
-    ]})
+    conf = [f"{level}: {why}."]
+    if level == "Off":
+        conf = [f"Off: it's past Dec 31. Last season this signal lost from January on, so T13 doesn't bet now "
+                f"(the read is still tracked)."]
+    conf.append(f"Track record behind it: last season's replay ({m['early_w']}-{m['early_l']} on 3+ gaps before "
+                f"January) — one season, real but not proven.")
+    conf.append("T13 live: no graded games yet." if graded == 0 else f"T13 live: {graded} graded games.")
+    sections.append({"title": "Confidence", "lines": conf})
     return {"side": side, "line": bet_line, "level": level, "cushion": round(cushion, 1),
             "worst": round(low, 1), "p_cover": round(p_cover, 3), "p_worst": round(p_worst, 3),
-            "sections": sections}
+            "measured": m, "sections": sections}
 
 
 def _rank_at(reads: dict, rating: float) -> str:

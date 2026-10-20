@@ -361,10 +361,10 @@ def personnel_call(view: dict | None, gap_to_fire: float = 3.0) -> dict:
 
 
 def evaluate_personnel(game: Game, home_spread: float | None, view: dict | None,
-                       gap_to_fire: float = 3.0) -> list[Pick]:
+                       gap_to_fire: float = 3.0, season_day: int = 0, last_day: int = 71) -> list[Pick]:
     """T13: bet the side the personnel line likes when the gap is 3+ in every day-to-day version
     of tonight and the model isn't blind on the game."""
-    if home_spread is None:
+    if home_spread is None or season_day > last_day:     # measured: no edge from January on
         return []
     c = personnel_call(view, gap_to_fire)
     if c["call"] != "now":

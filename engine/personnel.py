@@ -38,7 +38,13 @@ from .teams import code
 
 BASELINE = -1.5      # typical bench-level BPM a small sample is pulled toward
 PULL = 400           # minutes of "baseline" blended in
-HOME_COURT = 2.0     # points; assumption, stated on the board
+HOME_COURT = 1.7     # points; MEASURED: mean home margin 2025-26, all 1,231 games (+1.74)
+B2B = 1.7            # points a team loses on the 2nd night of a back-to-back; MEASURED on 2025-26
+                     # (engine/backtest.py: model residual on B2B games, +1.68, t 2.0 — and the
+                     # market already prices it, so leaving it out made fake gaps)
+T13_LAST_DAY = 71    # T13 bets only through Dec 31 (season day 71). MEASURED on 2025-26 with
+                     # Odds API consensus lines: gaps of 3+ won 55-62% before January and
+                     # 42-46% from January on, in every version of the model tested.
 MIN_CAP = 38.0
 ROLE_GAMES = 50      # games needed for last season's minutes per game to count in full
 UNKNOWN_FLAG_MIN = 30  # unknown minutes above this → low-confidence rating
@@ -360,14 +366,17 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
     want = {id(p): wanted(p) for p in avail}
     for p in avail:
         p.wanted = want[id(p)]
-    total = sum(want.values())
-    scale = 240 / total if total > 240 else 1.0
-    for p in avail:
-        p.minutes = want[id(p)] * scale
-    filled = sum(p.minutes for p in avail)
-    tr.unknown_minutes = max(0.0, 240 - filled)        # filled at league average (0)
+    # Top-down minutes, the way coaches do it: the rotation gets its full role, the end of the
+    # bench loses minutes first. A player who sits hands his minutes to the next man in line.
+    # MEASURED better than shrinking everyone by the same % (2025-26 replay: margin error 14.43
+    # vs 14.69). Minutes nobody can fill go to bench level (BASELINE), not league average.
+    left = 240.0
+    for p in sorted(avail, key=lambda p: -p.wanted):
+        p.minutes = min(p.wanted, left)
+        left -= p.minutes
+    tr.unknown_minutes = max(0.0, left)                 # filled at bench level (BASELINE)
 
-    tr.rating = sum(p.bpm_used * p.minutes / 48 for p in avail)
+    tr.rating = sum(p.bpm_used * p.minutes / 48 for p in avail) + tr.unknown_minutes * BASELINE / 48
     same = sum(p.minutes for p in avail if p.last and p.last["team"] == team)
     tr.continuity = same / 240
     return tr
@@ -398,8 +407,8 @@ def adjust_return(p: Player) -> None:
     p.steps.append(f"= {p.bpm_used:+.2f}")
 
 
-def fair_home_spread(home: TeamRead, away: TeamRead) -> float:
-    return -(home.rating - away.rating + HOME_COURT)
+def fair_home_spread(home: TeamRead, away: TeamRead, home_b2b: bool = False, away_b2b: bool = False) -> float:
+    return -(home.rating - away.rating + HOME_COURT - B2B * home_b2b + B2B * away_b2b)
 
 
 def evidence(tr: TeamRead) -> list[str]:
@@ -601,8 +610,9 @@ def _cal(raw, cal):
     return raw if cal is None else cal[0] + cal[1] * raw
 
 
-def game_view(away: TeamRead, home: TeamRead, market: float | None, cal) -> dict:
-    raw = fair_home_spread(home, away)
+def game_view(away: TeamRead, home: TeamRead, market: float | None, cal,
+              home_b2b: bool = False, away_b2b: bool = False) -> dict:
+    raw = fair_home_spread(home, away, home_b2b, away_b2b)
     fair = _cal(raw, cal)
     gap = None if market is None else market - fair
     blind = blind_reasons(away) + blind_reasons(home)
@@ -612,7 +622,7 @@ def game_view(away: TeamRead, home: TeamRead, market: float | None, cal) -> dict
         for h_ver, h_lbl in ((home, "play"), (home.sit, "sit")):
             if a_ver is None or h_ver is None:
                 continue
-            f = _cal(fair_home_spread(h_ver, a_ver), cal)
+            f = _cal(fair_home_spread(h_ver, a_ver, home_b2b, away_b2b), cal)
             scenarios.append({"away": a_lbl, "home": h_lbl, "fair": round(f * 2) / 2,
                               "gap": None if market is None else round(market - f, 1)})
     waiting = [f"{away.team}: {p.name}" for p in away.dtd if p.minutes > 0] + \
@@ -631,8 +641,8 @@ def game_view(away: TeamRead, home: TeamRead, market: float | None, cal) -> dict
 #              the rotation its full role and cuts the end of the bench first (how coaches do it)
 #   returns  — base docks players back from ACL/Achilles by the measured first-year drop;
 #              "no penalty" gives them their pre-injury level and minutes
-STRESS = {"base": (False, False), "top-down minutes": (True, False),
-          "no injury penalty": (False, True), "both": (True, True)}
+STRESS = {"base": (True, False), "even-shrink minutes": (False, False),
+          "no injury penalty": (True, True), "both": (False, True)}
 
 
 def _topdown_minutes(players) -> dict:
@@ -663,19 +673,24 @@ def stress_rating(tr: TeamRead, topdown: bool, no_penalty: bool) -> float:
             m = min(w, left)
             left -= m
             total += b * m / 48
-        return total
+        return total + max(0.0, left) * BASELINE / 48
     tot = sum(w for _, _, w in rows)
     sc = 240 / tot if tot > 240 else 1.0
-    return sum(b * w * sc / 48 for _, b, w in rows)
+    return sum(b * w * sc / 48 for _, b, w in rows) + max(0.0, 240 - tot * sc) * BASELINE / 48
 
 
-def stress_lines(reads: dict, games: list[tuple[str, str, str, float | None]]) -> dict:
-    """games: (game_id, away, home, market home spread). Returns game_id → {test: calibrated gap},
-    each test calibrated to the market on its own (so a test isn't penalised for a different scale)."""
+def stress_lines(reads: dict, games: list, b2b: dict | None = None) -> dict:
+    """games: (game_id, away, home, market home spread). b2b: game_id → (home_b2b, away_b2b).
+    Returns game_id → {test: calibrated gap}, each test calibrated to the market on its own."""
     out = {gid: {} for gid, *_ in games}
+    b2b = b2b or {}
     for name, (td, npen) in STRESS.items():
         rat = {t: stress_rating(tr, td, npen) for t, tr in reads.items()}
-        raw = {gid: -(rat[h] - rat[a] + HOME_COURT) for gid, a, h, _ in games if h in rat and a in rat}
+        raw = {}
+        for gid, a, h, _ in games:
+            if h in rat and a in rat:
+                hb, ab = b2b.get(gid, (False, False))
+                raw[gid] = -(rat[h] - rat[a] + HOME_COURT - B2B * hb + B2B * ab)
         cal = calibrate([(m, raw[gid]) for gid, a, h, m in games if gid in raw])
         for gid, a, h, m in games:
             if gid in raw and m is not None:

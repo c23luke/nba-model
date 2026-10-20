@@ -203,3 +203,29 @@ def test_name_fallback_and_old_draftees():
                      drafts={"5": {"year": 2015, "pick": 5}})
     ev = [p for p in tr.players if p.name == "Euro Vet"][0]
     assert ev.prior is None and ev in tr.unknown
+
+
+def test_sitting_player_hands_minutes_to_next_man_and_bench_fill():
+    # top-down minutes: if a starter sits, his minutes go to the next players in line,
+    # and minutes nobody can fill count at bench level, not league average
+    roster = [ath("Star Guard", injury="Day-To-Day")] + [ath("Role Wing")] * 4
+    play = P.rate_team("BOS", roster, LAST)
+    sit = P.rate_team("BOS", roster, LAST, dtd_sit=True)
+    assert sum(p.minutes for p in play.players) <= 240.01
+    assert sit.unknown_minutes > play.unknown_minutes
+    assert abs(sit.rating - (sum(p.bpm_used * p.minutes / 48 for p in sit.players if p.minutes)
+                             + sit.unknown_minutes * P.BASELINE / 48)) < 1e-9
+
+
+def test_t13_stops_after_dec_31():
+    from engine.systems import evaluate_personnel
+    g = Game("x", date(2027, 1, 5), "CHA", "BKN")
+    clean = {"gap": -5.0, "fair": 4.0, "blind": [], "away_rating": 1.2, "home_rating": -4.8}
+    assert evaluate_personnel(g, -1.0, clean, season_day=30)
+    assert evaluate_personnel(g, -1.0, clean, season_day=P.T13_LAST_DAY + 1) == []
+
+
+def test_back_to_back_moves_the_fair_line():
+    a = P.rate_team("NYK", [ath("Role Wing")] * 9, LAST)
+    h = P.rate_team("BOS", [ath("Role Wing")] * 9, LAST)
+    assert P.fair_home_spread(h, a, home_b2b=True) - P.fair_home_spread(h, a) == P.B2B
