@@ -10,13 +10,13 @@
 <style>
 :root {
   --bg: #14213A; --panel: #1D2E4D; --line: #2C4068; --text: #EEF2F7; --muted: #8FA0BA;
-  --amber: #F2A93B; --amber-ink: #1A1206; --win: #4CC38A; --loss: #E5604F; --push: #A9B4C6;
+  --amber: #F2A93B; --amber-ink: #1A1206; --early: #7CC4F2; --win: #4CC38A; --loss: #E5604F; --push: #A9B4C6;
   --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Barlow", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     --bg: #EEF2F7; --panel: #FFFFFF; --line: #D3DBE7; --text: #14213A; --muted: #5B6B85;
-    --amber: #C77D0A; --amber-ink: #FFFFFF; --win: #198754; --loss: #C2412F; --push: #6B778A;
+    --amber: #C77D0A; --amber-ink: #FFFFFF; --early: #1F6FA8; --win: #198754; --loss: #C2412F; --push: #6B778A;
   }
 }
 :root[data-theme="dark"] { color-scheme: dark; }
@@ -75,6 +75,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 .badge { display: inline-block; font-family: var(--cond); font-weight: 700; font-size: 14px; line-height: 1; padding: 4px 7px 3px; border-radius: 4px; vertical-align: 3px; margin-right: 6px; }
 .badge.OG { background: var(--amber); color: var(--amber-ink); }
 .badge.FAV { border: 1.5px solid var(--amber); color: var(--amber); padding: 2.5px 6px 1.5px; }
+.badge.EARLY { border: 1.5px solid var(--early); color: var(--early); padding: 2.5px 6px 1.5px; }
 .badge.TEST { border: 1.5px solid var(--line); color: var(--muted); padding: 2.5px 6px 1.5px; }
 .intro { color: var(--muted); margin: -4px 0 12px; max-width: 64ch; font-size: 15px; }
 .rec { font-family: var(--cond); font-size: 22px; font-weight: 600; }
@@ -104,6 +105,12 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 
   <h2>Graded bets</h2>
   <div id="history"></div>
+
+  <h2>Early season <small>EARLY = runs only in the first 2–3 weeks</small></h2>
+  <p class="intro">Untested ideas for the opening weeks, before streaks and back-to-backs build up. Tracked and graded live.</p>
+  <div id="early"></div>
+  <h2>Early-season records</h2>
+  <table class="records" id="early-records"></table>
 
   <h2>Testing <small>FAV = my top 5 picks · TEST = the other 7</small></h2>
   <p class="intro">Tracked and graded live, not bets to take. One moves up to the main board only after it builds a real record.</p>
@@ -159,6 +166,8 @@ function render(b) {
     ? `${games} game${games > 1 ? "s" : ""} on the board today and tomorrow. Lines are out on ${withLines}. ` +
       (waiting.length ? `${waiting.length} system${waiting.length > 1 ? "s have" : " has"} fired and ${waiting.length > 1 ? "are" : "is"} waiting on a line.` : "The model checks again every 15 minutes.")
     : "No games on the schedule today or tomorrow.";
+  const earlyLive = (b.early || []).filter(p => p.line != null).length;
+  if (earlyLive) $("sub").textContent += ` ${earlyLive} early-season pick${earlyLive > 1 ? "s are" : " is"} live further down (EARLY, untested).`;
 
   const sysName = id => b.systems[id]?.name || `System ${id}`;
   $("bets").innerHTML = b.bets.map(p => slip(p, b.systems[p.system])).join("") ||
@@ -170,9 +179,9 @@ function render(b) {
     $("slate-note").textContent = `lines from ${b.line_source}`;
     $("slate").innerHTML = `<table class="slate"><thead><tr><th>Game</th><th>Spread · total</th><th>Systems</th></tr></thead><tbody>` +
       b.slate.map(g => {
-        const all = [...b.bets, ...(b.tests || [])];
+        const all = [...b.bets, ...(b.tests || []), ...(b.early || [])];
         const fired = g.picks.map(k => all.find(p => p.key === k)).filter(Boolean)
-          .sort((x, y) => ["OG", "FAV", "TEST"].indexOf(x.group) - ["OG", "FAV", "TEST"].indexOf(y.group));
+          .sort((x, y) => ["OG", "FAV", "EARLY", "TEST"].indexOf(x.group) - ["OG", "FAV", "EARLY", "TEST"].indexOf(y.group));
         const hs = g.home_spread;
         const line = hs == null ? `<span class="dim">no line</span>` :
           `${hs < 0 ? g.home : hs > 0 ? g.away : "PK"} ${hs === 0 ? "" : "−" + Math.abs(hs)}`;
@@ -192,6 +201,24 @@ function render(b) {
       <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span></td>
       <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
     </tr>`).join("");
+
+  // early season
+  const row = (p, defs) => `<div class="test-row">
+      <div class="tag">${p.tag}</div>
+      <div><div class="test-pick">${badge(p.group)}${esc(p.label)} <span class="ctx">${esc(defs?.[p.system]?.name || "")}</span></div>
+        <div class="ctx">${p.away} @ ${p.home} · ${tipDay(p.tip_utc)} ${tipTime(p.tip_utc)}</div>
+        <div class="ctx">${p.evidence.map(esc).join(". ")}</div></div>
+    </div>`;
+  const recRow = s => `<tr>
+      <td>${badge(s.group)}<b>${s.tag}. ${esc(s.name)}</b><div class="ctx">${esc(s.rule)}</div></td>
+      <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span>
+        <div class="ctx">${s.win_pct == null ? "no results yet" : (s.win_pct * 100).toFixed(1) + "%"}</div></td>
+      <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
+    </tr>`;
+  const early = b.early || [];
+  $("early").innerHTML = early.length ? early.map(p => row(p, b.early_systems)).join("")
+    : `<div class="empty">No early-season systems have fired on today's or tomorrow's games.</div>`;
+  $("early-records").innerHTML = Object.values(b.early_systems || {}).map(recRow).join("");
 
   // forward tests
   const tests = b.tests || [];

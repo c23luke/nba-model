@@ -56,12 +56,37 @@ TEST_SYSTEMS = {
 FAVORITES = {101, 102, 103, 110, 112}
 
 
+# Early-season systems: only run in the first 2-3 weeks, while books are still pricing
+# teams off last season and preseason guesses. Ids 201-207 show as E1-E7.
+EARLY_SYSTEMS = {
+    201: {"name": "Season-opener under", "bet": "total", "window": "both teams' first game",
+          "rule": "Both teams playing their first game of the season → bet the under"},
+    202: {"name": "Early home underdog", "bet": "spread", "window": "first 2 weeks",
+          "rule": "Home underdog of 7 or less in the first 2 weeks → bet the home dog"},
+    203: {"name": "Fade early big favorite", "bet": "spread", "window": "first 2 weeks",
+          "rule": "Favorite of 10+ in the first 2 weeks → bet the underdog"},
+    204: {"name": "Early blowout bounce-back", "bet": "spread", "window": "first 3 weeks",
+          "rule": "Lost by 15+ last game, first 3 weeks → bet them"},
+    205: {"name": "Fade early blowout winner", "bet": "spread", "window": "first 3 weeks",
+          "rule": "Won by 15+ last game and favored, first 3 weeks → bet against them"},
+    206: {"name": "Back the winless team", "bet": "spread", "window": "first 3 weeks",
+          "rule": "Team is 0-3 or worse, first 3 weeks → bet them"},
+    207: {"name": "Fade the unbeaten favorite", "bet": "spread", "window": "first 3 weeks",
+          "rule": "Team is 3-0 or better and favored, first 3 weeks → bet against them"},
+}
+
+
 def label(system: int) -> str:
+    if system >= 200:
+        return f"E{system - 200}"
     return f"T{system - 100}" if system >= 100 else f"S{system}"
 
 
 def group(system: int) -> str:
-    """OG = the 4 TrendsCenter systems, FAV = favored test systems, TEST = the rest."""
+    """OG = the 4 TrendsCenter systems, FAV = favored test systems, TEST = the rest,
+    EARLY = early-season systems."""
+    if system >= 200:
+        return "EARLY"
     if system < 100:
         return "OG"
     return "FAV" if system in FAVORITES else "TEST"
@@ -231,6 +256,58 @@ def evaluate_tests(game: Game, home: TeamState, away: TeamState,
     if home.days_rest == 0 and away.days_rest == 0:
         picks.append(Pick(105, game.id, "total", "UNDER", total, [
             f"{game.away} and {game.home} are both on the second night of a back-to-back"]))
+    return picks
+
+
+def evaluate_early(game: Game, home: TeamState, away: TeamState,
+                   home_spread: float | None, total: float | None, season_day: int) -> list[Pick]:
+    """The 7 early-season systems. season_day = days since opening night (0 = opening night)."""
+    picks: list[Pick] = []
+    if season_day > 20:
+        return picks
+    sides = [
+        (game.home, home, away, True, home_spread),
+        (game.away, away, home, False, None if home_spread is None else -home_spread),
+    ]
+    for team, t, o, is_home, spread in sides:
+        # E2 early home underdog (7 or less)
+        if season_day <= 13 and is_home and spread is not None and 0 < spread <= 7:
+            picks.append(Pick(202, game.id, "spread", team, spread, [
+                f"{team} is a home underdog ({spread:+g}) in the first 2 weeks",
+                "Early lines lean on last season and preseason views"]))
+
+        # E3 fade the early big favorite
+        if season_day <= 13 and spread is not None and spread >= 10:
+            picks.append(Pick(203, game.id, "spread", team, spread, [
+                f"{o.team} is favored by {spread:g} in the first 2 weeks",
+                "Rotations and starters' minutes are still settling early"]))
+
+        # E4 early blowout bounce-back (15+)
+        if t.last_margin is not None and t.last_margin <= -15:
+            picks.append(Pick(204, game.id, "spread", team, spread, [
+                f"{team} lost by {-t.last_margin} last game: {t.last_game.score_line()}",
+                f"Only {t.games} game(s) into the season"]))
+
+        # E5 fade the early blowout winner when favored
+        if o.last_margin is not None and o.last_margin >= 15 and spread is not None and spread > 0:
+            picks.append(Pick(205, game.id, "spread", team, spread, [
+                f"{o.team} won by {o.last_margin} last game: {o.last_game.score_line()}",
+                f"{o.team} is favored by {spread:g}, only {o.games} game(s) in"]))
+
+        # E6 back the winless team (0-3 or worse)
+        if t.wins == 0 and t.losses >= 3:
+            picks.append(Pick(206, game.id, "spread", team, spread, [
+                f"{team} is {t.record} to start the season"]))
+
+        # E7 fade the unbeaten favorite (3-0 or better)
+        if o.losses == 0 and o.wins >= 3 and spread is not None and spread > 0:
+            picks.append(Pick(207, game.id, "spread", team, spread, [
+                f"{o.team} is {o.record} and favored by {spread:g}"]))
+
+    # E1 season-opener under: both teams' first game (checked once per game)
+    if home.games == 0 and away.games == 0:
+        picks.append(Pick(201, game.id, "total", "UNDER", total, [
+            f"First game of the season for both {game.away} and {game.home}"]))
     return picks
 
 
