@@ -77,6 +77,12 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 .badge.FAV { border: 1.5px solid var(--amber); color: var(--amber); padding: 2.5px 6px 1.5px; }
 .badge.EARLY { border: 1.5px solid var(--early); color: var(--early); padding: 2.5px 6px 1.5px; }
 .badge.TEST { border: 1.5px solid var(--line); color: var(--muted); padding: 2.5px 6px 1.5px; }
+.pers { margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--text); }
+.pers.hot { color: var(--amber); }
+.blind { color: var(--muted); font-style: italic; }
+.ev { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.ev summary { cursor: pointer; color: var(--muted); }
+.ev div { margin: 3px 0 0 10px; }
 .intro { color: var(--muted); margin: -4px 0 12px; max-width: 64ch; font-size: 15px; }
 .rec { font-family: var(--cond); font-size: 22px; font-weight: 600; }
 .W { color: var(--win); } .L { color: var(--loss); } .P { color: var(--push); }
@@ -188,7 +194,7 @@ function render(b) {
         return `<tr>
           <td><div class="team">${g.away} @ ${g.home}</div>
             <div class="ctx">${tipDay(g.tip_utc)} ${tipTime(g.tip_utc)}</div>
-            <div class="ctx">${ctx(g.away, g.away_state)}<br>${ctx(g.home, g.home_state)}</div></td>
+            <div class="ctx">${ctx(g.away, g.away_state)}<br>${ctx(g.home, g.home_state)}</div>${pers(g)}</td>
           <td class="lines"><div class="num">${line}</div><div class="num dim">${g.total ?? "—"}</div></td>
           <td class="sysc">${fired.length ? fired.map(p => `<div style="margin:2px 0">${badge(p.group)}<span class="${p.group === "TEST" ? "dim" : "fired"}">${p.tag} ${esc(p.label)}</span></div>`).join("") : `<span class="dim">—</span>`}</td>
         </tr>`;
@@ -241,6 +247,17 @@ function render(b) {
       <td><span class="${p.result}" style="font-family:var(--cond);font-weight:700;font-size:20px">${p.result}</span></td>
       <td>${badge("OG")}<b>${esc(p.label)}</b> <span class="ctx">S${p.system}</span><div class="ctx">${esc(p.final_score)} · ${p.game_date}</div></td>
     </tr>`).join("") + `</tbody></table>` : `<div class="empty">No graded bets yet. Results post the morning after each game.</div>`;
+}
+
+function pers(g) {
+  const v = g.personnel;
+  if (!v) return "";
+  const fav = v.fair < 0 ? `${g.home} −${Math.abs(v.fair)}` : v.fair > 0 ? `${g.away} −${Math.abs(v.fair)}` : "PK";
+  const gap = v.gap == null ? "" : ` · gap ${v.gap > 0 ? "+" : ""}${v.gap}`;
+  const big = v.gap != null && Math.abs(v.gap) >= 3;
+  const blind = v.blind.length ? `<div class="ctx blind">Blind spot: ${v.blind.map(esc).join("; ")}</div>` : "";
+  return `<div class="pers ${big && !v.blind.length ? "hot" : ""}">Personnel: ${fav}${gap}</div>${blind}
+    <details class="ev"><summary>Why</summary>${v.evidence.map(e => `<div>${esc(e)}</div>`).join("")}</details>`;
 }
 
 function ctx(team, s) {

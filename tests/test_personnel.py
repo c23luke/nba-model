@@ -90,3 +90,37 @@ def test_age_curve_is_measured_from_data(tmp_path):
     assert abs(P.AGE_CURVE[(19, 21)][0] - 2.0) < 1e-9 and P.AGE_CURVE[(19, 21)][1] == 1
     assert abs(P.AGE_CURVE[(34, 45)][0] + 2.0) < 1e-9
     assert last[P.norm("Young A")]["age_delta"] == 2.0     # age 21 last season → young group
+
+
+# ---------------- board integration ----------------
+from datetime import date
+from engine.state import Game
+from engine.systems import evaluate_personnel
+
+
+def test_calibrate_needs_six_and_fits_line():
+    assert P.calibrate([(1.0, 2.0)] * 5) is None
+    pairs = [(0.5 * f + 1.0, f) for f in (-10, -6, -2, 0, 3, 8)]
+    a, b = P.calibrate(pairs)
+    assert abs(a - 1.0) < 1e-9 and abs(b - 0.5) < 1e-9
+
+
+def test_blind_when_starter_day_to_day_or_back_from_missed_season():
+    tr = P.rate_team("BOS", [ath("Star Guard", injury="Day-To-Day"), ath("Role Wing")], LAST)
+    assert any("day-to-day" in r for r in P.blind_reasons(tr))
+    last = dict(LAST)
+    r = rec("Back Star", "BOS", 60, 2100, 4.0); r["missed_last"] = True
+    last[P.norm("Back Star")] = r
+    tr = P.rate_team("BOS", [ath("Back Star"), ath("Role Wing")], last)
+    assert any("missed season" in x for x in P.blind_reasons(tr))
+
+
+def test_t13_fires_on_clean_gap_only():
+    g = Game("x", date(2026, 10, 22), "CHA", "BKN")
+    clean = {"gap": -5.0, "fair": 4.0, "blind": [], "away_rating": 1.2, "home_rating": -4.8}
+    picks = evaluate_personnel(g, -1.0, clean)
+    assert [(p.system, p.side, p.line) for p in picks] == [(113, "CHA", 1.0)]
+    assert evaluate_personnel(g, -1.0, {**clean, "gap": -2.5}) == []
+    assert evaluate_personnel(g, -1.0, {**clean, "blind": ["CHA: Kon Knueppel (24 mpg) is day-to-day"]}) == []
+    home = evaluate_personnel(g, -1.0, {**clean, "gap": +4.0})
+    assert [(p.side, p.line) for p in home] == [("BKN", -1.0)]

@@ -20,7 +20,8 @@ from . import sources
 from .state import Game, team_state
 from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
-                      evaluate_early, grade, label, group)
+                      evaluate_early, evaluate_personnel, grade, label, group)
+from . import personnel as personnel_mod
 
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 
@@ -50,7 +51,7 @@ def tipped(g: Game, now: datetime) -> bool:
 
 def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.espn_day,
         fetch_lines=None, fetch_kalshi=sources.kalshi_markets, store=None,
-        season_start: date = SEASON_START) -> dict:
+        season_start: date = SEASON_START, personnel_fetch="default") -> dict:
     now = now or datetime.now(timezone.utc)
     today = now.astimezone(sources.ET).date()
     store = store or get_store()
@@ -100,6 +101,25 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             changed.append(row)
     store.save_games(list({r["id"]: r for r in changed}.values()))
 
+    # ---- 2b. personnel read (current rosters x each player's own last two seasons)
+    views = {}
+    if personnel_fetch == "default":
+        personnel_fetch = personnel_mod.read_all
+    if personnel_fetch:
+        try:
+            reads = personnel_fetch()
+            raw = {g.id: personnel_mod.fair_home_spread(reads[g.home], reads[g.away])
+                   for g in upcoming if g.home in reads and g.away in reads}
+            cal = personnel_mod.calibrate([(stored[gid].get("home_spread"), f) for gid, f in raw.items()])
+            for g in upcoming:
+                if g.id in raw:
+                    views[g.id] = personnel_mod.game_view(reads[g.away], reads[g.home],
+                                                          stored[g.id].get("home_spread"), cal)
+            log.append(f"Personnel: {len(views)} games rated"
+                       + (f", calibrated market = {cal[0]:+.1f} + {cal[1]:.2f} x personnel" if cal else ", not calibrated (under 6 lines)"))
+        except Exception as e:
+            log.append(f"Personnel read failed: {e}")
+
     # ---- 3 + 4. run systems on every game that hasn't tipped
     old = {p["key"]: p for p in store.load_picks()}
     seen_now = set()
@@ -111,7 +131,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         picks = (evaluate(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_tests(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_early(g, hs, at, row.get("home_spread"), row.get("total"),
-                                  (g.game_date - season_start).days))
+                                  (g.game_date - season_start).days)
+                 + evaluate_personnel(g, row.get("home_spread"), views.get(g.id)))
         keys = []
         for p in picks:
             prev = old.get(p.key, {})
@@ -139,6 +160,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             "home_spread": row.get("home_spread"), "total": row.get("total"),
             "line_source": row.get("line_source"), "line_books": row.get("line_books"),
             "line_updated": row.get("line_updated"), "picks": keys,
+            "personnel": views.get(g.id),
         })
 
     # bets that fired earlier but no longer qualify (line moved) — keep, mark inactive

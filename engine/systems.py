@@ -49,11 +49,13 @@ TEST_SYSTEMS = {
           "rule": "Favorite by 10+, total 225+ → bet the over (control test for System 4)"},
     112: {"name": "Big rested favorite vs tired dog", "bet": "spread", "idea": "mismatch",
           "rule": "Favorite by 8+ with rest vs dog on a back-to-back → bet the favorite"},
+    113: {"name": "Personnel gap", "bet": "spread", "idea": "personnel",
+          "rule": "Personnel fair line 3+ pts off the market, and no blind spots → bet the side personnel likes"},
 }
 
 
 # My top picks among the test systems — shown as FAV on the board.
-FAVORITES = {101, 102, 103, 110, 112}
+FAVORITES = {101, 102, 103, 110, 112, 113}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
@@ -323,3 +325,22 @@ def grade(pick: Pick, game: Game) -> str | None:
                         else (game.away_score, game.home_score))
         diff = mine - theirs + pick.line
     return "P" if diff == 0 else ("W" if diff > 0 else "L")
+
+
+def evaluate_personnel(game: Game, home_spread: float | None, view: dict | None,
+                       gap_to_fire: float = 3.0) -> list[Pick]:
+    """T13: bet the side the personnel line likes when the gap is big and the model isn't blind."""
+    if not view or home_spread is None or view.get("gap") is None or view["blind"]:
+        return []
+    gap = view["gap"]                       # market - fair, home perspective
+    if abs(gap) < gap_to_fire:
+        return []
+    if gap > 0:                             # market makes home worse than personnel does → bet home
+        side, line = game.home, home_spread
+    else:
+        side, line = game.away, -home_spread
+    return [Pick(113, game.id, "spread", side, line, [
+        f"Personnel fair line: {game.home} {view['fair']:+g} vs market {game.home} {home_spread:+g} (gap {gap:+.1f})",
+        f"Ratings from current players: {game.away} {view['away_rating']:+.1f}, {game.home} {view['home_rating']:+.1f} per 100",
+        "No blind spots: no day-to-day starters, no stars back from a missed season, minutes all known",
+    ])]

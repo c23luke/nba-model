@@ -42,7 +42,7 @@ def test_full_pass_fires_prices_and_grades(tmp_path):
     store = LocalStore(tmp_path)
     morning = datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc)      # 10am ET Nov 15
     board = run(now=morning, fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)),
-                fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START)
+                fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None)
 
     bets = board["bets"]
     assert [(b["system"], b["side"], b["line"]) for b in bets] == [(1, "LAL", 6.0)]
@@ -55,7 +55,7 @@ def test_full_pass_fires_prices_and_grades(tmp_path):
     # next morning: game is final (LAL won 119-95) → graded W
     nxt = datetime(2025, 11, 16, 15, 0, tzinfo=timezone.utc)
     board = run(now=nxt, fetch_day=make_fetch_day(date(2025, 11, 16), date(2025, 11, 15)),
-                fetch_lines=lambda: ({}, {}), fetch_kalshi=fake_kalshi, store=store, season_start=START)
+                fetch_lines=lambda: ({}, {}), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None)
     h = [p for p in board["history"] if p["key"] == bets[0]["key"]]
     assert h and h[0]["result"] == "W" and "LAL 119 @ MIL 95" in h[0]["final_score"]
     assert board["systems"][1]["w"] == 1 and board["systems"][1]["l"] == 0
@@ -79,12 +79,34 @@ def test_bet_drops_when_line_moves_out(tmp_path):
     store = LocalStore(tmp_path)
     fd = make_fetch_day(day, day - timedelta(1))
     b = run(now=t(15), fetch_day=fd,
-            fetch_lines=lines(228.5), fetch_kalshi=fake_kalshi, store=store, season_start=START)
+            fetch_lines=lines(228.5), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None)
     assert any(p["system"] == 4 and p["game_id"] == g.id for p in b["bets"])
 
     # total drops to 219.5 an hour later → System 4 no longer qualifies
     b = run(now=t(16), fetch_day=fd,
-            fetch_lines=lines(219.5), fetch_kalshi=fake_kalshi, store=store, season_start=START)
+            fetch_lines=lines(219.5), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None)
     assert not any(p["system"] == 4 and p["game_id"] == g.id for p in b["bets"])
     d = [p for p in b["dropped"] if p["system"] == 4 and p["game_id"] == g.id]
     assert d and d[0]["first_line"] == 228.5
+
+
+def test_run_attaches_personnel_and_fires_t13(tmp_path):
+    from engine import personnel as P
+    from tests.test_personnel import ath, LAST
+    day = date(2025, 11, 15)
+    todays = [g for g in ALL if g.game_date == day]
+    # fake league: every team average except LAL (stacked) → one big clean gap
+    def fake_reads():
+        reads = {}
+        for g in todays:
+            for t in (g.home, g.away):
+                roster = [ath("Star Guard")] * 7 if t == "LAL" else [ath("Role Wing")] * 10
+                reads[t] = P.rate_team(t, roster, LAST)
+        return reads
+    lines = {(day, g.away, g.home): {"home_spread": -2.0, "total": 225.0, "source": "t", "books": 9} for g in todays}
+    b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_lines=lambda: (lines, {}),
+            fetch_kalshi=fake_kalshi, store=LocalStore(tmp_path), season_start=START, personnel_fetch=fake_reads)
+    assert all(s["personnel"] for s in b["slate"] if s["date"] == day.isoformat())
+    t13 = [p for p in b["tests"] if p["system"] == 113]
+    assert t13 and all(p["side"] == "LAL" for p in t13)

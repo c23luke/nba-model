@@ -332,3 +332,50 @@ if __name__ == "__main__":
     print(report(reads, rows))
     print()
     print(market_check([(m, fair_home_spread(reads[h], reads[a])) for a, h, m, _ in rows]))
+
+
+# --------------------------------------------------------------- board helpers
+BLIND_UNKNOWN_MIN = 20
+GAP_TO_FIRE = 3.0
+
+
+def blind_reasons(tr: TeamRead) -> list[str]:
+    """Where this model can't see what the market sees. A gap here is not an edge."""
+    top8 = tr.rotation[:8]
+    out = []
+    if tr.unknown_minutes > BLIND_UNKNOWN_MIN:
+        out.append(f"{tr.team}: {tr.unknown_minutes:.0f} minutes from players with no NBA numbers")
+    for p in top8:
+        if p.status == "day-to-day":
+            out.append(f"{tr.team}: {p.name} ({p.minutes:.0f} mpg) is day-to-day")
+        if p.last and p.last.get("missed_last"):
+            out.append(f"{tr.team}: {p.name} is back from a missed season")
+    return out
+
+
+def calibrate(pairs: list[tuple[float, float]]) -> tuple[float, float] | None:
+    """Fit market = a + b * personnel across the slate (needs 6+ games with lines)."""
+    pairs = [(m, f) for m, f in pairs if m is not None]
+    if len(pairs) < 6:
+        return None
+    n = len(pairs)
+    mx = sum(m for m, _ in pairs) / n
+    fx = sum(f for _, f in pairs) / n
+    vf = sum((f - fx) ** 2 for _, f in pairs)
+    if not vf:
+        return None
+    b = sum((m - mx) * (f - fx) for m, f in pairs) / vf
+    return mx - b * fx, b
+
+
+def game_view(away: TeamRead, home: TeamRead, market: float | None, cal) -> dict:
+    raw = fair_home_spread(home, away)
+    fair = raw if cal is None else cal[0] + cal[1] * raw
+    gap = None if market is None else market - fair
+    blind = blind_reasons(away) + blind_reasons(home)
+    return {
+        "raw": round(raw, 1), "fair": round(fair * 2) / 2, "gap": None if gap is None else round(gap, 1),
+        "calibrated": cal is not None, "blind": blind,
+        "away_rating": round(away.rating, 2), "home_rating": round(home.rating, 2),
+        "evidence": evidence(away) + evidence(home),
+    }
