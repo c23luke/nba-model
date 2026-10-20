@@ -134,3 +134,24 @@ def test_dropped_pick_still_graded_but_not_official(tmp_path):
     assert p["meta"]["result_first"] in ("W", "L", "P") and p["meta"]["clv"] == -9.0   # over 228.5 → 219.5 close
     s4 = b["systems"][4]
     assert s4["dropped"]["n"] >= 1 and all(h["active"] for h in b["history"])
+
+
+def test_t13_bet_gets_a_written_case(tmp_path):
+    from engine import personnel as P
+    from tests.test_personnel import ath, LAST
+    day = date(2025, 11, 15)
+    todays = [g for g in ALL if g.game_date == day]
+    def fake_reads():
+        return {t: P.rate_team(t, [ath("Star Guard")] * 7 if t == "LAL" else [ath("Role Wing")] * 10, LAST)
+                for g in todays for t in (g.home, g.away)}
+    lines = {(day, g.away, g.home): {"home_spread": -2.0, "total": 225.0, "source": "t", "books": 9} for g in todays}
+    b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_lines=lambda: (lines, {}),
+            fetch_kalshi=fake_kalshi, store=LocalStore(tmp_path), season_start=START, personnel_fetch=fake_reads, fetch_box=None)
+    cases = [s["personnel"]["case"] for s in b["slate"] if s["personnel"] and s["personnel"].get("case")]
+    assert cases and all(c["side"] == "LAL" for c in cases)
+    titles = [x["title"] for x in cases[0]["sections"]]
+    assert titles[0] == "The bet" and titles[-1] == "Confidence"
+    assert "Why we think we're right" in titles and "What could make us wrong" in titles
+    assert 0.5 < cases[0]["p_cover"] < 1 and cases[0]["level"] in ("High", "Medium", "Low")
+    assert not [n for n in b["notes"] if "failed" in n]

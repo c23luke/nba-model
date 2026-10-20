@@ -34,6 +34,17 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .track h3 { font-family: var(--cond); font-size: 17px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .track td { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .track td.r { text-align: right; font-family: var(--cond); font-size: 17px; white-space: nowrap; }
+.case { background: var(--card, rgba(127,127,127,.06)); border: 1.5px solid var(--amber); border-radius: 10px; padding: 14px 16px; margin: 10px 0 16px; }
+.case-head { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+.case-head .pick { font-family: var(--cond); font-size: 30px; font-weight: 700; }
+.case-stats { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 8px 0 4px; font-family: var(--cond); font-size: 17px; }
+.case-stats b { display: block; font-size: 24px; }
+.lvl { font-family: var(--cond); font-weight: 700; font-size: 15px; padding: 3px 8px; border-radius: 4px; }
+.lvl.High { background: var(--win); color: #fff; } .lvl.Medium { background: var(--amber); color: var(--amber-ink); } .lvl.Low { background: var(--loss); color: #fff; }
+.case details { border-top: 1px solid var(--line); padding: 6px 0; }
+.case summary { cursor: pointer; font-weight: 600; }
+.case .cl { font-size: 14px; margin: 3px 0; line-height: 1.45; }
+.case .cl.sub { padding-left: 14px; color: var(--muted); }
 .stack { border: 1.5px solid var(--amber); border-radius: 8px; padding: 10px 12px; margin: 6px 0; }
 
 .answer { font-family: var(--cond); font-weight: 700; font-size: clamp(44px, 11vw, 88px); line-height: .92; margin: 28px 0 8px; letter-spacing: -.01em; }
@@ -111,6 +122,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <section id="bets"></section>
 
   <div id="stacks"></div>
+  <div id="cases"></div>
 
   <h2>Today and tomorrow <small id="slate-note"></small></h2>
   <div id="slate"></div>
@@ -264,6 +276,23 @@ function render(b) {
   $("stacks").innerHTML = st.length ? `<h2>Stacks <small>2+ systems on the same side</small></h2>` + st.map(x =>
     `<div class="stack"><b>${esc(x.label)}</b> <span class="ctx">${x.away} @ ${x.home} · ${tipDay(x.tip_utc)} ${tipTime(x.tip_utc)}</span>
       <div>${x.groups.map(badge).join("")}<span class="ctx">${x.systems.join(" + ")}</span></div></div>`).join("") : "";
+
+  // the written case for each personnel bet (and ones waiting on a status)
+  const cases = b.slate.filter(g => g.personnel && g.personnel.case).map(g => ({ g, c: g.personnel.case, call: g.personnel.call.call }));
+  $("cases").innerHTML = cases.length ? `<h2>Why we like it <small>the full case, rebuilt every 15 minutes</small></h2>` + cases.map(({ g, c, call }) => `
+    <article class="case">
+      <div class="case-head"><span class="pick">${esc(c.side)} ${c.line > 0 ? "+" : ""}${c.line === 0 ? "PK" : c.line}</span>
+        <span class="ctx">${g.away} @ ${g.home} · ${tipDay(g.tip_utc)} ${tipTime(g.tip_utc)}</span>
+        <span class="lvl ${c.level}">Confidence: ${c.level}</span>${call === "waiting" ? `<span class="waiting">⏳ waiting on status — not a bet yet</span>` : ""}</div>
+      <div class="case-stats">
+        <div>Cushion<b>${c.cushion > 0 ? "+" : ""}${c.cushion} pts</b></div>
+        <div>Weakest check<b>${c.worst > 0 ? "+" : ""}${c.worst} pts</b></div>
+        <div>Cover if we're right<b>${Math.round(c.p_cover * 100)}%</b></div>
+        <div>Break-even<b>52.4%</b></div>
+      </div>
+      ${c.sections.map((s, i) => `<details ${i === 0 || i === c.sections.length - 1 || s.title.startsWith("Why we think") ? "open" : ""}><summary>${esc(s.title)}</summary>
+        ${s.lines.map(l => `<div class="cl ${l.startsWith("  ") ? "sub" : ""}">${esc(l.trim())}</div>`).join("")}</details>`).join("")}
+    </article>`).join("") : "";
 
   // every variation
   const T = b.tracking || {};

@@ -24,6 +24,7 @@ from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, eval
                       SHADOW_SYSTEMS, grade, label, group)
 from . import personnel as personnel_mod
 from . import boxscore
+from . import case as case_mod
 
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 
@@ -123,7 +124,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         log.append(f"Box score step failed: {e}")
 
     # ---- 2b. personnel read (current rosters x each player's own last two seasons + this season)
-    views = {}
+    views, reads, stress, cal = {}, {}, {}, None
     if personnel_fetch == "default":
         personnel_fetch = lambda: personnel_mod.read_all(live=live)
     if personnel_fetch:
@@ -136,6 +137,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 if g.id in raw:
                     views[g.id] = personnel_mod.game_view(reads[g.away], reads[g.home],
                                                           stored[g.id].get("home_spread"), cal)
+            try:
+                stress = personnel_mod.stress_lines(
+                    reads, [(g.id, g.away, g.home, stored[g.id].get("home_spread")) for g in upcoming if g.id in raw])
+            except Exception as e:
+                log.append(f"Stress tests failed: {e}")
             log.append(f"Personnel: {len(views)} games rated"
                        + (f", calibrated market = {cal[0]:+.1f} + {cal[1]:.2f} x personnel" if cal else ", not calibrated (under 6 lines)"))
         except Exception as e:
@@ -143,6 +149,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 3 + 4. run systems on every game that hasn't tipped
     old = {p["key"]: p for p in store.load_picks()}
+    t13 = [p for p in old.values() if p["system"] == 113 and p.get("active") and p.get("result")]
+    t13_record = {"w": sum(p["result"] == "W" for p in t13), "l": sum(p["result"] == "L" for p in t13)}
     seen_now = set()
     pick_rows = []
     slate = []
@@ -177,6 +185,18 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             seen_now.add(p.key)
             if p.system < 300:
                 keys.append(p.key)
+        pview = ({**views[g.id], "call": personnel_call(views[g.id])} if g.id in views else None)
+        if pview and pview["call"]["call"] in ("now", "waiting") and row.get("home_spread") is not None:
+            try:
+                side = g.home if pview["call"]["side"] == "home" else g.away
+                bet_line = row["home_spread"] if side == g.home else -row["home_spread"]
+                names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
+                others = sorted({f"{label(p.system)} {names[p.system]['name']} ({group(p.system)})" for p in picks
+                                 if p.side == side and p.bet == "spread" and p.system not in (113, 301)})
+                pview["case"] = case_mod.build_case(g.away, g.home, side, bet_line, row["home_spread"], pview,
+                                                    reads, stress.get(g.id), cal, others, t13_record)
+            except Exception as e:
+                log.append(f"Case for {g.away} @ {g.home} failed: {e}")
         slate.append({
             "game_id": g.id, "date": g.game_date.isoformat(), "tip_utc": g.tip_utc,
             "away": g.away, "home": g.home,
@@ -184,7 +204,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             "home_spread": row.get("home_spread"), "total": row.get("total"),
             "line_source": row.get("line_source"), "line_books": row.get("line_books"),
             "line_updated": row.get("line_updated"), "picks": keys,
-            "personnel": ({**views[g.id], "call": personnel_call(views[g.id])} if g.id in views else None),
+            "personnel": pview,
         })
 
     # bets that fired earlier but no longer qualify (line moved) — keep, mark inactive

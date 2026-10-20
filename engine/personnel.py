@@ -238,6 +238,7 @@ class Player:
 
     prior: dict | None = None         # rookie prior from draft slot (measured)
     live: dict | None = None          # this season so far: min, games, mpg, bpm_live
+    wanted: float = 0.0               # projected role minutes before fitting the team into 240
 
     @property
     def known(self) -> bool:
@@ -357,6 +358,8 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
             p.steps.append(f"this season: {p.live['min']:.0f} min in {p.live['games']} g, box impact "
                            f"{p.live['bpm_live']:+.1f} → blended {p.bpm_used:+.2f} (prior worth {w} min)")
     want = {id(p): wanted(p) for p in avail}
+    for p in avail:
+        p.wanted = want[id(p)]
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
     for p in avail:
@@ -620,3 +623,62 @@ def game_view(away: TeamRead, home: TeamRead, market: float | None, cal) -> dict
         "away_rating": round(away.rating, 2), "home_rating": round(home.rating, 2),
         "evidence": evidence(away) + evidence(home),
     }
+
+
+# --------------------------------------------------------------- stress tests
+# The two judgement calls a sharp would argue with most, re-run every time:
+#   minutes  — base shrinks every player's role by the same % to fit 240 minutes; "top-down" gives
+#              the rotation its full role and cuts the end of the bench first (how coaches do it)
+#   returns  — base docks players back from ACL/Achilles by the measured first-year drop;
+#              "no penalty" gives them their pre-injury level and minutes
+STRESS = {"base": (False, False), "top-down minutes": (True, False),
+          "no injury penalty": (False, True), "both": (True, True)}
+
+
+def _topdown_minutes(players) -> dict:
+    left, mins = 240.0, {}
+    for p in sorted(players, key=lambda p: -p.wanted):
+        m = min(p.wanted, left)
+        mins[id(p)] = m
+        left -= m
+    return mins
+
+
+def stress_rating(tr: TeamRead, topdown: bool, no_penalty: bool) -> float:
+    if tr is None:
+        return 0.0
+    rows = []
+    for p in tr.players:
+        if p.bpm_used is None or p.wanted <= 0:
+            continue
+        b, w = p.bpm_used, p.wanted
+        if no_penalty and p.last and p.last.get("missed_last") and norm(p.name) in RETURNS:
+            inj = RETURNS[norm(p.name)]["injury"]
+            b = p.last["bpm_blend"] + p.last.get("age_delta", 0.0)
+            w = min(w / INJURY_MINUTES[inj], MIN_CAP)
+        rows.append((p, b, w))
+    if topdown:
+        left, total = 240.0, 0.0
+        for p, b, w in sorted(rows, key=lambda r: -r[2]):
+            m = min(w, left)
+            left -= m
+            total += b * m / 48
+        return total
+    tot = sum(w for _, _, w in rows)
+    sc = 240 / tot if tot > 240 else 1.0
+    return sum(b * w * sc / 48 for _, b, w in rows)
+
+
+def stress_lines(reads: dict, games: list[tuple[str, str, str, float | None]]) -> dict:
+    """games: (game_id, away, home, market home spread). Returns game_id → {test: calibrated gap},
+    each test calibrated to the market on its own (so a test isn't penalised for a different scale)."""
+    out = {gid: {} for gid, *_ in games}
+    for name, (td, npen) in STRESS.items():
+        rat = {t: stress_rating(tr, td, npen) for t, tr in reads.items()}
+        raw = {gid: -(rat[h] - rat[a] + HOME_COURT) for gid, a, h, _ in games if h in rat and a in rat}
+        cal = calibrate([(m, raw[gid]) for gid, a, h, m in games if gid in raw])
+        for gid, a, h, m in games:
+            if gid in raw and m is not None:
+                out[gid][name] = {"gap": round(m - _cal(raw[gid], cal), 1), "away": round(rat[a], 2),
+                                  "home": round(rat[h], 2), "slope": None if cal is None else round(cal[1], 3)}
+    return out
