@@ -255,9 +255,16 @@ def main():
     out = {}
     for kind, rows in (("spread", spread_rows), ("total", total_rows)):
         real = search(rows, kind)
-        fake = [len(search(rows, kind, shuffle_seed=s)) for s in range(SHUFFLES)]
+        fakes = [search(rows, kind, shuffle_seed=s) for s in range(SHUFFLES)]
+        fake = [len(f) for f in fakes]
         print(f"=== {kind.upper()}: {len(real)} systems pass on real results; on shuffled results "
               f"{fake} pass (average {sum(fake)/len(fake):.0f}) — that's how many pure luck produces")
+        fl = lambda lst: [wilson_low(x["w"], x["w"] + x["l"]) for x in lst]
+        for cut in (0.52, 0.54, 0.56, 0.58, 0.60):
+            r = sum(f >= cut for f in fl(real))
+            fk = [sum(f >= cut for f in fl(x)) for x in fakes]
+            print(f"    floor ≥ {cut:.0%}: real {r} vs luck {fk} (avg {sum(fk)/len(fk):.0f})")
+        print(f"    best floor: real {max(fl(real) or [0]):.1%} vs luck {[round(max(fl(x) or [0]) * 100, 1) for x in fakes]}")
         real.sort(key=lambda s: -wilson_low(s["w"], s["w"] + s["l"]))
         seen = []
         shown = 0
