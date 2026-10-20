@@ -42,9 +42,12 @@ HOME_COURT = 1.7     # points; MEASURED: mean home margin 2025-26, all 1,231 gam
 B2B = 1.7            # points a team loses on the 2nd night of a back-to-back; MEASURED on 2025-26
                      # (engine/backtest.py: model residual on B2B games, +1.68, t 2.0 — and the
                      # market already prices it, so leaving it out made fake gaps)
-T13_LAST_DAY = 71    # T13 bets only through Dec 31 (season day 71). MEASURED on 2025-26 with
-                     # Odds API consensus lines: gaps of 3+ won 55-62% before January and
-                     # 42-46% from January on, in every version of the model tested.
+# T13 bets ALL season, at the first line it sees, and the bet locks there. MEASURED on 2024-25 +
+# 2025-26 at the opening line (engine/backtest_open.py, 2,038 games): the market moves toward the
+# model +0.12 pts per 1 pt of gap (t 7.4); 3+ gaps got +0.57 pts of CLV on average (line moved our
+# way 355 times, against 219) and went 357-330 vs the open; strongest in the first 30 days
+# (43-33, CLV +1.03). (An earlier test against 6:30pm lines looked like "no edge after January";
+# that was grading an opening-line bet at a near-closing number.)
 MIN_CAP = 38.0
 ROLE_GAMES = 50      # games needed for last season's minutes per game to count in full
 UNKNOWN_FLAG_MIN = 30  # unknown minutes above this → low-confidence rating

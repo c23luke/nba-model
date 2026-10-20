@@ -217,12 +217,12 @@ def test_sitting_player_hands_minutes_to_next_man_and_bench_fill():
                              + sit.unknown_minutes * P.BASELINE / 48)) < 1e-9
 
 
-def test_t13_stops_after_dec_31():
+def test_t13_bets_all_season():
     from engine.systems import evaluate_personnel
-    g = Game("x", date(2027, 1, 5), "CHA", "BKN")
+    g = Game("x", date(2027, 3, 5), "CHA", "BKN")
     clean = {"gap": -5.0, "fair": 4.0, "blind": [], "away_rating": 1.2, "home_rating": -4.8}
     assert evaluate_personnel(g, -1.0, clean, season_day=30)
-    assert evaluate_personnel(g, -1.0, clean, season_day=P.T13_LAST_DAY + 1) == []
+    assert evaluate_personnel(g, -1.0, clean, season_day=140)
 
 
 def test_back_to_back_moves_the_fair_line():

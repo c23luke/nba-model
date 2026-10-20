@@ -20,7 +20,7 @@ from . import sources
 from .state import Game, team_state
 from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
-                      evaluate_early, evaluate_personnel, evaluate_personnel_shadow, personnel_call,
+                      evaluate_early, evaluate_personnel, evaluate_personnel_shadow, personnel_call, LOCK_ON_FIRE,
                       SHADOW_SYSTEMS, grade, label, group)
 from . import personnel as personnel_mod
 from . import boxscore
@@ -175,6 +175,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             # Kalshi prices only for the 4 main systems
             quote = (sources.kalshi_quote(p, g, fetch=fetch_kalshi)
                      if p.line is not None and p.system < 100 else None)
+            locked = p.system in LOCK_ON_FIRE and prev.get("first_line") is not None
+            if locked:                                   # bet stays at the line it fired at
+                p.line = prev["first_line"]
             r = {
                 **prev,
                 "key": p.key, "game_id": g.id, "game_date": g.game_date.isoformat(), "tip_utc": g.tip_utc,
@@ -218,6 +221,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     upcoming_ids = {g.id for g in upcoming}
     for k, p in old.items():
         if p["game_id"] in upcoming_ids and k not in seen_now and p.get("active"):
+            if p["system"] in LOCK_ON_FIRE and p.get("first_line") is not None:
+                # already bet at the first line: keep it; note where the line has gone since
+                pick_rows.append({**p, "last_checked": now.isoformat(),
+                                  "dropped_reason": None})
+                continue
             pick_rows.append({**p, "active": False, "last_checked": now.isoformat(),
                               "dropped_reason": "No longer qualifies at the current line"})
 

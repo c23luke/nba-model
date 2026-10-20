@@ -287,7 +287,8 @@ function render(b) {
       <div class="case-stats">
         <div>Cushion<b>${c.cushion > 0 ? "+" : ""}${c.cushion} pts</b></div>
         <div>Weakest check<b>${c.worst > 0 ? "+" : ""}${c.worst} pts</b></div>
-        ${c.measured && c.measured.pct != null ? `<div>Last season, same spot<b>${c.measured.w}-${c.measured.l} · ${Math.round(c.measured.pct * 100)}%</b></div>` : ""}
+        ${c.measured && c.measured.pct != null ? `<div>2 seasons, same spot, vs open<b>${c.measured.w}-${c.measured.l} · ${Math.round(c.measured.pct * 100)}%</b></div>
+        <div>Line moved our way<b>+${c.measured.clv.toFixed(1)} pts avg</b></div>` : ""}
         <div>Break-even<b>52.4%</b></div>
       </div>
       ${c.sections.map((s, i) => `<details ${i === 0 || i === c.sections.length - 1 || s.title.startsWith("Why we think") ? "open" : ""}><summary>${esc(s.title)}</summary>

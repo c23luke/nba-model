@@ -155,3 +155,27 @@ def test_t13_bet_gets_a_written_case(tmp_path):
     assert "Why we think we're right" in titles and "What could make us wrong" in titles
     assert 0.5 < cases[0]["p_cover"] < 1 and cases[0]["level"] in ("High", "Medium", "Low")
     assert not [n for n in b["notes"] if "failed" in n]
+
+
+def test_t13_locks_at_first_line_when_line_moves_our_way(tmp_path):
+    from engine import personnel as P
+    from tests.test_personnel import ath, LAST
+    day = date(2025, 11, 15)
+    todays = [g for g in ALL if g.game_date == day]
+    def fake_reads():
+        return {t: P.rate_team(t, [ath("Star Guard")] * 7 if t == "LAL" else [ath("Role Wing")] * 10, LAST)
+                for g in todays for t in (g.home, g.away)}
+    store = LocalStore(tmp_path)
+    kw = dict(fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_kalshi=fake_kalshi, store=store,
+              season_start=START, personnel_fetch=fake_reads, fetch_box=None)
+    lines = lambda hs: (lambda: ({(day, g.away, g.home): {"home_spread": hs if "LAL" in (g.home, g.away) else -2.0,
+                                                          "total": 225.0, "source": "t", "books": 9} for g in todays}, {}))
+    b1 = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc), fetch_lines=lines(-2.0), **kw)
+    first = [p for p in b1["tests"] if p["system"] == 113]
+    assert first
+    # the market moves hard toward LAL (the model's side) — the gap disappears, the bet must stay
+    lal = next(p for p in first)
+    moved = -30.0 if lal["side"] == "LAL" and lal["home"] == "LAL" else 30.0
+    b2 = run(now=datetime(2025, 11, 15, 16, 0, tzinfo=timezone.utc), fetch_lines=lines(moved), **kw)
+    still = [p for p in b2["tests"] if p["key"] == lal["key"]]
+    assert still and still[0]["line"] == lal["first_line"] and still[0]["active"]
