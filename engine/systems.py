@@ -52,8 +52,19 @@ TEST_SYSTEMS = {
 }
 
 
+# My top picks among the test systems — shown as FAV on the board.
+FAVORITES = {101, 102, 103, 110, 112}
+
+
 def label(system: int) -> str:
     return f"T{system - 100}" if system >= 100 else f"S{system}"
+
+
+def group(system: int) -> str:
+    """OG = the 4 TrendsCenter systems, FAV = favored test systems, TEST = the rest."""
+    if system < 100:
+        return "OG"
+    return "FAV" if system in FAVORITES else "TEST"
 
 
 @dataclass

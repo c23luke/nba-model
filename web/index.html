@@ -72,6 +72,10 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 .test-row { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .tag { font-family: var(--cond); font-weight: 700; font-size: 18px; color: var(--muted); }
 .test-pick { font-family: var(--cond); font-weight: 600; font-size: 20px; }
+.badge { display: inline-block; font-family: var(--cond); font-weight: 700; font-size: 14px; line-height: 1; padding: 4px 7px 3px; border-radius: 4px; vertical-align: 3px; margin-right: 6px; }
+.badge.OG { background: var(--amber); color: var(--amber-ink); }
+.badge.FAV { border: 1.5px solid var(--amber); color: var(--amber); padding: 2.5px 6px 1.5px; }
+.badge.TEST { border: 1.5px solid var(--line); color: var(--muted); padding: 2.5px 6px 1.5px; }
 .intro { color: var(--muted); margin: -4px 0 12px; max-width: 64ch; font-size: 15px; }
 .rec { font-family: var(--cond); font-size: 22px; font-weight: 600; }
 .W { color: var(--win); } .L { color: var(--loss); } .P { color: var(--push); }
@@ -101,7 +105,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <h2>Graded bets</h2>
   <div id="history"></div>
 
-  <h2>Testing <small>12 systems being forward-tested</small></h2>
+  <h2>Testing <small>FAV = my top 5 picks · TEST = the other 7</small></h2>
   <p class="intro">Tracked and graded live, not bets to take. One moves up to the main board only after it builds a real record.</p>
   <div id="tests"></div>
   <h2>Testing records</h2>
@@ -112,6 +116,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
 <script>
 const cfg = window.BOARD_CONFIG || {};
 const $ = id => document.getElementById(id);
+const badge = g => `<span class="badge ${g}">${g}</span>`;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const tipTime = iso => iso ? new Date(iso.replace("Z", "+00:00")).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
 const tipDay = iso => iso ? new Date(iso.replace("Z", "+00:00")).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) : "";
@@ -165,7 +170,9 @@ function render(b) {
     $("slate-note").textContent = `lines from ${b.line_source}`;
     $("slate").innerHTML = `<table class="slate"><thead><tr><th>Game</th><th>Spread · total</th><th>Systems</th></tr></thead><tbody>` +
       b.slate.map(g => {
-        const fired = g.picks.map(k => b.bets.find(p => p.key === k)).filter(Boolean);
+        const all = [...b.bets, ...(b.tests || [])];
+        const fired = g.picks.map(k => all.find(p => p.key === k)).filter(Boolean)
+          .sort((x, y) => ["OG", "FAV", "TEST"].indexOf(x.group) - ["OG", "FAV", "TEST"].indexOf(y.group));
         const hs = g.home_spread;
         const line = hs == null ? `<span class="dim">no line</span>` :
           `${hs < 0 ? g.home : hs > 0 ? g.away : "PK"} ${hs === 0 ? "" : "−" + Math.abs(hs)}`;
@@ -174,14 +181,14 @@ function render(b) {
             <div class="ctx">${tipDay(g.tip_utc)} ${tipTime(g.tip_utc)}</div>
             <div class="ctx">${ctx(g.away, g.away_state)}<br>${ctx(g.home, g.home_state)}</div></td>
           <td class="lines"><div class="num">${line}</div><div class="num dim">${g.total ?? "—"}</div></td>
-          <td class="sysc">${fired.length ? fired.map(p => `<span class="fired">S${p.system} ${esc(p.label)}</span>`).join("<br>") : `<span class="dim">—</span>`}</td>
+          <td class="sysc">${fired.length ? fired.map(p => `<div style="margin:2px 0">${badge(p.group)}<span class="${p.group === "TEST" ? "dim" : "fired"}">${p.tag} ${esc(p.label)}</span></div>`).join("") : `<span class="dim">—</span>`}</td>
         </tr>`;
       }).join("") + `</tbody></table>`;
   }
 
   // records
   $("records").innerHTML = Object.entries(b.systems).map(([id, s]) => `<tr>
-      <td><b>${id}. ${esc(s.name)}</b><div class="ctx">Card: ${esc(s.card)}</div></td>
+      <td>${badge("OG")}<b>${id}. ${esc(s.name)}</b><div class="ctx">Card: ${esc(s.card)}</div></td>
       <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span></td>
       <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
     </tr>`).join("");
@@ -190,12 +197,13 @@ function render(b) {
   const tests = b.tests || [];
   $("tests").innerHTML = tests.length ? tests.map(p => `<div class="test-row">
       <div class="tag">${p.tag}</div>
-      <div><div class="test-pick">${esc(p.label)} <span class="ctx">${esc(b.test_systems?.[p.system]?.name || "")}</span></div>
+      <div><div class="test-pick">${badge(p.group)}${esc(p.label)} <span class="ctx">${esc(b.test_systems?.[p.system]?.name || "")}</span></div>
         <div class="ctx">${p.away} @ ${p.home} · ${tipDay(p.tip_utc)} ${tipTime(p.tip_utc)}</div>
         <div class="ctx">${p.evidence.map(esc).join(". ")}</div></div>
     </div>`).join("") : `<div class="empty">No test systems have fired on today's or tomorrow's games.</div>`;
-  $("test-records").innerHTML = Object.entries(b.test_systems || {}).map(([id, s]) => `<tr>
-      <td><b>${s.tag}. ${esc(s.name)}</b><div class="ctx">${esc(s.rule)}</div></td>
+  $("test-records").innerHTML = Object.entries(b.test_systems || {})
+    .sort(([, a], [, c]) => (a.group === "FAV" ? 0 : 1) - (c.group === "FAV" ? 0 : 1)).map(([id, s]) => `<tr>
+      <td>${badge(s.group)}<b>${s.tag}. ${esc(s.name)}</b><div class="ctx">${esc(s.rule)}</div></td>
       <td><span class="rec">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</span>
         <div class="ctx">${s.win_pct == null ? "no results yet" : (s.win_pct * 100).toFixed(1) + "%"}</div></td>
       <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
@@ -204,7 +212,7 @@ function render(b) {
   // history
   $("history").innerHTML = b.history.length ? `<table><tbody>` + b.history.map(p => `<tr>
       <td><span class="${p.result}" style="font-family:var(--cond);font-weight:700;font-size:20px">${p.result}</span></td>
-      <td><b>${esc(p.label)}</b> <span class="ctx">S${p.system}</span><div class="ctx">${esc(p.final_score)} · ${p.game_date}</div></td>
+      <td>${badge("OG")}<b>${esc(p.label)}</b> <span class="ctx">S${p.system}</span><div class="ctx">${esc(p.final_score)} · ${p.game_date}</div></td>
     </tr>`).join("") + `</tbody></table>` : `<div class="empty">No graded bets yet. Results post the morning after each game.</div>`;
 }
 
@@ -237,7 +245,7 @@ function slip(p, sys) {
   return `<article class="slip ${waiting ? "waiting" : ""}">
     <div class="slip-head"><div class="pick">${esc(p.label)}</div>
       <div class="when">${p.away} @ ${p.home} · ${tipDay(p.tip_utc)} ${tipTime(p.tip_utc)}</div></div>
-    <div class="sys">System ${p.system}: ${esc(sys?.name)} <span>(${esc(sys?.card)})</span></div>
+    <div class="sys">${badge("OG")}System ${p.system}: ${esc(sys?.name)} <span>(${esc(sys?.card)})</span></div>
     <ul class="why">${p.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul>
     ${waiting ? `<div class="note">Fires regardless of the number. Waiting for the line to post.</div>` : ""}
     ${price}

@@ -19,7 +19,7 @@ from datetime import date, datetime, timedelta, timezone
 from . import sources
 from .state import Game, team_state
 from .store import get_store
-from .systems import SYSTEMS, TEST_SYSTEMS, Pick, evaluate, evaluate_tests, grade, label
+from .systems import SYSTEMS, TEST_SYSTEMS, Pick, evaluate, evaluate_tests, grade, label, group
 
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 
@@ -118,7 +118,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             r = {
                 **prev,
                 "key": p.key, "game_id": g.id, "game_date": g.game_date.isoformat(), "tip_utc": g.tip_utc,
-                "away": g.away, "home": g.home, "system": p.system, "tag": label(p.system),
+                "away": g.away, "home": g.home, "system": p.system, "tag": label(p.system), "group": group(p.system),
                 "bet": p.bet, "side": p.side,
                 "label": p.label(), "line": p.line, "evidence": p.evidence, "active": True,
                 "kalshi": quote or prev.get("kalshi"),
@@ -178,7 +178,7 @@ def _records(defs, picks):
         w = sum(p["result"] == "W" for p in mine)
         l = sum(p["result"] == "L" for p in mine)
         pu = sum(p["result"] == "P" for p in mine)
-        out[sid] = {**meta, "tag": label(sid), "w": w, "l": l, "p": pu,
+        out[sid] = {**meta, "tag": label(sid), "group": group(sid), "w": w, "l": l, "p": pu,
                     "win_pct": round(w / (w + l), 4) if w + l else None,
                     "units": round(w * (100 / 110) - l, 2)}   # 1u risked at -110
     return out
@@ -195,7 +195,8 @@ def build_board(now, today, slate, picks, usage, log, source):
         "generated_at": now.isoformat(), "today": t, "line_source": source,
         "odds_api": usage, "notes": log, "slate": slate,
         "systems": _records(SYSTEMS, picks), "test_systems": _records(TEST_SYSTEMS, picks),
-        "bets": [p for p in live if main(p)], "tests": [p for p in live if test(p)],
+        "bets": [p for p in live if main(p)],
+        "tests": sorted([p for p in live if test(p)], key=lambda p: (group(p["system"]) != "FAV", p.get("tip_utc") or "")),
         "dropped": [p for p in picks if not p.get("active") and open_(p) and main(p)],
         "history": [p for p in history if main(p)][:200],
         "test_history": [p for p in history if test(p)][:300],
@@ -207,6 +208,6 @@ if __name__ == "__main__":
     print(f"{b['generated_at']}  games on slate: {len(b['slate'])}  live bets: {len(b['bets'])}  "
           f"line source: {b['line_source']}  odds credits left: {b['odds_api'].get('remaining')}")
     for p in b["bets"] + b["tests"]:
-        print(f"  {label(p['system'])}  {p['away']} @ {p['home']}  ->  {p['label']}")
+        print(f"  {group(p['system']):4} {label(p['system'])}  {p['away']} @ {p['home']}  ->  {p['label']}")
     for n in b["notes"]:
         print("  note:", n)
