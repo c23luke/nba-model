@@ -349,7 +349,9 @@ def evidence(tr: TeamRead) -> list[str]:
             f"{p.name} ({p.last['team'] or '?'}, {p.last['mp']} min, BPM {p.last['bpm']:+.1f})" for p in top))
     if tr.out:
         lines.append("OUT: " + ", ".join(
-            f"{p.name}" + (f" ({p.last['mpg']:.0f} mpg, BPM {p.last['bpm']:+.1f})" if p.known else " (no NBA log)")
+            f"{p.name}" + (f" ({p.last['mpg']:.0f} mpg, BPM {p.last['bpm']:+.1f})" if p.last
+                           else f" (#{p.draft['pick']} pick {p.draft['year']}, rookie)" if p.draft
+                           else " (no NBA log)")
             for p in tr.out))
     for p in [p for p in tr.rotation if p.prior]:
         lines.append(f"Rookie (rated on draft slot) — {p.name}, {p.bpm_used:+.1f}, {p.minutes:.0f} mpg: "

@@ -156,3 +156,14 @@ def test_returning_star_gets_a_number_with_steps():
     assert abs(k.bpm_used - (r["bpm_blend"] + 0.3 + 0.3 - acl)) < 1e-9     # ages 32 and 33, then ACL
     assert any("ACL" in s for s in k.steps) and k.minutes < 36 * 0.82
     assert not any("Kyrie" in b for b in P.blind_reasons(tr))              # rated, so not blind
+
+
+
+def test_injured_rookie_in_evidence_does_not_crash():
+    P.ROOKIE_PRIOR.clear()
+    P.ROOKIE_PRIOR.update({(1, 3): {"bpm": -0.9, "mpg": 22.0, "share": 1.0, "n": 6}})
+    roster = [ath("Star Guard"), {**ath("Hurt Rookie", 0, injury="Out"), "id": 7}]
+    tr = P.rate_team("SAS", roster, LAST, drafts={"7": {"year": 2026, "pick": 2}})
+    ev = P.evidence(tr)
+    assert any("OUT: Hurt Rookie (#2 pick 2026, rookie)" in e for e in ev)
+    assert P.report({"SAS": tr, "BOS": tr}, [("SAS", "BOS", -2.0, 220.0)])   # full report renders

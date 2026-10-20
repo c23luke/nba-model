@@ -153,7 +153,9 @@ async function load() {
 
 function render(b) {
   const mins = (Date.now() - new Date(b.generated_at)) / 60000;
-  $("updated").innerHTML = `Model ran ${ago(b.generated_at)}` + (mins > 45 ? ` · <span class="stale">check the GitHub Action</span>` : "");
+  const warn = (b.notes || []).filter(n => /fail|error/i.test(n));
+  $("updated").innerHTML = `Model ran ${ago(b.generated_at)}` + (mins > 45 ? ` · <span class="stale">check the GitHub Action</span>` : "")
+    + (warn.length ? ` · <span class="stale" title="${esc(warn.join(" | "))}">${warn.length} warning${warn.length > 1 ? "s" : ""}: ${esc(warn[0]).slice(0, 80)}</span>` : "");
 
   const priced = b.bets.filter(p => p.line != null);
   const waiting = b.bets.filter(p => p.line == null);
