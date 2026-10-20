@@ -128,6 +128,17 @@ def team_flags(hist, team, day, game, opp):
     f["road3p"] = road >= 2 and game.home != team          # 3rd+ straight road game
     f["long_trip"] = bool(last and miles_between(last["venue"], game.home) >= 1500)
     f["same_opp_last"] = bool(last and last["opp"] == opp)
+    f["early_lt10"] = n < 10
+    f["home_after_road3"] = game.home == team and road >= 3          # first home game after 3+ away
+    f["road_after_home3"] = game.home != team and sum(1 for _ in itertools.takewhile(lambda x: x["home"], reversed(h))) >= 3
+    f["first_b2b"] = rest == 0 and not any((h[i]["date"] - h[i - 1]["date"]).days == 1 for i in range(1, len(h)))
+    last5 = h[-5:]
+    f["hot5"] = len(last5) == 5 and sum(x["won"] for x in last5) >= 4
+    f["cold5"] = len(last5) == 5 and sum(x["won"] for x in last5) <= 1
+    f["ats_hot5"] = len(cov) >= 5 and sum(1 for c in cov[-5:] if c) >= 4
+    f["ats_cold5"] = len(cov) >= 5 and sum(1 for c in cov[-5:] if c) <= 1
+    f["overs5"] = len(ovs) >= 5 and sum(1 for o in ovs[-5:] if o) >= 4
+    f["unders5"] = len(ovs) >= 5 and sum(1 for o in ovs[-5:] if o) <= 1
     return f
 
 
@@ -143,7 +154,9 @@ def build(season, games, lines, start, end=None):
     allstar = date.fromisoformat(ALL_STAR[season])
     end = end or max(by_day)
     for day in sorted(by_day):
-        stage = {"first14": (day - start).days < 14, "pre_jan": day < date(start.year + 1, 1, 1),
+        stage = {"first14": (day - start).days < 14, "first30": (day - start).days < 30,
+                 "nov_dec": 14 <= (day - start).days and day < date(start.year + 1, 1, 1),
+                 "pre_jan": day < date(start.year + 1, 1, 1), "jan_asb": date(start.year + 1, 1, 1) <= day < allstar,
                  "post_asb": day >= allstar, "last21": day >= end - timedelta(21)}
         for g in by_day[day]:
             ln = lines.get(f"{day.isoformat()}|{g.away}|{g.home}") or {}
@@ -256,6 +269,16 @@ def main():
         spread_rows += sr
         total_rows += tr
         print(f"{season}: {len(games)} games, lines {how}; {len(sr)} spread rows, {len(tr)} totals rows")
+    window = os.environ.get("MINE_WINDOW", "all")
+    if window == "pre_asb":
+        keep = lambda r: not r[0].get("G:post_asb")
+        spread_rows = [r for r in spread_rows if keep(r)]
+        total_rows = [r for r in total_rows if keep(r)]
+        for rows in (spread_rows, total_rows):
+            for r, _, _ in rows:
+                for k in ("G:post_asb", "G:last21"):
+                    r.pop(k, None)
+        print(f"\nWINDOW: opening night to the All-Star break only — {len(spread_rows)} spread rows, {len(total_rows)} totals rows")
     print(f"\nRules: 1-3 flags; {MIN_SEASON_N}+ games and {MIN_SEASON_PCT:.0%}+ in every season but at most "
           f"{SEASONS_ALLOWED_TO_MISS}; {MIN_TOTAL_N}+ games and {MIN_TOTAL_PCT:.0%}+ overall; vs the closing line.\n")
     out = {}
@@ -287,7 +310,7 @@ def main():
                 break
         out[kind] = {"real": real[:200], "shuffled": fake}
         print()
-    (P.STATIC / "mined_systems.json").write_text(json.dumps(out, default=str))
+    (P.STATIC / f"mined_systems{'' if window == 'all' else '_' + window}.json").write_text(json.dumps(out, default=str))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,10 @@ name: Search for new systems (3 seasons)
 
 on:
   workflow_dispatch:
+    inputs:
+      window:
+        description: "all = whole season; pre_asb = opening night to the All-Star break"
+        default: "all"
 
 permissions:
   contents: write
@@ -19,6 +23,7 @@ jobs:
       - name: Search
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          MINE_WINDOW: ${{ inputs.window }}
         run: |
           set +e
           python -m engine.mine > report.txt 2>&1
@@ -30,5 +35,5 @@ jobs:
         if: always()
         run: |
           git config user.name "nba-model-bot"; git config user.email "actions@users.noreply.github.com"
-          for f in data_static/odds_close_*.json data_static/mined_systems.json; do [ -f "$f" ] && git add "$f"; done
+          for f in data_static/odds_close_*.json data_static/mined_systems*.json; do [ -f "$f" ] && git add "$f"; done
           if ! git diff --cached --quiet; then git commit -m "System search data" && git pull --rebase && git push; fi
