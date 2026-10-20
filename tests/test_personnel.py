@@ -167,3 +167,16 @@ def test_injured_rookie_in_evidence_does_not_crash():
     ev = P.evidence(tr)
     assert any("OUT: Hurt Rookie (#2 pick 2026, rookie)" in e for e in ev)
     assert P.report({"SAS": tr, "BOS": tr}, [("SAS", "BOS", -2.0, 220.0)])   # full report renders
+
+
+
+def test_name_fallback_and_old_draftees():
+    last = dict(LAST)
+    last[P.norm("Ron Holland")] = rec("Ron Holland", "DET", 78, 1551, -2.0)
+    assert P.find(last, "Ronald Holland II")["name"] == "Ron Holland"
+    assert P.find(last, "Rondo Smith") is None
+    P.ROOKIE_PRIOR.clear(); P.ROOKIE_PRIOR.update({(4, 7): {"bpm": -2.3, "mpg": 21.5, "share": 1.0, "n": 8}})
+    tr = P.rate_team("CLE", [ath("Role Wing"), {**ath("Euro Vet", 8), "id": 5}], LAST,
+                     drafts={"5": {"year": 2015, "pick": 5}})
+    ev = [p for p in tr.players if p.name == "Euro Vet"][0]
+    assert ev.prior is None and ev in tr.unknown

@@ -51,6 +51,8 @@ ESPN_TEAMS = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams
 ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{}/roster"
 ESPN_ATHLETE = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{}"
 LOTTERY = 14         # an unknown player picked this high will play real minutes → blind spot
+ROOKIE_SINCE = 2023  # draft-slot prior only for players drafted this year or later (stashed
+                     # picks included); an older draftee with no recent NBA minutes stays UNKNOWN
 
 # ---- Returning from a major injury (first season back) -----------------------
 # Research (NBA players, first season after surgery vs their own pre-injury level):
@@ -163,6 +165,21 @@ def rookie_prior(pick: int) -> dict | None:
     return None
 
 
+def find(last: dict, name: str) -> dict | None:
+    """Exact normalized match, else a unique 'same last name, first names share 3 letters'
+    match (ESPN 'Ronald Holland II' = Basketball-Reference 'Ron Holland')."""
+    key = norm(name)
+    if key in last:
+        return last[key]
+    parts = key.split()
+    if len(parts) < 2:
+        return None
+    first, surname = parts[0], " ".join(parts[1:])
+    hits = [v for k, v in last.items()
+            if k.split()[1:] and " ".join(k.split()[1:]) == surname and k.split()[0][:3] == first[:3]]
+    return hits[0] if len(hits) == 1 else None
+
+
 def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, dict]:
     """Each player's own record over the last two seasons, wherever he played.
 
@@ -266,13 +283,13 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
     for a in athletes:
         name = a.get("displayName") or a.get("fullName") or ""
         exp = (a.get("experience") or {}).get("years")
-        tr.players.append(Player(name, _status(a), exp, last.get(norm(name)),
+        tr.players.append(Player(name, _status(a), exp, find(last, name),
                                  espn_id=str(a.get("id") or "") or None,
                                  age_now=int(a["age"]) if a.get("age") else None))
     for p in tr.players:
         if p.last is None and drafts and p.espn_id in drafts:
             p.draft = drafts[p.espn_id]
-            pr = rookie_prior(p.draft["pick"])
+            pr = rookie_prior(p.draft["pick"]) if (p.draft.get("year") or 0) >= ROOKIE_SINCE else None
             if pr and pr["mpg"] > 0:
                 p.prior = pr
                 p.steps.append(f"rookie prior: #{p.draft['pick']} pick {p.draft['year']} → picks {pr['tier']} "
@@ -391,7 +408,7 @@ def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) ->
     for athletes in rosters.values():
         for a in athletes:
             name = a.get("displayName") or a.get("fullName") or ""
-            if norm(name) in last or not a.get("id"):
+            if find(last, name) or not a.get("id"):
                 continue
             try:
                 d = fetch(ESPN_ATHLETE.format(a["id"])).get("draft") or {}
