@@ -84,4 +84,11 @@ def get_store():
     # .strip(): pasted secrets often carry a trailing newline or space
     url = (os.environ.get("SUPABASE_URL") or "").strip()
     key = (os.environ.get("SUPABASE_SERVICE_KEY") or "").strip()
+    if key and (any(c in key for c in "\r\n\t ") or not key.isascii()):
+        lines = [ln.strip() for ln in key.splitlines() if ln.strip()]
+        raise SystemExit(
+            "SUPABASE_SERVICE_KEY looks mis-pasted: "
+            f"{len(lines)} non-empty line(s), lengths {[len(ln) for ln in lines]}, "
+            f"starts with sb_secret_: {[ln.startswith('sb_secret_') for ln in lines]}, "
+            f"plain ASCII: {key.isascii()}. Re-paste just the one key in GitHub → Settings → Secrets.")
     return SupabaseStore(url, key) if url and key else LocalStore(os.environ.get("DATA_DIR", "data"))
