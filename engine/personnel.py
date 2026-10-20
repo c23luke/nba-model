@@ -12,8 +12,11 @@ Method (every step is shown in the output)
   2. Players listed OUT get no minutes. Day-to-day players stay in, flagged.
   3. Minutes: split 240 among available players in proportion to last season's
      minutes per game (capped at 38), scaled down for players with under 50 games.
-  4. Small samples are pulled toward a bench-level baseline:
-        bpm_used = (bpm * minutes + BASELINE * PULL) / (minutes + PULL)
+  4. Impact blends the last two seasons (older one at half weight), and small samples
+     are pulled toward a bench-level baseline:
+        bpm_used = (bpm26*mp26 + bpm25*0.5*mp25 + BASELINE*PULL) / (mp26 + 0.5*mp25 + PULL)
+     Role (minutes per game) uses both seasons too, so a star who missed last season
+     keeps his healthy role and is flagged "back from a missed season".
   5. Players with no NBA minutes last season are UNKNOWN: listed by name, counted,
      given no number. If the known players can't fill 240 minutes, the gap is shown
      and filled at league average (BPM 0). That fill is stated in the output, never hidden.
@@ -38,7 +41,10 @@ MIN_CAP = 38.0
 ROLE_GAMES = 50      # games needed for last season's minutes per game to count in full
 UNKNOWN_FLAG_MIN = 30  # unknown minutes above this → low-confidence rating
 
-DATA = Path(__file__).resolve().parent.parent / "data_static" / "players_2025_26.csv"
+STATIC = Path(__file__).resolve().parent.parent / "data_static"
+DATA = STATIC / "players_2025_26.csv"          # last season
+DATA_PREV = STATIC / "players_2024_25.csv"     # season before (100+ minutes only)
+PREV_WEIGHT = 0.5                              # the older season counts half
 ESPN_TEAMS = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
 ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{}/roster"
 
@@ -50,17 +56,50 @@ def norm(name: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def load_last_season(path: Path = DATA) -> dict[str, dict]:
+def _read(path: Path) -> dict[str, dict]:
     out = {}
+    if not path.exists():
+        return out
     with open(path, encoding="utf-8") as f:
         for r in csv.DictReader(f, delimiter=";"):
-            g, mp = int(r["g"] or 0), int(r["mp"] or 0)
             try:
                 team = code(r["final_team"])
             except KeyError:
                 team = None
-            out[norm(r["name"])] = {"name": r["name"], "team": team, "g": g, "mp": mp,
-                                    "mpg": mp / g if g else 0.0, "bpm": float(r["bpm"] or 0)}
+            out[norm(r["name"])] = {"name": r["name"], "team": team, "g": int(r["g"] or 0),
+                                    "mp": int(r["mp"] or 0), "bpm": float(r["bpm"] or 0)}
+    return out
+
+
+def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, dict]:
+    """Each player's own record over the last two seasons, wherever he played.
+
+    role mpg  = all minutes / all games across both seasons (an injured star keeps his healthy role)
+    bpm_blend = minutes-weighted, older season counted at half weight, plus the small-sample pull
+    """
+    cur, prev = _read(path), _read(prev_path)
+    out = {}
+    for key in set(cur) | set(prev):
+        c, q = cur.get(key), prev.get(key)
+        mp26, g26 = (c["mp"], c["g"]) if c else (0, 0)
+        mp25, g25 = (q["mp"], q["g"]) if q else (0, 0)
+        if mp26 + mp25 == 0:
+            continue
+        w26, w25 = mp26, PREV_WEIGHT * mp25
+        b26 = c["bpm"] if c else 0.0
+        b25 = q["bpm"] if q else 0.0
+        out[key] = {
+            "name": (c or q)["name"],
+            "team": (c["team"] if c and mp26 else q["team"]),
+            "g": g26 + g25, "mp": mp26 + mp25,
+            "mpg": (mp26 + mp25) / (g26 + g25) if g26 + g25 else 0.0,
+            "bpm": b26 if mp26 else b25,                      # most recent season, for display
+            "bpm_blend": (b26 * w26 + b25 * w25 + BASELINE * PULL) / (w26 + w25 + PULL),
+            "mp26": mp26, "g26": g26, "bpm26": b26 if c else None,
+            "mp25": mp25, "g25": g25, "bpm25": b25 if q else None,
+            "team25": q["team"] if q else None,
+            "missed_last": mp26 == 0,
+        }
     return out
 
 
@@ -126,10 +165,9 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
 
     avail = [p for p in tr.players if p.status != "out" and p.known]
     for p in avail:
-        mp = p.last["mp"]
-        p.bpm_used = (p.last["bpm"] * mp + BASELINE * PULL) / (mp + PULL)
-    # Minutes per game only counts as a real role if he played enough games to earn it:
-    # 15 games at 29 mpg is mostly garbage time / tanking, not a rotation spot.
+        p.bpm_used = p.last["bpm_blend"]
+    # Minutes per game only counts as a real role if he played enough games (over two
+    # seasons) to earn it: 15 games at 29 mpg is mostly garbage time, not a rotation spot.
     want = {id(p): min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES) for p in avail}
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
@@ -161,10 +199,15 @@ def evidence(tr: TeamRead) -> list[str]:
         lines.append("OUT: " + ", ".join(
             f"{p.name}" + (f" ({p.last['mpg']:.0f} mpg, BPM {p.last['bpm']:+.1f})" if p.known else " (no NBA log)")
             for p in tr.out))
+    back = [p for p in tr.rotation if p.last and p.last["missed_last"]]
+    if back:
+        lines.append("Back from a missed season (rated on 2024-25): " + ", ".join(
+            f"{p.name} ({p.last['mp25']} min, BPM {p.last['bpm25']:+.1f}, projected {p.minutes:.0f} mpg)"
+            for p in back))
     if tr.dtd:
         lines.append("Day-to-day: " + ", ".join(p.name for p in tr.dtd))
     if tr.unknown:
-        lines.append(f"UNKNOWN (no NBA minutes last season): {len(tr.unknown)} — "
+        lines.append(f"UNKNOWN (no NBA minutes in either of the last two seasons): {len(tr.unknown)} — "
                      + ", ".join(p.name for p in tr.unknown))
     if tr.unknown_minutes > 0.5:
         lines.append(f"{tr.unknown_minutes:.0f} of 240 minutes can't be filled by known players "
@@ -172,8 +215,8 @@ def evidence(tr: TeamRead) -> list[str]:
     return lines
 
 
-def read_all(fetch=get_json, path: Path = DATA) -> dict[str, TeamRead]:
-    last = load_last_season(path)
+def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, TeamRead]:
+    last = load_last_season(path, prev_path)
     return {t: rate_team(t, ath, last) for t, ath in fetch_rosters(fetch).items()}
 
 

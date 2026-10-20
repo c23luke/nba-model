@@ -7,10 +7,17 @@ def ath(name, years=3, injury=None):
             "injuries": [{"status": injury}] if injury else []}
 
 
+def rec(name, team, g, mp, bpm):
+    return {"name": name, "team": team, "g": g, "mp": mp, "mpg": mp / g, "bpm": bpm,
+            "bpm_blend": (bpm * mp + P.BASELINE * P.PULL) / (mp + P.PULL),
+            "mp26": mp, "g26": g, "bpm26": bpm, "mp25": 0, "g25": 0, "bpm25": None,
+            "team25": None, "missed_last": False}
+
+
 LAST = {
-    P.norm("Star Guard"): {"name": "Star Guard", "team": "BOS", "g": 70, "mp": 2450, "mpg": 35.0, "bpm": 6.0},
-    P.norm("Role Wing Jr."): {"name": "Role Wing Jr.", "team": "NYK", "g": 70, "mp": 1750, "mpg": 25.0, "bpm": 0.0},
-    P.norm("Tiny Sample"): {"name": "Tiny Sample", "team": "BOS", "g": 5, "mp": 40, "mpg": 8.0, "bpm": 15.0},
+    P.norm("Star Guard"): rec("Star Guard", "BOS", 70, 2450, 6.0),
+    P.norm("Role Wing Jr."): rec("Role Wing Jr.", "NYK", 70, 1750, 0.0),
+    P.norm("Tiny Sample"): rec("Tiny Sample", "BOS", 5, 40, 15.0),
 }
 
 
@@ -55,7 +62,21 @@ def test_fair_spread_sign():
 
 def test_few_games_shrinks_role():
     last = dict(LAST)
-    last[P.norm("Garbage Time")] = {"name": "Garbage Time", "team": "BOS", "g": 15, "mp": 435, "mpg": 29.0, "bpm": -5.0}
+    last[P.norm("Garbage Time")] = rec("Garbage Time", "BOS", 15, 435, -5.0)
     tr = P.rate_team("BOS", [ath("Star Guard"), ath("Garbage Time")], last)
     gt = [p for p in tr.players if p.name == "Garbage Time"][0]
     assert gt.minutes < 10
+
+
+def test_two_season_loader(tmp_path):
+    cur = tmp_path / "c.csv"; prev = tmp_path / "p.csv"
+    cur.write_text("name;final_team;age;g;mp;bpm\nInjured Star;IND;25;0;0;0\nTrae Like;WAS;27;15;500;3.0\n")
+    prev.write_text("name;final_team;g;mp;bpm\nInjured Star;IND;73;2451;5.8\nTrae Like;ATL;76;2739;0.5\n")
+    last = P.load_last_season(cur, prev)
+    star = last[P.norm("Injured Star")]
+    assert star["missed_last"] and star["team"] == "IND" and abs(star["mpg"] - 2451 / 73) < 1e-9
+    assert star["bpm_blend"] > 3.0                       # healthy season carries him
+    trae = last[P.norm("Trae Like")]
+    assert trae["g"] == 91 and trae["team"] == "WAS"     # role from both seasons, most recent team
+    tr = P.rate_team("IND", [ath("Injured Star"), ath("Trae Like")], last)
+    assert all(p.minutes > 25 for p in tr.players)       # neither loses his role to games missed
