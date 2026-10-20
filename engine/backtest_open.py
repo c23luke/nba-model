@@ -243,7 +243,60 @@ def main():
             print(f"    {wname}")
             for c in cells:
                 print(f"        {c}")
+    blob["confidence"] = by_confidence(allrows)
+    blob["buckets"] = by_bucket(allrows["live (top-down, bench fill, B2B)"])
     (P.STATIC / "backtest_open.json").write_text(json.dumps(blob))
+
+
+BUCKETS = [("0-2", 0, 2), ("2-3", 2, 3), ("3-4", 3, 4), ("4-5", 4, 5), ("5+", 5, 99)]
+
+
+def by_bucket(rows):
+    """Gap size as separate buckets (not 'or more'), per stage of the season."""
+    cal = calibrate_open(rows)
+    out = {}
+    print("\n=== BY GAP SIZE (separate buckets), live version, vs the opening line")
+    for wname, lo_d, hi_d in WINDOWS + [("whole season", 0, 999)]:
+        ws = [r for r in cal if lo_d <= r["day"] <= hi_d]
+        out[wname] = {}
+        print(f"    {wname}")
+        for name, lo, hi in BUCKETS:
+            g = grade([r for r in ws if lo <= abs(r["gap"]) < hi], 0)
+            out[wname][name] = g
+            print(f"        {name:4} {fmt(g)}")
+    return out
+
+
+def by_confidence(allrows):
+    """The board's confidence check, replayed: gap 3+ in the live version, then re-priced with bench
+    minutes spread evenly (the stress test that most often drops a bet to Low).
+      High   = both versions 4.5+ on the same side
+      Medium = both 3+ on the same side
+      Low    = live 3+, but the even-shrink version under 3 (or on the other side)
+    The live board also stress-tests the injury penalty; history can't (box scores show who played)."""
+    live = calibrate_open(allrows["live (top-down, bench fill, B2B)"])
+    alt = calibrate_open(allrows["old board (even shrink)"])
+    groups = {"High": [], "Medium": [], "Low": []}
+    paired = 0
+    for a, b in zip(live, alt):
+        if (a["date"], a["actual"], a["open"]) != (b["date"], b["actual"], b["open"]):
+            continue
+        paired += 1
+        if abs(a["gap"]) < 3:
+            continue
+        same = (a["gap"] > 0) == (b["gap"] > 0)
+        low = min(abs(a["gap"]), abs(b["gap"]) if same else 0.0)
+        groups["High" if low >= 4.5 else "Medium" if low >= 3 else "Low"].append(a)
+    print(f"\n=== BY CONFIDENCE (gap 3+ in the live version; {paired} games paired), vs the opening line")
+    out = {}
+    for wname, lo_d, hi_d in WINDOWS + [("whole season", 0, 999)]:
+        out[wname] = {}
+        print(f"    {wname}")
+        for k, rs in groups.items():
+            g = grade([r for r in rs if lo_d <= r["day"] <= hi_d], 0)
+            out[wname][k] = g
+            print(f"        {k:6} {fmt(g)}")
+    return out
 
 
 if __name__ == "__main__":

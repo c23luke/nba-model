@@ -17,7 +17,10 @@ import math
 
 from . import personnel as P
 
-BACKTEST = json.loads((P.STATIC / "backtest_open.json").read_text())["live (top-down, bench fill, B2B)"]
+_BT_FILE = json.loads((P.STATIC / "backtest_open.json").read_text())
+BACKTEST = _BT_FILE["live (top-down, bench fill, B2B)"]
+BACKTEST_CONFIDENCE = _BT_FILE.get("confidence") or {}
+BACKTEST_BUCKETS = _BT_FILE.get("buckets") or {}
 WINDOWS = [("days 0-30", 0, 30), ("days 31-71 (to ~Dec 31)", 31, 71), ("days 72-130", 72, 130), ("days 131+", 131, 999)]
 
 
