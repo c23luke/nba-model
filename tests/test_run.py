@@ -110,3 +110,27 @@ def test_run_attaches_personnel_and_fires_t13(tmp_path):
     assert all(s["personnel"] for s in b["slate"] if s["date"] == day.isoformat())
     t13 = [p for p in b["tests"] if p["system"] == 113]
     assert t13 and all(p["side"] == "LAL" for p in t13)
+
+
+def test_dropped_pick_still_graded_but_not_official(tmp_path):
+    from engine.state import team_state
+    def fits(x):
+        fin = [y for y in ALL if y.game_date < x.game_date]
+        return (team_state(x.home, fin, x.game_date).last_won is True
+                and team_state(x.away, fin, x.game_date).last_won is False)
+    g = next(x for x in ALL if x.game_date >= date(2025, 11, 10) and fits(x))
+    day = g.game_date
+    t = lambda d, h: datetime(d.year, d.month, d.day, h, 0, tzinfo=timezone.utc)
+    lines = lambda total: (lambda: ({(day, g.away, g.home): {"home_spread": -10.5, "total": total,
+                                                             "source": "t", "books": 5}}, {}))
+    store = LocalStore(tmp_path)
+    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    run(now=t(day, 15), fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_lines=lines(228.5), **kw)
+    run(now=t(day, 16), fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_lines=lines(219.5), **kw)
+    nxt = day + timedelta(1)
+    b = run(now=t(nxt, 15), fetch_day=make_fetch_day(nxt, day), fetch_lines=lambda: ({}, {}), **kw)
+    p = next(p for p in store.load_picks() if p["system"] == 4 and p["game_id"] == g.id)
+    assert p["result"] in ("W", "L", "P") and not p["active"]
+    assert p["meta"]["result_first"] in ("W", "L", "P") and p["meta"]["clv"] == -9.0   # over 228.5 → 219.5 close
+    s4 = b["systems"][4]
+    assert s4["dropped"]["n"] >= 1 and all(h["active"] for h in b["history"])

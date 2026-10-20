@@ -38,8 +38,10 @@ create table if not exists picks (
   kalshi         jsonb,
   result         text,                     -- W / L / P
   final_score    text,
-  graded_at      text
+  graded_at      text,
+  meta           jsonb                     -- tracking: personnel gap, first-line result, CLV
 );
+alter table picks add column if not exists meta jsonb;
 
 create table if not exists player_games (
   id         text primary key,            -- <game>-<espn player id>

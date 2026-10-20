@@ -55,6 +55,14 @@ TEST_SYSTEMS = {
 
 
 # My top picks among the test systems — shown as FAV on the board.
+# Tracking only: never shown as a bet. Lets every variation be graded (e.g. the personnel
+# side on every game, so we can see how it does at each gap size, waiting vs clean, blind or not).
+SHADOW_SYSTEMS = {
+    301: {"name": "Personnel side, every game", "bet": "spread", "idea": "tracking",
+          "rule": "Whichever side the personnel line likes, every game, any gap. Graded so the "
+                  "record can be split by gap size, day-to-day status and blind spots."},
+}
+
 FAVORITES = {101, 102, 103, 110, 112, 113}
 
 
@@ -79,6 +87,8 @@ EARLY_SYSTEMS = {
 
 
 def label(system: int) -> str:
+    if system >= 300:
+        return f"X{system - 300}"
     if system >= 200:
         return f"E{system - 200}"
     return f"T{system - 100}" if system >= 100 else f"S{system}"
@@ -87,6 +97,8 @@ def label(system: int) -> str:
 def group(system: int) -> str:
     """OG = the 4 TrendsCenter systems, FAV = favored test systems, TEST = the rest,
     EARLY = early-season systems."""
+    if system >= 300:
+        return "SHADOW"
     if system >= 200:
         return "EARLY"
     if system < 100:
@@ -102,6 +114,7 @@ class Pick:
     side: str                # team code, or "OVER"
     line: float | None       # team's spread (e.g. -4.5) or the total; None = line not out yet
     evidence: list[str] = field(default_factory=list)
+    meta: dict = field(default_factory=dict)   # extra numbers kept for tracking (e.g. personnel gap)
 
     @property
     def key(self) -> str:
@@ -357,10 +370,30 @@ def evaluate_personnel(game: Game, home_spread: float | None, view: dict | None,
     if c["call"] != "now":
         return []
     side, line = (game.home, home_spread) if c["side"] == "home" else (game.away, -home_spread)
+    meta = {"gap": abs(view["gap"]), "worst_gap": abs(c["worst_gap"]), "call": "now"}
     either = (f"Holds whether day-to-day players play or sit (smallest gap {c['worst_gap']:+.1f})"
               if view.get("waiting_on") else "No day-to-day players in either rotation")
     return [Pick(113, game.id, "spread", side, line, [
         f"Personnel fair line: {game.home} {view['fair']:+g} vs market {game.home} {home_spread:+g} (gap {view['gap']:+.1f})",
         f"Ratings from current players: {game.away} {view['away_rating']:+.1f}, {game.home} {view['home_rating']:+.1f} per 100",
         either,
-    ])]
+    ], meta)]
+
+
+def evaluate_personnel_shadow(game: Game, home_spread: float | None, view: dict | None) -> list[Pick]:
+    """X1: the side the personnel line likes on every game (tracking only, never a bet)."""
+    if home_spread is None or not view or not view.get("gap"):
+        return []
+    gap = view["gap"]
+    home = gap > 0
+    side, line = (game.home, home_spread) if home else (game.away, -home_spread)
+    gaps = [s["gap"] for s in view.get("scenarios") or [] if s["gap"] is not None] or [gap]
+    same = [abs(g) for g in gaps if (g > 0) == home]
+    c = personnel_call(view)
+    return [Pick(301, game.id, "spread", side, line, [
+        f"Personnel likes {side} by {abs(gap):.1f} vs the market"], {
+        "gap": round(abs(gap), 1),
+        "worst_gap": round(min(same), 1) if len(same) == len(gaps) else 0.0,   # 0 = versions disagree on side
+        "call": "blind" if view.get("blind") else c["call"],
+        "dtd": len(view.get("waiting_on") or []),
+    })]

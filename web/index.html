@@ -29,6 +29,12 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: var(--muted); font-size: 14px; }
 .top b { font-family: var(--cond); font-size: 18px; color: var(--text); letter-spacing: .02em; font-weight: 600; }
 .stale { color: var(--loss); }
+.track { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 8px 0 18px; }
+.track table { width: 100%; }
+.track h3 { font-family: var(--cond); font-size: 17px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.track td { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.track td.r { text-align: right; font-family: var(--cond); font-size: 17px; white-space: nowrap; }
+.stack { border: 1.5px solid var(--amber); border-radius: 8px; padding: 10px 12px; margin: 6px 0; }
 
 .answer { font-family: var(--cond); font-weight: 700; font-size: clamp(44px, 11vw, 88px); line-height: .92; margin: 28px 0 8px; letter-spacing: -.01em; }
 .answer.live { color: var(--amber); }
@@ -104,6 +110,8 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <p id="sub" class="sub"></p>
   <section id="bets"></section>
 
+  <div id="stacks"></div>
+
   <h2>Today and tomorrow <small id="slate-note"></small></h2>
   <div id="slate"></div>
 
@@ -124,6 +132,10 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <div id="tests"></div>
   <h2>Testing records</h2>
   <table class="records" id="test-records"></table>
+
+  <h2>Every variation <small>graded live, official picks only (still qualified at tip)</small></h2>
+  <p class="intro">Stacks = 2+ systems on the same side of the same game. "At first line" = every time a system fired, even if the line later moved out, graded at the number when it fired. CLV = points gained vs the closing line by betting when it first fired.</p>
+  <div id="tracking"></div>
 </main>
 
 <script src="config.js" onerror="void 0"></script>
@@ -155,7 +167,9 @@ async function load() {
 function render(b) {
   const mins = (Date.now() - new Date(b.generated_at)) / 60000;
   const warn = (b.notes || []).filter(n => /fail|error/i.test(n));
-  $("updated").innerHTML = `Model ran ${ago(b.generated_at)}` + (mins > 45 ? ` · <span class="stale">check the GitHub Action</span>` : "")
+  const etHour = Number(new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour: "numeric", hourCycle: "h23" }));
+  const running = etHour >= 10 || etHour < 2;
+  $("updated").innerHTML = `Model ran ${ago(b.generated_at)}` + (running && mins > 45 ? ` · <span class="stale">check the GitHub Action</span>` : "")
     + (warn.length ? ` · <span class="stale" title="${esc(warn.join(" | "))}">${warn.length} warning${warn.length > 1 ? "s" : ""}: ${esc(warn[0]).slice(0, 80)}</span>` : "");
 
   const priced = b.bets.filter(p => p.line != null);
@@ -244,6 +258,35 @@ function render(b) {
         <div class="ctx">${s.win_pct == null ? "no results yet" : (s.win_pct * 100).toFixed(1) + "%"}</div></td>
       <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
     </tr>`).join("");
+
+  // stacks tonight
+  const st = b.stacks || [];
+  $("stacks").innerHTML = st.length ? `<h2>Stacks <small>2+ systems on the same side</small></h2>` + st.map(x =>
+    `<div class="stack"><b>${esc(x.label)}</b> <span class="ctx">${x.away} @ ${x.home} · ${tipDay(x.tip_utc)} ${tipTime(x.tip_utc)}</span>
+      <div>${x.groups.map(badge).join("")}<span class="ctx">${x.systems.join(" + ")}</span></div></div>`).join("") : "";
+
+  // every variation
+  const T = b.tracking || {};
+  const wl = r => r && r.n ? `${r.w}-${r.l}${r.p ? "-" + r.p : ""} · ${r.win_pct == null ? "—" : (r.win_pct * 100).toFixed(0) + "%"} · ${r.units > 0 ? "+" : ""}${r.units}u` : "—";
+  const tbl = (title, obj, empty) => {
+    const rows = Object.entries(obj || {});
+    return `<div><h3>${title}</h3>${rows.length ? `<table>${rows.map(([k, r]) => `<tr><td>${esc(k)}</td><td class="r">${wl(r)}</td></tr>`).join("")}</table>`
+      : `<div class="ctx">${empty}</div>`}</div>`;
+  };
+  const allSys = { ...b.systems, ...(b.test_systems || {}), ...(b.early_systems || {}), ...(b.shadow_systems || {}) };
+  const sysRows = Object.values(allSys).filter(s => s.if_first && s.if_first.n);
+  const firstTbl = `<div><h3>Each system: official · at first line · CLV</h3>${sysRows.length ? `<table><tr><td></td><td class="r ctx">Official</td><td class="r ctx">At first line</td><td class="r ctx">Avg CLV</td></tr>${sysRows.map(s =>
+      `<tr><td>${badge(s.group)}${s.tag}</td><td class="r">${wl(s)}</td><td class="r">${wl(s.if_first)}</td><td class="r">${s.avg_clv == null ? "—" : (s.avg_clv > 0 ? "+" : "") + s.avg_clv}</td></tr>`).join("")}</table>`
+      : `<div class="ctx">Fills in after the first games are graded.</div>`}</div>`;
+  $("tracking").innerHTML = `<div class="track">
+      ${tbl("Stacks by group", T.by_groups, "No stacks graded yet.")}
+      ${tbl("Stacks by exact systems", T.by_combo, "No stacks graded yet.")}
+      ${tbl("How many systems agreed", T.by_count, "Nothing graded yet.")}
+      ${tbl("Systems vs the personnel line", T.system_vs_personnel, "Nothing graded yet.")}
+      ${tbl("Personnel line by gap size (every game)", T.personnel_by_gap, "Nothing graded yet.")}
+      ${tbl("Personnel line by status", T.personnel_by_call, "Nothing graded yet.")}
+    </div>${firstTbl}
+    <p class="ctx">Games where systems landed on opposite sides: ${T.conflicts ?? 0}</p>`;
 
   // history
   $("history").innerHTML = b.history.length ? `<table><tbody>` + b.history.map(p => `<tr>

@@ -53,7 +53,7 @@ COLUMNS = {
               "final", "home_spread", "total", "line_source", "line_books", "line_updated"],
     "picks": ["key", "game_id", "game_date", "tip_utc", "away", "home", "system", "bet", "side",
               "label", "line", "first_line", "first_seen", "last_checked", "active", "dropped_reason",
-              "evidence", "kalshi", "result", "final_score", "graded_at"],
+              "evidence", "kalshi", "result", "final_score", "graded_at", "meta"],
     "player_games": ["id", "game_id", "game_date", "team", "espn_id", "name", "min", "pts", "fgm", "fga",
                      "fg3m", "fg3a", "ftm", "fta", "orb", "drb", "ast", "stl", "blk", "tov", "pf", "pm",
                      "team_poss", "game_min"],

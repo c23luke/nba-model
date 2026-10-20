@@ -20,7 +20,8 @@ from . import sources
 from .state import Game, team_state
 from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
-                      evaluate_early, evaluate_personnel, personnel_call, grade, label, group)
+                      evaluate_early, evaluate_personnel, evaluate_personnel_shadow, personnel_call,
+                      SHADOW_SYSTEMS, grade, label, group)
 from . import personnel as personnel_mod
 from . import boxscore
 
@@ -152,7 +153,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                  + evaluate_tests(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_early(g, hs, at, row.get("home_spread"), row.get("total"),
                                   (g.game_date - season_start).days)
-                 + evaluate_personnel(g, row.get("home_spread"), views.get(g.id)))
+                 + evaluate_personnel(g, row.get("home_spread"), views.get(g.id))
+                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id)))
         keys = []
         for p in picks:
             prev = old.get(p.key, {})
@@ -169,10 +171,12 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 "first_seen": prev.get("first_seen") or now.isoformat(),
                 "first_line": prev.get("first_line") if prev.get("first_line") is not None else p.line,
                 "last_checked": now.isoformat(),
+                "meta": {**(prev.get("meta") or {}), **p.meta},
             }
             pick_rows.append(r)
             seen_now.add(p.key)
-            keys.append(p.key)
+            if p.system < 300:
+                keys.append(p.key)
         slate.append({
             "game_id": g.id, "date": g.game_date.isoformat(), "tip_utc": g.tip_utc,
             "away": g.away, "home": g.home,
@@ -190,13 +194,27 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             pick_rows.append({**p, "active": False, "last_checked": now.isoformat(),
                               "dropped_reason": "No longer qualifies at the current line"})
 
-    # ---- 5. grade
+    # ---- 5. grade every pick, including ones that fired and later dropped (tracked separately),
+    #         at the closing line AND at the line when it first fired
     by_id = {g.id: g for g in games}
     for k, p in old.items():
         g = by_id.get(p["game_id"])
-        if p.get("active") and p.get("result") is None and g and g.final and p.get("line") is not None:
+        if p.get("result") is None and g and g.final and p.get("line") is not None:
             res = grade(Pick(p["system"], p["game_id"], p["bet"], p["side"], p["line"]), g)
-            pick_rows.append({**p, "result": res, "final_score": g.score_line(), "graded_at": now.isoformat()})
+            first = p.get("first_line")
+            meta = dict(p.get("meta") or {})
+            gr = stored.get(p["game_id"]) or {}
+            close = (gr.get("total") if p["bet"] == "total" else
+                     None if gr.get("home_spread") is None else
+                     gr["home_spread"] if p["side"] == p["home"] else -gr["home_spread"])
+            if close is None:
+                close = p["line"]
+            meta["close_line"] = close
+            if first is not None:
+                meta["result_first"] = grade(Pick(p["system"], p["game_id"], p["bet"], p["side"], first), g)
+                meta["clv"] = clv(p["bet"], p["side"], first, close)
+            pick_rows.append({**p, "result": res, "final_score": g.score_line(),
+                              "graded_at": now.isoformat(), "meta": meta})
     store.save_picks(pick_rows)
 
     # ---- 6. board
@@ -205,6 +223,13 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"))
     store.save_board(board)
     return board
+
+
+def clv(bet: str, side: str, first: float, close: float) -> float:
+    """Points gained by betting when it first fired instead of at the close (+ = first line was better)."""
+    if bet == "total":
+        return round(close - first if side == "OVER" else first - close, 1)
+    return round(first - close, 1)
 
 
 def _state(st) -> dict:
@@ -216,17 +241,102 @@ def _state(st) -> dict:
     return {"record": st.record, "streak": st.streak, "rest": rest, "last": last}
 
 
+def _wl(results) -> dict:
+    results = [r for r in results if r]
+    w, l, pu = (sum(r == x for r in results) for x in "WLP")
+    return {"w": w, "l": l, "p": pu, "n": w + l + pu,
+            "win_pct": round(w / (w + l), 4) if w + l else None,
+            "units": round(w * (100 / 110) - l, 2)}           # 1u risked at -110
+
+
+def _meta(p, k):
+    return (p.get("meta") or {}).get(k)
+
+
 def _records(defs, picks):
     out = {}
     for sid, meta in defs.items():
-        mine = [p for p in picks if p["system"] == sid and p.get("result")]
-        w = sum(p["result"] == "W" for p in mine)
-        l = sum(p["result"] == "L" for p in mine)
-        pu = sum(p["result"] == "P" for p in mine)
-        out[sid] = {**meta, "tag": label(sid), "group": group(sid), "w": w, "l": l, "p": pu,
-                    "win_pct": round(w / (w + l), 4) if w + l else None,
-                    "units": round(w * (100 / 110) - l, 2)}   # 1u risked at -110
+        official = [p for p in picks if p["system"] == sid and p.get("result") and p.get("active")]
+        ever = [p for p in picks if p["system"] == sid and p.get("result")]
+        clvs = [_meta(p, "clv") for p in ever if _meta(p, "clv") is not None]
+        out[sid] = {**meta, "tag": label(sid), "group": group(sid), **_wl(p["result"] for p in official),
+                    # every time it fired, even if the line later moved out, graded at the first line
+                    "if_first": _wl(_meta(p, "result_first") for p in ever),
+                    "dropped": _wl(p["result"] for p in ever if not p.get("active")),
+                    "avg_clv": round(sum(clvs) / len(clvs), 2) if clvs else None}
     return out
+
+
+def _bucket(g):
+    for lo, hi, name in ((0, 1, "0–1"), (1, 2, "1–2"), (2, 3, "2–3"), (3, 4, "3–4"), (4, 99, "4+")):
+        if lo <= g < hi:
+            return name
+    return "4+"
+
+
+def tracking(picks: list[dict]) -> dict:
+    """Every variation, graded: stacks of systems on the same side, systems vs the personnel line,
+    and the personnel line split by gap size and by day-to-day / blind status."""
+    graded = [p for p in picks if p.get("result") and p.get("active")]
+    real = [p for p in graded if p["system"] < 300]
+    shadow = {p["game_id"]: p for p in graded if p["system"] == 301}
+
+    # same game, same bet, same side → one stack
+    stacks = {}
+    for p in real:
+        stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(p)
+    by_combo, by_groups, by_count = {}, {}, {}
+    for (gid, bet, side), ps in stacks.items():
+        res = ps[0]["result"]
+        n = len({p["system"] for p in ps})
+        by_count.setdefault("1 system" if n == 1 else "2 systems" if n == 2 else "3+ systems", []).append(res)
+        if n < 2:
+            continue
+        combo = "+".join(sorted({label(p["system"]) for p in ps}))
+        groups = "+".join(sorted({group(p["system"]) for p in ps}))
+        by_combo.setdefault(combo, []).append(res)
+        by_groups.setdefault(groups, []).append(res)
+
+    # opposite sides of the same game
+    conflicts = 0
+    per_game = {}
+    for (gid, bet, side) in stacks:
+        per_game.setdefault((gid, bet), set()).add(side)
+    conflicts = sum(len(v) > 1 for v in per_game.values())
+
+    # each system's spread picks: did the personnel line agree?
+    vs_pers = {}
+    for p in real:
+        sh = shadow.get(p["game_id"])
+        if p["bet"] != "spread" or not sh or p["system"] == 113:
+            continue
+        k = f"{group(p['system'])} + personnel {'agrees' if sh['side'] == p['side'] else 'disagrees'}"
+        vs_pers.setdefault(k, []).append(p["result"])
+
+    pers_gap, pers_call = {}, {}
+    for p in shadow.values():
+        pers_gap.setdefault(_bucket(_meta(p, "gap") or 0), []).append(p["result"])
+        pers_call.setdefault(_meta(p, "call") or "none", []).append(p["result"])
+
+    t = lambda d: {k: _wl(v) for k, v in sorted(d.items())}
+    return {"by_combo": t(by_combo), "by_groups": t(by_groups), "by_count": t(by_count),
+            "conflicts": conflicts, "system_vs_personnel": t(vs_pers),
+            "personnel_by_gap": t(pers_gap), "personnel_by_call": t(pers_call)}
+
+
+def live_stacks(live: list[dict]) -> list[dict]:
+    """Tonight's games where 2+ systems are on the same side."""
+    st = {}
+    for p in live:
+        if p["system"] < 300 and p.get("line") is not None:
+            st.setdefault((p["game_id"], p["bet"], p["side"]), []).append(p)
+    out = []
+    for (gid, bet, side), ps in st.items():
+        if len({p["system"] for p in ps}) >= 2:
+            out.append({"game_id": gid, "away": ps[0]["away"], "home": ps[0]["home"], "tip_utc": ps[0].get("tip_utc"),
+                        "label": ps[0]["label"], "systems": sorted({p["tag"] for p in ps}),
+                        "groups": sorted({p["group"] for p in ps})})
+    return sorted(out, key=lambda x: (-len(x["systems"]), x["tip_utc"] or ""))
 
 
 def build_board(now, today, slate, picks, usage, log, source):
@@ -235,11 +345,14 @@ def build_board(now, today, slate, picks, usage, log, source):
     open_ = lambda p: p.get("result") is None and p["game_date"] >= t
     live = sorted([p for p in picks if p.get("active") and open_(p)],
                   key=lambda p: (p.get("tip_utc") or "", p["system"]))
-    history = sorted([p for p in picks if p.get("result")], key=lambda p: p.get("tip_utc") or "", reverse=True)
+    history = sorted([p for p in picks if p.get("result") and p.get("active")],
+                     key=lambda p: p.get("tip_utc") or "", reverse=True)
     main = lambda p: p["system"] < 100
     test = lambda p: 100 <= p["system"] < 200
-    early = lambda p: p["system"] >= 200
+    early = lambda p: 200 <= p["system"] < 300
     return {
+        "tracking": tracking(picks), "stacks": live_stacks(live),
+        "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
         "odds_api": usage, "notes": log, "slate": slate,
         "systems": _records(SYSTEMS, picks), "test_systems": _records(TEST_SYSTEMS, picks),
