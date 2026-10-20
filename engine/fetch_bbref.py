@@ -61,7 +61,7 @@ def advanced(season_end: int) -> list[str]:
             continue
         name = (r.get("name_display") or r.get("player") or "").strip().rstrip("*")
         team = (r.get("team_name_abbr") or r.get("team_id") or "").strip()
-        if not name or name == "League Average":
+        if not name or name == "League Average" or not (r.get("games", r.get("g", "")) or "").strip().isdigit():
             continue
         rec = (team, r.get("age", ""), r.get("games", r.get("g", "")), r.get("mp", ""), r.get("bpm", ""))
         d = by.setdefault(name, {"tot": None, "last": None})
