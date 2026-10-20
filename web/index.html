@@ -216,19 +216,21 @@ function render(b) {
         <div>${badge(c.group)}<b>${c.tag}</b> <span class="ctx">${esc(c.name)}${c.with.length ? " · also on it: " + c.with.join(", ") : ""}</span></div>
         <div class="ctx">${esc(c.why)}</div></div>
       <div class="num">${(c.win * 100).toFixed(1)}% expected<br>${c.best ? `<b>${esc(c.best.venue_name)} ${esc(c.best.contract)} ${esc(c.best.price_txt)}</b><br>${(c.best.ev * 100).toFixed(1)}% exp. return` : "book −110 or better"}${c.max != null ? `<br>Kalshi max ${Math.round(c.max * 100)}¢` : ""}
-        ${c.url ? `<br><a href="${esc(c.url)}" target="_blank" rel="noopener">Open ${c.best ? esc(c.best.venue_name) : "Kalshi"}</a>` : ""}</div>
+        ${c.best && c.best.url ? `<br><a href="${esc(c.best.url)}" target="_blank" rel="noopener">Open ${esc(c.best.venue_name)}</a>`
+          : c.url ? `<br><a href="${esc(c.url)}" target="_blank" rel="noopener">Kalshi market</a>` : ""}</div>
       ${(c.shop || []).length > 1 ? `<div class="shop">${c.shop.map(q => `<span class="${q.mine ? "" : "ctx"}">${esc(q.venue_name)} ${esc(q.contract)} <b>${esc(q.price_txt)}</b> ${(q.ev * 100).toFixed(1)}%${q.fee_counted ? "" : "*"}${q.mine ? "" : " (no account)"}</span>`).join(" · ")}<span class="ctx"> · * fees not counted</span></div>` : ""}
     </div>`).join("") : "";
   const done = b.card_done || [], hold = b.card_holding || [];
   const resChip = r => r.status === "FINAL" ? `<div class="verdict ${r.result === "W" ? "BET" : r.result === "L" ? "LOSS" : "PASS"}">${r.result === "W" ? "WON" : r.result === "L" ? "LOST" : "PUSH"}</div>`
-    : r.status === "IN PROGRESS" ? `<div class="verdict PASS">LIVE</div>` : `<div class="verdict PASS">HOLD</div>`;
+    : r.status === "IN PROGRESS" ? `<div class="verdict PASS">LIVE</div>` : `<div class="verdict PASS">MOVED</div>`;
+  const sideLine = (r, x) => { const team = r.label.split(" ")[0]; return /^(OVER|UNDER)$/.test(team) ? `${team} ${x}` : `${team} ${x > 0 ? "+" : ""}${x}`; };
   const doneRow = r => `<div class="cardrow">${resChip(r)}
       <div><div class="pick">${esc(r.label)}</div>
         <div class="ctx">${r.away} @ ${r.home} · ${tipDay(r.tip_utc)} ${tipTime(r.tip_utc)}${r.final_score ? " · final " + esc(r.final_score) : ""}</div>
-        <div>${badge(r.group)}<b>${r.tag}</b>${r.status === "HOLDING" ? ` <span class="ctx">already fired at this number and graded there · the model isn't adding more at today's line</span>` : ""}</div></div>
+        <div>${badge(r.group)}<b>${r.tag}</b></div>${r.status === "MOVED" ? `<div class="ctx">Was a bet at ${esc(r.label)} (${tipTime(r.fired_at)} ${tipDay(r.fired_at)}). The line is now ${r.now_line == null ? "off the board" : esc(sideLine(r, r.now_line))} and the model doesn't like it there. Got ${esc(r.label)} or better? You're in — it's graded at that number. Didn't? Skip it.</div>` : ""}</div>
       <div class="num">${r.status === "FINAL" ? (r.result === "W" ? "+1.00u" : r.result === "L" ? "−1.10u" : "0u") : ""}${r.clv != null && r.status === "FINAL" ? `<br>CLV ${r.clv > 0 ? "+" : ""}${r.clv}` : ""}</div>
     </div>`;
-  $("card").innerHTML += (hold.length ? `<h2>Already bet <small>fired earlier, graded at that number</small></h2>` + hold.map(doneRow).join("") : "")
+  $("card").innerHTML += (hold.length ? `<h2>Line moved — no longer a bet <small>only counts if you got the earlier number</small></h2>` + hold.map(doneRow).join("") : "")
     + (done.length ? `<h2>Tipped · last 30 hours <small>card bets that started or finished</small></h2>` + done.map(doneRow).join("") : "");
   $("sub").textContent = games
     ? `${games} game${games > 1 ? "s" : ""} on the board today and tomorrow. Lines are out on ${withLines}. ` +

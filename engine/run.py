@@ -453,7 +453,16 @@ def build_board(now, today, slate, picks, usage, log, source):
                 "close_line": (p.get("meta") or {}).get("close_line")}
     card_done = sorted([brief(p, "FINAL" if p.get("result") else "IN PROGRESS") for p in cardish
                         if since <= (p.get("tip_utc") or "") < now_iso], key=lambda r: r["tip_utc"] or "", reverse=True)
-    holding = [brief(p, "HOLDING") for p in cardish if p.get("result") is None and (p.get("tip_utc") or "") >= now_iso
+    lines_now = {g["game_id"]: g for g in slate}
+    def line_now(p):
+        g = lines_now.get(p["game_id"]) or {}
+        if p["bet"] == "total":
+            return g.get("total")
+        hs = g.get("home_spread")
+        return None if hs is None else (hs if p["side"] == p["home"] else -hs)
+    # fired earlier at a better number; the model doesn't want it at today's number
+    holding = [{**brief(p, "MOVED"), "fired_at": p.get("first_seen"), "now_line": line_now(p)}
+               for p in cardish if p.get("result") is None and (p.get("tip_utc") or "") >= now_iso
                and p["key"] not in on_card]
     for p in picks:
         p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
