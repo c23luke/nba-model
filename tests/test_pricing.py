@@ -117,3 +117,20 @@ def test_exchange_feed_parsing_and_kalshi_ladder():
     got = sorted((q["line"], q["price"]) for q in lad)
     assert got == [(-1.5, 0.40), (-0.5, 0.47), (1.5, 0.50), (3.5, 0.60)]
     assert all(q["cost"] == round(q["price"] + kalshi_fee(q["price"]), 4) for q in lad)
+
+
+def test_locked_bet_is_shopped_from_where_the_market_is_now():
+    # T13 locked MEM -1; the market has since gone to MEM +1.5 and the case (rebuilt at +1.5) still says 52.9%
+    slate = [{"game_id": "g1", "home": "MEM", "home_spread": 1.5,
+              "personnel": {"case": {"side": "MEM", "win_est": 0.529, "line": 1.5}}}]
+    shop = [xq("polymarket", "MEM", 1.5, -122)]
+    c = build_card([pk(113, "MEM", shop, line=-1.0)], slate, now=NOW)[0]
+    assert c["best"]["win"] == 0.529 and c["best"]["ev"] < 0       # no 2.5-point head start from the old number
+
+
+def test_quote_far_off_the_market_is_treated_as_bad_data():
+    slate = [{"game_id": "g1", "home": "H", "home_spread": -1.5}]   # H -1.5 consensus
+    shop = [xq("polymarket", "H", 1.5, +113),     # H +1.5 priced like H -1.5 (teams swapped in the feed)
+            xq("prophetx", "H", -1.5, +104)]
+    c = build_card([pk(112, "H", shop, line=-1.5)], slate, now=NOW)[0]
+    assert [q["venue"] for q in c["shop"]] == ["prophetx"]

@@ -52,15 +52,34 @@ def max_price(win: float) -> float | None:
 
 
 def win_estimate(pick: dict, slate: list[dict]) -> float | None:
+    return win_and_line(pick, slate)[0]
+
+
+def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | None]:
+    """Expected win rate and the line it applies to. System rates apply at the pick's current line;
+    the personnel case is rebuilt every run at the CURRENT market line, so a T13 bet that locked at an
+    earlier number is shopped from where the market is now, not from the old number."""
     sid = pick["system"]
     if sid in SYSTEMS:
-        return SYSTEMS[sid]["card_win_rate"]
+        return SYSTEMS[sid]["card_win_rate"], pick.get("line")
     if (TEST_SYSTEMS.get(sid) or {}).get("win_est"):
-        return TEST_SYSTEMS[sid]["win_est"]
+        return TEST_SYSTEMS[sid]["win_est"], pick.get("line")
     for g in slate:
         c = ((g.get("personnel") or {}).get("case") or {})
         if g.get("game_id") == pick["game_id"] and c.get("side") == pick["side"]:
-            return c.get("win_est")
+            return c.get("win_est"), c.get("line", pick.get("line"))
+    return None, None
+
+
+def market_line(pick: dict, slate: list[dict]) -> float | None:
+    """The consensus number for the pick's side right now (median of US books)."""
+    for g in slate:
+        if g.get("game_id") != pick["game_id"]:
+            continue
+        if pick["bet"] == "total":
+            return g.get("total")
+        hs = g.get("home_spread")
+        return None if hs is None else (hs if pick["side"] == g.get("home") else -hs)
     return None
 
 
@@ -92,7 +111,11 @@ def price_text(q: dict) -> str:
     return f"{a:+d}"
 
 
-def shop(p: dict, win0: float) -> list[dict]:
+SUSPECT = 0.10     # a quote 10+ points of probability cheaper than the consensus says is a data error, not a gift
+
+
+def shop(p: dict, win0: float, base: float | None = None, market: float | None = None) -> list[dict]:
+    base = p["line"] if base is None else base
     out = []
     for q in p.get("shop") or []:
         if q["bet"] != p["bet"] or q["side"] != p["side"]:
@@ -101,7 +124,11 @@ def shop(p: dict, win0: float) -> list[dict]:
             continue
         if abs(q["line"] - p["line"]) > WINDOW[p["bet"]]:
             continue
-        win, push = outcome(win0, p["line"], p["bet"], p["side"], q["line"])
+        win, push = outcome(win0, base, p["bet"], p["side"], q["line"])
+        if market is not None:
+            mw, mp = outcome(0.5, market, p["bet"], p["side"], q["line"])
+            if q["cost"] < mw / (1 - mp) - SUSPECT:
+                continue                    # e.g. a feed that swapped the two teams' spreads
         breakeven = win / (1 - push) if push < 1 else 1.0          # cost at which expected return is 0
         out.append({**q, "win": round(win, 4), "push": round(push, 4),
                     "ev": round(expected_return(win, push, q["cost"]), 4),
@@ -128,10 +155,10 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
             continue
         if p.get("tip_utc") and p["tip_utc"] < now_iso:
             continue  # already tipped: nothing left to bet
-        win = win_estimate(p, slate)
+        win, base = win_and_line(p, slate)
         if win is None:
             continue
-        quotes = shop(p, win)
+        quotes = shop(p, win, base, market_line(p, slate))
         mine = [q for q in quotes if q["mine"]]
         best = mine[0] if mine else None
         kalshi = [q for q in mine if q["venue"] == "kalshi"]
