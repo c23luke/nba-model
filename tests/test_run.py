@@ -237,3 +237,13 @@ def test_gap_tracker_splits_every_game_by_gap_and_confidence():
     assert t["by_confidence"]["Low"]["l"] == 1 and t["by_confidence"]["High"]["w"] == 1
     assert t["pending"] == 1 and t["window"] == "days 0-30"
     assert "3+" in t["history_by_gap"]["whole season"]
+
+
+def test_card_bet_shows_its_real_record_and_it_grows():
+    store = LocalStore(tmp := __import__("tempfile").mkdtemp())
+    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines, **kw)
+    c = next(c for c in b["card"] if c["tag"] == "S1")
+    assert c["record"]["history"]["w"] == 218 and c["record"]["history"]["l"] == 143      # the 23-year card, as-is
+    assert (c["record"]["w"], c["record"]["l"]) == (218 + c["record"]["season"]["w"], 143 + c["record"]["season"]["l"])

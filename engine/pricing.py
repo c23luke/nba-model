@@ -105,6 +105,37 @@ EARLY_STACK_MIN_GAP = 3.0
 EARLY_STACK_WIN = 0.559
 
 
+def _card_wl(card: str) -> tuple[int, int]:
+    w, l = card.split(" ")[0].split("-")[:2]
+    return int(w), int(l)
+
+
+# The record each card bet carries before this season (shown as-is, never shrunk). This season's
+# graded bets are added on top by run.build_board, so the number grows as the system bets.
+HISTORY = {**{sid: (*_card_wl(m["card"]), f"{m['card'].split('·')[-1].strip()} card") for sid, m in SYSTEMS.items()},
+           102: (56, 43, "2 seasons, at the open"), 112: (79, 62, "2 seasons, at the open"),
+           121: (194, 124, "6 seasons"), 122: (149, 91, "6 seasons"), 123: (149, 86, "6 seasons"),
+           124: (69, 31, "6 seasons")}
+
+
+def history(pick: dict, slate: list[dict]) -> dict | None:
+    sid = pick["system"]
+    if group(sid) == "EARLY":
+        h = players_history("EARLY", EARLY_STACK_MIN_GAP)
+        return {"w": h["w"], "l": h["l"], "label": "2 seasons, early system + players model 3+, at the open"} if h else None
+    if sid == 113:
+        for g in slate:
+            c = ((g.get("personnel") or {}).get("case") or {})
+            m = c.get("measured") or {}
+            if g.get("game_id") == pick["game_id"] and c.get("side") == pick["side"] and m.get("w") is not None:
+                return {"w": m["w"], "l": m["l"], "label": f"2 seasons, gaps of {m.get('tier', 3)}+, {m.get('window')}, at the open"}
+        return None
+    if sid in HISTORY:
+        w, l, lab = HISTORY[sid]
+        return {"w": w, "l": l, "label": lab}
+    return None
+
+
 def early_stack(pick: dict, slate: list[dict]) -> bool:
     """An early-season system bet where the players model likes the same side by 3+."""
     if group(pick["system"]) != "EARLY" or pick["bet"] != "spread":
@@ -277,7 +308,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "price": at_line["price"] if at_line else k.get("price"),
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
-                     "players": pg, "players_bucket": pb,
+                     "players": pg, "players_bucket": pb, "system": p["system"], "history": history(p, slate),
                      "players_history": players_history(group(p["system"]), pg),
                      "contract": at_line["contract"] if at_line else k.get("contract"),
                      "url": (best or {}).get("url") or k.get("url"),

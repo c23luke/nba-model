@@ -495,8 +495,26 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
     main = lambda p: p["system"] < 100
     test = lambda p: 100 <= p["system"] < 200
     early = lambda p: 200 <= p["system"] < 300
-    from .pricing import build_card
+    from .pricing import build_card, agree_bucket
     card = build_card(live, slate, now)
+    # each card bet's record = its history + this season's graded bets of the same kind
+    graded = [p for p in picks if p.get("result") and p.get("active")]
+    x1 = {p["game_id"]: p for p in graded if p["system"] == 301}
+    def live_wl(row):
+        if row["group"] == "EARLY":           # early system + players model 3+ on the same side
+            res = []
+            for p in graded:
+                sh = x1.get(p["game_id"])
+                if 200 <= p["system"] < 300 and p["bet"] == "spread" and sh and sh["side"] == p["side"] \
+                        and (_meta(sh, "gap_first") or _meta(sh, "gap") or 0) >= 3:
+                    res.append(p["result"])
+            return _wl(res)
+        return _wl(p["result"] for p in graded if p["system"] == row["system"])
+    for row in card:
+        lv = live_wl(row)
+        h = row.get("history") or {"w": 0, "l": 0, "label": None}
+        row["record"] = {"history": h, "season": {"w": lv["w"], "l": lv["l"], "p": lv["p"]},
+                         "w": h["w"] + lv["w"], "l": h["l"] + lv["l"]}
     # the card's own history: OG/FAV bets that already tipped in the last 30 hours (in progress or graded),
     # and fired bets the model no longer adds to at today's number (still graded where they fired)
     now_iso = now.isoformat()
