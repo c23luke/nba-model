@@ -20,7 +20,7 @@ def test_alerts_once_and_only_alert_groups(tmp_path):
     sent = []
     W.push = lambda *a: sent.append(a)
     assert W.alert_new(board, store, "topic", print) == 1
-    assert "Pay up to" in sent[0][2] and sent[0][3] == "https://kalshi.com/x"
+    assert "Max price" in sent[0][2] and sent[0][1].startswith("BET") and sent[0][3] == "https://kalshi.com/x"
     saved = {p["key"]: p for p in store.load_picks()}
     assert saved["g1-S113-NOP"]["meta"]["alerted"]
     board["tests"] = [saved["g1-S113-NOP"] | {"tag": "T13", "group": "FAV"}, test_pick]

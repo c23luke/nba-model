@@ -82,12 +82,18 @@ def message(pick: dict, board: dict) -> tuple[str, str, str]:
     k = pick.get("kalshi") or {}
     win = win_rate(pick, board)
     cap = max_price(win) if win else None
-    title = f"BET: {pick['label']} — {pick['away']} @ {pick['home']}"
+    price = k.get("price")
+    good = price is not None and cap is not None and price <= cap + 1e-9
+    verb = "BET" if good or price is None else "LIMIT"
+    title = f"{verb}: {pick['label']} — {pick['away']} @ {pick['home']}"
     lines = [f"{pick['tag']} ({pick['group']})"]
-    if k.get("price") is not None:
-        lines.append(f"Kalshi: {k['contract']} at {round(k['price'] * 100)}¢")
+    if price is not None:
+        lines.append(f"Kalshi: {k['contract']} at {round(price * 100)}¢")
     if cap:
-        lines.append(f"Pay up to {round(cap * 100)}¢ on Kalshi incl. fee (expected win rate {win:.1%})")
+        lines.append(f"Max price {round(cap * 100)}¢ incl. fee (expected win rate {win:.1%})")
+        if price is not None and not good:
+            lines.append(f"Too pricey right now — set a limit order at {round(cap * 100)}¢"
+                         + (f", or take {pick['label']} at -110 or better at a book" if win > 110 / 210 else ""))
     lines += pick.get("evidence", [])[:2]
     return title, "\n".join(lines), k.get("url") or BOARD_URL
 
