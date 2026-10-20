@@ -20,6 +20,8 @@ Method (every step is shown in the output)
   5. Players with no NBA minutes last season are UNKNOWN: listed by name, counted,
      given no number. If the known players can't fill 240 minutes, the gap is shown
      and filled at league average (BPM 0). That fill is stated in the output, never hidden.
+  5b. Age: each player's number is moved by the age curve MEASURED from the same two
+     seasons (average BPM change by age group). Printed at the top of every report.
   6. Team rating (points per 100 possessions vs an average team) = sum of bpm_used * min/48.
   7. Fair home spread = -(home rating - away rating + HOME_COURT).
 """
@@ -67,8 +69,43 @@ def _read(path: Path) -> dict[str, dict]:
             except KeyError:
                 team = None
             out[norm(r["name"])] = {"name": r["name"], "team": team, "g": int(r["g"] or 0),
-                                    "mp": int(r["mp"] or 0), "bpm": float(r["bpm"] or 0)}
+                                    "mp": int(r["mp"] or 0), "bpm": float(r["bpm"] or 0),
+                                    "age": int(r["age"]) if r.get("age") else None}
     return out
+
+
+AGE_GROUPS = [(19, 21), (22, 23), (24, 25), (26, 27), (28, 29), (30, 31), (32, 33), (34, 45)]
+
+
+def measure_age_curve(cur: dict, prev: dict, min_mp: int = 500) -> dict[tuple, tuple[float, int]]:
+    """Measured, not assumed: average BPM change from 2024-25 to 2025-26 by age in 2024-25,
+    weighted by the smaller of the two seasons' minutes. Players with 500+ minutes in both."""
+    acc = {g: [0.0, 0.0, 0] for g in AGE_GROUPS}
+    for k, c in cur.items():
+        q = prev.get(k)
+        if not q or c.get("age") is None or c["mp"] < min_mp or q["mp"] < min_mp:
+            continue
+        age_then = c["age"] - 1
+        for lo, hi in AGE_GROUPS:
+            if lo <= max(age_then, 19) <= hi:
+                w = min(c["mp"], q["mp"])
+                acc[(lo, hi)][0] += (c["bpm"] - q["bpm"]) * w
+                acc[(lo, hi)][1] += w
+                acc[(lo, hi)][2] += 1
+    return {g: (a[0] / a[1] if a[1] else 0.0, a[2]) for g, a in acc.items()}
+
+
+def age_delta(age: int | None, curve: dict) -> float:
+    """Expected BPM change into this season for a player who was `age` last season."""
+    if age is None:
+        return 0.0
+    for (lo, hi), (d, _) in curve.items():
+        if lo <= max(age, 19) <= hi:
+            return d
+    return 0.0
+
+
+AGE_CURVE: dict = {}
 
 
 def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, dict]:
@@ -78,6 +115,8 @@ def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str
     bpm_blend = minutes-weighted, older season counted at half weight, plus the small-sample pull
     """
     cur, prev = _read(path), _read(prev_path)
+    AGE_CURVE.clear()
+    AGE_CURVE.update(measure_age_curve(cur, prev))
     out = {}
     for key in set(cur) | set(prev):
         c, q = cur.get(key), prev.get(key)
@@ -99,6 +138,8 @@ def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str
             "mp25": mp25, "g25": g25, "bpm25": b25 if q else None,
             "team25": q["team"] if q else None,
             "missed_last": mp26 == 0,
+            "age": c.get("age") if c else None,
+            "age_delta": age_delta(c.get("age") if c else None, AGE_CURVE),
         }
     return out
 
@@ -165,7 +206,8 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
 
     avail = [p for p in tr.players if p.status != "out" and p.known]
     for p in avail:
-        p.bpm_used = p.last["bpm_blend"]
+        # last two seasons + the measured age curve (young players improve, the oldest decline)
+        p.bpm_used = p.last["bpm_blend"] + p.last.get("age_delta", 0.0)
     # Minutes per game only counts as a real role if he played enough games (over two
     # seasons) to earn it: 15 games at 29 mpg is mostly garbage time, not a rotation spot.
     want = {id(p): min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES) for p in avail}
@@ -222,7 +264,11 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV) -> 
 
 def report(reads: dict[str, TeamRead], games: list[tuple[str, str, float | None, float | None]]) -> str:
     """games: (away, home, market home spread, total)."""
-    out = ["TEAM RATINGS (per 100 vs average, from current personnel)"]
+    out = ["AGE CURVE (measured from players with 500+ min in both 2024-25 and 2025-26):"]
+    out.append("  " + " | ".join(f"age {lo}-{hi}: {d:+.2f} (n={n})" for (lo, hi), (d, n) in AGE_CURVE.items()))
+    out.append("  Players with no age on file (missed 2025-26) get no age adjustment.")
+    out.append("")
+    out.append("TEAM RATINGS (per 100 vs average, from current personnel)")
     for t, r in sorted(reads.items(), key=lambda kv: -kv[1].rating):
         out.append(f"  {t}  {r.rating:+6.2f}  continuity {r.continuity:4.0%}  unknown min {r.unknown_minutes:4.0f}"
                    f"  out {len(r.out)}  rotation: " + ", ".join(f"{p.name} {p.minutes:.0f}" for p in r.rotation[:8]))

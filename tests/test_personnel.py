@@ -80,3 +80,13 @@ def test_two_season_loader(tmp_path):
     assert trae["g"] == 91 and trae["team"] == "WAS"     # role from both seasons, most recent team
     tr = P.rate_team("IND", [ath("Injured Star"), ath("Trae Like")], last)
     assert all(p.minutes > 25 for p in tr.players)       # neither loses his role to games missed
+
+
+def test_age_curve_is_measured_from_data(tmp_path):
+    cur = tmp_path / "c.csv"; prev = tmp_path / "p.csv"
+    cur.write_text("name;final_team;age;g;mp;bpm\nYoung A;SAS;21;70;2000;2.0\nOld B;LAL;36;70;2000;-1.0\n")
+    prev.write_text("name;final_team;g;mp;bpm\nYoung A;SAS;70;2000;0.0\nOld B;LAL;70;2000;1.0\n")
+    last = P.load_last_season(cur, prev)
+    assert abs(P.AGE_CURVE[(19, 21)][0] - 2.0) < 1e-9 and P.AGE_CURVE[(19, 21)][1] == 1
+    assert abs(P.AGE_CURVE[(34, 45)][0] + 2.0) < 1e-9
+    assert last[P.norm("Young A")]["age_delta"] == 2.0     # age 21 last season → young group
