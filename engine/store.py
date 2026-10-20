@@ -33,7 +33,7 @@ class LocalStore:
     def load_picks(self):  return self._read("picks", [])
     def save_picks(self, rows):
         cur = {r["key"]: r for r in self.load_picks()}
-        cur.update({r["key"]: r for r in rows})
+        cur.update({r["key"]: r for r in shape("picks", rows)})     # same columns as the Supabase table
         self._write("picks", list(cur.values()))
 
     def load_player_games(self):  return self._read("player_games", [])

@@ -179,3 +179,22 @@ def test_t13_locks_at_first_line_when_line_moves_our_way(tmp_path):
     b2 = run(now=datetime(2025, 11, 15, 16, 0, tzinfo=timezone.utc), fetch_lines=lines(moved), **kw)
     still = [p for p in b2["tests"] if p["key"] == lal["key"]]
     assert still and still[0]["line"] == lal["first_line"] and still[0]["active"]
+
+
+def test_card_line_shops_kalshi_and_exchanges(tmp_path):
+    store = LocalStore(tmp_path)
+    morning = datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc)
+    px = {"venue": "prophetx", "venue_name": "ProphetX", "bet": "spread", "side": "LAL", "line": 7.0, "ml": False,
+          "american": -105, "cost": round(105 / 205, 4), "fee_counted": False, "size": 900,
+          "contract": "LAL +7", "url": None, "ticker": None}
+    board = run(now=morning, fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)),
+                fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START,
+                personnel_fetch=None, fetch_box=None,
+                fetch_exchanges=lambda: ({(date(2025, 11, 15), "LAL", "MIL"): [px]}, {}))
+    c = next(c for c in board["card"] if c["tag"] == "S1")
+    venues = {q["venue"] for q in c["shop"]}
+    assert venues == {"kalshi", "prophetx"}
+    assert c["best"]["venue"] == "prophetx" and c["best"]["line"] == 7.0      # a point better at -105
+    assert all("shop" not in p for p in board["bets"])                         # prices only on the card
+    feed = store._read("bet_feed", [])
+    assert feed and feed[0]["best_venue"] == "prophetx" and feed[0]["status"] == c["verdict"].lower()

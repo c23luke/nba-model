@@ -286,6 +286,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 6. board
     all_picks = {p["key"]: p for p in store.load_picks()}
+    for r in pick_rows:                       # venue prices aren't stored with the pick; carry them to the card
+        if r.get("shop") is not None and r["key"] in all_picks:
+            all_picks[r["key"]]["shop"] = r["shop"]
     # how this season's scoring compares with the closing totals (the market catching up, or not)
     tot_rows = [(g, stored[g.id].get("total")) for g in finals if stored.get(g.id, {}).get("total") is not None]
     def drift(rows):
