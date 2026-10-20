@@ -237,7 +237,7 @@ function render(b) {
   const doneRow = r => `<div class="cardrow">${resChip(r)}
       <div><div class="pick">${esc(r.label)}</div>
         <div class="ctx">${r.away} @ ${r.home} · ${tipDay(r.tip_utc)} ${tipTime(r.tip_utc)}${r.final_score ? " · final " + esc(r.final_score) : ""}</div>
-        <div>${badge(r.group)}<b>${r.tag}</b></div>${r.status === "MOVED" ? `<div class="ctx">Was a bet at ${esc(r.label)} (${tipTime(r.fired_at)} ${tipDay(r.fired_at)}). The line is now ${r.now_line == null ? "off the board" : esc(sideLine(r, r.now_line))} and the model doesn't like it there. Got ${esc(r.label)} or better? You're in — it's graded at that number. Didn't? Skip it.</div>` : ""}</div>
+        <div>${badge(r.group)}<b>${r.tag}</b></div>${r.status === "MOVED" ? `<div class="ctx">Was a bet at ${esc(r.label)} (${tipTime(r.fired_at)} ${tipDay(r.fired_at)}). ${r.now_line != null && esc(sideLine(r, r.now_line)) === esc(r.label) ? "The line hasn't moved, but the model no longer sees 3+ points of edge (lineup or injury news since it fired)." : `The line is now ${r.now_line == null ? "off the board" : esc(sideLine(r, r.now_line))} and the model doesn't like it there.`} Got ${esc(r.label)} or better? You're in — it's graded at that number. Didn't? Skip it.</div>` : ""}</div>
       <div class="num">${r.status === "FINAL" ? (r.result === "W" ? "+1.00u" : r.result === "L" ? "−1.10u" : "0u") : ""}${r.clv != null && r.status === "FINAL" ? `<br>CLV ${r.clv > 0 ? "+" : ""}${r.clv}` : ""}</div>
     </div>`;
   $("card").innerHTML += (hold.length ? `<h2>Line moved — no longer a bet <small>only counts if you got the earlier number</small></h2>` + hold.map(doneRow).join("") : "")
