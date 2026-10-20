@@ -304,6 +304,7 @@ def kalshi_ladder(pick, g: Game, fetch=kalshi_markets) -> list[dict]:
             return
         fee = kalshi_fee(price)
         out.append({"venue": "kalshi", "venue_name": "Kalshi", "bet": bet, "side": side, "line": line, "ml": ml,
+                    "order_side": "no" if contract.startswith("NO") else "yes",
                     "price": price, "fee": fee, "cost": round(price + fee, 4), "fee_counted": True,
                     "size": None, "contract": contract, "url": url, "ticker": m["ticker"]})
 

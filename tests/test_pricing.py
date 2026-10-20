@@ -86,7 +86,8 @@ def test_feed_rows_carry_what_a_scanner_needs():
     row = feed_rows(card, NOW)[0]
     assert row["status"] == "bet" and row["best_venue"] == "kalshi" and row["best_ticker"] == "T"
     assert row["best_price"] == 0.49 and row["max_price"] == max_price(0.56)
-    assert row["quotes"][0]["venue"] == "kalshi"
+    assert row["quotes"][0]["venue"] == "kalshi" and row["quotes"][0]["ticker"] == "T"
+    assert {"order_side", "side", "ml", "price_txt"} <= set(row["quotes"][0])
 
 
 def test_exchange_feed_parsing_and_kalshi_ladder():
@@ -117,6 +118,8 @@ def test_exchange_feed_parsing_and_kalshi_ladder():
     got = sorted((q["line"], q["price"]) for q in lad)
     assert got == [(-1.5, 0.40), (-0.5, 0.47), (1.5, 0.50), (3.5, 0.60)]
     assert all(q["cost"] == round(q["price"] + kalshi_fee(q["price"]), 4) for q in lad)
+    sides = {(q["line"], q["order_side"]) for q in lad}
+    assert sides == {(-1.5, "yes"), (-0.5, "yes"), (1.5, "no"), (3.5, "no")}
 
 
 def test_locked_bet_is_shopped_from_where_the_market_is_now():

@@ -216,8 +216,9 @@ def feed_rows(card: list[dict], now: datetime) -> list[dict]:
             "best_cost": b.get("cost"), "best_ev": b.get("ev"), "best_contract": b.get("contract"),
             "best_ticker": b.get("ticker"), "best_url": b.get("url"), "max_price": c.get("max"),
             "why": c["why"],
-            "quotes": [{k: q.get(k) for k in ("venue", "contract", "line", "price", "american", "cost",
-                                              "fee_counted", "size", "win", "ev", "max_cost", "ticker")}
+            "quotes": [{k: q.get(k) for k in ("venue", "venue_name", "contract", "side", "ml", "line", "price",
+                                              "american", "cost", "fee_counted", "size", "win", "ev", "max_cost",
+                                              "ticker", "order_side", "price_txt")}
                        for q in c.get("shop", [])],
         })
     return out
