@@ -23,7 +23,7 @@ def test_stacks_combos_and_conflicts():
              pk(202, "g4", "H", "W", active=False)]                    # dropped → not official
     t = tracking(picks)
     assert t["by_combo"]["E2+T1+T13"]["w"] == 1
-    assert t["by_groups"]["EARLY+FAV"]["w"] == 1
+    assert t["by_groups"]["EARLY+FAV+TEST"]["w"] == 1      # T1 is TEST since the 2-season replay
     assert t["by_count"]["3+ systems"]["w"] == 1 and t["by_count"]["1 system"]["n"] == 3
     assert t["conflicts"] == 1
 

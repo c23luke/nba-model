@@ -67,14 +67,18 @@ SHADOW_SYSTEMS = {
 # line moves (moving toward us IS the point — that's CLV) and it's graded at the line it fired at.
 LOCK_ON_FIRE = {113}
 
-FAVORITES = {101, 102, 103, 110, 112, 113}
+# FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
+#   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
+# T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
+FAVORITES = {102, 112, 113}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
 # teams off last season and preseason guesses. Ids 201-207 show as E1-E7.
 EARLY_SYSTEMS = {
-    201: {"name": "Season-opener under", "bet": "total", "window": "both teams' first game",
-          "rule": "Both teams playing their first game of the season → bet the under"},
+    201: {"name": "Season-opener over", "bet": "total", "window": "both teams' first game",
+          "rule": "Both teams playing their first game of the season → bet the OVER. Flipped 2026-10-20: "
+                  "replayed on 2024-25 + 2025-26, opener unders went 6-22 vs the close (overs 22-6)"},
     202: {"name": "Early home underdog", "bet": "spread", "window": "first 2 weeks",
           "rule": "Home underdog of 7 or less in the first 2 weeks → bet the home dog"},
     203: {"name": "Fade early big favorite", "bet": "spread", "window": "first 2 weeks",
@@ -323,10 +327,11 @@ def evaluate_early(game: Game, home: TeamState, away: TeamState,
             picks.append(Pick(207, game.id, "spread", team, spread, [
                 f"{o.team} is {o.record} and favored by {spread:g}"]))
 
-    # E1 season-opener under: both teams' first game (checked once per game)
+    # E1 season-opener OVER: both teams' first game (checked once per game)
     if home.games == 0 and away.games == 0:
-        picks.append(Pick(201, game.id, "total", "UNDER", total, [
-            f"First game of the season for both {game.away} and {game.home}"]))
+        picks.append(Pick(201, game.id, "total", "OVER", total, [
+            f"First game of the season for both {game.away} and {game.home}",
+            "Last two seasons, opener totals went over 22 of 28 times vs the closing number"]))
     return picks
 
 

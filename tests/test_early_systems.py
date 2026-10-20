@@ -28,8 +28,8 @@ def test_labels():
     assert (label(3), group(3)) == ("S3", "OG")
 
 
-def test_e1_opener_under_only_when_both_unplayed():
-    assert fired(run([], "BOS", "DET", +1.5, 222.0), 201) == [("UNDER", 222.0)]
+def test_e1_opener_over_only_when_both_unplayed():
+    assert fired(run([], "BOS", "DET", +1.5, 222.0), 201) == [("OVER", 222.0)]
     hist = [g(1, OPEN, "BOS", "NYK", 100, 90)]
     assert fired(run(hist, "BOS", "DET", +1.5, 222.0, OPEN + timedelta(2)), 201) == []
 
