@@ -1,0 +1,285 @@
+import {
+  type Db, type FeedRow, type OrderRow, type Quote, type Settings, type Venue,
+  etDayStart, evAt, Kalshi, kalshiFee, kalshiSigner, pkcs1ToPkcs8, polyFee, runOnce,
+} from "./core.ts";
+
+function eq(a: unknown, b: unknown, m = "") {
+  if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${m} expected ${JSON.stringify(b)} got ${JSON.stringify(a)}`);
+}
+function ok(c: unknown, m = "assertion failed") { if (!c) throw new Error(m); }
+
+const NOW = new Date("2026-10-21T16:00:00Z");          // noon ET
+const TIP = "2026-10-22T00:00:00Z";
+
+function settings(p: Partial<Settings> = {}): Settings {
+  return { live_betting_on: false, kalshi_env: "demo", venues: ["kalshi"], stake_dollars: 5, daily_loss_cap: 25,
+    max_open_bets: 6, max_dollars_per_game: 10, min_ev: 0.02, max_feed_age_minutes: 20, run_token: "t",
+    last_heartbeat: null, ...p };
+}
+function kq(p: Partial<Quote> = {}): Quote {
+  return { venue: "kalshi", venue_name: "Kalshi", contract: "NO · IND wins by over 3.5", side: "NOP", line: 3.5,
+    price: 0.49, cost: 0.51, win: 0.56, ev: 0.098, max_cost: 0.56, ticker: "KXNBASPREAD-26OCT21INDNOP-IND4",
+    order_side: "no", ...p };
+}
+function feedRow(p: Partial<FeedRow> = {}, quotes = [kq()]): FeedRow {
+  return { key: "g1-S113-NOP", status: "bet", updated_at: NOW.toISOString(), game_id: "g1", tip_utc: TIP,
+    away: "IND", home: "NOP", system: "T13", pick: "NOP +3.5", bet: "spread", side: "NOP", quotes, ...p };
+}
+
+class FakeDb implements Db {
+  orders_: OrderRow[] = [];
+  logs: { level: string; message: string }[] = [];
+  feedPatches: Record<string, unknown>[] = [];
+  n = 0;
+  constructor(public s: Settings, public rows: FeedRow[]) {}
+  async settings() { return { ...this.s }; }
+  async updateSettings(p: Record<string, unknown>) { Object.assign(this.s, p); }
+  async feed() { return this.rows; }
+  async orders() { return this.orders_.map((o) => ({ ...o })); }
+  async insertOrder(row: OrderRow) {
+    const active = ["pending", "filled", "partial", "error"];
+    if (row.mode === "live" && this.orders_.some((o) => o.mode === "live" && active.includes(o.status) &&
+      (o.bet_key === row.bet_key || (o.venue === row.venue && o.market === row.market)))) return { conflict: true };
+    const id = `id${++this.n}`;
+    this.orders_.push({ ...row, id, created_at: NOW.toISOString(), seen_count: 1 });
+    return { id };
+  }
+  async updateOrder(id: string, p: Partial<OrderRow>) { Object.assign(this.orders_.find((o) => o.id === id)!, p); }
+  async updateFeed(key: string, p: Record<string, unknown>) { this.feedPatches.push({ key, ...p }); }
+  async log(level: string, message: string) { this.logs.push({ level, message }); }
+}
+
+class FakeVenue implements Venue {
+  name = "Kalshi";
+  hasKeys = true;
+  sent: { o: OrderRow; id: string }[] = [];
+  constructor(public askPrice: number | null = 0.49, public fillAll = true, public bal = 100, public pnl = 0,
+              public fail = false) {}
+  async ask(q: Quote) { return { ask: this.askPrice, market: String(q.ticker) }; }
+  fee(p: number, c: number) { return kalshiFee(p, c); }
+  async balance() { return this.bal; }
+  async pnlToday() { return this.pnl; }
+  async order(o: OrderRow, id: string) {
+    if (this.fail) throw new Error("boom");
+    this.sent.push({ o, id });
+    const fill = this.fillAll ? o.count : 0;
+    return { order_id: "K1", fill_count: fill, fill_cost: fill * o.limit_price, fees: 0.18, raw: {} };
+  }
+}
+
+Deno.test("dry run: logs WOULD HAVE PLACED once, sends nothing, refreshes on later runs", async () => {
+  const db = new FakeDb(settings(), [feedRow()]);
+  const k = new FakeVenue();
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(r.mode, "dry_run");
+  eq(k.sent.length, 0, "nothing sent");
+  eq(db.orders_.length, 1);
+  const o = db.orders_[0];
+  eq([o.status, o.order_side, o.limit_price, o.count, o.stake], ["dry_run", "no", 0.49, 10, 4.9]);
+  eq(o.est_fee, 0.18);
+  ok(db.logs.some((l) => l.message.startsWith("WOULD HAVE PLACED: Kalshi BUY NO ×10 KXNBASPREAD-26OCT21INDNOP-IND4 at 49¢")),
+     JSON.stringify(db.logs));
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(db.orders_.length, 1, "no duplicate dry row");
+  eq(db.orders_[0].seen_count, 2);
+});
+
+Deno.test("live: limit at the model's price, immediate-or-cancel, result saved on the bet", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), [feedRow()]);
+  const k = new FakeVenue(0.47);           // ask improved: still capped at the model's 49c
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 1);
+  eq([k.sent[0].o.limit_price, k.sent[0].o.count, k.sent[0].id], [0.49, 10, "id1"]);
+  eq(db.orders_[0].status, "filled");
+  eq((db.feedPatches[0] as any).order_status, "filled");
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 1, "never the same bet twice");
+});
+
+Deno.test("price moved above the model's price → skip", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), [feedRow()]);
+  const k = new FakeVenue(0.50);
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.includes("moved above the model's 49¢"), r.skips[0].reason);
+});
+
+Deno.test("same market can't be bet twice, even from a different system", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }),
+    [feedRow(), feedRow({ key: "g1-S4-NOP", system: "S4" })]);
+  const k = new FakeVenue();
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 1);
+});
+
+Deno.test("an error is logged and never retried", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), [feedRow()]);
+  const k = new FakeVenue(0.49, true, 100, 0, true);
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(db.orders_[0].status, "error");
+  ok(db.logs.some((l) => l.level === "error" && l.message.includes("not retried")));
+  k.fail = false;
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0, "no retry after an error");
+});
+
+Deno.test("unfilled immediate-or-cancel can try again, at most 3 times", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), [feedRow()]);
+  const k = new FakeVenue(0.49, false);
+  for (let i = 0; i < 5; i++) await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 3);
+  ok(db.orders_.every((o) => o.status === "unfilled"));
+  eq(new Set(k.sent.map((x) => x.id)).size, 3, "each try has its own client_order_id");
+});
+
+Deno.test("max dollars per game and max open bets", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, max_dollars_per_game: 4 }), [feedRow()]);
+  const k = new FakeVenue();
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.includes("max $4.00"), r.skips[0].reason);
+
+  const rows = [1, 2, 3].map((i) => feedRow({ key: `g${i}-S113-X`, game_id: `g${i}` }, [kq({ ticker: `T${i}` })]));
+  const db2 = new FakeDb(settings({ live_betting_on: true, max_open_bets: 2 }), rows);
+  const k2 = new FakeVenue();
+  await runOnce(db2, { kalshi: k2 }, NOW);
+  eq(k2.sent.length, 2);
+});
+
+Deno.test("daily loss cap switches live betting off before anything is sent", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), [feedRow()]);
+  db.orders_.push({ mode: "live", env: "prod", venue: "kalshi", market: "OLD", order_side: "yes", bet_key: "old",
+    game_id: "g0", tip_utc: "2026-10-21T00:00:00Z", pick: "x", system: "T13", contract: "x", line: 1, model_price: .5,
+    ask_at_check: .5, limit_price: .5, count: 10, stake: 5, est_fee: .18, ev: .05, status: "filled", fill_count: 10,
+    id: "old", created_at: "2026-10-20T20:00:00Z" });
+  const k = new FakeVenue(0.49, true, 100, -25.4);
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(db.s.live_betting_on, false);
+  ok(String(r.stopped).includes("Daily loss cap"));
+  eq(k.sent.length, 0);
+});
+
+Deno.test("balance too low → skip", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), [feedRow()]);
+  const k = new FakeVenue(0.49, true, 3);
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.includes("balance"), r.skips[0].reason);
+});
+
+Deno.test("stale feed rows and switched-off venues are ignored", async () => {
+  const db = new FakeDb(settings({ venues: [] }), [feedRow()]);
+  const r = await runOnce(db, { kalshi: new FakeVenue() }, NOW);
+  ok(r.skips[0].reason.startsWith("no quote"), r.skips[0].reason);
+});
+
+Deno.test("Polymarket US never goes live until verified", async () => {
+  const pq: Quote = { venue: "polymarket_us", venue_name: "Polymarket US", contract: "NOP to win", side: "NOP", ml: true,
+    line: -0.5, american: 150, cost: 0.4, win: 0.5, ev: 0.2, max_cost: 0.5 };
+  const db = new FakeDb(settings({ live_betting_on: true, venues: ["polymarket_us"] }), [feedRow({}, [pq])]);
+  const pv = new FakeVenue(0.39);
+  pv.name = "Polymarket US";
+  const r = await runOnce(db, { polymarket_us: pv }, NOW);
+  eq(pv.sent.length, 0);
+  ok(r.skips[0].reason.includes("dry-run only"), r.skips[0].reason);
+});
+
+Deno.test("fees, expected return, ET day", () => {
+  eq(kalshiFee(0.49, 10), 0.18);
+  eq(kalshiFee(0.5, 100), 1.75);
+  eq(polyFee(0.5, 100), 1.74);              // 1.7375 → 1.74
+  eq(polyFee(0.5, 2), 0.03);                // 0.03475 → 0.03
+  const q = kq();
+  ok(Math.abs(evAt(q, 0.56)) < 1e-9, "zero at break-even");
+  eq(etDayStart(new Date("2026-10-20T03:00:00Z")).toISOString(), "2026-10-19T04:00:00.000Z");
+  eq(etDayStart(new Date("2026-12-20T15:00:00Z")).toISOString(), "2026-12-20T05:00:00.000Z");
+});
+
+function pem(label: string, der: ArrayBuffer | Uint8Array) {
+  const b = new Uint8Array(der as ArrayBuffer);
+  let s = "";
+  for (const x of b) s += String.fromCharCode(x);
+  return `-----BEGIN ${label}-----\n${btoa(s).match(/.{1,64}/g)!.join("\n")}\n-----END ${label}-----\n`;
+}
+const b64d = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+Deno.test("Kalshi signing: Ed25519 key, and RSA keys in both PEM formats", async () => {
+  const msg = "1700000000000POST/trade-api/v2/portfolio/orders";
+  const ed = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]) as CryptoKeyPair;
+  const edSig = await (await kalshiSigner(pem("PRIVATE KEY", await crypto.subtle.exportKey("pkcs8", ed.privateKey))))(msg);
+  ok(await crypto.subtle.verify({ name: "Ed25519" }, ed.publicKey, b64d(edSig), new TextEncoder().encode(msg)), "ed25519");
+
+  const rsa = await crypto.subtle.generateKey({ name: "RSA-PSS", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]),
+    hash: "SHA-256" }, true, ["sign", "verify"]) as CryptoKeyPair;
+  const p8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", rsa.privateKey));
+  const p1 = p8.slice(26);                                         // strip the PKCS#8 wrapper
+  eq(Array.from(pkcs1ToPkcs8(p1)), Array.from(p8), "PKCS#1 → PKCS#8 round trip");
+  for (const key of [pem("RSA PRIVATE KEY", p1), pem("PRIVATE KEY", p8), pem("RSA PRIVATE KEY", p1).replace(/\n/g, "\\n")]) {
+    const sig = await (await kalshiSigner(key))(msg);
+    ok(await crypto.subtle.verify({ name: "RSA-PSS", saltLength: 32 }, rsa.publicKey, b64d(sig), new TextEncoder().encode(msg)), "rsa");
+  }
+});
+
+Deno.test("Kalshi order request: signed headers, path without query, IOC limit body", async () => {
+  const ed = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]) as CryptoKeyPair;
+  const signer = await kalshiSigner(pem("PRIVATE KEY", await crypto.subtle.exportKey("pkcs8", ed.privateKey)));
+  const calls: { url: string; init: RequestInit }[] = [];
+  const http = (async (url: string, init: RequestInit) => {
+    calls.push({ url, init });
+    if (url.includes("/portfolio/orders")) {
+      return new Response(JSON.stringify({ order: { order_id: "abc", fill_count: 10, taker_fill_cost_dollars: "4.9000",
+        taker_fees_dollars: "0.1800", status: "executed" } }));
+    }
+    if (url.includes("/portfolio/settlements")) {
+      return new Response(JSON.stringify({ settlements: [
+        { ticker: "MINE", revenue: 0, no_total_cost_dollars: "4.9000", yes_total_cost_dollars: "0", fee_cost: "0.1800" },
+        { ticker: "SCANNER", revenue: 1000, no_total_cost_dollars: "5.0000", yes_total_cost_dollars: "0", fee_cost: "0.1" }],
+        cursor: "" }));
+    }
+    return new Response(JSON.stringify({ market: { status: "active", no_ask_dollars: "0.4800", yes_ask_dollars: "0.5300" } }));
+  }) as unknown as typeof fetch;
+  const k = new Kalshi("https://demo-api.kalshi.co/trade-api/v2", "KEYID", signer, "https://api.elections.kalshi.com/trade-api/v2", http);
+  const a = await k.ask(kq());
+  eq(a.ask, 0.48);
+  ok(calls[0].url.startsWith("https://api.elections.kalshi.com"), "dry-run prices from prod");
+  const o = { market: "KXNBASPREAD-26OCT21INDNOP-IND4", order_side: "no", count: 10, limit_price: 0.49 } as OrderRow;
+  const r = await k.order(o, "client-1");
+  eq([r.order_id, r.fill_count, r.fill_cost, r.fees], ["abc", 10, 4.9, 0.18]);
+  const c = calls[1];
+  ok(c.url === "https://demo-api.kalshi.co/trade-api/v2/portfolio/orders", c.url);
+  const body = JSON.parse(String(c.init.body));
+  eq(body, { ticker: o.market, side: "no", action: "buy", count: 10, type: "limit",
+    time_in_force: "immediate_or_cancel", client_order_id: "client-1", no_price_dollars: "0.4900" });
+  const h = c.init.headers as Record<string, string>;
+  eq(h["KALSHI-ACCESS-KEY"], "KEYID");
+  const signed = h["KALSHI-ACCESS-TIMESTAMP"] + "POST/trade-api/v2/portfolio/orders";
+  ok(await crypto.subtle.verify({ name: "Ed25519" }, ed.publicKey, b64d(h["KALSHI-ACCESS-SIGNATURE"]),
+    new TextEncoder().encode(signed)), "signature covers timestamp+method+path");
+  const pnl = await k.pnlToday(new Set(["MINE"]), NOW.getTime());
+  ok(Math.abs(pnl + 5.08) < 1e-9, `only this system's markets count: ${pnl}`);
+  const sc = calls[2];
+  const sh = sc.init.headers as Record<string, string>;
+  ok(await crypto.subtle.verify({ name: "Ed25519" }, ed.publicKey, b64d(sh["KALSHI-ACCESS-SIGNATURE"]),
+    new TextEncoder().encode(sh["KALSHI-ACCESS-TIMESTAMP"] + "GET/trade-api/v2/portfolio/settlements")), "query string not signed");
+});
+
+Deno.test("Polymarket US: finds the game's moneyline and which side is ours", async () => {
+  const { PolymarketUS } = await import("./core.ts");
+  const ev = { startDate: "2026-10-20T23:00:00Z", teams: [{ abbreviation: "phi", displayAbbreviation: "PHI" },
+    { abbreviation: "ny", displayAbbreviation: "NY" }],
+    markets: [{ slug: "aec-nba-phi-ny-2026-10-20", sportsMarketType: "basketball_team_full_game_winner",
+      marketSides: [{ long: true, team: { abbreviation: "phi", displayAbbreviation: "PHI" } },
+                    { long: false, team: { abbreviation: "ny", displayAbbreviation: "NY" } }] }] };
+  const http = (async (url: string) => new Response(JSON.stringify(url.includes("/bbo")
+    ? { marketData: { longQuote: { value: "0.3900" }, shortQuote: { value: "0.62" } } }
+    : { events: [ev] }))) as unknown as typeof fetch;
+  const p = new PolymarketUS(undefined, undefined, http);
+  const row = feedRow({ away: "PHI", home: "NYK", tip_utc: "2026-10-20T23:00:00Z" });
+  const q: Quote = { venue: "polymarket_us", contract: "NYK to win", side: "NYK", ml: true, line: -0.5, cost: 0.63,
+    win: 0.6, ev: 0.05, max_cost: 0.6 };
+  const a = await p.ask(q, row);
+  eq([a.market, a.ask, q.order_side], ["aec-nba-phi-ny-2026-10-20", 0.62, "short"]);
+  const q2 = { ...q, side: "PHI", contract: "PHI to win" };
+  eq((await p.ask(q2, row)).ask, 0.39);
+  eq(q2.order_side, "long");
+});
