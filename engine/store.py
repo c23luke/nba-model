@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -39,6 +40,22 @@ class LocalStore:
         self._write("board", board)
 
 
+# Columns in supabase/schema.sql. Every row sent in one batch must have the same keys,
+# and unknown keys are rejected, so rows are shaped to exactly these.
+COLUMNS = {
+    "games": ["id", "game_date", "tip_utc", "away", "home", "away_score", "home_score", "periods",
+              "final", "home_spread", "total", "line_source", "line_books", "line_updated"],
+    "picks": ["key", "game_id", "game_date", "tip_utc", "away", "home", "system", "bet", "side",
+              "label", "line", "first_line", "first_seen", "last_checked", "active", "dropped_reason",
+              "evidence", "kalshi", "result", "final_score", "graded_at"],
+}
+
+
+def shape(table, rows):
+    cols = COLUMNS[table]
+    return [{c: r.get(c) for c in cols} for r in rows]
+
+
 class SupabaseStore:
     def __init__(self, url, key):
         self.url = url.rstrip("/") + "/rest/v1"
@@ -50,9 +67,12 @@ class SupabaseStore:
         data = None if body is None else json.dumps(body, default=str).encode()
         req = urllib.request.Request(self.url + path, data=data, method=method,
                                      headers={**self.h, **(extra or {})})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            txt = r.read().decode()
-            return json.loads(txt) if txt else None
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                txt = r.read().decode()
+                return json.loads(txt) if txt else None
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"Supabase {method} {path} -> {e.code}: {e.read().decode()[:500]}") from None
 
     def _all(self, table):
         rows, start = [], 0
@@ -70,11 +90,11 @@ class SupabaseStore:
 
     def load_games(self):  return self._all("games")
     def save_games(self, rows):
-        if rows: self._upsert("games", rows, "id")
+        if rows: self._upsert("games", shape("games", rows), "id")
 
     def load_picks(self):  return self._all("picks")
     def save_picks(self, rows):
-        if rows: self._upsert("picks", rows, "key")
+        if rows: self._upsert("picks", shape("picks", rows), "key")
 
     def save_board(self, board):
         self._upsert("board", [{"id": 1, "data": board}], "id")

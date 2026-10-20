@@ -121,7 +121,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             r = {
                 **prev,
                 "key": p.key, "game_id": g.id, "game_date": g.game_date.isoformat(), "tip_utc": g.tip_utc,
-                "away": g.away, "home": g.home, "system": p.system, "tag": label(p.system), "group": group(p.system),
+                "away": g.away, "home": g.home, "system": p.system,
                 "bet": p.bet, "side": p.side,
                 "label": p.label(), "line": p.line, "evidence": p.evidence, "active": True,
                 "kalshi": quote or prev.get("kalshi"),
@@ -188,6 +188,7 @@ def _records(defs, picks):
 
 
 def build_board(now, today, slate, picks, usage, log, source):
+    picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks]
     t = today.isoformat()
     open_ = lambda p: p.get("result") is None and p["game_date"] >= t
     live = sorted([p for p in picks if p.get("active") and open_(p)],
