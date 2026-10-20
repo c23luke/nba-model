@@ -158,3 +158,17 @@ def test_card_shows_how_much_the_players_model_agrees():
     assert h is None or (h["label"] == "agrees by 3+" and h["w"] + h["l"] > 0)
     c = build_card([pk(1, "H", [kq("H", -3.0, 0.45)], line=-3.0)], slate, now=NOW)[0]
     assert c["players"] == -5.6 and c["players_bucket"] == "players model disagrees"
+
+
+def test_early_system_makes_the_card_only_with_players_model_3_plus():
+    slate = [{"game_id": "g1", "home": "H", "home_spread": 4.0, "personnel": {"gap": 3.6}},     # likes H by 3.6
+             {"game_id": "g2", "home": "H", "home_spread": 4.0, "personnel": {"gap": 1.2}}]
+    live = [pk(202, "H", [kq("H", 4.0, 0.47)], line=4.0),
+            pk(202, "H", [kq("H", 4.0, 0.47)], game="g2", line=4.0)]
+    card = build_card(live, slate, now=NOW)
+    assert [c["game_id"] for c in card] == ["g1"]
+    c = card[0]
+    assert c["group"] == "EARLY" and c["win"] == 0.559 and c["verdict"] == "BET" and "players model agrees by 3.6" in c["name"]
+    # an OG/FAV bet on the same side already covers it: no duplicate row
+    card = build_card(live + [pk(112, "H", [kq("H", 4.0, 0.47)], line=4.0)], slate, now=NOW)
+    assert [c["tag"] for c in card if c["game_id"] == "g1"] == ["T12"]

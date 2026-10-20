@@ -203,7 +203,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         for p in picks:
             prev = old.get(p.key, {})
             # Kalshi prices only for the 4 main systems
-            priced = p.line is not None and (p.system < 100 or p.system in PRICED)
+            priced = p.line is not None and (p.system < 100 or p.system in PRICED
+                                             or (200 <= p.system < 300 and p.bet == "spread"))
             quote = sources.kalshi_quote(p, g, fetch=fetch_kalshi) if priced else None
             shop = (sources.kalshi_ladder(p, g, fetch=fetch_kalshi) + exchange_for(g)) if priced else None
             locked = p.system in LOCK_ON_FIRE and prev.get("first_line") is not None

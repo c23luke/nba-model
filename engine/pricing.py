@@ -99,6 +99,20 @@ def win_estimate(pick: dict, slate: list[dict]) -> float | None:
     return win_and_line(pick, slate)[0]
 
 
+# EARLY + players model agreeing by 3+: 26-10 (72%) vs the open over 2 seasons (backtest_og.py).
+# Only 36 games, so the win rate is shrunk hard toward 50%: 50% + 22.2 pts × 36 / (36 + 100) = 55.9%.
+EARLY_STACK_MIN_GAP = 3.0
+EARLY_STACK_WIN = 0.559
+
+
+def early_stack(pick: dict, slate: list[dict]) -> bool:
+    """An early-season system bet where the players model likes the same side by 3+."""
+    if group(pick["system"]) != "EARLY" or pick["bet"] != "spread":
+        return False
+    pg = players_gap(pick, slate)
+    return pg is not None and pg >= EARLY_STACK_MIN_GAP
+
+
 def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | None]:
     """Expected win rate and the line it applies to. System rates apply at the pick's current line;
     the personnel case is rebuilt every run at the CURRENT market line, so a T13 bet that locked at an
@@ -106,6 +120,8 @@ def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | N
     sid = pick["system"]
     if sid in SYSTEMS:
         return SYSTEMS[sid]["card_win_rate"], pick.get("line")
+    if group(sid) == "EARLY":
+        return (EARLY_STACK_WIN, pick.get("line")) if early_stack(pick, slate) else (None, None)
     if (TEST_SYSTEMS.get(sid) or {}).get("win_est"):
         return TEST_SYSTEMS[sid]["win_est"], pick.get("line")
     for g in slate:
@@ -203,9 +219,15 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
     for p in live:
         if p["system"] < 300 and p.get("line") is not None:
             stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(label(p["system"]))
+    main_sides = {(p["game_id"], p["bet"], p["side"]) for p in live
+                  if group(p["system"]) in ("OG", "FAV") and p.get("line") is not None}
     for p in live:
-        if group(p["system"]) not in ("OG", "FAV") or p.get("line") is None:
+        if p.get("line") is None:
             continue
+        if group(p["system"]) not in ("OG", "FAV"):
+            # EARLY + players model 3+ makes the card, unless an OG/FAV bet already covers that side
+            if not early_stack(p, slate) or (p["game_id"], p["bet"], p["side"]) in main_sides:
+                continue
         if p.get("tip_utc") and p["tip_utc"] < now_iso:
             continue  # already tipped: nothing left to bet
         win, base = win_and_line(p, slate)
@@ -243,7 +265,10 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         else:
             verdict, why = "PASS", "Not enough edge at today's prices"
         edge = best["ev"] if best else win - BREAK_EVEN_110
-        name = (SYSTEMS.get(p["system"]) or TEST_SYSTEMS.get(p["system"]) or {}).get("name", "")
+        from .systems import EARLY_SYSTEMS
+        name = (SYSTEMS.get(p["system"]) or TEST_SYSTEMS.get(p["system"]) or EARLY_SYSTEMS.get(p["system"]) or {}).get("name", "")
+        if group(p["system"]) == "EARLY":
+            name += f" + players model agrees by {pg:g} (2 seasons: 26-10 at the open)"
         k = p.get("kalshi") or {}
         rows.append({"key": p["key"], "label": p["label"], "away": p["away"], "home": p["home"],
                      "game_id": p["game_id"], "game_date": p.get("game_date"), "bet": p["bet"], "side": p["side"],

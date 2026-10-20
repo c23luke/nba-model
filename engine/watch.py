@@ -92,11 +92,11 @@ def push(topic: str, title: str, body: str, click: str) -> None:
 def alert_new(board: dict, store, topic: str | None, log) -> int:
     """Alert every BET/LIMIT on today's card once, and once more if a LIMIT turns into a BET."""
     picks = {p["key"]: p for p in board.get("bets", []) + board.get("tests", []) + board.get("totals", [])
-             if p.get("group") in ALERT_GROUPS and p.get("line") is not None}
+             + board.get("early", []) if p.get("line") is not None}
     card = board.get("card")
     if card is None:
         from .pricing import build_card
-        card = build_card(list(picks.values()), board.get("slate", []))
+        card = build_card([p for p in picks.values() if p.get("group") in ALERT_GROUPS], board.get("slate", []))
     sent = []
     for c in card:
         p = picks.get(c["key"])
