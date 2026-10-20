@@ -47,7 +47,33 @@ def fetch_season():
                 break
         return g, spread, boxscore.parse_summary(js, g.id, g.game_date.isoformat())
     with ThreadPoolExecutor(12) as ex:
-        return list(ex.map(one, games))
+        espn = list(ex.map(one, games))
+    # Odds API consensus (median of US books) at 6:30pm ET each day, when the key is available.
+    # Preferred over ESPN's single-book line; ESPN fills games the snapshot missed.
+    import os
+    key = "".join((os.environ.get("ODDS_API_KEY") or "").split())
+    if not key:
+        return espn, "ESPN pickcenter only"
+    snap = {}
+    left = None
+    def day_lines(d):
+        try:
+            return sources.odds_api_historical(key, f"{d.isoformat()}T22:30:00Z")
+        except Exception:
+            return {}, {}
+    with ThreadPoolExecutor(6) as ex:
+        for lines, meta in ex.map(day_lines, days):
+            snap.update(lines)
+            left = meta.get("remaining") or left
+    out, n_odds = [], 0
+    for g, spread, rows in espn:
+        ln = snap.get((g.game_date, g.away, g.home))
+        if ln and ln.get("home_spread") is not None:
+            out.append((g, ln["home_spread"], rows))
+            n_odds += 1
+        else:
+            out.append((g, spread, rows))
+    return out, f"Odds API consensus at 6:30pm ET on {n_odds} games, ESPN pickcenter on the rest (credits left {left})"
 
 
 def _safe(f, *a):
@@ -238,8 +264,32 @@ def ats_table(rows, key):
     return lines
 
 
+WINDOWS = [("days 0-30", 0, 30), ("days 31-50", 31, 50), ("days 51-71 (to Dec 31)", 51, 71),
+           ("days 72+ (Jan on)", 72, 999)]
+
+
+def window_table(rows, key):
+    out, lines = {}, []
+    for name, lo_d, hi_d in WINDOWS:
+        rs = [r for r in rows if lo_d <= (r["date"] - START).days <= hi_d]
+        cells, rec = [], {}
+        for lo in (0, 2, 3, 4, 5):
+            w = l = 0
+            for r in rs:
+                g = key(r)
+                res = r["actual"] + r["spread"]
+                if res == 0 or g == 0 or abs(g) < lo:
+                    continue
+                w, l = (w + 1, l) if (res > 0) == (g > 0) else (w, l + 1)
+            rec[lo] = [w, l]
+            cells.append(f"{lo}+: {w}-{l}" + (f" ({w/(w+l):.0%})" if w + l else ""))
+        out[name] = rec
+        lines.append(f"    {name:24} " + "  ".join(cells))
+    return out, lines
+
+
 def main():
-    data = fetch_season()
+    data, line_note = fetch_season()
     base = {"minutes": "prop", "prior_scale": 1.0, "recent": True, "prior_games": 3, "hc": 2.0, "fill": 0.0}
     cfgs = {
         "board (prop minutes)": base,
@@ -255,18 +305,22 @@ def main():
     preds, tiers = run(cfgs, data)
     n_box = sum(1 for d in data if d[2])
     n_sp = sum(1 for d in data if d[1] is not None)
-    print(f"2025-26 games replayed: {n_box} with box scores, {n_sp} with a closing spread")
+    print(f"2025-26 games replayed: {n_box} with box scores, {n_sp} with a spread")
+    print(f"lines: {line_note}")
     print("rookie prior (2024 class): " + " | ".join(f"{lo}-{hi}: BPM {v['bpm']:+.1f}, {v['role']:.0f} mpg"
                                                     for (lo, hi), v in tiers.items()))
     hm = [r["actual"] for r in next(iter(preds.values()))]
     print(f"home margin, all games: mean {sum(hm)/len(hm):+.2f}")
     # measure the back-to-back effect the model doesn't see: residual vs market by rest (train half)
-    rows0 = [r for r in preds["board (prop minutes)"] if r["spread"] is not None and r["date"] < SPLIT]
+    rows0 = [r for r in preds["board (prop minutes)"] if r["spread"] is not None]
     xs = [r["b2b_home"] - r["b2b_away"] for r in rows0]
     ys = [r["actual"] - r["pred"] for r in rows0]
     _, b2b, tb = ols(xs, ys)
     b2b = -b2b
-    print(f"back-to-back effect the model misses (train half, actual - model on B2B diff): {b2b:+.2f} pts (t {tb:.1f})")
+    print(f"back-to-back effect the model misses (full season, home B2B minus away B2B): {b2b:+.2f} pts (t {-tb:.1f})")
+    mk = [(r["actual"] + r["spread"]) for r in rows0]
+    _, bm, tm = ols(xs, mk)
+    print(f"  ...and what the market already prices of it (result vs line on the same split): {bm:+.2f} left over (t {tm:.1f})")
     print()
     print(f"{'version':28} {'RMSE model':>10} {'RMSE mkt':>9} {'w all':>6} {'t':>5} {'w train':>8} {'t':>5} {'w test':>7} {'t test':>6}   ATS out of sample (test half) by raw gap: W-L")
     for name, rows in preds.items():
@@ -275,6 +329,9 @@ def main():
             ats = "  ".join(f"{k}+: {w}-{l} ({w/(w+l):.1%})" if w + l else f"{k}+: -" for k, (w, l) in gr["ats_test_by_raw_gap"].items())
             print(f"{(name + tag):28} {gr['rmse_model']:10.2f} {gr['rmse_market']:9.2f} {gr['w_all']:6.2f} {gr['t_all']:5.1f} "
                   f"{gr['w_train']:8.2f} {gr['t_train']:5.1f} {gr['w_test']:7.2f} {gr['t_test']:6.1f}   {ats}")
+    print()
+    season_windows(preds, ["board (prop minutes)", "top-down, bench fill", "top-down + prior half",
+                           "prior only (no in-season)"])
     print()
     print("ATS by month, betting the side the model likes (no fitting needed: sign of the gap only)")
     for name in ("board (prop minutes)", "top-down, bench fill", "top-down + prior half", "prior only (no in-season)"):
@@ -290,3 +347,20 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def season_windows(preds, names):
+    import json
+    print()
+    print("BY SEASON WINDOW (days since opening night), calibrated gap like the board's T13, side the model likes:")
+    blob = {}
+    for name in names:
+        rows = [r for r in preds[name] if r["spread"] is not None]
+        cal = calibrated(rows)
+        rec, lines = window_table(cal, lambda r: r["cal_gap"])
+        blob[name] = rec
+        print(f"  {name}")
+        for ln in lines:
+            print(ln)
+    print()
+    print("JSON " + json.dumps(blob))

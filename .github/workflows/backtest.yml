@@ -13,6 +13,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Replay last season
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
           set -o pipefail
           python -m engine.backtest | tee report.txt

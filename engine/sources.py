@@ -91,6 +91,23 @@ def odds_api_lines(api_key: str) -> tuple[dict, dict]:
     Costs 2 credits per call (2 markets x 1 region)."""
     meta: dict = {}
     events = get_json(ODDS.format(key=api_key), meta=meta)
+    lines = parse_odds_events(events)
+    usage = {"remaining": meta.get("x-requests-remaining"), "used": meta.get("x-requests-used")}
+    return lines, usage
+
+
+ODDS_HIST = ("https://api.the-odds-api.com/v4/historical/sports/basketball_nba/odds"
+             "?apiKey={key}&regions=us&markets=spreads&oddsFormat=american&date={when}")
+
+
+def odds_api_historical(api_key: str, when_iso: str) -> tuple[dict, dict]:
+    """Snapshot of every NBA line at one moment in the past (10 credits: 1 market x 1 region)."""
+    meta: dict = {}
+    js = get_json(ODDS_HIST.format(key=api_key, when=when_iso), meta=meta)
+    return parse_odds_events(js.get("data") or []), {"remaining": meta.get("x-requests-remaining")}
+
+
+def parse_odds_events(events: list) -> dict:
     lines = {}
     for ev in events:
         try:
@@ -117,8 +134,7 @@ def odds_api_lines(api_key: str) -> tuple[dict, dict]:
             "total": _half(statistics.median(totals)) if totals else None,
             "source": "Odds API consensus", "books": len(per_book), "by_book": per_book,
         }
-    usage = {"remaining": meta.get("x-requests-remaining"), "used": meta.get("x-requests-used")}
-    return lines, usage
+    return lines
 
 
 def _half(x: float) -> float:
