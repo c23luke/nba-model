@@ -15,7 +15,7 @@ from . import personnel as P
 from . import sources
 from .state import team_state
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, evaluate, evaluate_tests, evaluate_early,
-                      grade, label)
+                      grade, label, group)
 
 SEASONS = {"2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
 
@@ -29,9 +29,23 @@ def season_games(start, end):
                        for g, _ in day if g.final], key=lambda g: (g.game_date, g.id)), s
 
 
+AGREE = [("players model disagrees", -99, 0), ("agrees by 0-3", 0, 3), ("agrees by 3-5", 3, 5),
+         ("agrees by 5+", 5, 99)]
+
+
+def agree_bucket(gap_on_side: float) -> str:
+    for name, lo, hi in AGREE:
+        if lo <= gap_on_side < hi:
+            return name
+    return AGREE[-1][0]
+
+
 def main():
     names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
     rec = defaultdict(lambda: {"open": [0, 0, 0], "close": [0, 0, 0]})
+    gp = P.STATIC / "personnel_gaps.json"
+    pgaps = json.loads(gp.read_text()) if gp.exists() else {}
+    combo = defaultdict(lambda: {"open": [0, 0, 0], "close": [0, 0, 0]})        # (group or system, bucket)
     per_season = defaultdict(lambda: defaultdict(lambda: [0, 0, 0]))
     for season, (start, end) in SEASONS.items():
         games, s0 = season_games(start, end)
@@ -61,12 +75,17 @@ def main():
                         if i is None:
                             continue
                         rec[p.system][when][i] += 1
+                        pg = (pgaps.get(k) or {}).get("gap")
+                        if p.bet == "spread" and pg is not None:
+                            b = agree_bucket(pg if p.side == g.home else -pg)
+                            for who in (group(p.system), label(p.system)):
+                                combo[(who, b)][when][i] += 1
                         if when == "close":
                             per_season[p.system][season][i] += 1
             finals += by_day[day]
         print(f"{season}: {len(games)} games replayed")
     print()
-    fmt = lambda w, l, p: (f"{w}-{l}" + (f"-{p}" if p else "") + (f" ({w/(w+l):.1%}, {w*100/110-l:+.1f}u)" if w + l else ""))
+    fmt = lambda w, l, p: (f"{w}-{l}" + (f"-{p}" if p else "") + (f" ({w/(w+l):.1%}, {w - 1.1 * l:+.1f}u)" if w + l else ""))
     print(f"{'system':44} {'vs CLOSE (2 seasons)':28} {'vs OPEN':28} by season (close)")
     for sid in sorted(rec):
         r = rec[sid]
@@ -76,6 +95,21 @@ def main():
               + (f"   CARD: {card}" if card else ""))
     never = [label(s) for s in names if s not in rec]
     print(f"\nnever fired: {', '.join(never) or 'none'}")
+    if not pgaps:
+        print("\n(no personnel_gaps.json yet: run the opening-line backtest first)")
+        return
+    print("\n=== SYSTEM + PLAYERS MODEL (spread systems only): does it help when the personnel line agrees?")
+    print(f"{'':10} {'':26} {'vs OPEN':28} {'vs CLOSE':28}")
+    out = {}
+    whos = ["OG", "FAV", "TEST", "EARLY"] + [label(s) for s in sorted(rec)]
+    for who in whos:
+        rows = [(b, combo[(who, b)]) for b, _, _ in AGREE if (who, b) in combo]
+        if not rows:
+            continue
+        out[who] = {b: {"open": r["open"], "close": r["close"]} for b, r in rows}
+        for b, r in rows:
+            print(f"{who:10} {b:26} {fmt(*r['open']):28} {fmt(*r['close']):28}")
+    (P.STATIC / "og_personnel.json").write_text(json.dumps(out))
 
 
 if __name__ == "__main__":

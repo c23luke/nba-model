@@ -142,6 +142,7 @@ def replay(season, games, lines):
                 h = BT.team_rating(ppl[g.home], prior, live, cfg)
                 a = BT.team_rating(ppl[g.away], prior, live, cfg)
                 out[vname].append({"day": (day - start).days, "date": day, "season": season,
+                                   "away": g.away, "home": g.home,
                                    "pred": h - a + cfg["hc"] - cfg["b2b"] * hb + cfg["b2b"] * ab,
                                    "open": ln.get("open"), "close": ln.get("close"), "open_at": ln.get("open_at"),
                                    "actual": g.home_score - g.away_score})
@@ -243,6 +244,11 @@ def main():
             print(f"    {wname}")
             for c in cells:
                 print(f"        {c}")
+    # every game's personnel gap (live version, calibrated to that day's openers) for other replays to join on
+    gaps = {f"{r['date'].isoformat()}|{r['away']}|{r['home']}": {"gap": round(r["gap"], 2), "day": r["day"]}
+            for r in calibrate_open(allrows["live (top-down, bench fill, B2B)"])}
+    (P.STATIC / "personnel_gaps.json").write_text(json.dumps(gaps))
+    print(f"\nsaved personnel gaps for {len(gaps)} games")
     blob["confidence"] = by_confidence(allrows)
     blob["buckets"] = by_bucket(allrows["live (top-down, bench fill, B2B)"])
     (P.STATIC / "backtest_open.json").write_text(json.dumps(blob))
