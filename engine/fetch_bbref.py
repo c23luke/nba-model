@@ -52,7 +52,7 @@ class Rows(HTMLParser):
             self.row[self.cell] += data
 
 
-def advanced(season_end: int) -> list[str]:
+def advanced(season_end: int, offdef: bool = False) -> list[str]:
     p = Rows("advanced")
     p.feed(get(f"https://www.basketball-reference.com/leagues/NBA_{season_end}_advanced.html"))
     by = {}
@@ -63,7 +63,8 @@ def advanced(season_end: int) -> list[str]:
         team = (r.get("team_name_abbr") or r.get("team_id") or "").strip()
         if not name or name == "League Average" or not (r.get("games", r.get("g", "")) or "").strip().isdigit():
             continue
-        rec = (team, r.get("age", ""), r.get("games", r.get("g", "")), r.get("mp", ""), r.get("bpm", ""))
+        rec = (team, r.get("age", ""), r.get("games", r.get("g", "")), r.get("mp", ""), r.get("bpm", ""),
+               r.get("obpm", ""), r.get("dbpm", ""))
         d = by.setdefault(name, {"tot": None, "last": None})
         if team == "TOT" or team.endswith("TM"):
             d["tot"] = rec
@@ -73,7 +74,8 @@ def advanced(season_end: int) -> list[str]:
     for name, d in by.items():
         base = d["tot"] or d["last"]
         final = (d["last"] or base)[0]
-        out.append(";".join([name, final, base[1], base[2], base[3], base[4]]))
+        cols = [name, final, base[1], base[2], base[3], base[4]] + ([base[5], base[6]] if offdef else [])
+        out.append(";".join(cols))
     return out
 
 
@@ -89,7 +91,19 @@ def draft(year: int) -> list[str]:
     return out
 
 
+def offdef_files(ends):
+    for end in ends:
+        rows = advanced(end, offdef=True)
+        f = STATIC / f"players_od_{end - 1}_{str(end)[2:]}.csv"
+        f.write_text("name;final_team;age;g;mp;bpm;obpm;dbpm\n" + "\n".join(rows) + "\n", encoding="utf-8")
+        print(f"{f.name}: {len(rows)} players")
+        time.sleep(4)
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "offdef":
+        offdef_files([int(x) for x in sys.argv[2:]])
+        sys.exit()
     end = int(sys.argv[1])
     rows = advanced(end)
     f = STATIC / f"players_{end - 1}_{str(end)[2:]}.csv"

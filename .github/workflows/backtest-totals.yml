@@ -1,0 +1,40 @@
+name: Backtest totals at the opening line (2 seasons)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Offense/defense split per player (Basketball-Reference)
+        run: |
+          need=""
+          for y in 2024 2025 2026; do f="data_static/players_od_$((y-1))_${y:2:2}.csv"; [ -f "$f" ] || need="$need $y"; done
+          if [ -n "$need" ]; then python -m engine.fetch_bbref offdef $need; fi
+      - name: Replay both seasons at the opening total
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set +e
+          python -m engine.backtest_totals > report.txt 2>&1
+          status=$?
+          cat report.txt
+          { echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      - name: Keep the data so reruns are free
+        if: always()
+        run: |
+          git config user.name "nba-model-bot"; git config user.email "actions@users.noreply.github.com"
+          for f in data_static/players_od_*.csv data_static/odds_totals_*.json data_static/backtest_totals.json; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if ! git diff --cached --quiet; then git commit -m "Totals backtest data" && git pull --rebase && git push; fi

@@ -97,13 +97,13 @@ def odds_api_lines(api_key: str) -> tuple[dict, dict]:
 
 
 ODDS_HIST = ("https://api.the-odds-api.com/v4/historical/sports/basketball_nba/odds"
-             "?apiKey={key}&regions=us&markets=spreads&oddsFormat=american&date={when}")
+             "?apiKey={key}&regions=us&markets={markets}&oddsFormat=american&date={when}")
 
 
-def odds_api_historical(api_key: str, when_iso: str) -> tuple[dict, dict]:
-    """Snapshot of every NBA line at one moment in the past (10 credits: 1 market x 1 region)."""
+def odds_api_historical(api_key: str, when_iso: str, markets: str = "spreads") -> tuple[dict, dict]:
+    """Snapshot of every NBA line at one moment in the past (10 credits per market x region)."""
     meta: dict = {}
-    js = get_json(ODDS_HIST.format(key=api_key, when=when_iso), meta=meta)
+    js = get_json(ODDS_HIST.format(key=api_key, when=when_iso, markets=markets), meta=meta)
     return parse_odds_events(js.get("data") or []), {"remaining": meta.get("x-requests-remaining")}
 
 
