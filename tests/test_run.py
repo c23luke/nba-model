@@ -198,3 +198,27 @@ def test_card_line_shops_kalshi_and_exchanges(tmp_path):
     assert all("shop" not in p for p in board["bets"])                         # prices only on the card
     feed = store._read("bet_feed", [])
     assert feed and feed[0]["best_venue"] == "prophetx" and feed[0]["status"] == c["verdict"].lower()
+
+
+def test_tipped_card_bets_stay_up_with_their_result(tmp_path):
+    store = LocalStore(tmp_path)
+    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines, **kw)
+    assert any(c["tag"] == "S1" for c in b["card"]) and not b["card_done"]
+    # during the game: off the card, shown as in progress
+    b = run(now=datetime(2025, 11, 16, 1, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=lambda: ({}, {}), **kw)
+    assert not any(c["tag"] == "S1" for c in b["card"])
+    assert [(r["tag"], r["status"]) for r in b["card_done"] if r["tag"] == "S1"] == [("S1", "IN PROGRESS")]
+    assert all(r["status"] == "IN PROGRESS" for r in b["card_done"])
+    # next morning: graded, still shown
+    b = run(now=datetime(2025, 11, 16, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 16), date(2025, 11, 15)), fetch_lines=lambda: ({}, {}), **kw)
+    r = next(r for r in b["card_done"] if r["tag"] == "S1")
+    assert (r["tag"], r["status"], r["result"]) == ("S1", "FINAL", "W") and "119" in r["final_score"]
+
+
+def test_units_risk_one_point_one_to_win_one():
+    from engine.run import _wl
+    assert _wl(["W"])["units"] == 1.0 and _wl(["W", "L"])["units"] == -0.1

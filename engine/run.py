@@ -334,7 +334,7 @@ def _wl(results) -> dict:
     w, l, pu = (sum(r == x for r in results) for x in "WLP")
     return {"w": w, "l": l, "p": pu, "n": w + l + pu,
             "win_pct": round(w / (w + l), 4) if w + l else None,
-            "units": round(w * (100 / 110) - l, 2)}           # 1u risked at -110
+            "units": round(w - 1.1 * l, 2)}                   # risk 1.1u to win 1u (-110)
 
 
 def _meta(p, k):
@@ -440,10 +440,25 @@ def build_board(now, today, slate, picks, usage, log, source):
     early = lambda p: 200 <= p["system"] < 300
     from .pricing import build_card
     card = build_card(live, slate, now)
+    # the card's own history: OG/FAV bets that already tipped in the last 30 hours (in progress or graded),
+    # and fired bets the model no longer adds to at today's number (still graded where they fired)
+    now_iso = now.isoformat()
+    on_card = {c["key"] for c in card}
+    since = (now - timedelta(hours=30)).isoformat()
+    cardish = [p for p in picks if p["group"] in ("OG", "FAV") and p.get("line") is not None and p.get("active")]
+    def brief(p, status):
+        return {"key": p["key"], "label": p["label"], "away": p["away"], "home": p["home"], "tip_utc": p.get("tip_utc"),
+                "tag": p["tag"], "group": p["group"], "status": status, "result": p.get("result"),
+                "final_score": p.get("final_score"), "clv": (p.get("meta") or {}).get("clv"),
+                "close_line": (p.get("meta") or {}).get("close_line")}
+    card_done = sorted([brief(p, "FINAL" if p.get("result") else "IN PROGRESS") for p in cardish
+                        if since <= (p.get("tip_utc") or "") < now_iso], key=lambda r: r["tip_utc"] or "", reverse=True)
+    holding = [brief(p, "HOLDING") for p in cardish if p.get("result") is None and (p.get("tip_utc") or "") >= now_iso
+               and p["key"] not in on_card]
     for p in picks:
         p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
     return {
-        "card": card,
+        "card": card, "card_done": card_done, "card_holding": holding,
         "tracking": tracking(picks), "stacks": live_stacks(live),
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
