@@ -49,6 +49,19 @@ def agree_bucket(gap_on_side: float) -> str:
     return AGREE[-1][0]
 
 
+def players_history(grp: str, gap_on_side: float | None) -> dict | None:
+    """2-season record (vs the open) of this group's spread bets with the players model in the same spot.
+    3-5 and 5+ are pooled into 3+: the samples are small and the two buckets alone bounce around."""
+    if gap_on_side is None:
+        return None
+    t = SYSTEM_PLAYERS_HISTORY.get(grp) or {}
+    keys = (["agrees by 3-5", "agrees by 5+"] if gap_on_side >= 3 else [agree_bucket(gap_on_side)])
+    w = sum((t.get(k) or {}).get("open", [0, 0, 0])[0] for k in keys)
+    l = sum((t.get(k) or {}).get("open", [0, 0, 0])[1] for k in keys)
+    name = "agrees by 3+" if gap_on_side >= 3 else agree_bucket(gap_on_side).replace("players model ", "")
+    return {"w": w, "l": l, "label": name} if w + l else None
+
+
 def players_gap(pick: dict, slate: list[dict]) -> float | None:
     """How many points the players model likes this side by, vs the market (negative = it likes the
     other side). Spreads only; the personnel model has no edge on totals."""
@@ -240,8 +253,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
                      "players": pg, "players_bucket": pb,
-                     "players_history": ((SYSTEM_PLAYERS_HISTORY.get(group(p["system"])) or {}).get(pb) or {}).get("open")
-                                        if pb else None,
+                     "players_history": players_history(group(p["system"]), pg),
                      "contract": at_line["contract"] if at_line else k.get("contract"),
                      "url": (best or {}).get("url") or k.get("url"),
                      "best": best, "shop": quotes[:8],
