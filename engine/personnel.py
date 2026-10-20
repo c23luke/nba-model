@@ -127,6 +127,41 @@ def age_delta(age: int | None, curve: dict) -> float:
 
 AGE_CURVE: dict = {}
 
+DRAFTS = STATIC / "drafts_2024_2025.csv"
+PICK_TIERS = [(1, 3), (4, 7), (8, 14), (15, 30), (31, 60)]
+ROOKIE_PRIOR: dict = {}
+
+
+def measure_rookie_prior(path: Path = DRAFTS) -> dict:
+    """Measured from the 2024 and 2025 drafts: what each pick range did as rookies.
+    bpm   = minutes-weighted rookie BPM of those who played 100+ min
+    mpg   = expected minutes per team game (DNPs and G-League stints count as zero)
+    share = fraction who played 100+ min."""
+    s25, s26 = _read(DATA_PREV), _read(DATA)
+    out = {}
+    if not path.exists():
+        return out
+    rows = list(csv.DictReader(open(path, encoding="utf-8"), delimiter=";"))
+    for lo, hi in PICK_TIERS:
+        tier = [r for r in rows if lo <= int(r["pick"]) <= hi]
+        bw = b = mins = games = played = 0
+        for r in tier:
+            x = (s25 if r["year"] == "2024" else s26).get(norm(r["name"]))
+            if x and x["mp"] >= 100:
+                played += 1
+                bw += x["mp"]; b += x["bpm"] * x["mp"]; mins += x["mp"]; games += x["g"]
+        out[(lo, hi)] = {"bpm": b / bw if bw else BASELINE,
+                         "mpg": mins / (82 * len(tier)) if tier else 0.0,   # per TEAM game, DNPs included
+                         "share": played / len(tier) if tier else 0.0, "n": len(tier)}
+    return out
+
+
+def rookie_prior(pick: int) -> dict | None:
+    for (lo, hi), v in ROOKIE_PRIOR.items():
+        if lo <= pick <= hi:
+            return {**v, "tier": f"{lo}-{hi}"}
+    return None
+
 
 def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, dict]:
     """Each player's own record over the last two seasons, wherever he played.
@@ -137,6 +172,8 @@ def load_last_season(path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str
     cur, prev = _read(path), _read(prev_path)
     AGE_CURVE.clear()
     AGE_CURVE.update(measure_age_curve(cur, prev))
+    ROOKIE_PRIOR.clear()
+    ROOKIE_PRIOR.update(measure_rookie_prior())
     out = {}
     for key in set(cur) | set(prev):
         c, q = cur.get(key), prev.get(key)
@@ -177,9 +214,11 @@ class Player:
     age_now: int | None = None       # ESPN age today
     steps: list[str] = field(default_factory=list)   # how this player's number was built
 
+    prior: dict | None = None         # rookie prior from draft slot (measured)
+
     @property
     def known(self) -> bool:
-        return bool(self.last and self.last["mp"] > 0)
+        return bool(self.last and self.last["mp"] > 0) or self.prior is not None
 
 
 @dataclass
@@ -221,7 +260,8 @@ def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
     return out
 
 
-def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRead:
+def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
+              drafts: dict[str, dict] | None = None) -> TeamRead:
     tr = TeamRead(team)
     for a in athletes:
         name = a.get("displayName") or a.get("fullName") or ""
@@ -229,19 +269,33 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
         tr.players.append(Player(name, _status(a), exp, last.get(norm(name)),
                                  espn_id=str(a.get("id") or "") or None,
                                  age_now=int(a["age"]) if a.get("age") else None))
+    for p in tr.players:
+        if p.last is None and drafts and p.espn_id in drafts:
+            p.draft = drafts[p.espn_id]
+            pr = rookie_prior(p.draft["pick"])
+            if pr and pr["mpg"] > 0:
+                p.prior = pr
+                p.steps.append(f"rookie prior: #{p.draft['pick']} pick {p.draft['year']} → picks {pr['tier']} "
+                               f"averaged BPM {pr['bpm']:+.1f} and {pr['mpg']:.0f} min per team game as rookies "
+                               f"({pr['share']:.0%} of {pr['n']} played)")
 
     avail = [p for p in tr.players if p.status != "out" and p.known]
-    for p in avail:
+    for p in [p for p in avail if p.prior]:
+        p.bpm_used = p.prior["bpm"]
+    for p in [p for p in avail if not p.prior]:
         # last two seasons + the measured age curve (young players improve, the oldest decline)
         p.bpm_used = p.last["bpm_blend"] + p.last.get("age_delta", 0.0)
         if p.last.get("missed_last"):
             adjust_return(p)
     # Minutes per game only counts as a real role if he played enough games (over two
     # seasons) to earn it: 15 games at 29 mpg is mostly garbage time, not a rotation spot.
-    want = {id(p): min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES)
-                   * (INJURY_MINUTES[RETURNS[norm(p.name)]["injury"]]
-                      if p.last.get("missed_last") and norm(p.name) in RETURNS else 1.0)
-            for p in avail}
+    def wanted(p):
+        if p.prior:
+            return min(p.prior["mpg"], MIN_CAP)
+        return (min(p.last["mpg"], MIN_CAP) * min(1.0, p.last["g"] / ROLE_GAMES)
+                * (INJURY_MINUTES[RETURNS[norm(p.name)]["injury"]]
+                   if p.last.get("missed_last") and norm(p.name) in RETURNS else 1.0))
+    want = {id(p): wanted(p) for p in avail}
     total = sum(want.values())
     scale = 240 / total if total > 240 else 1.0
     for p in avail:
@@ -250,7 +304,7 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict]) -> TeamRea
     tr.unknown_minutes = max(0.0, 240 - filled)        # filled at league average (0)
 
     tr.rating = sum(p.bpm_used * p.minutes / 48 for p in avail)
-    same = sum(p.minutes for p in avail if p.last["team"] == team)
+    same = sum(p.minutes for p in avail if p.last and p.last["team"] == team)
     tr.continuity = same / 240
     return tr
 
@@ -297,6 +351,9 @@ def evidence(tr: TeamRead) -> list[str]:
         lines.append("OUT: " + ", ".join(
             f"{p.name}" + (f" ({p.last['mpg']:.0f} mpg, BPM {p.last['bpm']:+.1f})" if p.known else " (no NBA log)")
             for p in tr.out))
+    for p in [p for p in tr.rotation if p.prior]:
+        lines.append(f"Rookie (rated on draft slot) — {p.name}, {p.bpm_used:+.1f}, {p.minutes:.0f} mpg: "
+                     + "; ".join(p.steps))
     for p in [p for p in tr.rotation if p.last and p.last["missed_last"]]:
         lines.append(f"Back from a missed season — {p.name}, rated {p.bpm_used:+.2f}, "
                      f"{p.minutes:.0f} mpg: " + "; ".join(p.steps))
@@ -326,16 +383,36 @@ def add_draft_info(reads: dict[str, TeamRead], fetch=get_json) -> None:
                 pass
 
 
+def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) -> dict[str, dict]:
+    """Draft slot (ESPN) for every rostered player with no NBA numbers."""
+    out = {}
+    for athletes in rosters.values():
+        for a in athletes:
+            name = a.get("displayName") or a.get("fullName") or ""
+            if norm(name) in last or not a.get("id"):
+                continue
+            try:
+                d = fetch(ESPN_ATHLETE.format(a["id"])).get("draft") or {}
+                if d.get("selection"):
+                    out[str(a["id"])] = {"year": d.get("year"), "pick": int(d["selection"])}
+            except Exception:
+                pass
+    return out
+
+
 def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV) -> dict[str, TeamRead]:
     last = load_last_season(path, prev_path)
-    reads = {t: rate_team(t, ath, last) for t, ath in fetch_rosters(fetch).items()}
-    add_draft_info(reads, fetch)
-    return reads
+    rosters = fetch_rosters(fetch)
+    drafts = lookup_drafts(rosters, last, fetch)
+    return {t: rate_team(t, ath, last, drafts) for t, ath in rosters.items()}
 
 
 def report(reads: dict[str, TeamRead], games: list[tuple[str, str, float | None, float | None]]) -> str:
     """games: (away, home, market home spread, total)."""
-    out = ["AGE CURVE (measured from players with 500+ min in both 2024-25 and 2025-26):"]
+    out = ["ROOKIE PRIOR (measured: 2024 + 2025 drafts, rookie seasons):"]
+    out.append("  " + " | ".join(f"picks {lo}-{hi}: BPM {v['bpm']:+.1f}, {v['mpg']:.0f} mpg, {v['share']:.0%} played (n={v['n']})"
+                                 for (lo, hi), v in ROOKIE_PRIOR.items()))
+    out.append("AGE CURVE (measured from players with 500+ min in both 2024-25 and 2025-26):")
     out.append("  " + " | ".join(f"age {lo}-{hi}: {d:+.2f} (n={n})" for (lo, hi), (d, n) in AGE_CURVE.items()))
     out.append("  Players with no age on file (missed 2025-26) get no age adjustment.")
     out.append("")
@@ -414,9 +491,12 @@ def blind_reasons(tr: TeamRead) -> list[str]:
     """Where this model can't see what the market sees. A gap here is not an edge."""
     top8 = tr.rotation[:8]
     out = []
-    for p in tr.unknown:
+    for p in tr.unknown:      # drafted high but no prior could be built (should be rare)
         if p.draft and p.draft["pick"] <= LOTTERY:
             out.append(f"{tr.team}: {p.name} (#{p.draft['pick']} pick {p.draft['year']}) has no NBA numbers")
+    rookie_min = sum(p.minutes for p in tr.rotation if p.prior)
+    if rookie_min > 40:
+        out.append(f"{tr.team}: {rookie_min:.0f} minutes rated only on draft slot")
     if tr.unknown_minutes > BLIND_UNKNOWN_MIN:
         out.append(f"{tr.team}: {tr.unknown_minutes:.0f} minutes from players with no NBA numbers")
     for p in top8:

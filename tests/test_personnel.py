@@ -127,15 +127,20 @@ def test_t13_fires_on_clean_gap_only():
 
 
 
-def test_lottery_rookie_makes_game_blind():
+def test_lottery_rookie_gets_draft_prior():
+    P.ROOKIE_PRIOR.clear()
+    P.ROOKIE_PRIOR.update({(1, 3): {"bpm": -0.9, "mpg": 27.0, "share": 1.0, "n": 6},
+                           (31, 60): {"bpm": -2.6, "mpg": 12.0, "share": 0.7, "n": 57}})
     roster = [ath("Star Guard"), ath("Role Wing"), {**ath("Top Pick", 0), "id": 99}]
-    tr = P.rate_team("WAS", roster, LAST)
-    P.add_draft_info({"WAS": tr}, fetch=lambda url: {"draft": {"year": 2026, "selection": 1}})
-    assert any("#1 pick" in r for r in P.blind_reasons(tr))
-    tr2 = P.rate_team("WAS", [ath("Star Guard"), ath("Role Wing"), {**ath("Late Pick", 0), "id": 98}], LAST)
-    P.add_draft_info({"WAS": tr2}, fetch=lambda url: {"draft": {"year": 2026, "selection": 41}})
-    assert not any("pick" in r for r in P.blind_reasons(tr2))
-
+    tr = P.rate_team("WAS", roster, LAST, drafts={"99": {"year": 2026, "pick": 1}})
+    tp = [p for p in tr.players if p.name == "Top Pick"][0]
+    assert tp.prior and tp.bpm_used == -0.9 and abs(tp.minutes - 27.0) < 1e-9
+    assert not tr.unknown
+    assert any("Rookie (rated on draft slot)" in e for e in P.evidence(tr))
+    late = P.rate_team("WAS", [ath("Role Wing"), {**ath("Late Pick", 0), "id": 98}], LAST,
+                       drafts={"98": {"year": 2026, "pick": 41}})
+    lp = [p for p in late.players if p.name == "Late Pick"][0]
+    assert abs(lp.minutes - 12.0) < 1e-9
 
 
 def test_returning_star_gets_a_number_with_steps():
