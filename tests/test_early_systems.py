@@ -60,3 +60,9 @@ def test_e6_e7_records():
     assert fired(p, 207) == [("UTA", 8.0)]
     p = run(hist[:2], "UTA", "OKC", -8.0, day=OPEN + timedelta(7))           # only 0-2 / 2-0
     assert fired(p, 206) == [] and fired(p, 207) == []
+
+
+def test_e8_early_over_first_two_weeks_only():
+    from datetime import timedelta
+    assert fired(run([], "BOS", "DET", +1.5, 222.0, day=OPEN + timedelta(3)), 208) == [("OVER", 222.0)]
+    assert fired(run([], "BOS", "DET", +1.5, 222.0, day=OPEN + timedelta(14)), 208) == []

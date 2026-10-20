@@ -121,6 +121,7 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: to
   <p id="sub" class="sub"></p>
   <section id="bets"></section>
 
+  <div id="scoring" class="ctx" style="margin:8px 0 4px"></div>
   <div id="stacks"></div>
   <div id="cases"></div>
 
@@ -270,6 +271,13 @@ function render(b) {
         <div class="ctx">${s.win_pct == null ? "no results yet" : (s.win_pct * 100).toFixed(1) + "%"}</div></td>
       <td><span class="rec ${s.units > 0 ? "W" : s.units < 0 ? "L" : ""}">${s.units > 0 ? "+" : ""}${s.units}u</span></td>
     </tr>`).join("");
+
+  // scoring vs the closing totals this season
+  const sc = b.scoring;
+  $("scoring").innerHTML = sc && sc.season && sc.season.n
+    ? `Scoring vs closing totals this season: overs ${sc.season.overs}-${sc.season.unders}, ${sc.season.avg > 0 ? "+" : ""}${sc.season.avg} pts a game` +
+      (sc.last7.n ? ` · last 7 days ${sc.last7.overs}-${sc.last7.unders} (${sc.last7.avg > 0 ? "+" : ""}${sc.last7.avg})` : "")
+    : "Scoring vs closing totals: fills in after the first finals.";
 
   // stacks tonight
   const st = b.stacks || [];

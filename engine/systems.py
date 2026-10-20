@@ -106,6 +106,9 @@ EARLY_SYSTEMS = {
           "rule": "Team is 0-3 or worse, first 3 weeks → bet them"},
     207: {"name": "Fade the unbeaten favorite", "bet": "spread", "window": "first 3 weeks",
           "rule": "Team is 3-0 or better and favored, first 3 weeks → bet against them"},
+    208: {"name": "Early-season over", "bet": "total", "window": "first 2 weeks",
+          "rule": "Every game in the first 2 weeks → over. Last 4 seasons 226-181 (55.5%) vs the close, "
+                  "+1.6 to +2.5 pts a game each year; 2020-21 and 2021-22 went the other way (scoring fell)"},
 }
 
 
@@ -341,6 +344,12 @@ def evaluate_early(game: Game, home: TeamState, away: TeamState,
         if o.losses == 0 and o.wins >= 3 and spread is not None and spread > 0:
             picks.append(Pick(207, game.id, "spread", team, spread, [
                 f"{o.team} is {o.record} and favored by {spread:g}"]))
+
+    # E8 early-season over: every game in the first 2 weeks (checked once per game)
+    if season_day < 14:
+        picks.append(Pick(208, game.id, "total", "OVER", total, [
+            "First 2 weeks of the season: books price totals off last season's scoring",
+            "Last 4 seasons: early overs 226-181 (55.5%) vs the close"]))
 
     # E1 season-opener OVER: both teams' first game (checked once per game)
     if home.games == 0 and away.games == 0:

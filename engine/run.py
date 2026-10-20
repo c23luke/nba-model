@@ -269,8 +269,18 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 6. board
     all_picks = {p["key"]: p for p in store.load_picks()}
+    # how this season's scoring compares with the closing totals (the market catching up, or not)
+    tot_rows = [(g, stored[g.id].get("total")) for g in finals if stored.get(g.id, {}).get("total") is not None]
+    def drift(rows):
+        o = sum(1 for g, t in rows if g.home_score + g.away_score > t)
+        u = sum(1 for g, t in rows if g.home_score + g.away_score < t)
+        avg = sum(g.home_score + g.away_score - t for g, t in rows) / len(rows) if rows else None
+        return {"overs": o, "unders": u, "avg": None if avg is None else round(avg, 1), "n": len(rows)}
+    scoring = {"season": drift(tot_rows),
+               "last7": drift([(g, t) for g, t in tot_rows if (today - g.game_date).days <= 7])}
     board = build_board(now, today, slate, list(all_picks.values()), usage, log,
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"))
+    board["scoring"] = scoring
     store.save_board(board)
     return board
 
