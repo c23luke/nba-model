@@ -15,7 +15,7 @@ prices each bet on Kalshi, grades results, and shows it all on one page.
 - `engine/state.py`  rest days, streaks, record, last game (from final scores)
 - `engine/systems.py` the 4 rules + grading
 - `engine/sources.py` ESPN, The Odds API, Kalshi
-- `engine/store.py`  Supabase (or local `data/` folder when no keys)
+- `engine/store.py`  Supabase (or local `data/` folder when no keys). Project: idudowjldcepblhcdbed (org "NBA Model", free)
 - `engine/run.py`    one full pass
 - `web/index.html`   the board (Vercel)
 - `.github/workflows/run-model.yml` runs a pass every 15 min, 10am–2am ET
