@@ -6,7 +6,7 @@ Places the model's bets on Kalshi (and later Polymarket US) with Caden's own key
 - Tables: `bet_settings` (one row — the switches), `bet_orders` (every attempt), `bet_log` (what happened), order columns on `bet_feed`
 - SQL: `supabase/migrations/20261020_bet_placer.sql`, `20261020_bet_placer_to_win.sql`, `20261020_bet_placer_cron.sql`
 - Secrets (Edge Functions → Secrets): `KALSHI_KEY_ID`, `KALSHI_PRIVATE_KEY`, `KALSHI_DEMO_KEY_ID`, `KALSHI_DEMO_PRIVATE_KEY`, `POLYMARKET_KEY_ID`, `POLYMARKET_SECRET_KEY`
-- Deploy: dashboard → Edge Functions → place-bets → paste `index.ts` and `core.ts`; "Verify JWT" OFF (the function checks its own run token)
+- Deploy: dashboard → Edge Functions → place-bets → paste `one-file-index.ts.txt` as the single `index.ts` (the dashboard editor didn't pick up a second file); "Verify JWT" OFF (the function checks its own run token). Regenerate the one-file version whenever core.ts/index.ts change.
 
 Default is a dry run: `live_betting_on = false`, `kalshi_env = 'demo'`.
 
