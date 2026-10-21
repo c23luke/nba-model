@@ -316,6 +316,16 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "url": (best or {}).get("url") or k.get("url"),
                      "best": best, "shop": quotes[:8],
                      "with": [x for x in stacks.get((p["game_id"], p["bet"], p["side"]), []) if x != label(p["system"])]})
+    # a main bet that an early stack also lands on: show the early combo's record on it too
+    for r in rows:
+        if r["group"] == "EARLY":
+            continue
+        for p in live:
+            if (p["game_id"], p["bet"], p["side"]) == (r["game_id"], r["bet"], r["side"]) and early_stack(p, slate):
+                h = history(p, slate)
+                if h:
+                    r["also_combo"] = {**h, "tag": label(p["system"])}
+                break
     order = {"BET": 0, "LIMIT": 1, "PASS": 2}
     rows.sort(key=lambda r: (order[r["verdict"]], -r["edge"]))
     return rows

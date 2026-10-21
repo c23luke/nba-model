@@ -175,3 +175,4 @@ def test_early_system_makes_the_card_only_with_players_model_3_plus():
     # an OG/FAV bet on the same side already covers it: no duplicate row
     card = build_card(live + [pk(112, "H", [kq("H", 4.0, 0.47)], line=4.0)], slate, now=NOW)
     assert [c["tag"] for c in card if c["game_id"] == "g1"] == ["T12"]
+    assert card[0]["also_combo"]["w"] == 26 and card[0]["also_combo"]["tag"] == "E2"
