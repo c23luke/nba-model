@@ -149,7 +149,16 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     # ---- 2b. personnel read (current rosters x each player's own last two seasons + this season)
     views, reads, stress, cal = {}, {}, {}, None
     if personnel_fetch == "default":
-        personnel_fetch = lambda: personnel_mod.read_all(live=live)
+        def personnel_fetch():
+            from . import injury_report
+            try:
+                official = injury_report.latest(now)
+                if official is None:
+                    log.append("Official injury report: none found in the last 3 hours (using ESPN)")
+            except Exception as e:
+                official = None
+                log.append(f"Official injury report failed (using ESPN): {e}")
+            return personnel_mod.read_all(live=live, official=official, notes=log)
     if personnel_fetch:
         try:
             reads = personnel_fetch()

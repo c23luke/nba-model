@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   try {
     const s = await db.settings();
     if (req.headers.get("x-run-token") !== String(s.run_token)) return new Response("forbidden", { status: 403 });
-    const out = await runOnce(db, await buildVenues(s), new Date(), keyCheck());
+    const out = await runOnce(db, await buildVenues(s, db), new Date(), keyCheck(db));
     return new Response(JSON.stringify(out), { headers: { "Content-Type": "application/json" } });
   } catch (e) {
     const m = (e instanceof Error ? e.message : String(e)).slice(0, 400);

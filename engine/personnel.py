@@ -484,9 +484,18 @@ def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) ->
 
 
 def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
-             live: dict[str, dict] | None = None) -> dict[str, TeamRead]:
+             live: dict[str, dict] | None = None, official: dict | None = None,
+             notes: list | None = None) -> dict[str, TeamRead]:
+    """official: the NBA's latest injury report (engine/injury_report.latest()); it overrides ESPN's statuses."""
     last = load_last_season(path, prev_path)
     rosters = fetch_rosters(fetch)
+    if official:
+        from .injury_report import apply
+        changed = apply(rosters, official)
+        if notes is not None:
+            notes.append(f"Official injury report {official['at']:%I:%M %p} ET: {len(official['rows'])} players listed"
+                         + (f"; differs from ESPN on {len(changed)}: " + "; ".join(changed[:8]) if changed else "")
+                         + (f"; not yet submitted: {', '.join(official['not_submitted'])}" if official.get("not_submitted") else ""))
     drafts = lookup_drafts(rosters, last, fetch)
     reads = {}
     for t, ath in rosters.items():
