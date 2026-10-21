@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NBA Model</title>
+<title>Courtside</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -43,7 +43,9 @@ nav { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom
 .tabs button { font: 600 17px var(--cond); letter-spacing: .02em; color: var(--muted); background: none; border: 0;
   padding: 12px 14px 10px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--amber); }
-@media (max-width: 480px) { .tabs button .long { display: none; } .tabs button { padding: 12px 10px 10px; text-transform: capitalize; } }
+@media (max-width: 480px) { .tabs { gap: 0; justify-content: space-between; } .tabs button .long { display: none; }
+  .tabs button { padding: 12px 6px 10px; font-size: 16px; text-transform: capitalize; } .tabs button .c { margin-left: 3px; padding: 1px 6px; } }
+@media (max-width: 380px) { .tabs button { padding: 12px 3px 10px; font-size: 15px; } .tabs button .c { padding: 1px 5px; } }
 .tabs button .c { font-size: 13px; background: var(--raised); color: var(--text); border-radius: 9px; padding: 1px 7px; margin-left: 4px; }
 main.wrap { padding: 22px 16px 72px; }
 section[hidden] { display: none; }
@@ -176,7 +178,7 @@ td .n { font-size: 18px; }
 </head>
 <body>
 <header class="wrap">
-  <div class="head"><div class="brand">NBA Model</div><div id="fresh" class="fresh"><i></i><span>Loading…</span></div></div>
+  <div class="head"><div class="brand">Courtside</div><div id="fresh" class="fresh"><i></i><span>Loading…</span></div></div>
   <p id="status" class="status"></p>
   <div id="warn" class="warn" hidden></div>
 </header>
@@ -267,7 +269,7 @@ function renderHead(b, placed) {
   if (nextTip) parts.push(`First tip ${when(nextTip)}`);
   if (toBet) parts.push(`${toBet} card bet${toBet > 1 ? "s" : ""} not placed yet (see why on the Bets tab)`);
   $("status").textContent = parts.length ? parts.join(". ") + "." : "No open bets. New bets are placed automatically when the card fires.";
-  document.title = s.open ? `(${s.open}) NBA Model` : "NBA Model";
+  document.title = s.open ? `(${s.open}) Courtside` : "Courtside";
   const cb = $("c-bets"); cb.hidden = !s.open; cb.textContent = s.open || "";
   const nCard = (b.card || []).length; const cc = $("c-card"); cc.hidden = !nCard; cc.textContent = nCard;
 }
