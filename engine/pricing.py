@@ -338,6 +338,11 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
                      # bet size: to win $20; Low-confidence personnel bets to win $10
                      "to_win": LOW_TO_WIN if level == "Low" else TO_WIN,
+                     # what an order placer needs to price ANY number on this bet (e.g. P2P offers)
+                     "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
+                               "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,
+                               "lo": allowed_lines(p, slate)[0], "hi": allowed_lines(p, slate)[1],
+                               "market": market_line(p, slate)},
                      "players": pg, "players_bucket": pb, "system": p["system"], "history": history(p, slate),
                      "players_history": players_history(group(p["system"]), pg),
                      "contract": at_line["contract"] if at_line else k.get("contract"),
@@ -373,7 +378,7 @@ def feed_rows(card: list[dict], now: datetime) -> list[dict]:
             "best_price": b.get("price") if b.get("venue") == "kalshi" else b.get("american"),
             "best_cost": b.get("cost"), "best_ev": b.get("ev"), "best_contract": b.get("contract"),
             "best_ticker": b.get("ticker"), "best_url": b.get("url"), "max_price": c.get("max"),
-            "why": c["why"], "confidence": c.get("confidence"), "to_win": c.get("to_win"),
+            "why": c["why"], "confidence": c.get("confidence"), "to_win": c.get("to_win"), "model": c.get("model"),
             "quotes": [{k: q.get(k) for k in ("venue", "venue_name", "contract", "side", "ml", "line", "price",
                                               "american", "cost", "fee_counted", "size", "win", "ev", "max_cost",
                                               "ticker", "order_side", "price_txt")}

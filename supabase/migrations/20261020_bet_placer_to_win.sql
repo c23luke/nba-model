@@ -10,3 +10,7 @@ select to_win_dollars, max_dollars_per_game, daily_loss_cap, live_betting_on, ka
 
 -- Per-bet size written by the model: Low-confidence bets win $10, everything else $20.
 alter table public.bet_feed add column if not exists confidence text, add column if not exists to_win numeric;
+
+-- BetOpenly support (applied 2026-10-20): model numbers per feed row, bet/side per order.
+alter table public.bet_feed add column if not exists model jsonb;
+alter table public.bet_orders add column if not exists bet text, add column if not exists side text;

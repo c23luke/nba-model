@@ -148,6 +148,8 @@ def test_low_confidence_personnel_bet_is_a_half_size_bet():
     c = build_card([pk(113, "MEM", [xq("prophetx", "MEM", 1.0, -116)], line=-1.0)], slate, now=NOW)[0]
     assert c["verdict"] == "BET" and c["confidence"] == "Medium" and c["to_win"] == 20
     assert feed_rows([c], NOW)[0]["to_win"] == 20
+    m = feed_rows([c], NOW)[0]["model"]
+    assert m["win0"] == 0.529 and m["base"] == -1.0 and m["side"] == "MEM" and m["sd"] == 14.14
 
 
 def test_card_shows_how_much_the_players_model_agrees():
