@@ -366,8 +366,9 @@ function profitChart(bets) {
 // card bets the order placer hasn't placed, with its latest reason
 function notPlaced(b, placed) {
   const held = new Set((placed.bets || []).map(x => `${x.game_id}|${x.side}`));
+  const resting = new Set((placed.resting || []).map(x => x.key));
   const why = Object.fromEntries(((b.placer || {}).skips || []).map(k => [k.pick, k.reason]));
-  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
+  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !resting.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
     .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }));
 }
 
@@ -401,6 +402,10 @@ function renderBets(placed, b) {
     </div>` : "") +
     `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites (plus any you placed by hand). Sized to win $20, or $10 when confidence is Low.</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys || fConf) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
+    ((placed.resting || []).length ? `<h2>Waiting for a price</h2><p class="lede">LIMIT bets: an order is sitting on Kalshi at the most we'd pay. It fills if the price comes to us, and is cancelled 5 minutes before tip or if the model stops wanting it.</p>` +
+      placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)} · card pick ${esc(r.pick)} · tips ${esc(until(r.tip_utc))}</span></div>
+        <div class="n" style="font-size:18px">${Math.round(r.price * 100)}¢ <span class="muted">${amer(r.american)}</span></div>
+        <div class="reason">${esc(r.venue_name)}: ${r.count} contracts, ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. ${esc(r.contract)}</div></div>`).join("") : "") +
     (np.length ? `<h2>On the card, not placed</h2><p class="lede">What the order placer said on its last check${placerAt ? ` (${esc(ago(placerAt))})` : ""}.</p>` +
       np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
         <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +

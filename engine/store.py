@@ -33,7 +33,8 @@ class LocalStore:
     def load_picks(self):  return self._read("picks", [])
     def load_orders(self):
         """Live orders that filled (what the order placer actually bet)."""
-        return [o for o in self._read("bet_orders", []) if o.get("mode") == "live" and (o.get("fill_count") or 0) > 0]
+        return [o for o in self._read("bet_orders", []) if o.get("mode") == "live"
+                and ((o.get("fill_count") or 0) > 0 or o.get("status") == "resting")]
 
     def load_placer_run(self):
         runs = [r for r in self._read("bet_log", []) if str(r.get("message", "")).startswith("run (")]
@@ -127,7 +128,8 @@ class SupabaseStore:
 
     def load_orders(self):
         """Live orders that filled (what the order placer actually bet). Private table; service key only."""
-        return self._req("GET", "/bet_orders?mode=eq.live&fill_count=gt.0&select=*&order=created_at.desc") or []
+        return self._req("GET", "/bet_orders?mode=eq.live&or=(fill_count.gt.0,status.eq.resting)&select=*"
+                                "&order=created_at.desc") or []
 
     def load_placer_run(self):
         """The order placer's latest run summary: why each card bet was skipped (logged at least every 15 min)."""

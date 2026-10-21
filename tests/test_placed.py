@@ -124,3 +124,13 @@ def test_a_bet_placed_by_hand_counts_like_any_other():
     assert (r["venue_name"], r["manual"], r["american"], r["risk"], r["to_win"]) == ("Other book", True, -104, 20.8, 20.0)
     assert (r["result"], r["pnl"], r["name"]) == ("W", 20.0, "Personnel gap")
     assert out["summary"]["w"] == 1 and out["summary"]["pnl"] == 20.0
+
+
+def test_resting_orders_are_listed_as_waiting_for_a_price():
+    now = datetime(2026, 10, 21, 16, 0, tzinfo=timezone.utc)
+    o = {"mode": "live", "venue": "kalshi", "status": "resting", "bet_key": "k", "game_id": "g", "pick": "NOP +3.5",
+         "system": "T13", "bet": "spread", "side": "NOP", "line": 3.5, "limit_price": 0.54, "count": 44, "stake": 23.76,
+         "fill_count": 0, "fill_cost": 0, "tip_utc": "2026-10-22T00:00:00+00:00", "created_at": "2026-10-21T15:00:00+00:00",
+         "contract": "NO · IND wins by over 3.5 (= NOP +3.5)"}
+    out = placed_bets([o], {}, {}, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)
+    assert out["bets"] == [] and out["resting"][0]["holding"] == "NOP +3.5" and out["resting"][0]["american"] == -117
