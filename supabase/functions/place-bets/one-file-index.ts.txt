@@ -1,5 +1,5 @@
-// place-bets — ONE-FILE version for pasting into the Supabase dashboard editor.
-// Same code as core.ts + index.ts in the repo (tests live in core_test.ts).
+// place-bets — ONE FILE version for pasting into the Supabase dashboard (core.ts + index.ts merged).
+// Generated from the repo; edit core.ts / index.ts there, not this file.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 // place-bets — Caden's order placer. Runs every minute from pg_cron.
@@ -47,12 +47,18 @@ export type Quote = {
   venue: string; venue_name?: string; contract: string; side: string; ml?: boolean; line: number;
   price?: number | null; american?: number | null; cost: number; win: number; ev: number; max_cost: number;
   ticker?: string | null; order_side?: string | null; size?: number | null;
+  offer_id?: string | null;          // BetOpenly: the offer to accept
 };
+
+/** The model's numbers for one bet — enough to price ANY number on it (e.g. a peer-to-peer offer). */
+export type Model = { win0: number; base: number; bet: string; side: string; sd: number; lo: number; hi: number;
+  market?: number | null };
 
 export type FeedRow = {
   key: string; status: string; updated_at: string; game_id: string; tip_utc: string; away: string; home: string;
   system: string; pick: string; bet: string; side: string; quotes: Quote[];
   to_win?: number | null;            // the model's size for this bet ($20, or $10 for Low confidence)
+  model?: Model | null;
 };
 
 export type OrderRow = {
@@ -61,8 +67,11 @@ export type OrderRow = {
   contract: string; line: number; model_price: number; ask_at_check: number; limit_price: number; count: number;
   stake: number; est_fee: number; ev: number; status: string; reason?: string | null; order_id?: string | null;
   fill_count?: number | null; fill_cost?: number | null; fees?: number | null; response?: unknown;
-  seen_count?: number;
+  seen_count?: number; bet?: string; side?: string;
 };
+
+export type GameRow = { id: string; home: string; away: string; home_score: number | null; away_score: number | null;
+  final: boolean | null; tip_utc?: string | null };
 
 export interface Db {
   settings(): Promise<Settings>;
@@ -73,6 +82,7 @@ export interface Db {
   updateOrder(id: string, patch: Partial<OrderRow>): Promise<void>;
   updateFeed(key: string, patch: Record<string, unknown>): Promise<void>;
   log(level: string, message: string, data?: unknown): Promise<void>;
+  games?(ids: string[]): Promise<GameRow[]>;
 }
 
 export interface Venue {
@@ -84,7 +94,11 @@ export interface Venue {
   balance(): Promise<number>;
   /** realized P&L today on the given markets (negative = loss) */
   pnlToday(markets: Set<string>, dayStartMs: number): Promise<number>;
-  order(o: OrderRow, clientId: string): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
+  order(o: OrderRow, clientId: string, q?: Quote): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
+  /** Venues with a peer-to-peer book build their own quotes from live offers, priced with the model. */
+  offers?(row: FeedRow): Promise<Quote[]>;
+  /** No settlement feed: today's P&L is graded from final scores instead. */
+  gradeFromGames?: boolean;
 }
 
 // ------------------------------------------------------------------ money math
@@ -113,6 +127,40 @@ export function evAt(q: Quote, costPerContract: number): number {
   const push = Math.max(0, 1 - q.win / q.max_cost);
   return q.win * (1 / costPerContract - 1) - (1 - q.win - push);
 }
+
+// Normal distribution helpers (results land around the line with the measured SD).
+export function normCdf(x: number): number {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989422804014327 * Math.exp(-x * x / 2);
+  const p = d * t * (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return x >= 0 ? 1 - p : p;
+}
+export function normInv(p: number): number {     // Acklam
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+  const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+  const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+  const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  const lo = 0.02425, hi = 1 - lo;
+  if (p < lo) { const q = Math.sqrt(-2 * Math.log(p)); return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  if (p > hi) { const q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  const q = p - 0.5, r = q * q;
+  return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+}
+
+/** (win, push) at `line`, given the model's win rate at its base line — same math as the Python card. */
+export function outcomeAt(m: Model, line: number): { win: number; push: number } {
+  const z0 = normInv(Math.min(Math.max(m.win0, 0.01), 0.99));
+  const over = m.bet === "total" && m.side === "OVER";
+  const cover = (L: number) => normCdf(z0 + ((over ? m.base - L : L - m.base) / m.sd));
+  if (Number.isInteger(line)) {
+    const [worse, better] = over ? [line + 0.5, line - 0.5] : [line - 0.5, line + 0.5];
+    const w = cover(worse);
+    return { win: w, push: cover(better) - w };
+  }
+  return { win: cover(line), push: 0 };
+}
+
+export const americanCost = (a: number) => (a > 0 ? 100 / (a + 100) : -a / (-a + 100));
 
 /** The price the model saw for this quote (what the limit order is capped at). */
 export function modelPrice(q: Quote): number {
@@ -147,11 +195,13 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
   if (live) {
     let pnl = 0;
     for (const v of on) {
-      const mine = new Set(recent.filter((o) => o.mode === "live" && o.venue === v && (o.fill_count ?? 0) > 0)
-        .map((o) => o.market));
+      const filled = recent.filter((o) => o.mode === "live" && o.venue === v && (o.fill_count ?? 0) > 0);
+      const mine = new Set(filled.map((o) => o.market));
       if (!mine.size) continue;
       try {
-        pnl += await venues[v].pnlToday(mine, dayStart.getTime());
+        pnl += venues[v].gradeFromGames
+          ? await pnlFromGames(db, filled, dayStart.getTime())
+          : await venues[v].pnlToday(mine, dayStart.getTime());
       } catch (e) {
         res.stopped = `could not check today's P&L on ${v}: ${msg(e)}`;
         await db.log("error", `Stopped this run: ${res.stopped}`);
@@ -186,9 +236,17 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
     const liveForBet = recent.filter((o) => o.mode === "live" && o.bet_key === row.key && LIVE_STATUSES.includes(o.status));
     if (live && liveForBet.length) { skip(`already ${liveForBet[0].status} (${liveForBet[0].venue})`); continue; }
 
-    const quotes = (row.quotes || []).filter((q) => on.includes(q.venue) && q.ev >= s.min_ev &&
-      (q.venue !== "kalshi" || (q.ticker && q.order_side)) && (q.venue !== "polymarket_us" || q.ml))
-      .sort((a, b) => b.ev - a.ev);
+    let quotes = (row.quotes || []).filter((q) => on.includes(q.venue) && !venues[q.venue].offers &&
+      (q.venue !== "kalshi" || (q.ticker && q.order_side)) && (q.venue !== "polymarket_us" || q.ml));
+    for (const vn of on) {                     // peer-to-peer books: price every live offer with the model
+      if (!venues[vn].offers || !row.model) continue;
+      try {
+        quotes = quotes.concat(await venues[vn].offers!(row));
+      } catch (e) {
+        res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason: `${venues[vn].name} offers failed: ${msg(e)}` });
+      }
+    }
+    quotes = quotes.filter((q) => q.ev >= s.min_ev).sort((a, b) => b.ev - a.ev);
     if (!quotes.length) { skip(`no quote on ${on.join("/") || "any switched-on venue"} with expected return ≥ ${pct(s.min_ev)}`); continue; }
 
     let done = false;
@@ -248,9 +306,14 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
         mode, env: q.venue === "kalshi" ? s.kalshi_env : "prod", venue: q.venue, market, order_side: orderSide(q),
         bet_key: row.key, game_id: row.game_id, tip_utc: row.tip_utc, pick: row.pick, system: row.system,
         contract: q.contract, line: q.line, model_price: seen, ask_at_check: ask, limit_price: limit, count,
-        stake, est_fee: fee, ev: round4(evNow), status: live ? "pending" : "dry_run",
+        stake, est_fee: fee, ev: round4(evNow), status: live ? "pending" : "dry_run", bet: row.bet, side: q.side,
       };
-      const text = `${q.venue_name ?? v.name} BUY ${order.order_side.toUpperCase()} ×${count} ${market} at ${cents(limit)} ` +
+      const text = q.venue === "betopenly"
+        ? `BetOpenly ACCEPT offer ${q.offer_id}: ${q.contract} at ${q.american! > 0 ? "+" : ""}${q.american} for ${money(stake)} ` +
+          `to win ${money(round2(count - stake))} (fee ~${money(fee)}) — ${row.pick}, ${row.system}, ${row.away} @ ${row.home}, ` +
+          `expected return ${pct(evNow)}` +
+          (q.size != null && q.size < stake ? ` (offer only has ${money(q.size)} left — would take that)` : "")
+        : `${q.venue_name ?? v.name} BUY ${order.order_side.toUpperCase()} ×${count} ${market} at ${cents(limit)} ` +
         `(stake ${money(stake)} + fee ${money(fee)}) — ${row.pick} via ${q.contract}, ${row.system}, ` +
         `${row.away} @ ${row.home}, expected return ${pct(evNow)}`;
 
@@ -280,7 +343,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       const ins = await db.insertOrder(order);
       if (ins.conflict || !ins.id) { why.push(`${v.name} ${market}: another run already claimed it`); continue; }
       try {
-        const r = await v.order(order, ins.id);
+        const r = await v.order(order, ins.id, q);
         const status = r.fill_count >= count ? "filled" : r.fill_count > 0 ? "partial" : "unfilled";
         await db.updateOrder(ins.id, { status, order_id: r.order_id, fill_count: r.fill_count, fill_cost: r.fill_cost,
           fees: r.fees, response: r.raw, reason: status === "unfilled" ? "immediate-or-cancel: nothing filled at the limit" : null });
@@ -315,6 +378,31 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
     await db.updateSettings({ last_heartbeat: now.toISOString() });
   }
   return res;
+}
+
+/** Today's realized P&L on these orders, graded from final scores at the number each was bet. */
+export async function pnlFromGames(db: Db, orders: OrderRow[], dayStartMs: number): Promise<number> {
+  if (!db.games) throw new Error("no games table to grade from");
+  const todays = orders.filter((o) => Date.parse(o.tip_utc) >= dayStartMs - 6 * 3600e3);
+  if (!todays.length) return 0;
+  const games = new Map((await db.games([...new Set(todays.map((o) => o.game_id))])).map((g) => [g.id, g]));
+  let pnl = 0;
+  for (const o of todays) {
+    const g = games.get(o.game_id);
+    if (!g || !g.final || g.home_score == null || g.away_score == null) continue;
+    const res = gradeAt(o, g);
+    const stake = o.fill_cost ?? 0, payout = o.fill_count ?? 0, fees = o.fees ?? 0;
+    pnl += res === "W" ? payout - stake - fees : res === "L" ? -stake - fees : 0;
+  }
+  return pnl;
+}
+
+export function gradeAt(o: OrderRow, g: GameRow): "W" | "L" | "P" {
+  const hs = g.home_score!, as_ = g.away_score!;
+  let margin: number;
+  if (o.bet === "total") margin = o.side === "UNDER" ? o.line - (hs + as_) : (hs + as_) - o.line;
+  else margin = (o.side === g.home ? hs - as_ : as_ - hs) + o.line;
+  return margin > 0 ? "W" : margin < 0 ? "L" : "P";
 }
 
 function best(r: FeedRow) {
@@ -489,6 +577,143 @@ export class PolymarketUS implements Venue {
   async order(): Promise<never> { throw new Error("Polymarket US live orders are not enabled yet"); }
 }
 
+// ------------------------------------------------------------------ BetOpenly (peer-to-peer offers)
+// How Caden's Exchange Scanner bets there (since early Oct 2026): x-api-key header; open-bets lists every offer;
+// re-check an offer's status right before accepting (no price lock); accept {amount}. ~1% of winnings as fee.
+export const BETOPENLY_BASE = "https://public.betopenly.com";
+const TEAM_NICKNAMES: Record<string, string> = {
+  ATL: "Hawks", BOS: "Celtics", BKN: "Nets", CHA: "Hornets", CHI: "Bulls", CLE: "Cavaliers", DAL: "Mavericks",
+  DEN: "Nuggets", DET: "Pistons", GSW: "Warriors", HOU: "Rockets", IND: "Pacers", LAC: "Clippers", LAL: "Lakers",
+  MEM: "Grizzlies", MIA: "Heat", MIL: "Bucks", MIN: "Timberwolves", NOP: "Pelicans", NYK: "Knicks", OKC: "Thunder",
+  ORL: "Magic", PHI: "76ers", PHX: "Suns", POR: "Trail Blazers", SAC: "Kings", SAS: "Spurs", TOR: "Raptors",
+  UTA: "Jazz", WAS: "Wizards",
+};
+/** Our team code from whatever a feed calls the team (abbreviation or name). */
+export function teamCode(t: { abbreviation?: string; displayName?: string } | string | undefined | null): string | null {
+  if (!t) return null;
+  const abbr = typeof t === "string" ? t : (t.abbreviation ?? "");
+  const name = typeof t === "string" ? t : (t.displayName ?? "");
+  const a = polyCode(abbr || "");
+  if (TEAM_NICKNAMES[a]) return a;
+  const low = name.toLowerCase();
+  for (const [code, nick] of Object.entries(TEAM_NICKNAMES)) if (low.includes(nick.toLowerCase())) return code;
+  return null;
+}
+const SPREAD_WINDOW = 4, TOTAL_WINDOW = 6;
+
+export class BetOpenly implements Venue {
+  name = "BetOpenly";
+  gradeFromGames = true;
+  private book: any[] | null = null;
+  constructor(private key?: string, private http: typeof fetch = fetch, private nowMs = () => Date.now()) {}
+  get hasKeys() { return !!this.key; }
+
+  private async call(method: string, path: string, body?: unknown) {
+    if (!this.key) throw new Error("no BETOPENLY_KEY in Supabase secrets");
+    const r = await this.http(BETOPENLY_BASE + path, {
+      method, body: body === undefined ? undefined : JSON.stringify(body),
+      headers: { "x-api-key": this.key, "content-type": "application/json", accept: "application/json" },
+    });
+    const txt = await r.text();
+    if (r.status !== 200 && r.status !== 201) throw new Error(`BetOpenly ${method} ${path} → ${r.status}: ${txt.slice(0, 300)}`);
+    return txt ? JSON.parse(txt) : {};
+  }
+
+  /** One live game offer in our terms, or null (parlays, futures, expired, not NBA full game...). */
+  parse(b: any): { id: string; team: string | null; kind: string; line: number | null; odds: number; available: number;
+                   eventMs: number; home: string | null; away: string | null } | null {
+    if (b?.betType !== "GAME" || !Array.isArray(b.details) || b.details.length !== 1) return null;
+    if (b.betStatus !== "PENDING") return null;
+    if (b.expiryDate && Number(b.expiryDate) * 1000 <= this.nowMs()) return null;
+    const d = b.details[0];
+    if (String(d.league ?? "").toUpperCase() !== "NBA" || String(d.timeframe ?? "").toLowerCase() !== "game") return null;
+    const kind0 = String(d.betType ?? "").toLowerCase();
+    const kind = kind0 === "to win" ? "moneyline" : kind0;
+    if (!["spread", "moneyline", "over", "under"].includes(kind)) return null;
+    const eventMs = d.eventDateIso ? Date.parse(d.eventDateIso) : Number(d.eventDate) * 1000;
+    return { id: String(b.id), team: teamCode(d.teamAbbv ?? d.team), kind,
+             line: d.lines == null ? null : Number(d.lines), odds: Number(d.odds), available: Number(b.availableAmount ?? 0),
+             eventMs, home: teamCode(d.homeTeam), away: teamCode(d.awayTeam) };
+  }
+
+  async offers(row: FeedRow): Promise<Quote[]> {
+    const m = row.model;
+    if (!m) return [];
+    if (!this.book) {
+      const js = await this.call("GET", "/v1/partners/bets/open-bets");
+      this.book = Array.isArray(js) ? js : (js.data ?? []);
+    }
+    const out: Quote[] = [];
+    for (const b of this.book!) {
+      const o = this.parse(b);
+      if (!o || o.home !== row.home || o.away !== row.away) continue;
+      if (Math.abs(o.eventMs - Date.parse(row.tip_utc)) > 6 * 3600e3) continue;
+      if (!Number.isFinite(o.odds) || o.odds === 0 || o.available <= 0) continue;
+      let line: number, contract: string;
+      if (m.bet === "total") {
+        if (o.kind !== m.side.toLowerCase() || o.line == null) continue;
+        line = o.line; contract = `${m.side === "OVER" ? "Over" : "Under"} ${line}`;
+      } else {
+        if (o.team !== m.side) continue;
+        if (o.kind === "moneyline") { line = -0.5; contract = `${m.side} to win`; }
+        else if (o.kind === "spread" && o.line != null) { line = o.line; contract = `${m.side} ${line > 0 ? "+" : ""}${line}`; }
+        else continue;
+      }
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) continue;                 // outside the system's rule
+      if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) continue;
+      const cost = americanCost(o.odds);
+      const { win, push } = outcomeAt(m, line);
+      if (m.market != null) {                                                   // way off the market = bad data
+        const mk = outcomeAt({ ...m, win0: 0.5, base: m.market }, line);
+        if (cost < mk.win / (1 - mk.push) - 0.10) continue;
+      }
+      const all_in = cost + this.fee(cost, 1);
+      const ev = win * (1 / all_in - 1) - (1 - win - push);
+      out.push({ venue: "betopenly", venue_name: "BetOpenly", contract, side: m.side, line, american: o.odds,
+                 cost: Math.round(cost * 10000) / 10000, win, ev: Math.round(ev * 10000) / 10000,
+                 max_cost: win / (1 - push), size: o.available, offer_id: o.id, ticker: o.id, order_side: "accept",
+                 ml: o.kind === "moneyline" });
+    }
+    return out.sort((a, b) => b.ev - a.ev);
+  }
+
+  async ask(q: Quote, row: FeedRow) {
+    const js = await this.call("GET", `/v1/partners/bets/${q.offer_id}/status`);
+    const b = js?.data ?? js;
+    const d = (b?.details ?? [])[0] ?? {};
+    const market = `bo:${row.away}@${row.home}:${row.bet}:${q.side}:${q.line}`;
+    if (b?.betStatus !== "PENDING" || Number(d.odds) !== Number(q.american)) {
+      return { ask: null, market, detail: { betStatus: b?.betStatus, odds: d.odds } };
+    }
+    return { ask: Math.round(americanCost(Number(d.odds)) * 10000) / 10000, market, detail: { available: b.availableAmount } };
+  }
+  /** ~1% of winnings. */
+  fee(p: number, c: number) { return Math.round(0.01 * c * (1 - p) * 100) / 100; }
+  async balance() {
+    const js = await this.call("GET", "/v1/partners/funds");
+    return Number(js.availableFunds ?? js.data?.availableFunds);
+  }
+  async pnlToday(): Promise<number> { throw new Error("BetOpenly P&L is graded from final scores"); }
+  async order(o: OrderRow, _clientId: string, q?: Quote) {
+    if (!q?.offer_id) throw new Error("no BetOpenly offer id");
+    // re-check right before accepting: there's no price lock
+    const st = await this.call("GET", `/v1/partners/bets/${q.offer_id}/status`);
+    const b = st?.data ?? st;
+    const d = (b?.details ?? [])[0] ?? {};
+    if (b?.betStatus !== "PENDING") throw new Error(`offer is ${b?.betStatus}, not PENDING`);
+    if (Number(d.odds) !== Number(q.american)) throw new Error(`odds changed ${q.american} → ${d.odds}`);
+    const amount = Math.round(Math.min(o.stake, Number(b.availableAmount ?? o.stake)) * 100) / 100;
+    if (amount <= 0) throw new Error("nothing left to take on this offer");
+    const js = await this.call("POST", `/v1/partners/bets/${q.offer_id}/accept`, { amount });
+    const r = js?.data ?? js;
+    const accepted = Number(r.acceptedAmount ?? 0), toWin = Number(r.amountToWin ?? 0);
+    if (!r.childBetId) throw new Error(`BetOpenly returned no bet id: ${JSON.stringify(js).slice(0, 300)}`);
+    const fill = accepted >= o.stake - 0.01 ? o.count : Math.floor(o.count * accepted / o.stake);
+    return { order_id: String(r.childBetId), fill_count: fill, fill_cost: accepted,
+             fees: Math.round(0.01 * toWin * 100) / 100, raw: { offer: q.offer_id, ...r } };
+  }
+}
+
 // ------------------------------------------------------------------ Supabase wiring
 // deno-lint-ignore no-explicit-any
 export function supabaseDb(sb: any): Db {
@@ -512,6 +737,9 @@ export function supabaseDb(sb: any): Db {
     async updateOrder(id, p) { must(await sb.from("bet_orders").update({ ...p, updated_at: new Date().toISOString() }).eq("id", id)); },
     async updateFeed(key, p) { must(await sb.from("bet_feed").update(p).eq("key", key)); },
     async log(level, message, data) { await sb.from("bet_log").insert({ level, message, data: data ?? null }); },
+    async games(ids) {
+      return must(await sb.from("games").select("id,home,away,home_score,away_score,final,tip_utc").in("id", ids)) as GameRow[];
+    },
   };
 }
 
@@ -528,7 +756,11 @@ export function keyCheck(): () => Promise<string> {
         out.push(`Kalshi ${env}: keys work, balance ${money(await k.balance())}`);
       } catch (e) { out.push(`Kalshi ${env}: ${msg(e)}`); }
     }
-    for (const name of ["BETOPENLY_KEY", "PROPHETX_ACCESS_KEY", "POLYMARKET_KEY_ID"]) {
+    if (Deno.env.get("BETOPENLY_KEY")) {
+      try { out.push(`BetOpenly: key works, balance ${money(await new BetOpenly(Deno.env.get("BETOPENLY_KEY")).balance())}`); }
+      catch (e) { out.push(`BetOpenly: ${msg(e)}`); }
+    } else out.push("BetOpenly: no key");
+    for (const name of ["PROPHETX_ACCESS_KEY", "POLYMARKET_KEY_ID"]) {
       out.push(`${name}: ${Deno.env.get(name) ? "saved (no order code for this venue yet)" : "not set"}`);
     }
     return "Key check — " + out.join(" · ");
@@ -544,8 +776,10 @@ export async function buildVenues(s: Settings): Promise<Record<string, Venue>> {
   return {
     kalshi: new Kalshi(KALSHI_BASE[env], keyId, signer, dataBase),
     polymarket_us: new PolymarketUS(Deno.env.get("POLYMARKET_KEY_ID"), Deno.env.get("POLYMARKET_SECRET_KEY")),
+    betopenly: new BetOpenly(Deno.env.get("BETOPENLY_KEY")),
   };
 }
+
 
 Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,

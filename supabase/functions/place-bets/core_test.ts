@@ -308,3 +308,104 @@ Deno.test("a Low-confidence bet is sized to win $10; the settings cap still rule
   await runOnce(db2, { kalshi: new FakeVenue() }, NOW);
   ok(db2.orders_[0].count * 0.51 - db2.orders_[0].est_fee < 7, "never bigger than the setting");
 });
+
+// ------------------------------------------------------------------ BetOpenly
+import { BetOpenly, BETOPENLY_BASE, gradeAt, outcomeAt, pnlFromGames, type Model } from "./core.ts";
+
+const MODEL: Model = { win0: 0.56, base: 3.5, bet: "spread", side: "NOP", sd: 14.14, lo: -10.5, hi: 7.5, market: 3.5 };
+function offer(p: Record<string, unknown> = {}, d: Record<string, unknown> = {}) {
+  return { id: "off1", betType: "GAME", betStatus: "PENDING", expiryDate: Date.parse(TIP) / 1000, availableAmount: 50,
+    details: [{ league: "NBA", timeframe: "game", eventDateIso: TIP, betType: "spread", team: "New Orleans Pelicans",
+      teamAbbv: "NO", lines: 4, odds: -105,
+      homeTeam: { displayName: "New Orleans Pelicans", abbreviation: "NO" },
+      awayTeam: { displayName: "Indiana Pacers", abbreviation: "IND" }, ...d }], ...p };
+}
+function fakeBO(book: unknown[], status: Record<string, unknown> = {}, accept: Record<string, unknown> = {}) {
+  const calls: { method: string; url: string; headers: Record<string, string>; body?: string }[] = [];
+  const http = (async (url: string, init: RequestInit) => {
+    calls.push({ method: init.method!, url, headers: init.headers as Record<string, string>, body: init.body as string });
+    const path = url.replace(BETOPENLY_BASE, "");
+    let js: unknown = {};
+    if (path === "/v1/partners/bets/open-bets") js = { data: book };
+    else if (path.endsWith("/status")) js = { ...(book.find((b: any) => path.includes(b.id)) as object), ...status };
+    else if (path.endsWith("/accept")) js = { acceptedAmount: JSON.parse(init.body as string).amount, amountToWin: 19.05, childBetId: "child9", ...accept };
+    else if (path === "/v1/partners/funds") js = { data: { availableFunds: 212.5 } };
+    return new Response(JSON.stringify(js), { status: 200 });
+  }) as unknown as typeof fetch;
+  return { bo: new BetOpenly("k", http, () => NOW.getTime()), calls };
+}
+const boRow = (p: Partial<FeedRow> = {}) => feedRow({ model: MODEL, to_win: 20, ...p }, []);
+
+Deno.test("model math matches the Python card (push on whole numbers)", () => {
+  const a = outcomeAt(MODEL, 3.5); ok(Math.abs(a.win - 0.56) < 1e-3 && a.push === 0, JSON.stringify(a));
+  const b = outcomeAt(MODEL, 4); ok(b.win > 0.56 && b.push > 0.02 && b.push < 0.04, JSON.stringify(b));
+  const o = outcomeAt({ ...MODEL, bet: "total", side: "OVER", base: 225.5, sd: 18.18 }, 224);
+  ok(o.win > 0.56, "over gets better as the number drops");
+});
+
+Deno.test("BetOpenly: reads offers from our side, skips parlays/expired/other games/wrong side/out of the rule", async () => {
+  const book = [
+    offer(),                                                             // NOP +4 -105: ours
+    offer({ id: "parlay", details: [offer().details[0], offer().details[0]] }),
+    offer({ id: "old", expiryDate: NOW.getTime() / 1000 - 60 }),
+    offer({ id: "taken", betStatus: "ACCEPTED" }),
+    offer({ id: "ind" }, { team: "Indiana Pacers", teamAbbv: "IND", lines: -4 }),   // other side
+    offer({ id: "half" }, { timeframe: "1h" }),
+    offer({ id: "far" }, { lines: 8.5 }),                                // past the system's max (7.5)
+    offer({ id: "ml" }, { betType: "moneyline", lines: null, odds: 150 }), // NOP ML = -0.5, inside window? 4 pts from 3.5
+    offer({ id: "nyk" }, { homeTeam: { abbreviation: "NY" }, awayTeam: { abbreviation: "BOS" } }),
+  ];
+  const { bo } = fakeBO(book);
+  const qs = await bo.offers(boRow());
+  eq(qs.map((q) => q.offer_id).sort(), ["ml", "off1"]);
+  const q = qs.find((q) => q.offer_id === "off1")!;
+  eq([q.contract, q.line, q.american, q.side, q.size], ["NOP +4", 4, -105, "NOP", 50]);
+});
+
+Deno.test("BetOpenly dry run: WOULD HAVE PLACED, nothing accepted", async () => {
+  const { bo, calls } = fakeBO([offer()]);
+  const db = new FakeDb(settings({ venues: ["betopenly"], to_win_dollars: 20, max_dollars_per_game: 50 }), [boRow()]);
+  await runOnce(db, { betopenly: bo }, NOW);
+  const line = db.logs.find((l) => l.message.startsWith("WOULD HAVE PLACED"))?.message ?? "";
+  ok(line.startsWith("WOULD HAVE PLACED: BetOpenly ACCEPT offer off1: NOP +4 at -105 for $21."), line);
+  ok(line.includes("to win $20."), line);
+  eq(calls.filter((c) => c.url.endsWith("/accept")).length, 0, "nothing accepted");
+  eq(calls[0].headers["x-api-key"], "k");
+  eq(db.orders_[0].market, "bo:IND@NOP:spread:NOP:4");
+});
+
+Deno.test("BetOpenly live: re-checks the offer, accepts min(stake, available), saves childBetId", async () => {
+  const { bo, calls } = fakeBO([offer({ availableAmount: 12 })]);
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", venues: ["betopenly"], to_win_dollars: 20,
+    max_dollars_per_game: 50 }), [boRow()]);
+  await runOnce(db, { betopenly: bo }, NOW);
+  const acc = calls.find((c) => c.url.endsWith("/accept"))!;
+  eq(acc.url, `${BETOPENLY_BASE}/v1/partners/bets/off1/accept`);
+  eq(JSON.parse(acc.body!), { amount: 12 });
+  const o = db.orders_[0];
+  eq([o.order_id, o.fill_cost, o.status], ["child9", 12, "partial"]);
+});
+
+Deno.test("BetOpenly: odds changed since we saw it → skip, nothing accepted", async () => {
+  const { bo, calls } = fakeBO([offer()], { details: [{ ...offer().details[0], odds: -115 }] });
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", venues: ["betopenly"], to_win_dollars: 20,
+    max_dollars_per_game: 50 }), [boRow()]);
+  await runOnce(db, { betopenly: bo }, NOW);
+  eq(calls.filter((c) => c.url.endsWith("/accept")).length, 0);
+  eq(db.orders_.length, 0);
+});
+
+Deno.test("BetOpenly balance and grading from final scores", async () => {
+  const { bo } = fakeBO([]);
+  eq(await bo.balance(), 212.5);
+  const g = { id: "g1", home: "NOP", away: "IND", home_score: 110, away_score: 113, final: true };
+  const base = { bet: "spread", side: "NOP", line: 4 } as OrderRow;
+  eq(gradeAt(base, g), "W");                                  // lost by 3, +4 covers
+  eq(gradeAt({ ...base, line: 3 } as OrderRow, g), "P");
+  eq(gradeAt({ ...base, bet: "total", side: "OVER", line: 224.5 } as OrderRow, g), "L");
+  const db = new FakeDb(settings(), []);
+  (db as any).games = async () => [g];
+  const pnl = await pnlFromGames(db, [{ ...base, game_id: "g1", tip_utc: TIP, fill_cost: 21, fill_count: 41, fees: 0.2 } as OrderRow],
+    etDayStart(NOW).getTime());
+  eq(Math.round(pnl * 100) / 100, 19.8);
+});
