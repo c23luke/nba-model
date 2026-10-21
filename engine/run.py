@@ -314,9 +314,27 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         return {"overs": o, "unders": u, "avg": None if avg is None else round(avg, 1), "n": len(rows)}
     scoring = {"season": drift(tot_rows),
                "last7": drift([(g, t) for g, t in tot_rows if (today - g.game_date).days <= 7])}
+    try:
+        orders = store.load_orders() if hasattr(store, "load_orders") else []
+    except Exception as e:
+        orders = []
+        log.append(f"placed bets: {e}")
     board = build_board(now, today, slate, list(all_picks.values()), usage, log,
-                        source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days))
+                        source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
+                        orders=orders, games=stored)
     board["scoring"] = scoring
+    # keep each card bet's reasoning on its pick, so a placed bet can still explain itself after it tips
+    from .placed import snapshot
+    snaps = []
+    for c in board["card"]:
+        p = all_picks.get(c["key"])
+        if p is None:
+            continue
+        meta, s = p.get("meta") or {}, snapshot(c)
+        if meta.get("card_snap") != s:
+            snaps.append({**p, "meta": {**meta, "card_snap": s}})
+    if snaps:
+        store.save_picks(snaps)
     store.save_board(board)
     try:
         from .pricing import feed_rows
@@ -484,7 +502,7 @@ def live_stacks(live: list[dict]) -> list[dict]:
     return sorted(out, key=lambda x: (-len(x["systems"]), x["tip_utc"] or ""))
 
 
-def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0):
+def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None):
     picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks]
     t = today.isoformat()
     open_ = lambda p: p.get("result") is None and p["game_date"] >= t
@@ -539,9 +557,16 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
     holding = [{**brief(p, "MOVED"), "fired_at": p.get("first_seen"), "now_line": line_now(p)}
                for p in cardish if p.get("result") is None and (p.get("tip_utc") or "") >= now_iso
                and p["key"] not in on_card]
+    from .placed import placed_bets
+    def season_wl(p):
+        r = live_wl({"group": p["group"], "system": p["system"]})
+        return {"w": r["w"], "l": r["l"], "p": r["p"]}
+    placed = placed_bets(orders or [], {p["key"]: p for p in picks}, games or {}, {c["key"]: c for c in card},
+                         season_wl, now)
     for p in picks:
         p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
     return {
+        "placed": placed,
         "card": card, "card_done": card_done, "card_holding": holding,
         "gap_tracker": gap_tracker(picks, season_day),
         "tracking": tracking(picks), "stacks": live_stacks(live),

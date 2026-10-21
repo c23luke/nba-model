@@ -31,6 +31,10 @@ class LocalStore:
         self._write("games", list(cur.values()))
 
     def load_picks(self):  return self._read("picks", [])
+    def load_orders(self):
+        """Live orders that filled (what the order placer actually bet)."""
+        return [o for o in self._read("bet_orders", []) if o.get("mode") == "live" and (o.get("fill_count") or 0) > 0]
+
     def save_picks(self, rows):
         cur = {r["key"]: r for r in self.load_picks()}
         cur.update({r["key"]: r for r in shape("picks", rows)})     # same columns as the Supabase table
@@ -116,6 +120,10 @@ class SupabaseStore:
     def load_picks(self):  return self._all("picks")
     def save_picks(self, rows):
         if rows: self._upsert("picks", shape("picks", rows), "key")
+
+    def load_orders(self):
+        """Live orders that filled (what the order placer actually bet). Private table; service key only."""
+        return self._req("GET", "/bet_orders?mode=eq.live&fill_count=gt.0&select=*&order=created_at.desc") or []
 
     def load_player_games(self):  return self._all("player_games")
     def save_player_games(self, rows):
