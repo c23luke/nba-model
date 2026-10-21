@@ -218,12 +218,40 @@ def price_text(q: dict) -> str:
 SUSPECT = 0.10     # a quote 10+ points of probability cheaper than the consensus says is a data error, not a gift
 
 
-def shop(p: dict, win0: float, base: float | None = None, market: float | None = None) -> list[dict]:
+# The numbers each system allows on the bet itself (Caden: if a system needs +8 or more, never shop
+# down to +7 — then it isn't that system's bet). Spread lines are the bet side's line; totals are the total.
+LINE_BOUNDS = {
+    2: (-99.0, -0.5),     # S2 road FAVORITE
+    3: (-99.0, -0.5),     # S3 home FAVORITE
+    4: (220.5, 999.0),    # S4 over: total above 220
+    112: (-99.0, -8.0),   # T12 favorite by 8+
+    202: (0.5, 7.0),      # E2 home underdog of 7 or less
+    203: (10.0, 99.0),    # E3 underdog of 10+
+    205: (0.5, 99.0),     # E5 bet against a favorite → we're the dog
+    207: (0.5, 99.0),     # E7 bet against a favorite → we're the dog
+}
+
+
+def allowed_lines(p: dict, slate: list[dict]) -> tuple[float, float]:
+    """Lowest and highest number this bet may be taken at."""
+    lo, hi = LINE_BOUNDS.get(p["system"], (-999.0, 999.0))
+    if p["system"] == 113:               # T13: the players-model edge must stay 3+ at the number we take
+        for g in slate:
+            c = ((g.get("personnel") or {}).get("case") or {})
+            if g.get("game_id") == p["game_id"] and c.get("side") == p["side"] and c.get("cushion") is not None:
+                lo = max(lo, c["line"] - (c["cushion"] - 3.0))
+    return lo, hi
+
+
+def shop(p: dict, win0: float, base: float | None = None, market: float | None = None,
+         bounds: tuple[float, float] = (-999.0, 999.0)) -> list[dict]:
     base = p["line"] if base is None else base
     out = []
     for q in p.get("shop") or []:
         if q["bet"] != p["bet"] or q["side"] != p["side"]:
             continue
+        if not (bounds[0] - 1e-9 <= q["line"] <= bounds[1] + 1e-9):
+            continue                      # outside what the system allows
         if q.get("size") is not None and q["size"] < MIN_SIZE:
             continue
         if abs(q["line"] - p["line"]) > WINDOW[p["bet"]]:
@@ -268,7 +296,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         win, base = win_and_line(p, slate)
         if win is None:
             continue
-        quotes = shop(p, win, base, market_line(p, slate))
+        quotes = shop(p, win, base, market_line(p, slate), allowed_lines(p, slate))
         mine = [q for q in quotes if q["mine"]]
         best = mine[0] if mine else None
         kalshi = [q for q in mine if q["venue"] == "kalshi"]

@@ -135,7 +135,7 @@ def test_quote_far_off_the_market_is_treated_as_bad_data():
     slate = [{"game_id": "g1", "home": "H", "home_spread": -1.5}]   # H -1.5 consensus
     shop = [xq("polymarket", "H", 1.5, +113),     # H +1.5 priced like H -1.5 (teams swapped in the feed)
             xq("prophetx", "H", -1.5, +104)]
-    c = build_card([pk(112, "H", shop, line=-1.5)], slate, now=NOW)[0]
+    c = build_card([pk(102, "H", shop, line=-1.5)], slate, now=NOW)[0]       # T2: no line limits
     assert [q["venue"] for q in c["shop"]] == ["prophetx"]
 
 
@@ -176,3 +176,17 @@ def test_early_system_makes_the_card_only_with_players_model_3_plus():
     card = build_card(live + [pk(112, "H", [kq("H", 4.0, 0.47)], line=4.0)], slate, now=NOW)
     assert [c["tag"] for c in card if c["game_id"] == "g1"] == ["T12"]
     assert card[0]["also_combo"]["w"] == 26 and card[0]["also_combo"]["tag"] == "E2"
+
+
+def test_shopping_never_leaves_what_the_system_allows():
+    # E2 = home underdog of 7 or less: +7.5 at a better price is NOT this system's bet
+    slate = [{"game_id": "g1", "home": "H", "home_spread": 6.5, "personnel": {"gap": 4.0}}]
+    shop = [kq("H", 6.5, 0.50), kq("H", 7.5, 0.47), kq("H", 5.5, 0.45)]
+    c = build_card([pk(202, "H", shop, line=6.5)], slate, now=NOW)[0]
+    assert {q["line"] for q in c["shop"]} == {6.5, 5.5}
+    # T13: edge must stay 3+ at the number taken — gap 4.0 at +3.5 allows down to +2.5, not +1.5
+    slate = [{"game_id": "g1", "home": "H", "home_spread": 3.5,
+              "personnel": {"case": {"side": "H", "win_est": 0.56, "line": 3.5, "cushion": 4.0, "level": "High"}}}]
+    shop = [kq("H", 3.5, 0.50), kq("H", 2.5, 0.45), kq("H", 1.5, 0.38)]
+    c = build_card([pk(113, "H", shop, line=3.5)], slate, now=NOW)[0]
+    assert {q["line"] for q in c["shop"]} == {3.5, 2.5}
