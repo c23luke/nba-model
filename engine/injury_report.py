@@ -71,7 +71,12 @@ def latest(now: datetime | None = None, fetch=_get) -> dict | None:
 
 
 def lines_from_pdf(pdf: bytes) -> list[str]:
-    import pdfplumber                      # installed in the workflows (pip install pdfplumber)
+    try:
+        import pdfplumber                  # installed in the workflows (pip install pdfplumber)
+    except ImportError:                    # a watcher that restarted itself on new code skipped that step
+        import subprocess, sys
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "pdfplumber==0.11.4"], check=True, timeout=180)
+        import pdfplumber
     out = []
     with pdfplumber.open(io.BytesIO(pdf)) as doc:
         for page in doc.pages:
