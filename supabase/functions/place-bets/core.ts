@@ -515,19 +515,27 @@ export class Kalshi implements Venue {
     return pnl;
   }
   async order(o: OrderRow, clientId: string) {
-    const body: Record<string, unknown> = {
-      ticker: o.market, side: o.order_side, action: "buy", count: o.count, type: "limit",
-      time_in_force: "immediate_or_cancel", client_order_id: clientId,
+    // Kalshi V2 orders (the old /portfolio/orders address now answers 410). V2 quotes everything from the YES side:
+    // buying YES at p = "bid" at p; buying NO at p = selling YES ("ask") at 1 - p.
+    const buyNo = o.order_side === "no";
+    const yesLimit = round4(buyNo ? 1 - o.limit_price : o.limit_price);
+    const body = {
+      ticker: o.market, side: buyNo ? "ask" : "bid", count: String(o.count), price: yesLimit.toFixed(4),
+      time_in_force: "immediate_or_cancel", self_trade_prevention_type: "taker_at_cross", client_order_id: clientId,
     };
-    body[o.order_side === "no" ? "no_price_dollars" : "yes_price_dollars"] = o.limit_price.toFixed(4);
-    const js = await this.call("POST", "/portfolio/orders", body);
-    const ord = js.order || {};
-    const fill = Number(ord.fill_count ?? ord.fill_count_fp ?? 0);
-    const cost = ord.taker_fill_cost_dollars != null ? Number(ord.taker_fill_cost_dollars)
-      : Number(ord.taker_fill_cost ?? 0) / 100;
-    const fees = ord.taker_fees_dollars != null ? Number(ord.taker_fees_dollars) : Number(ord.taker_fees ?? 0) / 100;
-    if (!ord.order_id) throw new Error(`Kalshi returned no order id: ${JSON.stringify(js).slice(0, 300)}`);
-    return { order_id: String(ord.order_id), fill_count: fill, fill_cost: cost, fees, raw: ord };
+    const ord = await this.call("POST", "/portfolio/events/orders", body);
+    if (!ord.order_id) throw new Error(`Kalshi returned no order id: ${JSON.stringify(ord).slice(0, 300)}`);
+    const fill = Number(ord.fill_count ?? 0);
+    let per = 0;
+    if (fill > 0) {
+      const avg = Number(ord.average_fill_price);
+      if (!Number.isFinite(avg)) throw new Error(`Kalshi filled ${fill} but sent no average price: ${JSON.stringify(ord).slice(0, 300)}`);
+      // the average is on the YES side; a sell of YES fills at or above our limit, so a NO buy costs 1 - avg.
+      // (if it ever comes back on the NO side instead, it'll be at or below our NO limit — use it as is)
+      per = buyNo ? (avg >= yesLimit - 1e-6 ? 1 - avg : avg) : avg;
+    }
+    const fees = fill * Number(ord.average_fee_paid ?? 0);
+    return { order_id: String(ord.order_id), fill_count: fill, fill_cost: round2(fill * per), fees: round2(fees), raw: ord };
   }
 }
 

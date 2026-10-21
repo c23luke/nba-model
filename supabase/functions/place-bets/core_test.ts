@@ -226,9 +226,11 @@ Deno.test("Kalshi order request: signed headers, path without query, IOC limit b
   const calls: { url: string; init: RequestInit }[] = [];
   const http = (async (url: string, init: RequestInit) => {
     calls.push({ url, init });
-    if (url.includes("/portfolio/orders")) {
-      return new Response(JSON.stringify({ order: { order_id: "abc", fill_count: 10, taker_fill_cost_dollars: "4.9000",
-        taker_fees_dollars: "0.1800", status: "executed" } }));
+    if (url.includes("/portfolio/events/orders")) {
+      const b = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ order_id: "abc", client_order_id: b.client_order_id, fill_count: "10.00",
+        remaining_count: "0.00", average_fill_price: b.side === "ask" ? "0.5200" : "0.4700", average_fee_paid: "0.0180",
+        ts_ms: 1 }), { status: 201 });
     }
     if (url.includes("/portfolio/settlements")) {
       return new Response(JSON.stringify({ settlements: [
@@ -244,20 +246,26 @@ Deno.test("Kalshi order request: signed headers, path without query, IOC limit b
   ok(calls[0].url.startsWith("https://api.elections.kalshi.com"), "dry-run prices from prod");
   const o = { market: "KXNBASPREAD-26OCT21INDNOP-IND4", order_side: "no", count: 10, limit_price: 0.49 } as OrderRow;
   const r = await k.order(o, "client-1");
-  eq([r.order_id, r.fill_count, r.fill_cost, r.fees], ["abc", 10, 4.9, 0.18]);
+  // buy NO at 49c = sell YES at 51c or better; filled at YES 52c = NO cost 48c each
+  eq([r.order_id, r.fill_count, r.fill_cost, r.fees], ["abc", 10, 4.8, 0.18]);
   const c = calls[1];
-  ok(c.url === "https://demo-api.kalshi.co/trade-api/v2/portfolio/orders", c.url);
+  ok(c.url === "https://demo-api.kalshi.co/trade-api/v2/portfolio/events/orders", c.url);
   const body = JSON.parse(String(c.init.body));
-  eq(body, { ticker: o.market, side: "no", action: "buy", count: 10, type: "limit",
-    time_in_force: "immediate_or_cancel", client_order_id: "client-1", no_price_dollars: "0.4900" });
+  eq(body, { ticker: o.market, side: "ask", count: "10", price: "0.5100", time_in_force: "immediate_or_cancel",
+    self_trade_prevention_type: "taker_at_cross", client_order_id: "client-1" });
   const h = c.init.headers as Record<string, string>;
   eq(h["KALSHI-ACCESS-KEY"], "KEYID");
-  const signed = h["KALSHI-ACCESS-TIMESTAMP"] + "POST/trade-api/v2/portfolio/orders";
+  const signed = h["KALSHI-ACCESS-TIMESTAMP"] + "POST/trade-api/v2/portfolio/events/orders";
   ok(await crypto.subtle.verify({ name: "Ed25519" }, ed.publicKey, b64d(h["KALSHI-ACCESS-SIGNATURE"]),
     new TextEncoder().encode(signed)), "signature covers timestamp+method+path");
+  // buy YES at 49c = bid at 49c
+  const ry = await k.order({ ...o, order_side: "yes" } as OrderRow, "client-2");
+  const by = JSON.parse(String(calls[calls.length - 1].init.body));
+  eq([by.side, by.price], ["bid", "0.4900"]);
+  eq(ry.fill_cost, 4.7);
   const pnl = await k.pnlToday(new Set(["MINE"]), NOW.getTime());
   ok(Math.abs(pnl + 5.08) < 1e-9, `only this system's markets count: ${pnl}`);
-  const sc = calls[2];
+  const sc = calls[3];
   const sh = sc.init.headers as Record<string, string>;
   ok(await crypto.subtle.verify({ name: "Ed25519" }, ed.publicKey, b64d(sh["KALSHI-ACCESS-SIGNATURE"]),
     new TextEncoder().encode(sh["KALSHI-ACCESS-TIMESTAMP"] + "GET/trade-api/v2/portfolio/settlements")), "query string not signed");
