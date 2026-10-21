@@ -7,3 +7,6 @@ update public.bet_settings
        updated_at = now()
  where id = 1;
 select to_win_dollars, max_dollars_per_game, daily_loss_cap, live_betting_on, kalshi_env from public.bet_settings;
+
+-- Per-bet size written by the model: Low-confidence bets win $10, everything else $20.
+alter table public.bet_feed add column if not exists confidence text, add column if not exists to_win numeric;

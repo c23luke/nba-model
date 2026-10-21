@@ -48,6 +48,7 @@ export type Quote = {
 export type FeedRow = {
   key: string; status: string; updated_at: string; game_id: string; tip_utc: string; away: string; home: string;
   system: string; pick: string; bet: string; side: string; quotes: Quote[];
+  to_win?: number | null;            // the model's size for this bet ($20, or $10 for Low confidence)
 };
 
 export type OrderRow = {
@@ -221,8 +222,10 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
 
       // Rule 2: same size every bet — to win a fixed amount (default), or a fixed stake
       const limit = round4(seen);
-      const count = s.to_win_dollars && s.to_win_dollars > 0
-        ? contractsToWin(limit, s.to_win_dollars, (p, c) => v.fee(p, c))
+      const toWin = s.to_win_dollars && s.to_win_dollars > 0
+        ? (row.to_win && row.to_win > 0 ? Math.min(row.to_win, s.to_win_dollars) : s.to_win_dollars) : 0;
+      const count = toWin > 0
+        ? contractsToWin(limit, toWin, (p, c) => v.fee(p, c))
         : Math.floor(s.stake_dollars / limit + 1e-9);
       if (count < 1) { why.push(`stake ${money(s.stake_dollars)} buys less than one contract at ${cents(limit)}`); continue; }
       const stake = round2(count * limit);

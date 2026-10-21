@@ -297,3 +297,14 @@ Deno.test("to-win sizing: same $20 win on every bet, whatever the price", async 
   eq([o.count, o.stake], [41, 20.09]);
   ok(o.count * (1 - o.limit_price) - o.est_fee >= 20, "wins at least $20 after the fee");
 });
+
+
+Deno.test("a Low-confidence bet is sized to win $10; the settings cap still rules", async () => {
+  const db = new FakeDb(settings({ to_win_dollars: 20, max_dollars_per_game: 50 }), [feedRow({ to_win: 10 })]);
+  await runOnce(db, { kalshi: new FakeVenue() }, NOW);
+  const o = db.orders_[0];
+  ok(o.count * (1 - o.limit_price) - o.est_fee >= 10 && o.count < 41, `count ${o.count}`);
+  const db2 = new FakeDb(settings({ to_win_dollars: 5, max_dollars_per_game: 50 }), [feedRow({ to_win: 20 })]);
+  await runOnce(db2, { kalshi: new FakeVenue() }, NOW);
+  ok(db2.orders_[0].count * 0.51 - db2.orders_[0].est_fee < 7, "never bigger than the setting");
+});

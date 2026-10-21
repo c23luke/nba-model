@@ -30,6 +30,8 @@ from .sources import MY_VENUES
 from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
 BREAK_EVEN_110 = 110 / 210
+TO_WIN = 20          # every bet is sized to win this many dollars
+LOW_TO_WIN = 10      # ...except Low-confidence personnel bets (Caden, 2026-10-20)
 
 # 2-season replay of every system split by whether the players model agreed (engine/backtest_og.py)
 try:
@@ -274,11 +276,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         pg = players_gap(p, slate) if p["system"] != 113 else None      # T13 IS the players model
         pb = agree_bucket(pg) if pg is not None else None
         level = confidence(p, slate) if p["system"] == 113 else None
-        if level == "Low":
-            verdict = "PASS"
-            why = ("Low confidence: the edge drops under 3 points in at least one version of the model. "
-                   "Tracked on the every-game tracker, not bet")
-        elif best and best["ev"] > 0:
+        if best and best["ev"] > 0:
             verdict = "BET"
             why = f"Best price: {_desc(best)}, {best['ev']:+.1%} expected return"
             runner = next((q for q in mine[1:] if q["venue"] != best["venue"]), None)
@@ -308,6 +306,8 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "price": at_line["price"] if at_line else k.get("price"),
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
+                     # bet size: to win $20; Low-confidence personnel bets to win $10
+                     "to_win": LOW_TO_WIN if level == "Low" else TO_WIN,
                      "players": pg, "players_bucket": pb, "system": p["system"], "history": history(p, slate),
                      "players_history": players_history(group(p["system"]), pg),
                      "contract": at_line["contract"] if at_line else k.get("contract"),
@@ -333,7 +333,7 @@ def feed_rows(card: list[dict], now: datetime) -> list[dict]:
             "best_price": b.get("price") if b.get("venue") == "kalshi" else b.get("american"),
             "best_cost": b.get("cost"), "best_ev": b.get("ev"), "best_contract": b.get("contract"),
             "best_ticker": b.get("ticker"), "best_url": b.get("url"), "max_price": c.get("max"),
-            "why": c["why"],
+            "why": c["why"], "confidence": c.get("confidence"), "to_win": c.get("to_win"),
             "quotes": [{k: q.get(k) for k in ("venue", "venue_name", "contract", "side", "ml", "line", "price",
                                               "american", "cost", "fee_counted", "size", "win", "ev", "max_cost",
                                               "ticker", "order_side", "price_txt")}
