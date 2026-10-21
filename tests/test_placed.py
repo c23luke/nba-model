@@ -111,3 +111,16 @@ def test_placer_skip_reasons_reach_the_board(tmp_path):
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines,
             fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
     assert b["placer"]["skips"][0]["reason"] == "price moved"
+
+
+def test_a_bet_placed_by_hand_counts_like_any_other():
+    o = {"venue": "manual", "bet_key": "k", "game_id": "g", "tip_utc": "2026-10-20T19:00Z", "pick": "DET +1.5", "system": "T13",
+         "bet": "spread", "side": "DET", "line": 1.5, "fill_count": 40.8, "fill_cost": 20.8, "fees": 0,
+         "created_at": "2026-10-20T18:00:00Z"}
+    g = {"g": {"final": True, "home": "DET", "away": "BOS", "home_score": 121, "away_score": 113, "home_spread": 1.5}}
+    out = placed_bets([o], {"k": {"key": "k", "system": 113, "group": "FAV", "away": "BOS", "home": "DET"}}, g, {},
+                      lambda p: {"w": 1, "l": 0, "p": 0}, datetime(2026, 10, 21, 3, tzinfo=timezone.utc), names={"T13": "Personnel gap"})
+    r = out["bets"][0]
+    assert (r["venue_name"], r["manual"], r["american"], r["risk"], r["to_win"]) == ("Other book", True, -104, 20.8, 20.0)
+    assert (r["result"], r["pnl"], r["name"]) == ("W", 20.0, "Personnel gap")
+    assert out["summary"]["w"] == 1 and out["summary"]["pnl"] == 20.0

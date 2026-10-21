@@ -13,7 +13,7 @@ from datetime import datetime
 from .pricing import outcome
 
 VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "Polymarket US",
-               "polymarket": "Polymarket", "prophetx": "ProphetX"}
+               "polymarket": "Polymarket", "prophetx": "ProphetX", "manual": "Other book"}
 
 # what the website needs from a card row to explain a bet later, after the row has left the card
 SNAP_KEYS = ("name", "why", "confidence", "win", "players", "players_bucket", "players_history",
@@ -81,7 +81,7 @@ def beat_close(o: dict, per: float, close: float) -> float | None:
 
 
 def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season_wl, now: datetime,
-                line_now=None) -> dict:
+                line_now=None, names: dict | None = None) -> dict:
     """orders: filled live bet_orders rows. picks: key -> pick (meta.card_snap holds the snapshot).
     games: id -> game row. card: key -> current card row. season_wl(pick) -> {w, l, p} this season.
     line_now(game_id, bet, side) -> the market line on our side right now (before tip), or None."""
@@ -133,13 +133,13 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "line": o.get("line"), "price": round(per, 4), "american": american(per) if 0 < per < 1 else None,
             "count": cnt, "cost": round(cost, 2), "fees": round(fees, 2), "risk": round(risk, 2),
             "to_win": round(to_win, 2), "ev": o.get("ev"), "model_price": o.get("model_price"),
-            "system": o.get("system"), "group": p.get("group"), "name": snap.get("name"),
+            "system": o.get("system"), "group": p.get("group"), "name": snap.get("name") or (names or {}).get(o.get("system")),
             "evidence": p.get("evidence") or [], "price_note": snap.get("why"), "confidence": snap.get("confidence"), "win": snap.get("win"),
             "players": snap.get("players"), "players_history": snap.get("players_history"),
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
-            "status": status, "result": res, "pnl": pnl, "market": market, "covering": mg,
+            "manual": venue == "manual", "status": status, "result": res, "pnl": pnl, "market": market, "covering": mg,
             "final_score": p.get("final_score") if res else None,
             "score": {"home": g.get("home_score"), "away": g.get("away_score")} if status != "OPEN" and g else None,
         })

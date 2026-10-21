@@ -286,7 +286,7 @@ function ticket(x) {
   const pl = x.status === "FINAL" ? `<div class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</div>` : "";
   return `<article class="ticket">
     <div class="stub">
-      <div class="venue">${esc(x.venue_name)}</div>
+      <div class="venue">${esc(x.venue_name)}</div>${x.manual ? `<div class="when">placed by hand</div>` : ""}
       <div class="state ${stateCls}">${stateTxt}</div>
       <div class="when">${x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}<br>${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc))}</div>
       ${pl}
@@ -383,10 +383,12 @@ function renderBets(placed, b) {
   const opts = (vals, cur, all) => `<option value="">${all}</option>` + vals.map(v => `<option${v === cur ? " selected" : ""}>${esc(v)}</option>`).join("");
   const uniq = k => [...new Set(allBets.map(x => x[k] || "None"))].sort();
   const np = notPlaced(b, placed);
+  const cardSys = [...Object.values(b.systems || {}), ...Object.values(b.test_systems || {}).filter(x => x.group === "FAV")];
+  const cardRec = { w: cardSys.reduce((t, x) => t + (x.w || 0), 0), l: cardSys.reduce((t, x) => t + (x.l || 0), 0) };
   const placerAt = (b.placer || {}).at;
   $("tab-bets").innerHTML = (allBets.length ? `<div class="ledger">
       <div><div class="k">Open</div><div class="v n">${open.length}</div><div class="s">${money(sum(open, "risk"))} at risk, to win ${money(sum(open, "to_win"))}</div></div>
-      <div><div class="k">Record</div><div class="v n">${w}-${l}${pu ? "-" + pu : ""}</div><div class="s">${w + l ? Math.round(w / (w + l) * 100) + "% of settled bets" : "nothing settled yet"}</div></div>
+      <div><div class="k">Record</div><div class="v n">${w}-${l}${pu ? "-" + pu : ""}</div><div class="s">${w + l ? Math.round(w / (w + l) * 100) + "% of our bets" : "nothing settled yet"}. Card systems this season ${wl(cardRec)}</div></div>
       <div><div class="k">Profit</div><div class="v n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</div><div class="s">${risked ? pct(pnl / risked) + " return on " + money(risked) : "on settled bets"}</div></div>
       <div><div class="k">Expected on open bets</div><div class="v n ${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</div><div class="s">${Object.entries(sites).map(([v, n]) => `${esc(v)} ${n}`).join(", ") || "no bets"}</div></div>
     </div>
@@ -396,7 +398,7 @@ function renderBets(placed, b) {
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
       <select id="f-conf" aria-label="Confidence">${opts(uniq("confidence"), fConf, "Any confidence")}</select>
     </div>` : "") +
-    `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites. Sized to win $20, or $10 when confidence is Low.</p>` +
+    `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites (plus any you placed by hand). Sized to win $20, or $10 when confidence is Low.</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys || fConf) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     (np.length ? `<h2>On the card, not placed</h2><p class="lede">What the order placer said on its last check${placerAt ? ` (${esc(ago(placerAt))})` : ""}.</p>` +
       np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>

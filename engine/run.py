@@ -574,7 +574,8 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         hs = g.get("home_spread")
         return None if hs is None else (hs if side == g.get("home") else -hs)
     placed = placed_bets(orders or [], {p["key"]: p for p in picks}, games or {}, {c["key"]: c for c in card},
-                         season_wl, now, market_now)
+                         season_wl, now, market_now,
+                         {label(i): x.get("name") for d in (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS) for i, x in d.items()})
     for p in picks:
         p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
     return {
