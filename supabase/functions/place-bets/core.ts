@@ -129,7 +129,8 @@ export function etDayStart(now: Date): Date {
 // ------------------------------------------------------------------ the run
 export type RunResult = { mode: string; actions: string[]; skips: { pick: string; reason: string }[]; stopped?: string };
 
-export async function runOnce(db: Db, venues: Record<string, Venue>, now = new Date()): Promise<RunResult> {
+export async function runOnce(db: Db, venues: Record<string, Venue>, now = new Date(),
+                              keyCheck?: () => Promise<string>): Promise<RunResult> {
   const s = await db.settings();
   const live = !!s.live_betting_on;
   const mode = live ? "live" : "dry_run";
@@ -301,6 +302,10 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
 
   const last = s.last_heartbeat ? Date.parse(s.last_heartbeat) : 0;
   if (res.actions.length || now.getTime() - last >= HEARTBEAT_MINUTES * 60e3) {
+    if (keyCheck) {
+      // read-only: proves the keys work without placing anything
+      try { await db.log("info", await keyCheck()); } catch (e) { await db.log("error", `Key check failed: ${msg(e)}`); }
+    }
     await db.log("info", `run (${mode}${live ? ", " + s.kalshi_env : ""}): ${feed.length} bets on the card, ` +
       `${res.actions.length} action(s), ${res.skips.length} skipped`, { skips: res.skips });
     await db.updateSettings({ last_heartbeat: now.toISOString() });
@@ -503,6 +508,26 @@ export function supabaseDb(sb: any): Db {
     async updateOrder(id, p) { must(await sb.from("bet_orders").update({ ...p, updated_at: new Date().toISOString() }).eq("id", id)); },
     async updateFeed(key, p) { must(await sb.from("bet_feed").update(p).eq("key", key)); },
     async log(level, message, data) { await sb.from("bet_log").insert({ level, message, data: data ?? null }); },
+  };
+}
+
+/** Read-only check of every key in the secrets (balances only). Never places anything. */
+export function keyCheck(): () => Promise<string> {
+  return async () => {
+    const out: string[] = [];
+    for (const env of ["prod", "demo"] as const) {
+      const id = Deno.env.get(env === "prod" ? "KALSHI_KEY_ID" : "KALSHI_DEMO_KEY_ID");
+      const pem = Deno.env.get(env === "prod" ? "KALSHI_PRIVATE_KEY" : "KALSHI_DEMO_PRIVATE_KEY");
+      if (!id || !pem) { out.push(`Kalshi ${env}: no keys`); continue; }
+      try {
+        const k = new Kalshi(KALSHI_BASE[env], id, await kalshiSigner(pem));
+        out.push(`Kalshi ${env}: keys work, balance ${money(await k.balance())}`);
+      } catch (e) { out.push(`Kalshi ${env}: ${msg(e)}`); }
+    }
+    for (const name of ["BETOPENLY_KEY", "PROPHETX_ACCESS_KEY", "POLYMARKET_KEY_ID"]) {
+      out.push(`${name}: ${Deno.env.get(name) ? "saved (no order code for this venue yet)" : "not set"}`);
+    }
+    return "Key check — " + out.join(" · ");
   };
 }
 
