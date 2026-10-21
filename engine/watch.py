@@ -16,6 +16,8 @@ import hashlib
 import json
 import math
 import os
+import subprocess
+import sys
 import time
 import urllib.request
 from datetime import datetime, timezone
@@ -122,6 +124,22 @@ def alert_new(board: dict, store, topic: str | None, log) -> int:
     return len(sent)
 
 
+def restart_if_new_code(end: float, log) -> None:
+    """Pull the repo; if new code landed, restart this process so the next model run uses it
+    (otherwise a fix pushed mid-hour wouldn't reach the board until the next hourly launch)."""
+    try:
+        head = lambda: subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        before = head()
+        subprocess.run(["git", "pull", "-q", "--ff-only"], timeout=60, capture_output=True)
+        after = head()
+        if after and before and after != before:
+            log(f"new code {after[:7]} — restarting the watcher")
+            os.environ["WATCH_END"] = str(end)
+            os.execv(sys.executable, [sys.executable, "-m", "engine.watch"])
+    except Exception as e:
+        log(f"code check failed: {e}")
+
+
 def main():
     store = get_store()
     topic = "".join((os.environ.get("NTFY_TOPIC") or "").split()) or None
@@ -131,7 +149,7 @@ def main():
         except Exception as e:
             print(f"no alert channel: {e}")
     log = lambda m: print(f"{datetime.now(timezone.utc):%H:%M:%S} {m}", flush=True)
-    end = time.time() + RUN_FOR
+    end = float(os.environ.get("WATCH_END") or time.time() + RUN_FOR)
     last_fp, last_run = None, 0.0
     while time.time() < end:
         why = None
@@ -154,6 +172,7 @@ def main():
             why = "new Kalshi lines listed"
         elif time.time() - last_run >= RERUN_EVERY:
             why = "5-minute refresh"
+            restart_if_new_code(end, log)
         last_fp = fp
         if why:
             try:
