@@ -1,0 +1,47 @@
+=== 2024-25: 1231 games (lines cached); games where each flag differs: 3 in 4 413, 4 in 6 454, miles (000s) 1157, miles on B2B (000s) 281, extra rest days 289, long road trip 176, visitor at altitude 74
+=== 2025-26: 1231 games (lines cached); games where each flag differs: 3 in 4 438, 4 in 6 460, miles (000s) 1166, miles on B2B (000s) 274, extra rest days 320, long road trip 162, visitor at altitude 70
+
+One flag at a time. Model miss = actual home margin minus the model's margin (it already has home court and back-to-backs).
+Market miss = actual margin minus the opening line. Positive = helps the team with the flag.
+  3 in 4                 model misses -0.58 pts per unit (t -1.2) | opening line misses -0.42 (t -0.9) | 851 games
+  4 in 6                 model misses -0.47 pts per unit (t -1.0) | opening line misses -0.39 (t -0.8) | 914 games
+  miles (000s)           model misses -0.56 pts per unit (t -1.3) | opening line misses -0.42 (t -1.0) | 2323 games
+  miles on B2B (000s)    model misses +0.51 pts per unit (t +0.5) | opening line misses +0.06 (t +0.1) | 555 games
+  extra rest days        model misses +0.18 pts per unit (t +0.4) | opening line misses +0.21 (t +0.4) | 609 games
+  long road trip         model misses -0.25 pts per unit (t -0.3) | opening line misses -0.22 (t -0.3) | 338 games
+  visitor at altitude    model misses -2.45 pts per unit (t -2.0) | opening line misses -1.27 (t -1.1) | 144 games
+
+All flags together (model miss):
+  3 in 4                 -0.71 (t -1.2)
+  4 in 6                 -0.18 (t -0.3)
+  miles (000s)           -0.69 (t -1.6)
+  miles on B2B (000s)    +1.24 (t +1.1)
+  extra rest days        +0.04 (t +0.1)
+  long road trip         -0.35 (t -0.4)
+  visitor at altitude    -2.57 (t -2.1)
+
+Out of sample: fit on one season, apply to the other.
+  fit 2024-25 -> test 2025-26 (all flags)
+     margin error 14.405 -> 14.421
+     3+ gaps vs open: 180-169 (52%) vs open | CLV +0.52 pts, moved our way 173 / against 114 | vs close 178-170
+                    -> 197-183 (52%) vs open | CLV +0.59 pts, moved our way 185 / against 123 | vs close 193-185
+     4+ gaps vs open: 114-108 (51%) vs open | CLV +0.58 pts, moved our way 114 / against 68 | vs close 111-112
+                    -> 121-104 (54%) vs open | CLV +0.67 pts, moved our way 119 / against 68 | vs close 118-107
+  fit 2024-25 -> test 2025-26 (only t>=2 flags: visitor at altitude)
+     margin error 14.405 -> 14.405
+     3+ gaps vs open: 180-169 (52%) vs open | CLV +0.52 pts, moved our way 173 / against 114 | vs close 178-170
+                    -> 185-174 (52%) vs open | CLV +0.60 pts, moved our way 181 / against 114 | vs close 182-176
+     4+ gaps vs open: 114-108 (51%) vs open | CLV +0.58 pts, moved our way 114 / against 68 | vs close 111-112
+                    -> 115-105 (52%) vs open | CLV +0.65 pts, moved our way 115 / against 65 | vs close 112-107
+  fit 2025-26 -> test 2024-25 (all flags)
+     margin error 14.194 -> 14.234
+     3+ gaps vs open: 176-161 (52%) vs open | CLV +0.62 pts, moved our way 181 / against 105 | vs close 169-163
+                    -> 176-176 (50%) vs open | CLV +0.57 pts, moved our way 185 / against 108 | vs close 172-178
+     4+ gaps vs open: 112-102 (52%) vs open | CLV +0.66 pts, moved our way 114 / against 66 | vs close 110-104
+                    -> 112-103 (52%) vs open | CLV +0.60 pts, moved our way 112 / against 66 | vs close 108-106
+  fit 2025-26 -> test 2024-25 (only t>=2 flags: visitor at altitude)
+     margin error 14.194 -> 14.178
+     3+ gaps vs open: 176-161 (52%) vs open | CLV +0.62 pts, moved our way 181 / against 105 | vs close 169-163
+                    -> 179-160 (53%) vs open | CLV +0.63 pts, moved our way 182 / against 104 | vs close 172-162
+     4+ gaps vs open: 112-102 (52%) vs open | CLV +0.66 pts, moved our way 114 / against 66 | vs close 110-104
+                    -> 111-105 (51%) vs open | CLV +0.65 pts, moved our way 114 / against 67 | vs close 108-108
