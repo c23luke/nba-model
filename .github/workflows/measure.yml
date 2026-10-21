@@ -1,0 +1,35 @@
+name: Measure (research run, saves the report)
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: which measurement to run (e.g. engine.measure_fatigue)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run
+        run: |
+          set +e
+          name=$(echo "${{ inputs.module }}" | tr -cd 'a-zA-Z0-9_.')
+          python -m "$name" > "reports/$name.txt" 2>&1
+          status=$?
+          cat "reports/$name.txt"
+          { echo '```'; cat "reports/$name.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          git config user.name "nba-model-bot"; git config user.email "actions@users.noreply.github.com"
+          git add "reports/$name.txt"
+          git commit -m "Report: $name" && git pull --rebase && git push
+          exit $status
