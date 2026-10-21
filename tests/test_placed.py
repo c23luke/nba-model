@@ -74,3 +74,40 @@ def test_placed_bet_keeps_its_reasoning_after_it_tips_and_grades(tmp_path):
     assert (r["status"], r["result"], r["pnl"]) == ("FINAL", "W", 15.6)
     assert r["record"]["season"]["w"] == 1                              # the system's own graded pick counts this season
     assert b["placed"]["summary"]["pnl"] == 15.6
+
+
+def test_line_movement_and_beating_the_close():
+    from engine.placed import beat_close, moved_our_way, number
+    assert number("NOP +3.5") == 3.5 and number("MEM −1") == -1 and number("OVER 220.5") == 220.5 and number("x") is None
+    assert moved_our_way("spread", "NOP", 3.5, 2.5) == 1.0          # dog got a point more than the close
+    assert moved_our_way("total", "OVER", 220.5, 222.5) == 2.0 and moved_our_way("total", "UNDER", 220.5, 222.5) == -2.0
+    o = {"bet": "spread", "side": "NOP", "line": 1.5}
+    assert beat_close(o, 0.43, 1.5) == 7.0                              # 50¢ fair at the close, paid 43¢
+    assert beat_close(o, 0.43, 3.5) < 7.0 and beat_close(o, 0.43, 3.5) > 0    # +1.5 is worth less when the close is +3.5
+    assert beat_close(o, 0.43, -0.5) > 7.0                               # market moved our way: NOP now favoured
+    assert beat_close(o, 0.43, 8.5) < 0                                  # market moved hard against us
+
+
+def test_open_bet_tracks_the_market_and_live_bet_shows_if_covering():
+    now = datetime(2026, 10, 22, 1, 0, tzinfo=timezone.utc)
+    o = {"mode": "live", "venue": "kalshi", "bet_key": "k1", "game_id": "g1", "pick": "NOP +3.5", "bet": "spread",
+         "side": "NOP", "line": 1.5, "fill_count": 37, "fill_cost": 15.91, "fees": 0.63, "created_at": "2026-10-21T01:40:00+00:00"}
+    picks = {"k1": {"key": "k1", "system": 113, "group": "FAV", "away": "IND", "home": "NOP"}}
+    later = {**o, "tip_utc": "2026-10-23T00:00:00+00:00"}
+    r = placed_bets([later], picks, {}, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now, lambda gid, bet, side: 2.5)["bets"][0]
+    assert r["market"]["moved"] == 1.0 and r["market"]["closed"] is False and r["market"]["line"] == 2.5
+    live = {**o, "tip_utc": "2026-10-22T00:00:00+00:00"}
+    g = {"g1": {"final": False, "home": "NOP", "away": "IND", "home_score": 88, "away_score": 90, "home_spread": 3.5}}
+    r = placed_bets([live], picks, g, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
+    assert r["status"] == "LIVE" and r["covering"] == -0.5                     # down 2 with +1.5
+    assert r["market"]["line"] == 3.5 and r["market"]["closed"]                # NOP home dog +3.5 at the close
+
+
+def test_placer_skip_reasons_reach_the_board(tmp_path):
+    store = LocalStore(tmp_path)
+    store._write("bet_log", [{"ts": "2025-11-15T14:59:00+00:00", "message": "run (live, prod): 1 bets", "level": "info",
+                              "data": {"skips": [{"pick": "LAL +6 (S1) LAL@MIL", "reason": "price moved"}]}}])
+    b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines,
+            fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    assert b["placer"]["skips"][0]["reason"] == "price moved"

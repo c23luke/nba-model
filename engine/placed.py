@@ -7,7 +7,10 @@ number we actually hold, not the card's number.
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime
+
+from .pricing import outcome
 
 VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "Polymarket US",
                "polymarket": "Polymarket", "prophetx": "ProphetX"}
@@ -40,21 +43,48 @@ def holding(o: dict) -> str:
     return f"{side} {'+' if line > 0 else '−' if line < 0 else ''}{abs(line):g}" if line else f"{side} PK"
 
 
-def grade(o: dict, g: dict) -> str | None:
+def margin(o: dict, g: dict) -> float | None:
+    """How far the bet is winning by (negative = losing) at the number we hold, on the current score."""
     hs, as_ = g.get("home_score"), g.get("away_score")
-    if not g.get("final") or hs is None or as_ is None:
+    if hs is None or as_ is None:
         return None
     line = float(o["line"])
     if o.get("bet") == "total":
-        m = (line - (hs + as_)) if o.get("side") == "UNDER" else ((hs + as_) - line)
-    else:
-        m = (hs - as_ if o.get("side") == g.get("home") else as_ - hs) + line
-    return "W" if m > 0 else "L" if m < 0 else "P"
+        return (line - (hs + as_)) if o.get("side") == "UNDER" else ((hs + as_) - line)
+    return (hs - as_ if o.get("side") == g.get("home") else as_ - hs) + line
 
 
-def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season_wl, now: datetime) -> dict:
+def grade(o: dict, g: dict) -> str | None:
+    m = margin(o, g) if g.get("final") else None
+    return None if m is None else "W" if m > 0 else "L" if m < 0 else "P"
+
+
+def number(label: str | None) -> float | None:
+    """The line in a pick label: 'NOP +3.5' -> 3.5, 'MEM −1' -> -1, 'OVER 220.5' -> 220.5."""
+    m = re.search(r"([+\-−]?\d+(?:\.\d+)?)\s*$", (label or "").strip())
+    return None if not m else float(m.group(1).replace("−", "-"))
+
+
+def moved_our_way(bet: str, side: str, at_bet: float, now: float) -> float:
+    """Points the market moved in our favour since we bet (+ = we got the better number)."""
+    return round((now - at_bet) if side == "OVER" else (at_bet - now), 1)
+
+
+def beat_close(o: dict, per: float, close: float) -> float | None:
+    """Cents per $1 payout we beat the closing market by: what our exact number was worth at the close
+    (a 50/50 market at the closing line, same result spread as the model) minus what we paid."""
+    try:
+        win, push = outcome(0.5, float(close), o.get("bet") or "spread", o.get("side") or "", float(o["line"]))
+    except (TypeError, ValueError):
+        return None
+    return round((win / (1 - push) - per) * 100, 1)
+
+
+def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season_wl, now: datetime,
+                line_now=None) -> dict:
     """orders: filled live bet_orders rows. picks: key -> pick (meta.card_snap holds the snapshot).
-    games: id -> game row. card: key -> current card row. season_wl(pick) -> {w, l, p} this season."""
+    games: id -> game row. card: key -> current card row. season_wl(pick) -> {w, l, p} this season.
+    line_now(game_id, bet, side) -> the market line on our side right now (before tip), or None."""
     now_iso = now.isoformat()
     rows = []
     for o in orders:
@@ -75,6 +105,24 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         res = grade(o, g) if g else None
         status = "FINAL" if res else ("LIVE" if tip and tip <= now_iso else "OPEN")
         pnl = None if not res else round(to_win if res == "W" else -risk if res == "L" else -upfront_fee, 2)
+        # the market since we bet: the card number when we placed it vs now (open) or at the close (tipped)
+        at_bet = number(o.get("pick"))
+        close = (p.get("meta") or {}).get("close_line") if status != "OPEN" else None
+        if close is None and status == "OPEN" and line_now:
+            now_line = line_now(o.get("game_id"), o.get("bet"), o.get("side"))
+        else:
+            now_line = close
+        if close is None and status != "OPEN":
+            close = g.get("total") if o.get("bet") == "total" else (
+                None if g.get("home_spread") is None else
+                g["home_spread"] if o.get("side") == g.get("home") else -g["home_spread"])
+            now_line = close
+        market = None
+        if now_line is not None:
+            market = {"at_bet": at_bet, "line": now_line, "closed": status != "OPEN",
+                      "moved": None if at_bet is None else moved_our_way(o.get("bet"), o.get("side"), at_bet, now_line),
+                      "beat_close": beat_close(o, per, now_line)}
+        mg = margin(o, g) if status == "LIVE" and g else None
         hist = snap.get("history") or None
         season = season_wl(p) if p else {"w": 0, "l": 0, "p": 0}
         rows.append({
@@ -91,7 +139,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
-            "status": status, "result": res, "pnl": pnl,
+            "status": status, "result": res, "pnl": pnl, "market": market, "covering": mg,
             "final_score": p.get("final_score") if res else None,
             "score": {"home": g.get("home_score"), "away": g.get("away_score")} if status != "OPEN" and g else None,
         })
@@ -113,4 +161,6 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         "w": w, "l": l, "p": pu, "pnl": pnl, "risked": risked,
         "roi": round(pnl / risked, 4) if risked else None,
         "since": min((r["placed_at"] for r in rows if r["placed_at"]), default=None),
+        "avg_beat_close": (lambda xs: round(sum(xs) / len(xs), 1) if xs else None)(
+            [r["market"]["beat_close"] for r in rows if r["market"] and r["market"]["closed"] and r["market"]["beat_close"] is not None]),
         "by_venue": by_venue}}

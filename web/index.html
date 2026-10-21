@@ -150,6 +150,27 @@ td .n { font-size: 18px; }
 .game { padding: 10px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
 .game .t { font: 600 20px var(--cond); }
 .foot { color: var(--muted); font-size: 13px; margin-top: 40px; }
+
+/* market line on a ticket, filters, chart, leaderboard */
+.mkt { font-size: 14px; color: var(--muted); margin: -2px 0 10px; }
+.mkt b { color: var(--text); font-weight: 600; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0 2px; font-size: 14px; color: var(--muted); }
+.filters select { font: 500 15px var(--body); color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+.chart { background: var(--panel); border-radius: 12px; padding: 14px 16px 10px; margin-top: 12px; }
+.chart .top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
+.chart .top b { font: 600 18px var(--cond); color: var(--text); }
+.chart svg { display: block; width: 100%; height: 170px; margin-top: 8px; overflow: visible; }
+.chart .key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); margin-top: 6px; }
+.chart .key i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: 3px; margin-right: 5px; }
+.np { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.np .pick { font: 700 20px var(--cond); }
+.np .reason { font-size: 14px; color: var(--muted); grid-column: 1 / -1; }
+.lb th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.lb th button[aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.spark { display: inline-flex; gap: 2px; vertical-align: middle; }
+.spark i { width: 7px; height: 14px; border-radius: 2px; background: var(--line); display: inline-block; }
+.spark i.W { background: var(--win); } .spark i.L { background: var(--loss); }
+@media (max-width: 600px) { .lb .hide-s { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .tabs button { transition: color .15s, border-color .15s; } }
 </style>
 </head>
@@ -192,6 +213,10 @@ const amer = a => a == null ? "" : (a > 0 ? "+" : "−") + Math.abs(a);
 const wl = r => r && (r.w + r.l) ? `${r.w}-${r.l}${r.p ? "-" + r.p : ""}` : "0-0";
 const winp = r => r && (r.w + r.l) ? `${Math.round(r.w / (r.w + r.l) * 100)}%` : "";
 const badge = g => g ? `<span class="badge ${g}">${g}</span>` : "";
+const etDate = iso => iso ? d(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) : "";
+const until = iso => { const m = Math.round((d(iso) - Date.now()) / 60000); if (m <= 0) return "any minute";
+  const h = Math.floor(m / 60); return h >= 24 ? `in ${Math.floor(h / 24)}d ${h % 24}h` : h ? `in ${h}h ${m % 60}m` : `in ${m}m`; };
+const lineTxt = (bet, side, x) => bet === "total" ? `${side} ${x}` : `${side} ${x > 0 ? "+" : x < 0 ? "−" : ""}${x === 0 ? "PK" : Math.abs(x)}`;
 const units = u => `<span class="n ${u > 0 ? "pos" : u < 0 ? "neg" : ""}">${u > 0 ? "+" : ""}${u ?? 0}u</span>`;
 
 // ---------- tabs (remembered per viewer; works without storage too)
@@ -235,12 +260,12 @@ function renderHead(b, placed) {
   $("warn").textContent = warn.length ? `${warn.length} warning${warn.length > 1 ? "s" : ""}: ${warn[0].slice(0, 120)}` : "";
   const s = placed.summary || {};
   const held = new Set((placed.bets || []).map(x => `${x.game_id}|${x.side}`));
-  const toBet = (b.card || []).filter(c => c.verdict === "BET" && !placedKeys.has(c.key) && !held.has(`${c.game_id}|${c.side}`)).length;
+  const toBet = notPlaced(b, placed).filter(c => c.verdict === "BET").length;
   const nextTip = (placed.bets || []).filter(x => x.status === "OPEN").map(x => x.tip_utc).sort()[0];
   const parts = [];
   if (s.open) parts.push(`${s.open} bet${s.open > 1 ? "s" : ""} open, ${money(s.at_risk)} at risk to win ${money(s.open_to_win)}`);
   if (nextTip) parts.push(`First tip ${when(nextTip)}`);
-  if (toBet) parts.push(`${toBet} card bet${toBet > 1 ? "s" : ""} waiting to be placed`);
+  if (toBet) parts.push(`${toBet} card bet${toBet > 1 ? "s" : ""} not placed yet (see why on the Bets tab)`);
   $("status").textContent = parts.length ? parts.join(". ") + "." : "No open bets. New bets are placed automatically when the card fires.";
   document.title = s.open ? `(${s.open}) NBA Model` : "NBA Model";
   const cb = $("c-bets"); cb.hidden = !s.open; cb.textContent = s.open || "";
@@ -261,7 +286,7 @@ function ticket(x) {
     <div class="stub">
       <div class="venue">${esc(x.venue_name)}</div>
       <div class="state ${stateCls}">${stateTxt}</div>
-      <div class="when">${x.status === "OPEN" ? "Tips " + esc(when(x.tip_utc)) : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc))}</div>
+      <div class="when">${x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}<br>${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc))}</div>
       ${pl}
     </div>
     <div class="body">
@@ -272,6 +297,7 @@ function ticket(x) {
         <div>To win<strong>${money(x.to_win)}</strong></div>
         <div>Expected return<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
+      ${marketLine(x)}
       <div class="chips">
         <span class="chip sys">${esc(x.system)}${x.name ? " · " + esc(x.name) : ""}</span>
         ${x.confidence ? `<span class="chip ${x.confidence}">${x.confidence} confidence</span>` : ""}
@@ -297,26 +323,93 @@ function ticket(x) {
   </article>`;
 }
 
-function renderBets(placed) {
-  const s = placed.summary, bets = placed.bets || [];
+function marketLine(x) {
+  const m = x.market;
+  if (x.status === "LIVE" && x.covering != null) {
+    const c = x.covering;
+    return `<div class="mkt"><b class="${c > 0 ? "pos" : c < 0 ? "neg" : ""}">${c > 0 ? "Covering by " + c : c < 0 ? "Behind by " + Math.abs(c) : "Right on the number"}</b> at ${esc(x.holding)}</div>`;
+  }
+  if (!m) return "";
+  const moved = m.moved == null ? "" : m.moved === 0 ? ", no move since we bet" : `, ${m.moved > 0 ? "moved " + m.moved + " our way" : "moved " + Math.abs(m.moved) + " against us"} since we bet`;
+  if (!m.closed) return `<div class="mkt">Line now <b>${esc(lineTxt(x.bet, x.side, m.line))}</b>${moved}${m.beat_close != null ? `. Worth <b class="${m.beat_close > 0 ? "pos" : m.beat_close < 0 ? "neg" : ""}">${m.beat_close > 0 ? "+" : ""}${m.beat_close}¢</b> vs what we paid` : ""}</div>`;
+  return `<div class="mkt">Closed <b>${esc(lineTxt(x.bet, x.side, m.line))}</b>${moved}${m.beat_close != null ? `. ${m.beat_close >= 0 ? "Beat the close by" : "Lost to the close by"} <b class="${m.beat_close > 0 ? "pos" : m.beat_close < 0 ? "neg" : ""}">${Math.abs(m.beat_close)}¢</b>` : ""}</div>`;
+}
+
+// profit by day, settled bets only: total plus one line per site
+function profitChart(bets) {
+  const done = bets.filter(x => x.status === "FINAL" && x.pnl != null);
+  if (!done.length) return `<div class="chart"><div class="top"><span>Profit by day</span><span>Shows up after the first bet settles.</span></div></div>`;
+  const days = [...new Set(done.map(x => etDate(x.tip_utc)))].sort();
+  const sites = [...new Set(done.map(x => x.venue_name))];
+  const cum = key => { let t = 0; return [0, ...days.map(dy => (t += done.filter(x => etDate(x.tip_utc) === dy && (key == null || x.venue_name === key)).reduce((a, x) => a + x.pnl, 0)))]; };
+  const series = [{ name: "All sites", v: cum(null), cls: "var(--amber)", w: 3 }, ...(sites.length > 1 ? sites.map((v, i) => ({ name: v, v: cum(v), cls: ["var(--early)", "var(--win)", "var(--muted)"][i % 3], w: 1.5 })) : [])];
+  const all = series.flatMap(x => x.v), lo = Math.min(0, ...all), hi = Math.max(0, ...all), span = hi - lo || 1;
+  const W = 600, H = 170, n = days.length;
+  const X = i => n ? (i / n) * W : 0, Y = v => H - 8 - ((v - lo) / span) * (H - 16);
+  const path = v => v.map((y, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(y).toFixed(1)}`).join("");
+  const tot = series[0].v[n], avgClv = (() => { const xs = done.filter(x => x.market && x.market.beat_close != null).map(x => x.market.beat_close); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; })();
+  return `<div class="chart">
+    <div class="top"><span>Profit by day <b class="${tot > 0 ? "pos" : tot < 0 ? "neg" : ""}">${signed$(tot)}</b></span>
+      <span>${avgClv == null ? "" : `Beat the close by <b class="${avgClv > 0 ? "pos" : avgClv < 0 ? "neg" : ""}">${avgClv > 0 ? "+" : ""}${avgClv.toFixed(1)}¢</b> a bet on average`}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by day">
+      <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+      ${series.slice().reverse().map(x => `<path d="${path(x.v)}" fill="none" stroke="${x.cls}" stroke-width="${x.w}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("")}
+      ${n === 1 ? `<circle cx="${X(1)}" cy="${Y(tot)}" r="4" fill="var(--amber)"/>` : ""}
+    </svg>
+    <div class="key">${series.map(x => `<span><i style="background:${x.cls}"></i>${esc(x.name)} ${signed$(x.v[n])}</span>`).join("")}<span>${esc(tipDay(days[0] + "T16:00Z"))} to ${esc(tipDay(days[n - 1] + "T16:00Z"))}</span></div>
+  </div>`;
+}
+
+// card bets the order placer hasn't placed, with its latest reason
+function notPlaced(b, placed) {
+  const held = new Set((placed.bets || []).map(x => `${x.game_id}|${x.side}`));
+  const why = Object.fromEntries(((b.placer || {}).skips || []).map(k => [k.pick, k.reason]));
+  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
+    .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }));
+}
+
+let fSite = "", fSys = "", fConf = "";
+function renderBets(placed, b) {
+  const allBets = placed.bets || [];
+  const bets = allBets.filter(x => (!fSite || x.venue_name === fSite) && (!fSys || x.system === fSys) && (!fConf || (x.confidence || "None") === fConf));
   const open = bets.filter(x => x.status !== "FINAL"), done = bets.filter(x => x.status === "FINAL");
-  const venues = s && s.by_venue ? Object.entries(s.by_venue) : [];
+  const sum = (xs, k) => Math.round(xs.reduce((t, x) => t + (x[k] || 0), 0) * 100) / 100;
+  const w = done.filter(x => x.result === "W").length, l = done.filter(x => x.result === "L").length, pu = done.filter(x => x.result === "P").length;
+  const pnl = sum(done, "pnl"), risked = sum(done, "risk");
   const expOpen = Math.round(open.reduce((t, x) => t + (x.ev || 0) * x.risk, 0) * 100) / 100;
-  $("tab-bets").innerHTML = (s ? `<div class="ledger">
-      <div><div class="k">Open</div><div class="v n">${s.open}</div><div class="s">${money(s.at_risk)} at risk, to win ${money(s.open_to_win)}</div></div>
-      <div><div class="k">Record</div><div class="v n">${s.w}-${s.l}${s.p ? "-" + s.p : ""}</div><div class="s">${s.w + s.l ? winp(s) + " of settled bets" : "nothing settled yet"}</div></div>
-      <div><div class="k">Profit</div><div class="v n ${s.pnl > 0 ? "pos" : s.pnl < 0 ? "neg" : ""}">${signed$(s.pnl)}</div><div class="s">${s.roi == null ? "on settled bets" : pct(s.roi) + " return on " + money(s.risked)}</div></div>
-      <div><div class="k">Expected on open bets</div><div class="v n ${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</div><div class="s">${venues.map(([v, x]) => `${esc(v)} ${x.bets}`).join(", ") || "no bets yet"}</div></div>
+  const sites = {}; for (const x of bets) sites[x.venue_name] = (sites[x.venue_name] || 0) + 1;
+  const opts = (vals, cur, all) => `<option value="">${all}</option>` + vals.map(v => `<option${v === cur ? " selected" : ""}>${esc(v)}</option>`).join("");
+  const uniq = k => [...new Set(allBets.map(x => x[k] || "None"))].sort();
+  const np = notPlaced(b, placed);
+  const placerAt = (b.placer || {}).at;
+  $("tab-bets").innerHTML = (allBets.length ? `<div class="ledger">
+      <div><div class="k">Open</div><div class="v n">${open.length}</div><div class="s">${money(sum(open, "risk"))} at risk, to win ${money(sum(open, "to_win"))}</div></div>
+      <div><div class="k">Record</div><div class="v n">${w}-${l}${pu ? "-" + pu : ""}</div><div class="s">${w + l ? Math.round(w / (w + l) * 100) + "% of settled bets" : "nothing settled yet"}</div></div>
+      <div><div class="k">Profit</div><div class="v n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</div><div class="s">${risked ? pct(pnl / risked) + " return on " + money(risked) : "on settled bets"}</div></div>
+      <div><div class="k">Expected on open bets</div><div class="v n ${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</div><div class="s">${Object.entries(sites).map(([v, n]) => `${esc(v)} ${n}`).join(", ") || "no bets"}</div></div>
+    </div>
+    ${profitChart(bets)}
+    <div class="filters">Show
+      <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
+      <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
+      <select id="f-conf" aria-label="Confidence">${opts(uniq("confidence"), fConf, "Any confidence")}</select>
     </div>` : "") +
-    `<h2>Open bets</h2><p class="lede">Placed automatically by the order placer at the best price across your sites. Sized to win $20, or $10 when confidence is Low.</p>` +
-    (open.length ? open.map(ticket).join("") : `<div class="empty">No open bets. When a card bet fires and the price is right, it gets placed and shows up here.</div>`) +
-    (done.length ? `<h2>Settled</h2>` + done.map(ticket).join("") : "") +
-    (s && s.since ? `<p class="foot">Live betting since ${esc(tipDay(s.since))}. Each bet is graded at the number we actually hold.</p>` : "");
+    `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites. Sized to win $20, or $10 when confidence is Low.</p>` +
+    (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys || fConf) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
+    (np.length ? `<h2>On the card, not placed</h2><p class="lede">What the order placer said on its last check${placerAt ? ` (${esc(ago(placerAt))})` : ""}.</p>` +
+      np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
+        <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +
+    (done.length ? `<h2>Settled</h2>` + done.slice().reverse().map(ticket).join("") : "") +
+    (placed.summary && placed.summary.since ? `<p class="foot">Live betting since ${esc(tipDay(placed.summary.since))}. Each bet is graded at the number we actually hold. "Beat the close" compares what we paid with what our exact number was worth at the closing line.</p>` : "");
+  for (const [id, set] of [["f-site", v => fSite = v], ["f-sys", v => fSys = v], ["f-conf", v => fConf = v]]) {
+    const el = $(id); if (el) el.onchange = () => { set(el.value); renderBets(placed, b); };
+  }
 }
 
 // ---------- today's card
 function renderCard(b, placed) {
   const byKey = Object.fromEntries((placed.bets || []).map(x => [x.key, x]));
+  const skipWhy = Object.fromEntries(notPlaced(b, placed).filter(c => c.reason).map(c => [c.key, c.reason]));
   const card = b.card || [], hold = b.card_holding || [];
   const row = c => {
     const p = byKey[c.key];
@@ -328,7 +421,8 @@ function renderCard(b, placed) {
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
         <div class="chips" style="margin:6px 0 4px">${badge(c.group)}<span class="chip sys">${esc(c.tag)}${c.name ? " · " + esc(c.name) : ""}</span>${c.confidence ? `<span class="chip ${c.confidence}">${c.confidence}</span>` : ""}${c.players != null ? `<span class="chip ${c.players >= 3 ? "stack" : ""}">Players ${c.players >= 0 ? "+" : ""}${c.players}</span>` : ""}</div>
         <div class="sub">${r.w + r.l ? `<b class="n" style="font-size:17px;color:var(--text)">${wl(r)}</b> ${winp(r)} all-time · ${wl(r.season)} this season. ` : ""}${esc(c.why || "")}</div>
-        ${p ? `<div class="placed">Placed on ${esc(p.venue_name)}: ${esc(p.holding)} at ${p.venue === "kalshi" ? Math.round(p.price * 100) + "¢" : amer(p.american)}, to win ${money(p.to_win)}</div>` : ""}
+        ${p ? `<div class="placed">Placed on ${esc(p.venue_name)}: ${esc(p.holding)} at ${p.venue === "kalshi" ? Math.round(p.price * 100) + "¢" : amer(p.american)}, to win ${money(p.to_win)}</div>`
+          : skipWhy[c.key] ? `<div class="sub" style="margin-top:4px">Not placed: ${esc(skipWhy[c.key])}</div>` : ""}
       </div>
       <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} expected` : "no price yet"}</div>
       ${(c.shop || []).length > 1 ? `<details class="shop"><summary>Every price (${c.shop.length})</summary><table>${c.shop.map(q =>
@@ -359,25 +453,45 @@ function renderResults(b) {
       : `<div class="empty">No graded OG bets yet. Results post the morning after each game.</div>`);
 }
 
-// ---------- systems
-let sysFilter = "OG";
+// ---------- systems leaderboard
+let sysFilter = "ALL", sysSort = "units";
 function renderSystems(b) {
   const groups = {
     OG: Object.entries(b.systems || {}).map(([id, s]) => ({ ...s, tag: "S" + id, group: "OG", rule: s.card })),
     FAV: Object.values(b.test_systems || {}).filter(s => s.group === "FAV"),
-    TEST: Object.values(b.test_systems || {}).filter(s => s.group !== "FAV"),
     EARLY: Object.values(b.early_systems || {}),
+    TEST: Object.values(b.test_systems || {}).filter(s => s.group !== "FAV"),
   };
-  const names = { OG: "Main (OG)", FAV: "Favorites", EARLY: "Early season", TEST: "Testing" };
-  const rows = groups[sysFilter] || [];
-  $("tab-systems").innerHTML = `<h2>System records this season</h2>
-    <p class="lede">Graded at the closing line, 1 unit at −110. Main systems bet; favorites held up on the last two seasons; testing is tracked only.</p>
-    <div class="seg" role="group">${Object.keys(groups).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
-    ${rows.length ? `<table><thead><tr><th>System</th><th class="r">Record</th><th class="r">Win %</th><th class="r">Units</th></tr></thead><tbody>${rows.map(s => `<tr>
+  groups.ALL = [...groups.OG, ...groups.FAV, ...groups.EARLY, ...groups.TEST];
+  const names = { ALL: "All", OG: "Main (OG)", FAV: "Favorites", EARLY: "Early season", TEST: "Testing" };
+  // each system's graded results, oldest to newest, for the last-20 strip
+  const res = {};
+  for (const p of [...(b.history || []), ...(b.test_history || []), ...(b.early_history || [])]) {
+    const tag = p.tag || "S" + p.system;
+    (res[tag] = res[tag] || []).push(p);
+  }
+  for (const k in res) res[k].sort((x, y) => (x.tip_utc || "").localeCompare(y.tip_utc || ""));
+  const key = {
+    units: s => s.units ?? 0,
+    win: s => s.w + s.l ? s.w / (s.w + s.l) : -1,
+    record: s => (s.w || 0) + (s.l || 0) + (s.p || 0),
+    clv: s => s.avg_clv ?? -99,
+    name: s => s.tag,
+  };
+  const rows = (groups[sysFilter] || []).slice().sort((x, y) => sysSort === "name" ? key.name(x).localeCompare(key.name(y), undefined, { numeric: true }) : key[sysSort](y) - key[sysSort](x));
+  const th = (k, label, cls = "r") => `<th class="${cls}"><button data-sort="${k}" aria-pressed="${sysSort === k}">${label}${sysSort === k ? (k === "name" ? " ↑" : " ↓") : ""}</button></th>`;
+  const spark = tag => { const r = (res[tag] || []).slice(-20); return r.length ? `<span class="spark" title="last ${r.length}, oldest first">${r.map(p => `<i class="${p.result}"></i>`).join("")}</span>` : `<span class="muted">—</span>`; };
+  $("tab-systems").innerHTML = `<h2>System leaderboard</h2>
+    <p class="lede">This season, graded at the closing line, 1 unit at −110. Main systems bet; favorites held up over the last two seasons; testing is tracked only. Tap a column to sort.</p>
+    <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
+    ${rows.length ? `<table class="lb"><thead><tr>${th("name", "System", "")}${th("record", "Record")}${th("win", "Win %")}${th("units", "Units")}${th("clv", "Beat close", "r hide-s")}<th class="hide-s">Last 20</th></tr></thead><tbody>${rows.map(s => `<tr>
       <td>${badge(s.group)}<b>${esc(s.tag)}. ${esc(s.name)}</b><div class="muted" style="font-size:14px">${esc(s.rule || "")}</div></td>
-      <td class="r"><span class="n">${wl(s)}</span></td><td class="r">${winp(s) || "—"}</td><td class="r">${units(s.units)}</td></tr>`).join("")}</tbody></table>`
+      <td class="r"><span class="n">${wl(s)}</span></td><td class="r">${winp(s) || "—"}</td><td class="r">${units(s.units)}</td>
+      <td class="r hide-s">${s.avg_clv == null ? "—" : `<span class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv} pts</span>`}</td>
+      <td class="hide-s">${spark(s.tag)}</td></tr>`).join("")}</tbody></table>`
       : `<div class="empty">No systems in this group.</div>`}`;
   $("tab-systems").querySelectorAll(".seg button").forEach(btn => btn.onclick = () => { sysFilter = btn.dataset.f; renderSystems(b); });
+  $("tab-systems").querySelectorAll("th button").forEach(btn => btn.onclick = () => { sysSort = btn.dataset.sort; renderSystems(b); });
 }
 
 // ---------- model lab
@@ -440,7 +554,7 @@ function render(b) {
   const placed = b.placed || { bets: [], summary: null };
   placedKeys = new Set((placed.bets || []).map(x => x.key));
   renderHead(b, placed);
-  renderBets(placed);
+  renderBets(placed, b);
   renderCard(b, placed);
   renderResults(b);
   renderSystems(b);

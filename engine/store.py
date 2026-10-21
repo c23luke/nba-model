@@ -35,6 +35,10 @@ class LocalStore:
         """Live orders that filled (what the order placer actually bet)."""
         return [o for o in self._read("bet_orders", []) if o.get("mode") == "live" and (o.get("fill_count") or 0) > 0]
 
+    def load_placer_run(self):
+        runs = [r for r in self._read("bet_log", []) if str(r.get("message", "")).startswith("run (")]
+        return ({"at": runs[-1].get("ts"), "skips": (runs[-1].get("data") or {}).get("skips", [])} if runs else None)
+
     def save_picks(self, rows):
         cur = {r["key"]: r for r in self.load_picks()}
         cur.update({r["key"]: r for r in shape("picks", rows)})     # same columns as the Supabase table
@@ -124,6 +128,11 @@ class SupabaseStore:
     def load_orders(self):
         """Live orders that filled (what the order placer actually bet). Private table; service key only."""
         return self._req("GET", "/bet_orders?mode=eq.live&fill_count=gt.0&select=*&order=created_at.desc") or []
+
+    def load_placer_run(self):
+        """The order placer's latest run summary: why each card bet was skipped (logged at least every 15 min)."""
+        rows = self._req("GET", "/bet_log?message=like.run%20(*&select=ts,data&order=ts.desc&limit=1") or []
+        return {"at": rows[0]["ts"], "skips": (rows[0].get("data") or {}).get("skips", [])} if rows else None
 
     def load_player_games(self):  return self._all("player_games")
     def save_player_games(self, rows):
