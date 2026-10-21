@@ -158,7 +158,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             except Exception as e:
                 official = None
                 log.append(f"Official injury report failed (using ESPN): {e}")
-            return personnel_mod.read_all(live=live, official=official, notes=log)
+            return personnel_mod.read_all(live=live, official=official, notes=log,
+                                          games=[(g.game_date, g.away, g.home) for g in upcoming])
     if personnel_fetch:
         try:
             reads = personnel_fetch()

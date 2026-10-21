@@ -118,11 +118,36 @@ def parse(pdf: bytes) -> tuple[list[dict], list[str]]:
     return parse_lines(lines_from_pdf(pdf))
 
 
-def apply(rosters: dict[str, list[dict]], report: dict | None) -> list[str]:
-    """Overwrite ESPN's status with the official one for every listed player. Returns what changed."""
+def for_games(rows: list[dict], games) -> list[dict]:
+    """Only rows for games still to be played (date, away, home), and for each team only its NEXT game —
+    the report also lists games already finished today, and a player out yesterday may be fine tonight."""
+    want = {}
+    for gd, away, home in games:
+        for t in (away, home):
+            if t not in want or gd < want[t][0]:
+                want[t] = (gd, away, home)
+    keep = []
+    for r in rows:
+        nxt = want.get(r["team"])
+        if not nxt or not r.get("date") or not r.get("matchup"):
+            continue
+        try:
+            rd = datetime.strptime(r["date"], "%m/%d/%Y").date()
+            a, h = (code(x) for x in r["matchup"].split("@"))
+        except Exception:
+            continue
+        if (rd, a, h) == nxt:
+            keep.append(r)
+    return keep
+
+
+def apply(rosters: dict[str, list[dict]], report: dict | None, games=None) -> list[str]:
+    """Overwrite ESPN's status with the official one for every listed player (for each team's next game
+    when `games` = [(date, away, home), ...] is given). Returns what changed."""
     if not report:
         return []
-    by = {(r["team"], r["key"]): r for r in report["rows"]}
+    rows = report["rows"] if games is None else for_games(report["rows"], games)
+    by = {(r["team"], r["key"]): r for r in rows}
     changed = []
     for team, athletes in rosters.items():
         for a in athletes:

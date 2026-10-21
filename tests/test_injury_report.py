@@ -90,3 +90,14 @@ def test_reads_a_real_pdf_table_layout():
     assert [(r["team"], r["player"], r["status"]) for r in rows] == [
         ("IND", "Tyrese Haliburton", "Out"), ("IND", "Andrew Nembhard", "Questionable"), ("NOP", "Zion Williamson", "Probable")]
     assert missing == ["UTA"]
+
+
+def test_only_each_teams_next_game_counts():
+    from datetime import date
+    rows, _ = IR.parse_lines([
+        "10/20/2026 07:00 (ET) BOS@DET Detroit Pistons Prince, Taurean Out Personal Reasons",       # already played
+        "10/21/2026 07:00 (ET) IND@NOP Indiana Pacers Nesmith, Aaron Out Injury/Illness",
+        "10/22/2026 07:00 (ET) NOP@HOU New Orleans Pelicans Williamson, Zion Out Rest",           # NOP's game after next
+    ])
+    keep = IR.for_games(rows, [(date(2026, 10, 21), "IND", "NOP"), (date(2026, 10, 22), "NOP", "HOU"), (date(2026, 10, 22), "DET", "CHI")])
+    assert [r["player"] for r in keep] == ["Aaron Nesmith"]
