@@ -1070,6 +1070,12 @@ export class ProphetX implements Venue {
       else if (x.line == null) { pass("no number"); continue; }
       else line = x.line;
       if (x.value < 1) { pass("nothing to take"); continue; }
+      // ProphetX's docs don't say which way a spread number is signed for each side, so check it against
+      // the market: if the market has us getting points and ProphetX says we're laying them (or the
+      // reverse), the number is read backwards — skip it rather than bet the wrong line.
+      if (x.kind === "spread" && m.market != null && Math.abs(m.market) >= 1 && Math.sign(line) !== Math.sign(m.market)) {
+        pass(`number looks flipped vs the market (${m.market > 0 ? "+" : ""}${m.market})`); continue;
+      }
       if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
       if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
       const cost = americanCost(x.price);

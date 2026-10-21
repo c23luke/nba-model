@@ -549,3 +549,14 @@ Deno.test("test-only sites log WOULD HAVE PLACED while live betting is on, and n
   eq(calls.filter((c) => c.path === "/v4/mm/submit_order").length, 0);
   eq(db.orders_.filter((o) => o.mode === "live").length, 0);
 });
+
+
+Deno.test("ProphetX: a spread number that's signed backwards vs the market is skipped", async () => {
+  const flipped = [{ id: 1, type: "spread", status: "active", selections: [
+    [{ competitor_id: 2, name: "New Orleans Pelicans", strike: -3.5, price: 100, value: 300, strike_id: "nopm35" }]] }];
+  const { http } = fakePX(flipped);
+  const px = new ProphetX("a", "s", undefined, http, () => NOW.getTime(), async () => {});
+  const row = pxRow();
+  eq((await px.offers(row)).length, 0);
+  ok(px.explain(row).includes("looks flipped"), px.explain(row));
+});
