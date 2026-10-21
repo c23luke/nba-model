@@ -1,0 +1,92 @@
+https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-10-20_11_15PM.pdf
+90 players, not yet submitted: []
+  10/20/2026 BOS@DET  BOS Devin Carter                 Out          Injury/Illness - Illness
+  10/20/2026 BOS@DET  DET Elijah Harkless              Out          G League - Two-Way
+  10/20/2026 BOS@DET  DET Isaac Jones                  Out          G League - Two-Way
+  10/20/2026 BOS@DET  DET Ugonna Onyenso               Out          G League - Two-Way
+  10/20/2026 BOS@DET  DET Taurean Prince               Out          Personal Reasons
+  10/20/2026 PHI@NYK  PHI Dominick Barlow              Out          
+  10/20/2026 PHI@NYK  PHI Adem Bona                    Available    -
+  10/20/2026 PHI@NYK  PHI Tacko Fall                   Out          Injury/Illness - Left Quadriceps Strain
+  10/20/2026 PHI@NYK  PHI Ariel Hukporti               Out          
+  10/20/2026 PHI@NYK  PHI Anfernee Simons              Available    -
+  10/20/2026 PHI@NYK  PHI Dean Wade                    Out          Injury/Illness - Left Ankle Sprain
+  10/20/2026 OKC@SAS  OKC Otega Oweh                   Out          
+  10/20/2026 OKC@SAS  OKC Thomas Sorber                Out          Injury/Illness - Right Knee Surgery
+  10/20/2026 OKC@SAS  OKC Nikola Topic                 Out          Injury/Illness - Low Back Surgery
+  10/20/2026 OKC@SAS  SAS Tobias Harris                Out          Injury/Illness - Left Calf Strain
+  10/20/2026 OKC@SAS  SAS Jayden Quaintance            Out          Injury/Illness - Right Knee Surgery
+  10/21/2026 ATL@ORL  ATL RayJ Dennis                  Questionable G League - Two-Way
+  10/21/2026 ATL@ORL  ATL Keshon Gilbert               Questionable G League - Two-Way
+  10/21/2026 ATL@ORL  ATL Mouhamed Gueye               Out          Injury/Illness - Left Foot Fracture
+  10/21/2026 ATL@ORL  ATL Henri Veesaar                Out          Injury/Illness - Right ACL Tear
+  10/21/2026 ATL@ORL  ATL Jalen Wilson                 Questionable G League - Two-Way
+  10/21/2026 ATL@ORL  ORL Anthony Black                Out          Injury/Illness - Right Ankle Sprain
+  10/21/2026 ATL@ORL  ORL Jonathan Isaac               Out          
+  10/21/2026 ATL@ORL  ORL Izaiyah Nelson               Out          
+  10/21/2026 ATL@ORL  ORL Noah Penda                   Out          
+  10/21/2026 MIL@WAS  MIL Nate Ament                   Probable     Injury/Illness - Left Ankle Sprain
+  10/21/2026 MIL@WAS  WAS AJ Dybantsa                  Out          Injury/Illness - Left Ankle Sprain
+  10/21/2026 MIL@WAS  WAS Tristan Vukcevic             Out          Injury/Illness - Left Hip Impingement
+  10/21/2026 MIL@WAS  WAS Jamir Watkins                Out          
+  10/21/2026 CHA@BKN  CHA Kylan Boswell                Out          Injury/Illness - Right Knee Surgery
+  10/21/2026 CHA@BKN  CHA Kon Knueppel                 Out          Injury/Illness - Left Hamstring Strain
+  10/21/2026 CHA@BKN  CHA Coby White                   Out          Injury/Illness - Left Calf Strain
+  10/21/2026 CHA@BKN  CHA Grant Williams               Out          Injury/Illness - Right Hamstring Strain
+  10/21/2026 CHA@BKN  BKN Tyler Bilodeau               Out          Injury/Illness - Right Shoulder Sprain
+  10/21/2026 CHI@TOR  CHI Tobe Awaka                   Probable     Injury/Illness - Left MCL Sprain
+  10/21/2026 CHI@TOR  CHI Nic Claxton                  Out          Injury/Illness - Left Hamstring Strain
+  10/21/2026 CHI@TOR  CHI Zach Collins                 Probable     
+  10/21/2026 CHI@TOR  CHI Jordan Hawkins               Doubtful     Injury/Illness - Gastrointestinal Illness
+  10/21/2026 CHI@TOR  CHI Leonard Miller               Probable     Injury/Illness - Right Adductor Strain
+  10/21/2026 CHI@TOR  CHI Isaac Okoro                  Probable     
+  10/21/2026 CHI@TOR  CHI Dailyn Swain                 Doubtful     Injury/Illness - Gastrointestinal Illness
+  10/21/2026 CHI@TOR  TOR Nate Bittle                  Out          
+  10/21/2026 MIN@MIA  MIN Donte DiVincenzo             Out          
+  10/21/2026 MIN@MIA  MIA Myron Gardner                Available    Injury/Illness - Right Ankle Sprain
+  10/21/2026 MIN@MIA  MIA Vladislav Goldin             Questionable Injury/Illness - Right Ankle Sprain
+  10/21/2026 MIN@MIA  MIA Dru Smith                    Available    Injury/Illness - Right Calf Strain
+  10/21/2026 IND@NOP  IND Kobe Brown                   Probable     G League - Two-Way
+  10/21/2026 IND@NOP  IND Johnny Furphy                Out          
+  10/21/2026 IND@NOP  IND T.J. McConnell               Out          Injury/Illness - Right Hamstring Strain
+  10/21/2026 IND@NOP  IND Aaron Nesmith                Out          Injury/Illness - Left Hamstring Strain
+  10/21/2026 IND@NOP  IND Jalen Slawson                Probable     G League - Two-Way
+  10/21/2026 IND@NOP  IND Braden Smith                 Doubtful     G League - Two-Way
+  10/21/2026 UTA@MEM  UTA Trey Alexander               Out          
+  10/21/2026 UTA@MEM  UTA Tony Bradley                 Out          Injury/Illness - Left Quadriceps Strain
+  10/21/2026 UTA@MEM  UTA Blake Hinson                 Out          Injury/Illness - Left Hamstring Strain
+  10/21/2026 UTA@MEM  UTA Jusuf Nurkic                 Out          
+  10/21/2026 UTA@MEM  MEM Isaiah Stewart               Doubtful     Injury/Illness - Left Ankle Sprain
+  10/21/2026 DAL@HOU  DAL Santi Aldama                 Out          Injury/Illness - Right Knee Surgery
+  10/21/2026 DAL@HOU  DAL Tarik Biberovic              Out          Injury/Illness - Right Heel Bursitis
+  10/21/2026 DAL@HOU  DAL Jett Howard                  Questionable Injury/Illness - Right Calf Tightness
+  10/21/2026 DAL@HOU  DAL Dereck Lively II             Out          Injury/Illness - Right Foot Surgery
+  10/21/2026 DAL@HOU  DAL Caleb Martin                 Out          Injury/Illness - Right Thumb Sprain
+  10/21/2026 DAL@HOU  HOU Steven Adams                 Questionable 
+  10/21/2026 DAL@HOU  HOU Julian Phillips              Questionable Injury/Illness - Illness
+  10/21/2026 GSW@LAL  GSW Charles Bassey               Questionable 
+  10/21/2026 GSW@LAL  GSW Jimmy Butler III             Out          Injury/Illness - Right ACL Repair /
+  10/21/2026 GSW@LAL  GSW Stephen Curry                Probable     Injury/Illness - Right Ankle Soreness
+  10/21/2026 GSW@LAL  GSW Moses Moody                  Out          
+  10/21/2026 GSW@LAL  GSW Brandin Podziemski           Out          
+  10/21/2026 GSW@LAL  GSW Kristaps Porzingis           Out          Not With Team
+  10/21/2026 GSW@LAL  LAL Cameron Carr                 Out          Injury/Illness - Right Oblique Strain
+  10/21/2026 GSW@LAL  LAL Walker Kessler               Available    Injury/Illness - Left Finger Splint
+  10/21/2026 GSW@LAL  LAL Collin Sexton                Questionable Injury/Illness - Right Soleus Strain
+  10/21/2026 GSW@LAL  LAL Adou Thiero                  Out          
+  10/21/2026 PHX@POR  PHX Luke Kennard                 Questionable 
+  10/21/2026 PHX@POR  PHX Mark Williams                Out          Injury/Illness - Left Shoulder Surgery
+  10/21/2026 PHX@POR  POR Deni Avdija                  Questionable Injury/Illness - Right Ankle Soreness
+  10/21/2026 PHX@POR  POR Branden Carlson              Out          Injury/Illness - Concussion Protocol
+  10/21/2026 PHX@POR  POR Micah Potter                 Questionable Injury/Illness - Illness
+  10/21/2026 PHX@POR  POR Shaedon Sharpe               Out          
+  10/21/2026 PHX@POR  POR Chris Youngblood             Out          Injury/Illness - Left Ankle Soreness
+  10/21/2026 SAC@LAC  SAC Dylan Cardwell               Out          Injury/Illness - Left Calf Strain
+  10/21/2026 SAC@LAC  SAC Malik Monk                   Questionable Injury/Illness - Left Ankle Soreness
+  10/21/2026 SAC@LAC  SAC Maxime Raynaud               Out          
+  10/21/2026 SAC@LAC  SAC Ben Simmons                  Out          
+  10/21/2026 SAC@LAC  LAC Bradley Beal                 Out          
+  10/21/2026 SAC@LAC  LAC Brandon Ingram               Out          Injury/Illness - Right Heel Surgery
+  10/21/2026 SAC@LAC  LAC Jordan Miller                Out          
+  10/21/2026 SAC@LAC  LAC Yanic Konan Niederhauser     Out          Injury/Illness - Right Lisfranc Surgery
+  10/21/2026 SAC@LAC  LAC Max Strus                    Out          
