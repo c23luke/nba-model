@@ -170,6 +170,8 @@ def test_early_system_makes_the_card_only_with_players_model_3_plus():
     assert [c["game_id"] for c in card] == ["g1"]
     c = card[0]
     assert c["group"] == "EARLY" and c["win"] == 0.559 and c["verdict"] == "BET" and "players model agrees by 3.6" in c["name"]
+    assert (c["history"]["w"], c["history"]["l"]) == (26, 10)                # the whole combo
+    assert (c["history"]["part"]["tag"], c["history"]["part"]["w"], c["history"]["part"]["l"]) == ("E2", 6, 4)
     # an OG/FAV bet on the same side already covers it: no duplicate row
     card = build_card(live + [pk(112, "H", [kq("H", 4.0, 0.47)], line=4.0)], slate, now=NOW)
     assert [c["tag"] for c in card if c["game_id"] == "g1"] == ["T12"]

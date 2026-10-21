@@ -124,7 +124,9 @@ def history(pick: dict, slate: list[dict]) -> dict | None:
     sid = pick["system"]
     if group(sid) == "EARLY":
         h = players_history("EARLY", EARLY_STACK_MIN_GAP)
-        return {"w": h["w"], "l": h["l"], "label": "2 seasons, early system + players model 3+, at the open"} if h else None
+        part = players_history(label(sid), EARLY_STACK_MIN_GAP)       # this one system's share of the combo
+        return ({"w": h["w"], "l": h["l"], "label": "2 seasons, early system + players model 3+, at the open",
+                 "part": {"tag": label(sid), "w": part["w"], "l": part["l"]} if part else None} if h else None)
     if sid == 113:
         for g in slate:
             c = ((g.get("personnel") or {}).get("case") or {})
