@@ -29,6 +29,7 @@ export type Settings = {
   kalshi_env: "demo" | "prod";
   venues: string[];
   stake_dollars: number;
+  to_win_dollars?: number | null;    // when set, every bet is sized to win this much (after fees)
   daily_loss_cap: number;
   max_open_bets: number;
   max_dollars_per_game: number;
@@ -93,6 +94,13 @@ export function polyFee(p: number, count: number): number {
   const fl = Math.floor(cents), diff = cents - fl;
   const r = Math.abs(diff - 0.5) < 1e-9 ? (fl % 2 === 0 ? fl : fl + 1) : Math.round(cents);
   return r / 100;
+}
+
+/** Fewest contracts that win at least `toWin` dollars after the fee, buying at `price`. */
+export function contractsToWin(price: number, toWin: number, fee: (p: number, c: number) => number): number {
+  let c = Math.max(1, Math.ceil(toWin / (1 - price) - 1e-9));
+  while (c * (1 - price) - fee(price, c) < toWin - 1e-9 && c < 100000) c++;
+  return c;
 }
 
 /** Expected return per $1 at an all-in cost per contract, from the model's win and break-even cost. */
@@ -211,9 +219,11 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       if (ask == null || ask <= 0 || ask >= 0.99) { why.push(`${v.name} ${q.contract}: nothing to buy right now`); continue; }
       if (ask > seen + 1e-9) { why.push(`${v.name} ${q.contract}: ask ${cents(ask)} moved above the model's ${cents(seen)}`); continue; }
 
-      // Rule 2: fixed stake
+      // Rule 2: same size every bet — to win a fixed amount (default), or a fixed stake
       const limit = round4(seen);
-      const count = Math.floor(s.stake_dollars / limit + 1e-9);
+      const count = s.to_win_dollars && s.to_win_dollars > 0
+        ? contractsToWin(limit, s.to_win_dollars, (p, c) => v.fee(p, c))
+        : Math.floor(s.stake_dollars / limit + 1e-9);
       if (count < 1) { why.push(`stake ${money(s.stake_dollars)} buys less than one contract at ${cents(limit)}`); continue; }
       const stake = round2(count * limit);
       const fee = v.fee(limit, count);

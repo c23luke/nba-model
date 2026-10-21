@@ -1,5 +1,5 @@
 import {
-  type Db, type FeedRow, type OrderRow, type Quote, type Settings, type Venue,
+  contractsToWin, type Db, type FeedRow, type OrderRow, type Quote, type Settings, type Venue,
   etDayStart, evAt, Kalshi, kalshiFee, kalshiSigner, pkcs1ToPkcs8, polyFee, runOnce,
 } from "./core.ts";
 
@@ -282,4 +282,18 @@ Deno.test("Polymarket US: finds the game's moneyline and which side is ours", as
   const q2 = { ...q, side: "PHI", contract: "PHI to win" };
   eq((await p.ask(q2, row)).ask, 0.39);
   eq(q2.order_side, "long");
+});
+
+
+Deno.test("to-win sizing: same $20 win on every bet, whatever the price", async () => {
+  // 49c: 41 contracts win 41 x 0.51 = 20.91, minus the 0.72 fee = 20.19 ≥ 20
+  eq(contractsToWin(0.49, 20, kalshiFee), 41);
+  ok(40 * 0.51 - kalshiFee(0.49, 40) < 20, "one fewer falls short");
+  const c70 = contractsToWin(0.70, 20, kalshiFee);
+  ok(c70 * 0.30 - kalshiFee(0.70, c70) >= 20 && (c70 - 1) * 0.30 - kalshiFee(0.70, c70 - 1) < 20);
+  const db = new FakeDb(settings({ to_win_dollars: 20, max_dollars_per_game: 50 }), [feedRow()]);
+  await runOnce(db, { kalshi: new FakeVenue() }, NOW);
+  const o = db.orders_[0];
+  eq([o.count, o.stake], [41, 20.09]);
+  ok(o.count * (1 - o.limit_price) - o.est_fee >= 20, "wins at least $20 after the fee");
 });
