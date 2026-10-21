@@ -352,7 +352,7 @@ function profitChart(bets) {
   const tot = series[0].v[n], avgClv = (() => { const xs = done.filter(x => x.market && x.market.beat_close != null).map(x => x.market.beat_close); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; })();
   return `<div class="chart">
     <div class="top"><span>Profit by day <b class="${tot > 0 ? "pos" : tot < 0 ? "neg" : ""}">${signed$(tot)}</b></span>
-      <span>${avgClv == null ? "" : `Beat the close by <b class="${avgClv > 0 ? "pos" : avgClv < 0 ? "neg" : ""}">${avgClv > 0 ? "+" : ""}${avgClv.toFixed(1)}¢</b> a bet on average`}</span></div>
+      <span>${avgClv == null ? "" : `${avgClv >= 0 ? "Beat the close by" : "Behind the close by"} <b class="${avgClv > 0 ? "pos" : avgClv < 0 ? "neg" : ""}">${Math.abs(avgClv).toFixed(1)}¢</b> a bet on average`}</span></div>
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by day">
       <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
       ${series.slice().reverse().map(x => `<path d="${path(x.v)}" fill="none" stroke="${x.cls}" stroke-width="${x.w}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("")}
