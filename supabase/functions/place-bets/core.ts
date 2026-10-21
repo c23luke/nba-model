@@ -93,6 +93,8 @@ export interface Venue {
   order(o: OrderRow, clientId: string, q?: Quote): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
   /** Venues with a peer-to-peer book build their own quotes from live offers, priced with the model. */
   offers?(row: FeedRow): Promise<Quote[]>;
+  /** Why a peer-to-peer venue had nothing to offer on this bet (shown in the skip reason). */
+  explain?(row: FeedRow): string;
   /** No settlement feed: today's P&L is graded from final scores instead. */
   gradeFromGames?: boolean;
 }
@@ -243,7 +245,11 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       }
     }
     quotes = quotes.filter((q) => q.ev >= s.min_ev).sort((a, b) => b.ev - a.ev);
-    if (!quotes.length) { skip(`no quote on ${on.join("/") || "any switched-on venue"} with expected return ≥ ${pct(s.min_ev)}`); continue; }
+    if (!quotes.length) {
+      const notes = on.map((vn) => venues[vn].explain?.(row) ?? "").filter(Boolean).join(" · ");
+      skip(`no quote on ${on.join("/") || "any switched-on venue"} with expected return ≥ ${pct(s.min_ev)}${notes ? ` — ${notes}` : ""}`);
+      continue;
+    }
 
     let done = false;
     const why: string[] = [];
@@ -596,11 +602,19 @@ export function teamCode(t: { abbreviation?: string; displayName?: string } | st
   return null;
 }
 const SPREAD_WINDOW = 4, TOTAL_WINDOW = 6;
+const toMs = (t: unknown) => { const n = Number(t); return n > 1e12 ? n : n * 1000; };
 
 export class BetOpenly implements Venue {
   name = "BetOpenly";
   gradeFromGames = true;
   private book: any[] | null = null;
+  private notes = new Map<string, string[]>();
+  /** What BetOpenly had on this game and why each offer was passed over (for the log). */
+  explain(row: FeedRow): string {
+    const n = this.notes.get(row.key);
+    if (!n) return "";
+    return n.length ? `BetOpenly offers on this game: ${n.join("; ")}` : `BetOpenly: no offers on this game (${this.book?.length ?? 0} open offers in all)`;
+  }
   constructor(private key?: string, private http: typeof fetch = fetch, private nowMs = () => Date.now()) {}
   get hasKeys() { return !!this.key; }
 
@@ -620,13 +634,13 @@ export class BetOpenly implements Venue {
                    eventMs: number; home: string | null; away: string | null } | null {
     if (b?.betType !== "GAME" || !Array.isArray(b.details) || b.details.length !== 1) return null;
     if (b.betStatus !== "PENDING") return null;
-    if (b.expiryDate && Number(b.expiryDate) * 1000 <= this.nowMs()) return null;
+    if (b.expiryDate && toMs(b.expiryDate) <= this.nowMs()) return null;
     const d = b.details[0];
     if (String(d.league ?? "").toUpperCase() !== "NBA" || String(d.timeframe ?? "").toLowerCase() !== "game") return null;
     const kind0 = String(d.betType ?? "").toLowerCase();
     const kind = kind0 === "to win" ? "moneyline" : kind0;
     if (!["spread", "moneyline", "over", "under"].includes(kind)) return null;
-    const eventMs = d.eventDateIso ? Date.parse(d.eventDateIso) : Number(d.eventDate) * 1000;
+    const eventMs = d.eventDateIso ? Date.parse(d.eventDateIso) : toMs(d.eventDate);
     return { id: String(b.id), team: teamCode(d.teamAbbv ?? d.team), kind,
              line: d.lines == null ? null : Number(d.lines), odds: Number(d.odds), available: Number(b.availableAmount ?? 0),
              eventMs, home: teamCode(d.homeTeam), away: teamCode(d.awayTeam) };
@@ -640,31 +654,40 @@ export class BetOpenly implements Venue {
       this.book = Array.isArray(js) ? js : (js.data ?? []);
     }
     const out: Quote[] = [];
+    const notes: string[] = [];
+    this.notes.set(row.key, notes);
     for (const b of this.book!) {
+      const d0 = Array.isArray(b?.details) ? b.details[0] : null;
+      const teams = d0 ? [teamCode(d0.homeTeam), teamCode(d0.awayTeam)] : [];
+      const onGame = teams.includes(row.home) && teams.includes(row.away);
+      const desc = onGame ? `${d0.teamAbbv ?? d0.team ?? "?"} ${d0.betType ?? "?"} ${d0.lines ?? ""} ${d0.odds > 0 ? "+" : ""}${d0.odds} ($${b.availableAmount ?? "?"})` : "";
+      const pass = (why: string) => { if (onGame && notes.length < 12) notes.push(`${desc}: ${why}`); };
       const o = this.parse(b);
-      if (!o || o.home !== row.home || o.away !== row.away) continue;
-      if (Math.abs(o.eventMs - Date.parse(row.tip_utc)) > 6 * 3600e3) continue;
-      if (!Number.isFinite(o.odds) || o.odds === 0 || o.available <= 0) continue;
+      if (!o) { pass(`not a live full-game single bet (${b?.betType}/${b?.betStatus}/${d0?.timeframe}/${b?.details?.length} legs)`); continue; }
+      if (o.home !== row.home || o.away !== row.away) continue;
+      if (Math.abs(o.eventMs - Date.parse(row.tip_utc)) > 6 * 3600e3) { pass("different date"); continue; }
+      if (!Number.isFinite(o.odds) || o.odds === 0 || o.available <= 0) { pass("no odds or nothing left"); continue; }
       let line: number, contract: string;
       if (m.bet === "total") {
-        if (o.kind !== m.side.toLowerCase() || o.line == null) continue;
+        if (o.kind !== m.side.toLowerCase() || o.line == null) { pass("not our bet"); continue; }
         line = o.line; contract = `${m.side === "OVER" ? "Over" : "Under"} ${line}`;
       } else {
-        if (o.team !== m.side) continue;
+        if (o.team !== m.side) { pass("other side"); continue; }
         if (o.kind === "moneyline") { line = -0.5; contract = `${m.side} to win`; }
         else if (o.kind === "spread" && o.line != null) { line = o.line; contract = `${m.side} ${line > 0 ? "+" : ""}${line}`; }
-        else continue;
+        else { pass("not our bet"); continue; }
       }
-      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) continue;                 // outside the system's rule
-      if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) continue;
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
+      if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
       const cost = americanCost(o.odds);
       const { win, push } = outcomeAt(m, line);
       if (m.market != null) {                                                   // way off the market = bad data
         const mk = outcomeAt({ ...m, win0: 0.5, base: m.market }, line);
-        if (cost < mk.win / (1 - mk.push) - 0.10) continue;
+        if (cost < mk.win / (1 - mk.push) - 0.10) { pass("price too good to be real (bad data)"); continue; }
       }
       const all_in = cost + this.fee(cost, 1);
       const ev = win * (1 / all_in - 1) - (1 - win - push);
+      pass(`expected return ${pct(ev)}`);
       out.push({ venue: "betopenly", venue_name: "BetOpenly", contract, side: m.side, line, american: o.odds,
                  cost: Math.round(cost * 10000) / 10000, win, ev: Math.round(ev * 10000) / 10000,
                  max_cost: win / (1 - push), size: o.available, offer_id: o.id, ticker: o.id, order_side: "accept",

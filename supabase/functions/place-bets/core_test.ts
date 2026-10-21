@@ -409,3 +409,12 @@ Deno.test("BetOpenly balance and grading from final scores", async () => {
     etDayStart(NOW).getTime());
   eq(Math.round(pnl * 100) / 100, 19.8);
 });
+
+Deno.test("BetOpenly: the skip reason lists what was on the game and why each was passed over", async () => {
+  const { bo } = fakeBO([offer({}, { lines: 8.5 }), offer({ id: "x" }, { team: "Indiana Pacers", teamAbbv: "IND", lines: -4 })]);
+  const db = new FakeDb(settings({ venues: ["betopenly"], to_win_dollars: 20 }), [boRow()]);
+  const r = await runOnce(db, { betopenly: bo }, NOW);
+  const why = r.skips[0].reason;
+  ok(why.includes("NO spread 8.5 -105 ($50): number outside the system"), why);
+  ok(why.includes("IND spread -4 -105 ($50): other side"), why);
+});
