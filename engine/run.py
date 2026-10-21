@@ -149,7 +149,17 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     # ---- 2b. personnel read (current rosters x each player's own last two seasons + this season)
     views, reads, stress, cal = {}, {}, {}, None
     if personnel_fetch == "default":
-        personnel_fetch = lambda: personnel_mod.read_all(live=live)
+        def personnel_fetch():
+            from . import injury_report
+            try:
+                official = injury_report.latest(now)
+                if official is None:
+                    log.append("Official injury report: none found in the last 3 hours (using ESPN)")
+            except Exception as e:
+                official = None
+                log.append(f"Official injury report failed (using ESPN): {e}")
+            return personnel_mod.read_all(live=live, official=official, notes=log,
+                                          games=[(g.game_date, g.away, g.home) for g in upcoming])
     if personnel_fetch:
         try:
             reads = personnel_fetch()
@@ -314,6 +324,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         return {"overs": o, "unders": u, "avg": None if avg is None else round(avg, 1), "n": len(rows)}
     scoring = {"season": drift(tot_rows),
                "last7": drift([(g, t) for g, t in tot_rows if (today - g.game_date).days <= 7])}
+    try:
+        bench_cfg = store.get_config("bench")
+    except Exception as e:
+        bench_cfg = None
+        log.append(f"bench settings: {e}")
     orders, placer = [], None
     try:
         orders = store.load_orders() if hasattr(store, "load_orders") else []
@@ -325,7 +340,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         log.append(f"order placer notes: {e}")
     board = build_board(now, today, slate, list(all_picks.values()), usage, log,
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
-                        orders=orders, games=stored)
+                        orders=orders, games=stored, bench_cfg=bench_cfg)
     board["scoring"] = scoring
     board["placer"] = placer
     # keep each card bet's reasoning on its pick, so a placed bet can still explain itself after it tips
@@ -387,7 +402,27 @@ def _records(defs, picks):
                     # every time it fired, even if the line later moved out, graded at the first line
                     "if_first": _wl(_meta(p, "result_first") for p in ever),
                     "dropped": _wl(p["result"] for p in ever if not p.get("active")),
-                    "avg_clv": round(sum(clvs) / len(clvs), 2) if clvs else None}
+                    "avg_clv": round(sum(clvs) / len(clvs), 2) if clvs else None, "n_clv": len(clvs)}
+    return out
+
+
+BENCH_MIN_PICKS = 30      # a system needs this many graded picks with a closing line before it can be benched
+
+
+def benched_systems(recs: dict, cfg: dict | None) -> dict:
+    """Systems the order placer should stop betting: behind the closing line on average over 30+ picks
+    (the line moved against the side it fired on), unless Caden switched them back on. Caden can also
+    bench one by hand. cfg (private config 'bench'): {"unbench": ["S1"], "bench": ["T7"]}."""
+    cfg = cfg or {}
+    unbench, manual = set(cfg.get("unbench") or []), set(cfg.get("bench") or [])
+    out = {}
+    for r in recs.values():
+        tag = r["tag"]
+        if tag in manual:
+            out[tag] = {"why": "benched by hand", "avg_clv": r.get("avg_clv"), "n": r.get("n_clv", 0)}
+        elif tag not in unbench and (r.get("n_clv") or 0) >= BENCH_MIN_PICKS and (r.get("avg_clv") or 0) < 0:
+            out[tag] = {"why": f"behind the closing line by {abs(r['avg_clv']):.2f} pts on average over {r['n_clv']} picks",
+                        "avg_clv": r["avg_clv"], "n": r["n_clv"]}
     return out
 
 
@@ -507,7 +542,8 @@ def live_stacks(live: list[dict]) -> list[dict]:
     return sorted(out, key=lambda x: (-len(x["systems"]), x["tip_utc"] or ""))
 
 
-def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None):
+def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None,
+                bench_cfg=None):
     picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks]
     t = today.isoformat()
     open_ = lambda p: p.get("result") is None and p["game_date"] >= t
@@ -533,6 +569,12 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
                     res.append(p["result"])
             return _wl(res)
         return _wl(p["result"] for p in graded if p["system"] == row["system"])
+    recs = {"systems": _records(SYSTEMS, picks), "test_systems": _records(TEST_SYSTEMS, picks),
+            "early_systems": _records(EARLY_SYSTEMS, picks)}
+    benched = benched_systems({**recs["systems"], **recs["test_systems"], **recs["early_systems"]}, bench_cfg)
+    for row in card:
+        if row["tag"] in benched and row["verdict"] in ("BET", "LIMIT"):
+            row["verdict"], row["why"] = "BENCHED", f"{row['tag']} is benched: {benched[row['tag']]['why']}. {row['why']}"
     for row in card:
         lv = live_wl(row)
         h = row.get("history") or {"w": 0, "l": 0, "label": None}
@@ -586,8 +628,8 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
         "odds_api": usage, "notes": log, "slate": slate,
-        "systems": _records(SYSTEMS, picks), "test_systems": _records(TEST_SYSTEMS, picks),
-        "early_systems": _records(EARLY_SYSTEMS, picks),
+        "systems": recs["systems"], "test_systems": recs["test_systems"],
+        "early_systems": recs["early_systems"], "benched": benched,
         "early": [p for p in live if early(p)],
         "early_history": [p for p in history if early(p)][:300],
         "bets": [p for p in live if main(p)],

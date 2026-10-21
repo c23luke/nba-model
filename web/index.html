@@ -112,6 +112,7 @@ details.more dt { color: var(--muted); } details.more dd { margin: 0; }
 .verdict.BET, .verdict.W { background: var(--win); border-color: var(--win); color: #fff; }
 .verdict.LIMIT { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); }
 .verdict.L { background: var(--loss); border-color: var(--loss); color: #fff; }
+.verdict.BENCHED { border-style: dashed; font-size: 13px; }
 .row .pick { font: 700 24px/1.1 var(--cond); }
 .row .sub { font-size: 14px; color: var(--muted); }
 .row .px { text-align: right; font-size: 14px; color: var(--muted); white-space: nowrap; }
@@ -365,8 +366,9 @@ function profitChart(bets) {
 // card bets the order placer hasn't placed, with its latest reason
 function notPlaced(b, placed) {
   const held = new Set((placed.bets || []).map(x => `${x.game_id}|${x.side}`));
+  const resting = new Set((placed.resting || []).map(x => x.key));
   const why = Object.fromEntries(((b.placer || {}).skips || []).map(k => [k.pick, k.reason]));
-  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
+  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !resting.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
     .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }));
 }
 
@@ -400,6 +402,10 @@ function renderBets(placed, b) {
     </div>` : "") +
     `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites (plus any you placed by hand). Sized to win $20, or $10 when confidence is Low.</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys || fConf) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
+    ((placed.resting || []).length ? `<h2>Waiting for a price</h2><p class="lede">LIMIT bets: an order is sitting on Kalshi at the most we'd pay. It fills if the price comes to us, and is cancelled 5 minutes before tip or if the model stops wanting it.</p>` +
+      placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)} · card pick ${esc(r.pick)} · tips ${esc(until(r.tip_utc))}</span></div>
+        <div class="n" style="font-size:18px">${Math.round(r.price * 100)}¢ <span class="muted">${amer(r.american)}</span></div>
+        <div class="reason">${esc(r.venue_name)}: ${r.count} contracts, ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. ${esc(r.contract)}</div></div>`).join("") : "") +
     (np.length ? `<h2>On the card, not placed</h2><p class="lede">What the order placer said on its last check${placerAt ? ` (${esc(ago(placerAt))})` : ""}.</p>` +
       np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
         <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +
@@ -437,7 +443,7 @@ function renderCard(b, placed) {
       <div><div class="pick">${esc(r.label)}</div><div class="sub">${esc(r.away)} @ ${esc(r.home)}, ${esc(when(r.tip_utc))}. ${badge(r.group)}${esc(r.tag)}</div>
       <div class="sub">Fired at ${esc(r.label)}; the line is now ${r.now_line == null ? "off the board" : esc(r.now_line)} and the model doesn't want it there. If you already have it, it's graded at the original number.</div></div><div></div></div>`;
   $("tab-card").innerHTML = `<h2>Today's card</h2>
-    <p class="lede">Main systems and the top picks, best first. BET means the price is good now. LIMIT means only at the Kalshi max or better. PASS means skip.</p>` +
+    <p class="lede">Main systems and the top picks, best first. BET means the price is good now. LIMIT means only at the most we'd pay or better. PASS means skip. BENCHED means the system has been losing to the closing line, so it isn't auto-bet.</p>` +
     (card.length ? card.map(row).join("") : `<div class="empty">Nothing on the card right now. The model checks again every few minutes.</div>`) +
     (hold.length ? `<h2>Line moved</h2><p class="lede">Fired earlier at a better number. Only counts if you got that number.</p>` + hold.map(moved).join("") : "");
 }
@@ -486,10 +492,10 @@ function renderSystems(b) {
   const th = (k, label, cls = "r") => `<th class="${cls}"><button data-sort="${k}" aria-pressed="${sysSort === k}">${label}${sysSort === k ? (k === "name" ? " ↑" : " ↓") : ""}</button></th>`;
   const spark = tag => { const r = (res[tag] || []).slice(-20); return r.length ? `<span class="spark" title="last ${r.length}, oldest first">${r.map(p => `<i class="${p.result}"></i>`).join("")}</span>` : `<span class="muted">—</span>`; };
   $("tab-systems").innerHTML = `<h2>System leaderboard</h2>
-    <p class="lede">This season, graded at the closing line, 1 unit at −110. Main systems bet; favorites held up over the last two seasons; testing is tracked only. Tap a column to sort.</p>
+    <p class="lede">This season, graded at the closing line, 1 unit at −110. Main systems bet; favorites held up over the last two seasons; testing is tracked only. A system that falls behind the closing line on average over 30+ picks is benched (not auto-bet) until you switch it back on. Tap a column to sort.</p>
     <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
     ${rows.length ? `<table class="lb"><thead><tr>${th("name", "System", "")}${th("record", "Record")}${th("win", "Win %")}${th("units", "Units")}${th("clv", "Beat close", "r hide-s")}<th class="hide-s">Last 20</th></tr></thead><tbody>${rows.map(s => `<tr>
-      <td>${badge(s.group)}<b>${esc(s.tag)}. ${esc(s.name)}</b><div class="muted" style="font-size:14px">${esc(s.rule || "")}</div></td>
+      <td>${badge(s.group)}<b>${esc(s.tag)}. ${esc(s.name)}</b>${(b.benched || {})[s.tag] ? ` <span class="chip Low" title="${esc(b.benched[s.tag].why)}">Benched</span>` : ""}<div class="muted" style="font-size:14px">${esc(s.rule || "")}${(b.benched || {})[s.tag] ? `<br>Not auto-bet: ${esc(b.benched[s.tag].why)}.` : ""}</div></td>
       <td class="r"><span class="n">${wl(s)}</span></td><td class="r">${winp(s) || "—"}</td><td class="r">${units(s.units)}</td>
       <td class="r hide-s">${s.avg_clv == null ? "—" : `<span class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv} pts</span>`}</td>
       <td class="hide-s">${spark(s.tag)}</td></tr>`).join("")}</tbody></table>`

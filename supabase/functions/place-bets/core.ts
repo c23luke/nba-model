@@ -21,7 +21,7 @@ export const POLY_GATEWAY = "https://gateway.polymarket.us";
 export const POLY_LIVE_VERIFIED = false;
 const MAX_UNFILLED_TRIES = 3;
 const HEARTBEAT_MINUTES = 15;
-const LIVE_STATUSES = ["pending", "filled", "partial", "error"];
+const LIVE_STATUSES = ["pending", "filled", "partial", "error", "resting"];
 
 // ------------------------------------------------------------------ types
 export type Settings = {
@@ -37,6 +37,7 @@ export type Settings = {
   max_feed_age_minutes: number;
   run_token: string;
   last_heartbeat?: string | null;
+  watch_venues?: string[] | null;    // test-only sites: log "WOULD HAVE PLACED" every run, never place, even when live
 };
 
 export type Quote = {
@@ -79,6 +80,8 @@ export interface Db {
   updateFeed(key: string, patch: Record<string, unknown>): Promise<void>;
   log(level: string, message: string, data?: unknown): Promise<void>;
   games?(ids: string[]): Promise<GameRow[]>;
+  getState?(key: string): Promise<any>;
+  setState?(key: string, value: unknown): Promise<void>;
 }
 
 export interface Venue {
@@ -91,6 +94,10 @@ export interface Venue {
   /** realized P&L today on the given markets (negative = loss) */
   pnlToday(markets: Set<string>, dayStartMs: number): Promise<number>;
   order(o: OrderRow, clientId: string, q?: Quote): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
+  /** Resting limit orders (Kalshi): place a good-till-canceled order, read it back, cancel it. */
+  rest?(o: OrderRow, clientId: string, expiresUnix: number): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
+  getOrder?(orderId: string): Promise<{ status: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
+  cancel?(orderId: string): Promise<void>;
   /** Venues with a peer-to-peer book build their own quotes from live offers, priced with the model. */
   offers?(row: FeedRow): Promise<Quote[]>;
   /** Why a peer-to-peer venue had nothing to offer on this bet (shown in the skip reason). */
@@ -103,6 +110,21 @@ export interface Venue {
 /** Kalshi taker fee for a whole order: 7% × C × P × (1−P), rounded up to the cent. */
 export function kalshiFee(p: number, count: number): number {
   return Math.ceil(0.07 * count * p * (1 - p) * 100 - 1e-9) / 100;
+}
+
+/** Kalshi maker fee on a resting order that fills later: 0.0175 × C × P × (1−P), rounded up to the cent.
+ * The fee schedule (July 2026) lists maker fees only for some series; we assume it applies, to be safe. */
+export function kalshiMakerFee(p: number, count: number): number {
+  return Math.ceil(0.0175 * count * p * (1 - p) * 100 - 1e-9) / 100;
+}
+
+/** The most we'd rest an order at: the price where the bet still returns `minEv` after the maker fee,
+ * rounded DOWN to a whole cent. win/push are the model's chances at this exact number. */
+export function restingPrice(win: number, push: number, minEv: number): number {
+  const allIn = win / (1 - push + minEv);              // most we can pay per contract, fee included
+  let p = allIn;
+  for (let i = 0; i < 5; i++) p = allIn - 0.0175 * p * (1 - p);
+  return Math.max(0.01, Math.min(0.99, Math.floor((p - 1e-9) * 100) / 100));
 }
 
 /** Polymarket US taker fee: 0.0695 × C × p × (1−p), banker's rounding to the cent. */
@@ -217,15 +239,20 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
 
   const minUpdated = new Date(now.getTime() - s.max_feed_age_minutes * 60e3).toISOString();
   const minTip = new Date(now.getTime() + 2 * 60e3).toISOString();
-  const feed = (await db.feed(minUpdated, minTip)).filter((r) => r.status === "bet");
+  const allFeed = await db.feed(minUpdated, minTip);
+  const feed = allFeed.filter((r) => r.status === "bet");
+  const limits = allFeed.filter((r) => r.status === "limit");
 
   // what's already committed (live), or — in a dry run — what the dry run has "placed" today
   const counted = recent.filter((o) =>
-    live ? o.mode === "live" && ["pending", "filled", "partial"].includes(o.status)
+    live ? o.mode === "live" && ["pending", "filled", "partial", "resting"].includes(o.status)
          : o.mode === "dry_run" && (o.created_at ?? "") >= dayStart.toISOString());
   const openNow = () => counted.filter((o) => (o.tip_utc ?? "") > new Date(now.getTime() - 4 * 3600e3).toISOString());
   const gameDollars = (g: string) => counted.filter((o) => o.game_id === g)
     .reduce((t, o) => t + (o.fill_cost ?? o.stake ?? 0), 0);
+
+  if (live) await manageResting(db, venues, recent, allFeed, now, res);
+  await placeResting(db, venues, s, live, on, limits, recent, counted, openNow, gameDollars, now, res);
 
   for (const row of feed.sort((a, b) => best(b) - best(a))) {
     const skip = (reason: string) => res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason });
@@ -369,6 +396,44 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
     if (!done) skip(why.join("; ") || "no quote passed the checks");
   }
 
+  // test-only sites: price every card bet there too and log what we WOULD have placed, never place
+  const watch = (s.watch_venues || []).filter((v) => venues[v] && !on.includes(v));
+  for (const row of watch.length ? feed : []) {
+    for (const vn of watch) {
+      const v = venues[vn];
+      try {
+        const qs = (v.offers ? (row.model ? await v.offers(row) : []) : (row.quotes || []).filter((q) => q.venue === vn))
+          .filter((q) => q.ev >= s.min_ev).sort((a, b) => b.ev - a.ev);
+        const q = qs[0];
+        if (!q) continue;
+        const chk = await v.ask(q, row);
+        if (chk.ask == null || chk.ask > modelPrice(q) + 1e-9) continue;
+        const prior = recent.find((o) => o.mode === "dry_run" && o.venue === vn && o.market === chk.market && o.bet_key === row.key);
+        if (prior?.id) { await db.updateOrder(prior.id, { ask_at_check: chk.ask, seen_count: (prior.seen_count ?? 1) + 1 }); continue; }
+        const limit = round4(modelPrice(q));
+        const toWin = s.to_win_dollars && s.to_win_dollars > 0
+          ? (row.to_win && row.to_win > 0 ? Math.min(row.to_win, s.to_win_dollars) : s.to_win_dollars) : 0;
+        const count = toWin > 0 ? contractsToWin(limit, toWin, (p, c) => v.fee(p, c)) : Math.floor(s.stake_dollars / limit + 1e-9);
+        if (count < 1) continue;
+        const stake = round2(count * limit), fee = v.fee(limit, count), evNow = evAt(q, (stake + fee) / count);
+        const order: OrderRow = {
+          mode: "dry_run", env: "prod", venue: vn, market: chk.market, order_side: orderSide(q), bet_key: row.key,
+          game_id: row.game_id, tip_utc: row.tip_utc, pick: row.pick, system: row.system, contract: q.contract, line: q.line,
+          model_price: limit, ask_at_check: chk.ask, limit_price: limit, count, stake, est_fee: fee, ev: round4(evNow),
+          status: "dry_run", bet: row.bet, side: q.side,
+        };
+        const text = `${v.name} (test site) ${q.contract} at ${q.american != null ? (q.american > 0 ? "+" : "") + q.american : cents(limit)} ` +
+          `for ${money(stake)} to win ${money(round2(count - stake - fee))} — ${row.pick}, ${row.system}, ${row.away} @ ${row.home}, ` +
+          `expected return ${pct(evNow)}`;
+        const ins = await db.insertOrder({ ...order, reason: "test site: nothing sent" });
+        await db.log("info", `WOULD HAVE PLACED: ${text}`, { ...order, id: ins.id });
+        res.actions.push(`would have placed (test site): ${text}`);
+      } catch (e) {
+        res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason: `${v.name} (test site): ${msg(e)}` });
+      }
+    }
+  }
+
   const last = s.last_heartbeat ? Date.parse(s.last_heartbeat) : 0;
   if (res.actions.length || now.getTime() - last >= HEARTBEAT_MINUTES * 60e3) {
     if (keyCheck) {
@@ -380,6 +445,113 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
     await db.updateSettings({ last_heartbeat: now.toISOString() });
   }
   return res;
+}
+
+
+const REST_STOP_BEFORE_TIP_MIN = 5;   // resting orders expire this many minutes before tip
+
+/** Check every resting order: record fills, and cancel any whose bet is no longer a LIMIT on the card
+ * (it became a BET, moved to PASS, was benched, or the game is about to start). */
+async function manageResting(db: Db, venues: Record<string, Venue>, recent: OrderRow[], feed: FeedRow[], now: Date,
+                             res: RunResult) {
+  const limitKeys = new Set(feed.filter((r) => r.status === "limit").map((r) => r.key));
+  for (const o of recent.filter((x) => x.mode === "live" && x.status === "resting" && x.order_id)) {
+    const v = venues[o.venue];
+    if (!v?.getOrder || !v.cancel) continue;
+    try {
+      let st = await v.getOrder(o.order_id!);
+      const late = Date.parse(o.tip_utc) - now.getTime() < REST_STOP_BEFORE_TIP_MIN * 60e3;
+      if (st.status === "resting" && (late || !limitKeys.has(o.bet_key))) {
+        await v.cancel(o.order_id!);
+        st = await v.getOrder(o.order_id!);
+        const why = late ? "game about to start" : "no longer a LIMIT on the card";
+        await db.log("info", `CANCELLED resting order (${why}): ${o.contract} for ${o.pick}; filled ${st.fill_count} of ${o.count}`);
+        res.actions.push(`cancelled resting ${o.pick}: ${why}`);
+      }
+      const status = st.status === "resting" ? "resting"
+        : st.fill_count >= o.count ? "filled" : st.fill_count > 0 ? "partial" : "unfilled";
+      if (status !== o.status || st.fill_count !== (o.fill_count ?? 0)) {
+        await db.updateOrder(o.id!, { status, fill_count: st.fill_count, fill_cost: st.fill_cost, fees: st.fees,
+          reason: status === "unfilled" ? "resting order expired or cancelled with nothing filled" : null });
+        if (st.fill_count > (o.fill_count ?? 0)) {
+          await db.log("info", `FILLED (resting): ${o.contract} — ${st.fill_count} of ${o.count} for ${money(st.fill_cost)} — ${o.pick}`);
+          await db.updateFeed(o.bet_key, { order_status: status, order_venue: o.venue, order_id: o.order_id,
+            order_fill_count: st.fill_count, order_fill_cost: st.fill_cost, order_placed_at: now.toISOString() });
+        }
+        Object.assign(o, { status, fill_count: st.fill_count, fill_cost: st.fill_cost });
+      }
+    } catch (e) {
+      await db.log("error", `Resting order check failed for ${o.pick} (${o.order_id}): ${msg(e)}`);
+    }
+  }
+}
+
+/** LIMIT bets: rest a good-till-canceled order on Kalshi at the most we'd pay (still +min_ev after the maker fee),
+ * so the bet fills if the price comes to us. One resting order per bet; it expires before tip. */
+async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, live: boolean, on: string[],
+                            limits: FeedRow[], recent: OrderRow[], counted: OrderRow[], openNow: () => OrderRow[],
+                            gameDollars: (g: string) => number, now: Date, res: RunResult) {
+  const k = venues.kalshi;
+  if (!on.includes("kalshi") || !k?.rest) return;
+  for (const row of limits) {
+    const skip = (reason: string) => res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason });
+    const mode = live ? "live" : "dry_run";
+    const mine = recent.filter((o) => o.bet_key === row.key && o.mode === mode &&
+      (live ? LIVE_STATUSES.includes(o.status) : o.status === "dry_run"));
+    if (mine.length) { skip(live ? `already ${mine[0].status} (${mine[0].venue})` : "resting order already logged"); continue; }
+    const qs = (row.quotes || []).filter((q) => q.venue === "kalshi" && q.ticker && q.order_side && q.win && q.max_cost);
+    if (!qs.length) { skip("LIMIT: no Kalshi market to rest an order on"); continue; }
+    // the strike where resting at our price is worth the most
+    const pick = qs.map((q) => {
+      const push = Math.max(0, 1 - q.win / q.max_cost);
+      const limit = restingPrice(q.win, push, s.min_ev);
+      return { q, limit, ev: evAt(q, limit + kalshiMakerFee(limit, 100) / 100) };
+    }).sort((a, b) => b.ev - a.ev)[0];
+    const { q, limit } = pick;
+    const toWin = s.to_win_dollars && s.to_win_dollars > 0
+      ? (row.to_win && row.to_win > 0 ? Math.min(row.to_win, s.to_win_dollars) : s.to_win_dollars) : 0;
+    const count = toWin > 0 ? contractsToWin(limit, toWin, kalshiMakerFee) : Math.floor(s.stake_dollars / limit + 1e-9);
+    if (count < 1) continue;
+    const stake = round2(count * limit), fee = kalshiMakerFee(limit, count);
+    if (openNow().length >= s.max_open_bets) { skip(`max open bets (${s.max_open_bets}) reached`); continue; }
+    if (gameDollars(row.game_id) + stake > s.max_dollars_per_game + 1e-9) {
+      skip(`resting order would put ${money(gameDollars(row.game_id) + stake)} on this game (max ${money(s.max_dollars_per_game)})`); continue;
+    }
+    const expires = Date.parse(row.tip_utc) / 1000 - REST_STOP_BEFORE_TIP_MIN * 60;
+    if (expires * 1000 <= now.getTime()) continue;
+    const order: OrderRow = {
+      mode, env: s.kalshi_env, venue: "kalshi", market: String(q.ticker), order_side: String(q.order_side),
+      bet_key: row.key, game_id: row.game_id, tip_utc: row.tip_utc, pick: row.pick, system: row.system,
+      contract: q.contract, line: q.line, model_price: limit, ask_at_check: null as unknown as number, limit_price: limit,
+      count, stake, est_fee: fee, ev: round4(evAt(q, (stake + fee) / count)), status: live ? "pending" : "dry_run",
+      bet: row.bet, side: q.side,
+    };
+    const text = `Kalshi RESTING ${order.order_side.toUpperCase()} ×${count} ${q.ticker} at ${cents(limit)} until ` +
+      `${REST_STOP_BEFORE_TIP_MIN} min before tip (stake ${money(stake)}, maker fee up to ${money(fee)}) — ${row.pick} via ` +
+      `${q.contract}, ${row.system}, ${row.away} @ ${row.home}, expected return ${pct(order.ev)} if it fills`;
+    if (!live) {
+      const ins = await db.insertOrder({ ...order, reason: "dry run: resting order not sent" });
+      await db.log("info", `WOULD HAVE PLACED: ${text}`, { ...order, id: ins.id });
+      res.actions.push(`would have placed: ${text}`);
+      continue;
+    }
+    const ins = await db.insertOrder(order);
+    if (ins.conflict || !ins.id) { skip("another order for this bet or market is already active"); continue; }
+    try {
+      const r = await k.rest(order, ins.id, expires);
+      const status = r.fill_count >= count ? "filled" : "resting";
+      await db.updateOrder(ins.id, { status, order_id: r.order_id, fill_count: r.fill_count, fill_cost: r.fill_cost,
+                                     fees: r.fees, response: r.raw });
+      await db.updateFeed(row.key, { order_status: status, order_venue: "kalshi", order_id: r.order_id });
+      await db.log("info", `${status === "filled" ? "FILLED" : "RESTING"}: ${text}`);
+      res.actions.push(`${status}: ${text}`);
+      counted.push({ ...order, status, fill_cost: r.fill_cost, created_at: now.toISOString() });
+    } catch (e) {
+      await db.updateOrder(ins.id, { status: "error", reason: msg(e) });
+      await db.log("error", `RESTING ORDER FAILED (not retried): ${text}: ${msg(e)}`);
+      res.actions.push(`error: ${text}: ${msg(e)}`);
+    }
+  }
 }
 
 /** Today's realized P&L on these orders, graded from final scores at the number each was bet. */
@@ -495,6 +667,32 @@ export class Kalshi implements Venue {
     return { ask: m.status && !["active", "open"].includes(m.status) ? null : ask, market: String(q.ticker), detail: m };
   }
   fee(p: number, c: number) { return kalshiFee(p, c); }
+
+  /** Good-till-canceled order at the limit, expiring at `expiresUnix`; it waits in the book for the price to come to us. */
+  async rest(o: OrderRow, clientId: string, expiresUnix: number) {
+    const buyNo = o.order_side === "no";
+    const yes = round4(buyNo ? 1 - o.limit_price : o.limit_price);
+    const r = await this.call("POST", "/portfolio/events/orders", {
+      ticker: o.market, side: buyNo ? "ask" : "bid", count: String(o.count), price: yes.toFixed(4),
+      time_in_force: "good_till_canceled", expiration_time: Math.floor(expiresUnix),
+      self_trade_prevention_type: "taker_at_cross", client_order_id: clientId,
+    });
+    if (!r.order_id) throw new Error(`Kalshi returned no order id: ${JSON.stringify(r).slice(0, 300)}`);
+    const fill = Number(r.fill_count ?? 0);
+    const avg = Number(r.average_fill_price ?? 0);
+    const per = fill > 0 ? (buyNo ? (avg >= yes - 1e-6 ? 1 - avg : avg) : avg) : 0;
+    return { order_id: String(r.order_id), fill_count: fill, fill_cost: round2(fill * per),
+             fees: round2(fill * Number(r.average_fee_paid ?? 0)), raw: r };
+  }
+  async getOrder(orderId: string) {
+    const js = await this.call("GET", `/portfolio/orders/${orderId}`);
+    const o = js.order || {};
+    const n = (x: unknown) => Number(x ?? 0) || 0;
+    return { status: String(o.status ?? "unknown"), fill_count: n(o.fill_count_fp ?? o.fill_count),
+             fill_cost: round2(n(o.taker_fill_cost_dollars) + n(o.maker_fill_cost_dollars)),
+             fees: round2(n(o.taker_fees_dollars) + n(o.maker_fees_dollars)), raw: o };
+  }
+  async cancel(orderId: string) { await this.call("DELETE", `/portfolio/events/orders/${orderId}`); }
   async balance() {
     const js = await this.call("GET", "/portfolio/balance");
     return js.balance_dollars != null ? Number(js.balance_dollars) : Number(js.balance) / 100;
@@ -599,10 +797,11 @@ const TEAM_NICKNAMES: Record<string, string> = {
   UTA: "Jazz", WAS: "Wizards",
 };
 /** Our team code from whatever a feed calls the team (abbreviation or name). */
-export function teamCode(t: { abbreviation?: string; displayName?: string } | string | undefined | null): string | null {
+export function teamCode(t: { abbreviation?: string; displayName?: string; display_name?: string; name?: string }
+                         | string | undefined | null): string | null {
   if (!t) return null;
   const abbr = typeof t === "string" ? t : (t.abbreviation ?? "");
-  const name = typeof t === "string" ? t : (t.displayName ?? "");
+  const name = typeof t === "string" ? t : (t.displayName ?? t.display_name ?? t.name ?? "");
   const a = polyCode(abbr || "");
   if (TEAM_NICKNAMES[a]) return a;
   const low = name.toLowerCase();
@@ -741,6 +940,205 @@ export class BetOpenly implements Venue {
   }
 }
 
+
+// ------------------------------------------------------------------ ProphetX (exchange, Trading API v4)
+// Docs: docs.prophetx.co. Login with the access + secret key gives a short-lived token; at most 20 live
+// sessions per key, so the token is cached in bet_state and refreshed instead of logging in every run.
+// Prices are American odds; "value" = dollars you can stake at that price right now. Orders are
+// buy-only, quantity = stake in dollars, fillOrKill fills what's there at your price or better.
+export const PROPHETX_BASE = "https://cash.api.prophetx.co/partner";
+export const PROPHETX_FEE = 0.02;            // reported 2% of net winnings (not in the official docs yet)
+
+export class ProphetX implements Venue {
+  name = "ProphetX";
+  gradeFromGames = true;
+  private token: string | null = null;
+  private nba: { events: any[] } | null = null;
+  private marketsCache = new Map<string, any[]>();
+  notes = new Map<string, string[]>();
+  constructor(private access?: string, private secret?: string, private db?: Db, private http: typeof fetch = fetch,
+              private nowMs = () => Date.now(), private sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))) {}
+  get hasKeys() { return !!(this.access && this.secret); }
+
+  private async raw(method: string, path: string, body?: unknown, auth = true) {
+    const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
+    if (auth) headers.authorization = `Bearer ${await this.auth()}`;
+    const r = await this.http(PROPHETX_BASE + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    const txt = await r.text();
+    let js: any = {};
+    try { js = txt ? JSON.parse(txt) : {}; } catch { js = { raw: txt }; }
+    return { status: r.status, js };
+  }
+  private async call(method: string, path: string, body?: unknown) {
+    const { status, js } = await this.raw(method, path, body);
+    if (status < 200 || status >= 300) throw new Error(`ProphetX ${method} ${path} → ${status}: ${JSON.stringify(js).slice(0, 300)}`);
+    return js?.data ?? js;
+  }
+
+  /** A valid access token: cached → refreshed → fresh login (in that order). */
+  private async auth(): Promise<string> {
+    if (this.token) return this.token;
+    if (!this.hasKeys) throw new Error("no PROPHETX_ACCESS_KEY / PROPHETX_SECRET_KEY in Supabase secrets");
+    const now = this.nowMs();
+    const ms = (t: unknown, fallback: number) => { const n = Number(t); return !n ? fallback : n > 1e12 ? n : n * 1000; };
+    const st = (await this.db?.getState?.("prophetx_token")) as any;
+    if (st?.access_token && now < (st.access_until ?? 0) - 60e3) return (this.token = st.access_token);
+    if (st?.refresh_token && now < (st.refresh_until ?? 0) - 60e3) {
+      const r = await this.raw("POST", "/auth/refresh", { refresh_token: st.refresh_token }, false);
+      const d = r.js?.data;
+      if (r.status === 200 && d?.access_token) {
+        await this.db?.setState?.("prophetx_token", { ...st, access_token: d.access_token,
+          access_until: ms(d.access_expire_time, now + 8 * 60e3) });
+        return (this.token = d.access_token);
+      }
+    }
+    const r = await this.raw("POST", "/auth/login", { access_key: this.access, secret_key: this.secret }, false);
+    const d = r.js?.data;
+    if (r.status !== 200 || !d?.access_token) throw new Error(`ProphetX login → ${r.status}: ${JSON.stringify(r.js).slice(0, 200)}`);
+    await this.db?.setState?.("prophetx_token", { access_token: d.access_token, refresh_token: d.refresh_token,
+      access_until: ms(d.access_expire_time, now + 8 * 60e3), refresh_until: ms(d.refresh_expire_time, now + 2 * 86400e3) });
+    return (this.token = d.access_token);
+  }
+
+  /** This game's ProphetX event (matched by both teams), or null. */
+  private async event(row: FeedRow) {
+    if (!this.nba) {
+      const t = await this.call("GET", "/mm/get_tournaments?has_active_events=true");
+      const nba = (t?.tournaments ?? []).find((x: any) => /^nba$/i.test(String(x.name).trim()))
+        ?? (t?.tournaments ?? []).find((x: any) => /\bnba\b/i.test(x.name) && !/g league|summer|wnba|cup/i.test(x.name));
+      if (!nba) throw new Error("no NBA tournament on ProphetX right now");
+      const ev = await this.call("GET", `/mm/get_sport_events?tournament_id=${nba.id}`);
+      this.nba = { events: ev?.sport_events ?? [] };
+    }
+    for (const e of this.nba.events) {
+      const side = (k: string) => (e.competitors ?? []).find((c: any) => c.side === k);
+      const h = teamCode(side("home")), a = teamCode(side("away"));
+      if (h === row.home && a === row.away && Math.abs(Date.parse(e.scheduled) - Date.parse(row.tip_utc)) < 6 * 3600e3) {
+        return e;
+      }
+    }
+    return null;
+  }
+  private async markets(eventId: string, fresh = false) {
+    if (fresh || !this.marketsCache.has(eventId)) {
+      const d = await this.call("GET", `/v4/mm/get_markets?event_id=${eventId}`);
+      this.marketsCache.set(eventId, d?.markets ?? []);
+    }
+    return this.marketsCache.get(eventId)!;
+  }
+
+  /** Every selection on this game as {team or OVER/UNDER, kind, line, price, value, strike_id}. */
+  selections(markets: any[], ev: any) {
+    const comp = new Map<number, string | null>((ev.competitors ?? []).map((c: any) => [c.id, teamCode(c)]));
+    const out: { who: string | null; kind: string; line: number | null; price: number; value: number; strike_id: string }[] = [];
+    const walk = (m: any) => {
+      for (const group of m.selections ?? []) {
+        for (const sel of (Array.isArray(group) ? group : [group])) {
+          if (!sel?.strike_id || !Number.isFinite(Number(sel.price))) continue;
+          const name = `${sel.name ?? ""} ${sel.display_name ?? ""}`.toLowerCase();
+          const who = m.type === "total" ? (/\bover\b/.test(name) ? "OVER" : /\bunder\b/.test(name) ? "UNDER" : null)
+            : comp.get(sel.competitor_id) ?? teamCode(sel.name);
+          out.push({ who, kind: m.type, line: sel.strike == null || m.type === "moneyline" ? null : Number(sel.strike),
+                     price: Number(sel.price), value: Number(sel.value ?? 0), strike_id: String(sel.strike_id) });
+        }
+      }
+      for (const sub of m.market_strikes ?? []) if (sub && typeof sub === "object") walk({ ...sub, type: sub.type ?? m.type });
+    };
+    for (const m of markets) if (["moneyline", "spread", "total"].includes(m.type) && (!m.status || /active|open/i.test(m.status))) walk(m);
+    return out;
+  }
+
+  explain(row: FeedRow): string {
+    const n = this.notes.get(row.key);
+    return !n ? "" : n.length ? `ProphetX on this game: ${n.join("; ")}` : "ProphetX: nothing on this game";
+  }
+
+  async offers(row: FeedRow): Promise<Quote[]> {
+    const m = row.model;
+    if (!m) return [];
+    const notes: string[] = [];
+    this.notes.set(row.key, notes);
+    const ev = await this.event(row);
+    if (!ev) { notes.push("game not listed"); return []; }
+    const out: Quote[] = [];
+    for (const x of this.selections(await this.markets(String(ev.event_id)), ev)) {
+      const desc = `${x.who ?? "?"} ${x.kind} ${x.line ?? ""} ${x.price > 0 ? "+" : ""}${x.price} ($${x.value})`;
+      const pass = (why: string) => { if (notes.length < 12) notes.push(`${desc}: ${why}`); };
+      if (m.bet === "total" ? x.kind !== "total" || x.who !== m.side : x.kind === "total" || x.who !== m.side) continue;
+      let line: number;
+      if (x.kind === "moneyline") line = -0.5;
+      else if (x.line == null) { pass("no number"); continue; }
+      else line = x.line;
+      if (x.value < 1) { pass("nothing to take"); continue; }
+      // ProphetX's docs don't say which way a spread number is signed for each side, so check it against
+      // the market: if the market has us getting points and ProphetX says we're laying them (or the
+      // reverse), the number is read backwards — skip it rather than bet the wrong line.
+      if (x.kind === "spread" && m.market != null && Math.abs(m.market) >= 1 && Math.sign(line) !== Math.sign(m.market)) {
+        pass(`number looks flipped vs the market (${m.market > 0 ? "+" : ""}${m.market})`); continue;
+      }
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
+      if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
+      const cost = americanCost(x.price);
+      const { win, push } = outcomeAt(m, line);
+      if (m.market != null) {
+        const mk = outcomeAt({ ...m, win0: 0.5, base: m.market }, line);
+        if (cost < mk.win / (1 - mk.push) - 0.10) { pass("price too good to be real (bad data)"); continue; }
+      }
+      const ev_ = win * (1 / (cost + this.fee(cost, 1)) - 1) - (1 - win - push);
+      pass(`expected return ${pct(ev_)}`);
+      const contract = m.bet === "total" ? `${m.side === "OVER" ? "Over" : "Under"} ${line}`
+        : x.kind === "moneyline" ? `${m.side} to win` : `${m.side} ${line > 0 ? "+" : ""}${line}`;
+      out.push({ venue: "prophetx", venue_name: "ProphetX", contract, side: m.side, line, american: x.price,
+                 cost: round4(cost), win, ev: round4(ev_), max_cost: win / (1 - push), size: x.value,
+                 offer_id: x.strike_id, ticker: `${ev.event_id}:${x.strike_id}`, order_side: "buy", ml: x.kind === "moneyline" });
+    }
+    return out.sort((a, b) => b.ev - a.ev);
+  }
+
+  async ask(q: Quote, row: FeedRow) {
+    const market = `px:${row.away}@${row.home}:${row.bet}:${q.side}:${q.line}`;
+    const ev = await this.event(row);
+    if (!ev) return { ask: null, market };
+    const x = this.selections(await this.markets(String(ev.event_id), true), ev).find((s) => s.strike_id === q.offer_id);
+    if (!x || x.value < 1) return { ask: null, market, detail: { gone: true } };
+    return { ask: round4(americanCost(x.price)), market, detail: { price: x.price, value: x.value } };
+  }
+  /** ~2% of winnings (c = payout dollars, p = price per $1 payout). */
+  fee(p: number, c: number) { return Math.round(PROPHETX_FEE * c * (1 - p) * 100) / 100; }
+  async balance() { return Number((await this.call("GET", "/v4/mm/get_balance"))?.balance); }
+  async pnlToday(): Promise<number> { throw new Error("ProphetX P&L is graded from final scores"); }
+
+  async order(o: OrderRow, clientId: string, q?: Quote) {
+    if (!q?.offer_id || q.american == null) throw new Error("no ProphetX selection");
+    const quantity = Math.round(o.stake * 100) / 100;
+    const sub = await this.call("POST", "/v4/mm/submit_order", { external_id: clientId, strike_id: q.offer_id,
+      price: q.american, quantity, order_strategy: "fillOrKill" });
+    const id = sub?.order?.order_id;
+    if (!id) throw new Error(`ProphetX returned no order id: ${JSON.stringify(sub).slice(0, 300)}`);
+    // the reply comes back before matching; poll until nothing is left open (about 2-7 s for fillOrKill)
+    let ord: any = null;
+    for (let i = 0; i < 10; i++) {
+      await this.sleep(i < 3 ? 1500 : 2500);
+      const r = await this.raw("GET", `/v4/mm/get_order/${id}`);
+      if (r.status === 404) continue;
+      if (r.status !== 200) throw new Error(`ProphetX get_order → ${r.status}`);
+      ord = r.js?.data ?? r.js;
+      if (Number(ord?.open_quantity ?? 1) === 0 || /cancel|closed|settled/i.test(String(ord?.status))) break;
+    }
+    if (!ord) throw new Error(`ProphetX order ${id}: status not visible after 20 s (check it on ProphetX)`);
+    const filled = Number(ord.filled_quantity ?? (ord.matching_status === "fully_matched" ? ord.quantity : 0)) || 0;
+    let profit = 0;
+    if (filled > 0) {
+      const md = await this.call("GET", `/v4/mm/get_order_matched_detail?order_id=${id}`);
+      profit = (md?.matching_details ?? []).reduce((t: number, m: any) => t + Number(m.profit ?? 0), 0);
+      if (!profit) profit = filled * (1 / americanCost(q.american) - 1);
+    }
+    const payout = filled + profit;
+    return { order_id: String(id), fill_count: filled > 0 ? Math.round(payout * 100) / 100 : 0, fill_cost: filled,
+             fees: Math.round(PROPHETX_FEE * profit * 100) / 100, raw: { order: ord, profit } };
+  }
+}
+
 // ------------------------------------------------------------------ Supabase wiring
 // deno-lint-ignore no-explicit-any
 export function supabaseDb(sb: any): Db {
@@ -752,7 +1150,7 @@ export function supabaseDb(sb: any): Db {
     async settings() { return must(await sb.from("bet_settings").select("*").eq("id", 1).single()) as Settings; },
     async updateSettings(p) { must(await sb.from("bet_settings").update({ ...p, updated_at: new Date().toISOString() }).eq("id", 1)); },
     async feed(minUpdated, minTip) {
-      return must(await sb.from("bet_feed").select("*").eq("status", "bet").gte("updated_at", minUpdated)
+      return must(await sb.from("bet_feed").select("*").in("status", ["bet", "limit"]).gte("updated_at", minUpdated)
         .gte("tip_utc", minTip)) as FeedRow[];
     },
     async orders(since) { return must(await sb.from("bet_orders").select("*").gte("created_at", since)) as OrderRow[]; },
@@ -767,11 +1165,18 @@ export function supabaseDb(sb: any): Db {
     async games(ids) {
       return must(await sb.from("games").select("id,home,away,home_score,away_score,final,tip_utc").in("id", ids)) as GameRow[];
     },
+    async getState(key) {
+      const r = must(await sb.from("bet_state").select("value").eq("key", key).maybeSingle()) as { value: unknown } | null;
+      return r ? r.value : null;
+    },
+    async setState(key, value) {
+      must(await sb.from("bet_state").upsert({ key, value, updated_at: new Date().toISOString() }));
+    },
   };
 }
 
 /** Read-only check of every key in the secrets (balances only). Never places anything. */
-export function keyCheck(): () => Promise<string> {
+export function keyCheck(db?: Db): () => Promise<string> {
   return async () => {
     const out: string[] = [];
     for (const env of ["prod", "demo"] as const) {
@@ -787,14 +1192,18 @@ export function keyCheck(): () => Promise<string> {
       try { out.push(`BetOpenly: key works, balance ${money(await new BetOpenly(Deno.env.get("BETOPENLY_KEY")).balance())}`); }
       catch (e) { out.push(`BetOpenly: ${msg(e)}`); }
     } else out.push("BetOpenly: no key");
-    for (const name of ["PROPHETX_ACCESS_KEY", "POLYMARKET_KEY_ID"]) {
-      out.push(`${name}: ${Deno.env.get(name) ? "saved (no order code for this venue yet)" : "not set"}`);
-    }
+    if (Deno.env.get("PROPHETX_ACCESS_KEY") && Deno.env.get("PROPHETX_SECRET_KEY")) {
+      try {
+        const px = new ProphetX(Deno.env.get("PROPHETX_ACCESS_KEY"), Deno.env.get("PROPHETX_SECRET_KEY"), db);
+        out.push(`ProphetX: keys work, balance ${money(await px.balance())}`);
+      } catch (e) { out.push(`ProphetX: ${msg(e)}`); }
+    } else out.push("ProphetX: no keys");
+    out.push(`POLYMARKET_KEY_ID: ${Deno.env.get("POLYMARKET_KEY_ID") ? "saved (dry run only)" : "not set"}`);
     return "Key check — " + out.join(" · ");
   };
 }
 
-export async function buildVenues(s: Settings): Promise<Record<string, Venue>> {
+export async function buildVenues(s: Settings, db?: Db): Promise<Record<string, Venue>> {
   const env = s.kalshi_env === "prod" ? "prod" : "demo";
   const keyId = Deno.env.get(env === "prod" ? "KALSHI_KEY_ID" : "KALSHI_DEMO_KEY_ID");
   const pem = Deno.env.get(env === "prod" ? "KALSHI_PRIVATE_KEY" : "KALSHI_DEMO_PRIVATE_KEY");
@@ -804,5 +1213,6 @@ export async function buildVenues(s: Settings): Promise<Record<string, Venue>> {
     kalshi: new Kalshi(KALSHI_BASE[env], keyId, signer, dataBase),
     polymarket_us: new PolymarketUS(Deno.env.get("POLYMARKET_KEY_ID"), Deno.env.get("POLYMARKET_SECRET_KEY")),
     betopenly: new BetOpenly(Deno.env.get("BETOPENLY_KEY")),
+    prophetx: new ProphetX(Deno.env.get("PROPHETX_ACCESS_KEY"), Deno.env.get("PROPHETX_SECRET_KEY"), db),
   };
 }

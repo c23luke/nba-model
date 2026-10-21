@@ -2,6 +2,7 @@
 
 Runs ~55 minutes per launch (Supabase starts it every hour, 10am-2am ET):
   every 60 s   ESPN injury report (any status change on any team)
+  every 60 s   the NBA's official injury report (a new one posts every 15 minutes)
                Kalshi spread / total events (a new game's lines just listed)
   on a change  rerun the model right away
   every 5 min  rerun anyway (lines move without news)
@@ -151,6 +152,17 @@ def main():
     log = lambda m: print(f"{datetime.now(timezone.utc):%H:%M:%S} {m}", flush=True)
     end = float(os.environ.get("WATCH_END") or time.time() + RUN_FOR)
     last_fp, last_run = None, 0.0
+    from . import injury_report
+    official = {"url": None, "fp": ""}
+
+    def official_fp():
+        """Only fetch when a newer 15-minute report slot is due; keep the last fingerprint otherwise."""
+        newest = injury_report.slot_urls(datetime.now(timezone.utc), 1)[0][1]
+        if newest != official["url"]:
+            rep = injury_report.latest()
+            if rep:
+                official["url"], official["fp"] = (newest if rep["url"] == newest else rep["url"]), injury_report.fingerprint(rep)
+        return official["fp"]
     while time.time() < end:
         why = None
         try:
@@ -159,15 +171,22 @@ def main():
             fp_i = last_fp[0] if last_fp else None
             log(f"injury check failed: {e}")
         try:
+            fp_o = official_fp()
+        except Exception as e:
+            fp_o = official["fp"]
+            log(f"official injury report check failed: {e}")
+        try:
             fp_k, _ = kalshi_fingerprint()
         except Exception as e:
             fp_k = last_fp[1] if last_fp else None
             log(f"kalshi check failed: {e}")
-        fp = (fp_i, fp_k)
+        fp = (fp_i, fp_k, fp_o)
         if last_fp is None:
             why = "first run"
         elif fp[0] != last_fp[0]:
             why = "injury report changed"
+        elif fp[2] != last_fp[2]:
+            why = "official NBA injury report changed"
         elif fp[1] != last_fp[1]:
             why = "new Kalshi lines listed"
         elif time.time() - last_run >= RERUN_EVERY:

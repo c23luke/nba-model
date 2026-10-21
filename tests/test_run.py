@@ -247,3 +247,27 @@ def test_card_bet_shows_its_real_record_and_it_grows():
     c = next(c for c in b["card"] if c["tag"] == "S1")
     assert c["record"]["history"]["w"] == 218 and c["record"]["history"]["l"] == 143      # the 23-year card, as-is
     assert (c["record"]["w"], c["record"]["l"]) == (218 + c["record"]["season"]["w"], 143 + c["record"]["season"]["l"])
+
+
+def test_systems_behind_the_close_get_benched_until_switched_back_on():
+    from engine.run import benched_systems
+    recs = {1: {"tag": "S1", "avg_clv": -0.4, "n_clv": 31}, 2: {"tag": "S2", "avg_clv": -0.4, "n_clv": 29},
+            3: {"tag": "S3", "avg_clv": 0.3, "n_clv": 50}, 4: {"tag": "S4", "avg_clv": 0.1, "n_clv": 5}}
+    b = benched_systems(recs, None)
+    assert list(b) == ["S1"] and "31 picks" in b["S1"]["why"]          # S2 has too few picks to judge
+    assert benched_systems(recs, {"unbench": ["S1"]}) == {}
+    assert set(benched_systems(recs, {"bench": ["S4"]})) == {"S1", "S4"}
+
+
+def test_a_benched_system_stays_on_the_card_but_is_not_a_bet(tmp_path, monkeypatch):
+    import engine.run as R
+    monkeypatch.setattr(R, "BENCH_MIN_PICKS", 0)
+    store = LocalStore(tmp_path)
+    store._write("config", {"bench": {"bench": ["S1"]}})
+    b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines,
+            fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    c = next(c for c in b["card"] if c["tag"] == "S1")
+    assert c["verdict"] == "BENCHED" and "benched by hand" in c["why"] and "S1" in b["benched"]
+    feed = {r["key"]: r for r in store._read("bet_feed", [])}
+    assert feed[c["key"]]["status"] == "benched"                      # the order placer only bets status 'bet'

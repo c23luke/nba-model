@@ -86,9 +86,16 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
     games: id -> game row. card: key -> current card row. season_wl(pick) -> {w, l, p} this season.
     line_now(game_id, bet, side) -> the market line on our side right now (before tip), or None."""
     now_iso = now.isoformat()
-    rows = []
+    rows, waiting = [], []
     for o in orders:
         cnt, cost = float(o.get("fill_count") or 0), float(o.get("fill_cost") or 0)
+        if o.get("status") == "resting" and (o.get("tip_utc") or "") > now_iso:
+            lim = float(o.get("limit_price") or 0)
+            waiting.append({"key": o.get("bet_key"), "pick": o.get("pick"), "system": o.get("system"),
+                            "venue_name": VENUE_NAMES.get(o.get("venue"), o.get("venue")), "contract": o.get("contract"),
+                            "holding": holding(o), "price": lim, "american": american(lim) if 0 < lim < 1 else None,
+                            "count": o.get("count"), "stake": o.get("stake"), "filled": cnt, "tip_utc": o.get("tip_utc"),
+                            "placed_at": o.get("created_at")})
         if cnt <= 0:
             continue
         fees = float(o.get("fees") or 0)
@@ -155,7 +162,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         v["bets"] += 1
         v["open"] += r["status"] != "FINAL"
         v["pnl"] = round(v["pnl"] + (r["pnl"] or 0), 2)
-    return {"bets": rows, "summary": {
+    return {"bets": rows, "resting": waiting, "summary": {
         "open": len(open_), "at_risk": round(sum(r["risk"] for r in open_), 2),
         "open_to_win": round(sum(r["to_win"] for r in open_), 2),
         "w": w, "l": l, "p": pu, "pnl": pnl, "risked": risked,

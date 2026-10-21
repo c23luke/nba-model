@@ -426,3 +426,137 @@ Deno.test("BetOpenly: the skip reason lists what was on the game and why each wa
   ok(why.includes("NO spread 8.5 -105 ($50): number outside the system"), why);
   ok(why.includes("IND spread -4 -105 ($50): other side"), why);
 });
+
+// ------------------------------------------------------------------ resting limit orders (Kalshi)
+import { kalshiMakerFee, ProphetX, PROPHETX_BASE, restingPrice } from "./core.ts";
+
+class RestVenue extends FakeVenue {
+  rested: { o: OrderRow; id: string; exp: number }[] = [];
+  cancelled: string[] = [];
+  state: Record<string, { status: string; fill_count: number; fill_cost: number; fees: number }> = {};
+  async rest(o: OrderRow, id: string, exp: number) {
+    this.rested.push({ o, id, exp });
+    this.state["R" + this.rested.length] = { status: "resting", fill_count: 0, fill_cost: 0, fees: 0 };
+    return { order_id: "R" + this.rested.length, fill_count: 0, fill_cost: 0, fees: 0, raw: {} };
+  }
+  async getOrder(id: string) { return { ...this.state[id], raw: {} }; }
+  async cancel(id: string) { this.cancelled.push(id); this.state[id] = { ...this.state[id], status: "canceled" }; }
+}
+const limitRow = (p: Partial<FeedRow> = {}) => feedRow({ status: "limit", to_win: 20, ...p }, [kq({ ev: -0.01 })]);
+
+Deno.test("resting price: the most we'd pay and still make the minimum return after the maker fee", () => {
+  const p = restingPrice(0.56, 0, 0.02);
+  eq(p, 0.54);
+  const allIn = p + kalshiMakerFee(p, 100) / 100;
+  ok(0.56 / allIn - 1 >= 0.02, `still +2% at ${allIn}`);
+});
+
+Deno.test("a LIMIT bet rests one good-till-canceled order on Kalshi that expires before tip", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", to_win_dollars: 20, max_dollars_per_game: 50 }), [limitRow()]);
+  const k = new RestVenue();
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.rested.length, 1);
+  const r = k.rested[0];
+  eq([r.o.limit_price, r.o.order_side, db.orders_[0].status, db.orders_[0].order_id], [0.54, "no", "resting", "R1"]);
+  eq(r.exp, Date.parse(TIP) / 1000 - 300);
+  ok(r.o.count * (1 - 0.54) - kalshiMakerFee(0.54, r.o.count) >= 20, "sized to win $20 after the maker fee");
+  await runOnce(db, { kalshi: k }, NOW);                     // next minute: no second order
+  eq(k.rested.length, 1);
+});
+
+Deno.test("resting orders: fills are recorded, and it's cancelled once the bet leaves LIMIT", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", to_win_dollars: 20, max_dollars_per_game: 50 }), [limitRow()]);
+  const k = new RestVenue();
+  await runOnce(db, { kalshi: k }, NOW);
+  k.state.R1 = { status: "resting", fill_count: 10, fill_cost: 5.4, fees: 0.05 };
+  await runOnce(db, { kalshi: k }, NOW);
+  eq([db.orders_[0].status, db.orders_[0].fill_count, db.orders_[0].fill_cost], ["resting", 10, 5.4]);
+  db.rows = [feedRow({ status: "pass" })];                  // model no longer wants it at a limit
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.cancelled, ["R1"]);
+  eq(db.orders_[0].status, "partial");                       // kept what filled
+});
+
+Deno.test("resting orders are cancelled 5 minutes before tip", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", to_win_dollars: 20, max_dollars_per_game: 50 }), [limitRow()]);
+  const k = new RestVenue();
+  await runOnce(db, { kalshi: k }, NOW);
+  await runOnce(db, { kalshi: k }, new Date(Date.parse(TIP) - 3 * 60e3));
+  eq(k.cancelled, ["R1"]);
+  eq(db.orders_[0].status, "unfilled");
+});
+
+// ------------------------------------------------------------------ ProphetX
+function fakePX(markets: unknown[], opts: { orderStatus?: Record<string, unknown> } = {}) {
+  const calls: { method: string; path: string; body?: any; auth?: string }[] = [];
+  const http = (async (url: string, init: RequestInit) => {
+    const path = url.replace(PROPHETX_BASE, "");
+    const h = init.headers as Record<string, string>;
+    calls.push({ method: init.method!, path, body: init.body ? JSON.parse(init.body as string) : undefined, auth: h.authorization });
+    const j = (data: unknown, status = 200) => new Response(JSON.stringify({ data }), { status });
+    if (path === "/auth/login") return j({ access_token: "A1", refresh_token: "R1", access_expire_time: Math.floor(NOW.getTime() / 1000) + 600, refresh_expire_time: Math.floor(NOW.getTime() / 1000) + 86400 });
+    if (path.startsWith("/mm/get_tournaments")) return j({ tournaments: [{ id: 9, name: "WNBA" }, { id: 7, name: "NBA" }] });
+    if (path.startsWith("/mm/get_sport_events")) return j({ sport_events: [{ event_id: 55, scheduled: TIP, competitors: [
+      { id: 1, name: "Indiana Pacers", abbreviation: "IND", side: "away" }, { id: 2, name: "New Orleans Pelicans", abbreviation: "NO", side: "home" }] }] });
+    if (path.startsWith("/v4/mm/get_markets")) return j({ event_id: 55, markets });
+    if (path === "/v4/mm/submit_order") return j({ success: true, order: { order_id: "partner_x", status: "inactive", filled_quantity: 0 } });
+    if (path.startsWith("/v4/mm/get_order/")) return j({ order_id: "partner_x", open_quantity: 0, filled_quantity: 20.5, matching_status: "fully_matched", status: "open", ...(opts.orderStatus || {}) });
+    if (path.startsWith("/v4/mm/get_order_matched_detail")) return j({ matching_details: [{ profit: 20.5, quantity: 20.5, price: 100 }] });
+    if (path === "/v4/mm/get_balance") return j({ balance: 250.75 });
+    return new Response("{}", { status: 404 });
+  }) as unknown as typeof fetch;
+  return { http, calls };
+}
+const pxMarkets = [{ id: 1, type: "spread", status: "active", selections: [
+  [{ competitor_id: 2, name: "New Orleans Pelicans", strike: 4, price: 100, value: 300, strike_id: "nop4" },
+   { competitor_id: 2, name: "New Orleans Pelicans", strike: 8.5, price: 250, value: 300, strike_id: "nop85" }],
+  [{ competitor_id: 1, name: "Indiana Pacers", strike: -4, price: -120, value: 300, strike_id: "ind4" }]] }];
+const pxRow = () => feedRow({ model: { win0: 0.56, base: 3.5, bet: "spread", side: "NOP", sd: 14.14, lo: -10.5, hi: 7.5, market: 3.5 }, to_win: 20 }, []);
+
+Deno.test("ProphetX: logs in once, caches the token, prices our side at its own number", async () => {
+  const { http, calls } = fakePX(pxMarkets);
+  const db = new FakeDb(settings(), []);
+  const st: Record<string, unknown> = {};
+  (db as any).getState = async (k: string) => st[k] ?? null;
+  (db as any).setState = async (k: string, v: unknown) => { st[k] = v; };
+  const px = new ProphetX("a", "s", db, http, () => NOW.getTime(), async () => {});
+  const qs = await px.offers(pxRow());
+  eq(qs.map((q) => [q.contract, q.american, q.offer_id]), [["NOP +4", 100, "nop4"]]);   // +8.5 is past the system's max
+  eq(calls.filter((c) => c.path === "/auth/login").length, 1);
+  eq(calls.find((c) => c.path.startsWith("/v4/mm/get_markets"))!.auth, "Bearer A1");
+  const px2 = new ProphetX("a", "s", db, http, () => NOW.getTime(), async () => {});
+  eq(await px2.balance(), 250.75);
+  eq(calls.filter((c) => c.path === "/auth/login").length, 1, "second run reuses the cached token");
+});
+
+Deno.test("ProphetX order: fillOrKill at our price, waits for matching, records the fill", async () => {
+  const { http, calls } = fakePX(pxMarkets);
+  const px = new ProphetX("a", "s", undefined, http, () => NOW.getTime(), async () => {});
+  const q = (await px.offers(pxRow()))[0];
+  const r = await px.order({ stake: 20.5, count: 41 } as OrderRow, "client-9", q);
+  const sub = calls.find((c) => c.path === "/v4/mm/submit_order")!;
+  eq(sub.body, { external_id: "client-9", strike_id: "nop4", price: 100, quantity: 20.5, order_strategy: "fillOrKill" });
+  eq([r.order_id, r.fill_cost, r.fill_count, r.fees], ["partner_x", 20.5, 41, 0.41]);
+});
+
+Deno.test("test-only sites log WOULD HAVE PLACED while live betting is on, and never place", async () => {
+  const { http, calls } = fakePX(pxMarkets);
+  const px = new ProphetX("a", "s", undefined, http, () => NOW.getTime(), async () => {});
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", venues: ["kalshi"], watch_venues: ["prophetx"],
+    to_win_dollars: 20, max_dollars_per_game: 50 }), [pxRow()]);
+  await runOnce(db, { kalshi: new FakeVenue(null), prophetx: px }, NOW);
+  ok(db.logs.some((l) => l.message.startsWith("WOULD HAVE PLACED: ProphetX (test site) NOP +4 at +100")), JSON.stringify(db.logs));
+  eq(calls.filter((c) => c.path === "/v4/mm/submit_order").length, 0);
+  eq(db.orders_.filter((o) => o.mode === "live").length, 0);
+});
+
+
+Deno.test("ProphetX: a spread number that's signed backwards vs the market is skipped", async () => {
+  const flipped = [{ id: 1, type: "spread", status: "active", selections: [
+    [{ competitor_id: 2, name: "New Orleans Pelicans", strike: -3.5, price: 100, value: 300, strike_id: "nopm35" }]] }];
+  const { http } = fakePX(flipped);
+  const px = new ProphetX("a", "s", undefined, http, () => NOW.getTime(), async () => {});
+  const row = pxRow();
+  eq((await px.offers(row)).length, 0);
+  ok(px.explain(row).includes("looks flipped"), px.explain(row));
+});
