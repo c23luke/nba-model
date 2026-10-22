@@ -561,3 +561,16 @@ Deno.test("ProphetX: a spread number that's signed backwards vs the market is sk
   eq((await px.offers(row)).length, 0);
   ok(px.explain(row).includes("looks flipped"), px.explain(row));
 });
+
+
+Deno.test("near ties go to the number that wins more often; a clearly better price still wins", async () => {
+  // both priced at the fake 49¢ ask; +3.5 cashes more often, +1.5 is listed with slightly more expected return
+  const p15 = kq({ contract: "NOP +1.5", line: 1.5, ev: 0.114, win: 0.58, max_cost: 0.58, ticker: "IND2" });
+  const p35 = kq({ contract: "NOP +3.5", line: 3.5, ev: 0.109, win: 0.62, max_cost: 0.62, ticker: "IND4" });
+  const db = new FakeDb(settings(), [feedRow({}, [p15, p35])]);
+  await runOnce(db, { kalshi: new FakeVenue() }, NOW);
+  eq(db.orders_[0].contract, "NOP +3.5");
+  const db2 = new FakeDb(settings(), [feedRow({}, [{ ...p15, ev: 0.14 }, p35])]);
+  await runOnce(db2, { kalshi: new FakeVenue() }, NOW);
+  eq(db2.orders_[0].contract, "NOP +1.5");
+});

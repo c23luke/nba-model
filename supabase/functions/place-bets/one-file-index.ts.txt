@@ -207,6 +207,18 @@ export function outcomeAt(m: Model, line: number): { win: number; push: number }
 
 export const americanCost = (a: number) => (a > 0 ? 100 / (a + 100) : -a / (-a + 100));
 
+// Caden (2026-10-22): when two prices make about the same money, take the one that wins more often.
+export const POINTS_TIEBREAK = 0.02;
+/** Best first; among quotes within POINTS_TIEBREAK of the top expected return, the most likely to cash goes first. */
+export function preferPoints(qs: Quote[]): Quote[] {
+  const out = [...qs].sort((a, b) => b.ev - a.ev);
+  if (!out.length) return out;
+  const top = out[0].ev;
+  const cash = (q: Quote) => q.win + Math.max(0, 1 - q.win / q.max_cost) / 2;
+  const near = out.filter((q) => q.ev >= top - POINTS_TIEBREAK).sort((a, b) => cash(b) - cash(a) || b.ev - a.ev);
+  return near.concat(out.filter((q) => q.ev < top - POINTS_TIEBREAK));
+}
+
 /** The price the model saw for this quote (what the limit order is capped at). */
 export function modelPrice(q: Quote): number {
   return q.venue === "kalshi" ? Number(q.price) : Number(q.cost);
@@ -296,7 +308,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
         res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason: `${venues[vn].name} offers failed: ${msg(e)}` });
       }
     }
-    quotes = quotes.filter((q) => q.ev >= s.min_ev).sort((a, b) => b.ev - a.ev);
+    quotes = preferPoints(quotes.filter((q) => q.ev >= s.min_ev));
     if (!quotes.length) {
       const notes = on.map((vn) => venues[vn].explain?.(row) ?? "").filter(Boolean).join(" · ");
       skip(`no quote on ${on.join("/") || "any switched-on venue"} with expected return ≥ ${pct(s.min_ev)}${notes ? ` — ${notes}` : ""}`);
@@ -428,8 +440,8 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       const v = venues[vn];
       try {
         const qs = (v.offers ? (row.model ? await v.offers(row) : []) : (row.quotes || []).filter((q) => q.venue === vn))
-          .filter((q) => q.ev >= s.min_ev).sort((a, b) => b.ev - a.ev);
-        const q = qs[0];
+          .filter((q) => q.ev >= s.min_ev);
+        const q = preferPoints(qs)[0];
         if (!q) continue;
         const chk = await v.ask(q, row);
         if (chk.ask == null || chk.ask > modelPrice(q) + 1e-9) continue;

@@ -295,8 +295,25 @@ def shop(p: dict, win0: float, base: float | None = None, market: float | None =
                     "ev": round(expected_return(win, push, q["cost"]), 4),
                     "max_cost": round(breakeven, 4), "price_txt": price_text(q),
                     "mine": q["venue"] in MY_VENUES})
-    out.sort(key=lambda q: -q["ev"])
-    return out
+    return prefer_points(out)
+
+
+# Caden (2026-10-22): when two prices make about the same money, take the one that wins more often.
+# A cheaper number has to beat the best price with more points by this much expected return to be chosen.
+POINTS_TIEBREAK = 0.02
+
+
+def prefer_points(quotes: list[dict]) -> list[dict]:
+    """Best first. Among quotes within POINTS_TIEBREAK of the top expected return, the one most likely
+    to cash (more points) goes first; everything else stays in expected-return order."""
+    out = sorted(quotes, key=lambda q: -q["ev"])
+    if not out:
+        return out
+    top = out[0]["ev"]
+    near = [q for q in out if q["ev"] >= top - POINTS_TIEBREAK]
+    rest = [q for q in out if q["ev"] < top - POINTS_TIEBREAK]
+    near.sort(key=lambda q: (-(q["win"] + q.get("push", 0) / 2), -q["ev"]))
+    return near + rest
 
 
 def _desc(q: dict) -> str:

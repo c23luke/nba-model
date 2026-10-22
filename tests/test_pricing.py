@@ -207,3 +207,14 @@ def test_points_are_priced_from_the_measured_six_season_table():
     # totals keep the bell curve
     w2, _ = outcome(0.55, 220.5, "total", "OVER", 218.5)
     assert 0.59 < w2 < 0.61
+
+
+def test_near_ties_go_to_the_number_that_wins_more_often():
+    from engine.pricing import prefer_points
+    plus15 = {"contract": "NOP +1.5", "ev": 0.114, "win": 0.486, "push": 0}
+    plus35 = {"contract": "NOP +3.5", "ev": 0.109, "win": 0.56, "push": 0}
+    plus4_bad = {"contract": "NOP +4", "ev": 0.076, "win": 0.56, "push": 0.039}
+    assert [q["contract"] for q in prefer_points([plus15, plus4_bad, plus35])] == ["NOP +3.5", "NOP +1.5", "NOP +4"]
+    # a clearly better price (more than 2 points of expected return) still wins
+    big = {**plus15, "ev": 0.14}
+    assert prefer_points([plus35, big])[0]["contract"] == "NOP +1.5"
