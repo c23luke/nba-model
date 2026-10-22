@@ -167,11 +167,32 @@ export function normInv(p: number): number {     // Acklam
   return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
 }
 
+// What each extra point of spread is worth, MEASURED on six seasons (6,979 games, closing lines) — the
+// same table as engine/pricing.py POINT_GAIN: cover-chance gain for d = 0.5 ... 7 extra points.
+export const POINT_GAIN: Record<string, number[]> = {
+  "close within 3": [0.014, 0.028, 0.040, 0.054, 0.071, 0.085, 0.097, 0.109, 0.122, 0.137, 0.154, 0.167, 0.181, 0.196],
+  "3.5 to 7": [0.021, 0.039, 0.056, 0.074, 0.093, 0.108, 0.122, 0.134, 0.147, 0.160, 0.174, 0.187, 0.198, 0.208],
+  "7.5+": [0.021, 0.039, 0.056, 0.075, 0.092, 0.110, 0.127, 0.145, 0.162, 0.178, 0.193, 0.208, 0.221, 0.233],
+};
+export function pointGain(absLine: number, d: number): number {
+  const g = POINT_GAIN[absLine <= 3 ? "close within 3" : absLine <= 7 ? "3.5 to 7" : "7.5+"];
+  const a = Math.abs(d);
+  let val: number;
+  if (a <= 7) {
+    const i = a * 2, lo = Math.floor(i);
+    const glo = lo === 0 ? 0 : g[lo - 1], ghi = g[Math.min(lo, 13)];
+    val = glo + (ghi - glo) * (i - lo);
+  } else val = g[13] + (g[13] - g[11]) * (a - 7);
+  return d >= 0 ? val : -val;
+}
+
 /** (win, push) at `line`, given the model's win rate at its base line — same math as the Python card. */
 export function outcomeAt(m: Model, line: number): { win: number; push: number } {
   const z0 = normInv(Math.min(Math.max(m.win0, 0.01), 0.99));
   const over = m.bet === "total" && m.side === "OVER";
-  const cover = (L: number) => normCdf(z0 + ((over ? m.base - L : L - m.base) / m.sd));
+  const cover = (L: number) => m.bet !== "total"
+    ? Math.min(Math.max(m.win0 + pointGain(Math.abs(m.base), L - m.base), 0.01), 0.99)
+    : normCdf(z0 + ((over ? m.base - L : L - m.base) / m.sd));
   if (Number.isInteger(line)) {
     const [worse, better] = over ? [line + 0.5, line - 0.5] : [line - 0.5, line + 0.5];
     const w = cover(worse);

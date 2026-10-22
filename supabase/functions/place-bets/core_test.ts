@@ -346,7 +346,8 @@ const boRow = (p: Partial<FeedRow> = {}) => feedRow({ model: MODEL, to_win: 20, 
 
 Deno.test("model math matches the Python card (push on whole numbers)", () => {
   const a = outcomeAt(MODEL, 3.5); ok(Math.abs(a.win - 0.56) < 1e-3 && a.push === 0, JSON.stringify(a));
-  const b = outcomeAt(MODEL, 4); ok(b.win > 0.56 && b.push > 0.02 && b.push < 0.04, JSON.stringify(b));
+  const b = outcomeAt(MODEL, 4); ok(Math.abs(b.win - 0.56) < 1e-9 && Math.abs(b.push - 0.039) < 1e-9, JSON.stringify(b));
+  const c = outcomeAt(MODEL, 1.5); ok(Math.abs(c.win - 0.486) < 1e-9, `measured: 2 points near a 3.5 line = 7.4% (${c.win})`);
   const o = outcomeAt({ ...MODEL, bet: "total", side: "OVER", base: 225.5, sd: 18.18 }, 224);
   ok(o.win > 0.56, "over gets better as the number drops");
 });

@@ -187,6 +187,33 @@ def market_line(pick: dict, slate: list[dict]) -> float | None:
     return None
 
 
+# What each extra point of spread is worth, MEASURED on six seasons (2020-21 to 2025-26, 6,979 games,
+# closing consensus lines; engine/measure_points.py, reports/engine.measure_points.txt): the gain in cover
+# chance for d = 0.5, 1.0, ... 7.0 extra points over the line. A bell curve (SD 14.14) says ~2.8% a point;
+# real NBA results agree for lines within 3, but around lines of 3.5+ the first points are worth ~3.7-4.2%
+# each (results bunch closer to the line than a bell curve). Totals stay on the bell curve (SD 18.18).
+POINT_GAIN = {
+    "close within 3": [0.014, 0.028, 0.040, 0.054, 0.071, 0.085, 0.097, 0.109, 0.122, 0.137, 0.154, 0.167, 0.181, 0.196],
+    "3.5 to 7":       [0.021, 0.039, 0.056, 0.074, 0.093, 0.108, 0.122, 0.134, 0.147, 0.160, 0.174, 0.187, 0.198, 0.208],
+    "7.5+":           [0.021, 0.039, 0.056, 0.075, 0.092, 0.110, 0.127, 0.145, 0.162, 0.178, 0.193, 0.208, 0.221, 0.233],
+}
+
+
+def point_gain(abs_line: float, d: float) -> float:
+    """Measured change in cover chance from getting d more points (negative d = giving points up)."""
+    g = POINT_GAIN["close within 3" if abs_line <= 3 else "3.5 to 7" if abs_line <= 7 else "7.5+"]
+    a = abs(d)
+    if a <= 7:
+        i = a * 2                                        # position on the half-point grid
+        lo = int(i)
+        glo = 0.0 if lo == 0 else g[lo - 1]
+        ghi = g[min(lo, 13)] if lo < 14 else g[13]
+        val = glo + (ghi - glo) * (i - lo)
+    else:
+        val = g[13] + (g[13] - g[11]) * (a - 7)         # beyond 7: keep the last measured slope
+    return val if d >= 0 else -val
+
+
 def outcome(win0: float, pick_line: float, bet: str, side: str, line: float) -> tuple[float, float]:
     """(win, push) at `line`, given a win rate of win0 at the pick's own line."""
     sd = TOTAL_SD if bet == "total" else SPREAD_SD
@@ -194,6 +221,8 @@ def outcome(win0: float, pick_line: float, bet: str, side: str, line: float) -> 
     over = bet == "total" and side == "OVER"
 
     def cover(L):           # chance the result beats L (a half-point line)
+        if bet != "total":                              # spreads: measured value of each point
+            return min(max(win0 + point_gain(abs(pick_line), L - pick_line), 0.01), 0.99)
         return _N.cdf(z0 + ((pick_line - L) if over else (L - pick_line)) / sd)
 
     if float(line).is_integer():

@@ -192,3 +192,18 @@ def test_shopping_never_leaves_what_the_system_allows():
     shop = [kq("H", 3.5, 0.50), kq("H", 2.5, 0.45), kq("H", 1.5, 0.38)]
     c = build_card([pk(113, "H", shop, line=3.5)], slate, now=NOW)[0]
     assert {q["line"] for q in c["shop"]} == {3.5, 2.5}
+
+
+def test_points_are_priced_from_the_measured_six_season_table():
+    from engine.pricing import outcome, point_gain
+    # near a 3-4 point line, 2 points are worth 7.4% (a bell curve said 5.6%)
+    assert round(point_gain(3.5, 2), 3) == 0.074 and round(point_gain(3.5, -2), 3) == -0.074
+    # lines within 3 match the bell curve (~2.8% a point)
+    assert round(point_gain(1.5, 1), 3) == 0.028
+    win, push = outcome(0.56, 3.5, "spread", "NOP", 1.5)
+    assert round(win, 3) == 0.486 and push == 0
+    win, push = outcome(0.56, 3.5, "spread", "NOP", 4)           # whole number: push = the value of that point
+    assert round(win, 3) == 0.56 and round(push, 3) == 0.039
+    # totals keep the bell curve
+    w2, _ = outcome(0.55, 220.5, "total", "OVER", 218.5)
+    assert 0.59 < w2 < 0.61

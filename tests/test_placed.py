@@ -83,7 +83,8 @@ def test_line_movement_and_beating_the_close():
     assert moved_our_way("total", "OVER", 220.5, 222.5) == 2.0 and moved_our_way("total", "UNDER", 220.5, 222.5) == -2.0
     o = {"bet": "spread", "side": "NOP", "line": 1.5}
     assert beat_close(o, 0.43, 1.5) == 7.0                              # 50¢ fair at the close, paid 43¢
-    assert beat_close(o, 0.43, 3.5) < 7.0 and beat_close(o, 0.43, 3.5) > 0    # +1.5 is worth less when the close is +3.5
+    # +1.5 when the close is +3.5: two points short, worth 7.4% less (measured) -> 42.6¢, so 43¢ was 0.4¢ too much
+    assert beat_close(o, 0.43, 3.5) == -0.4
     assert beat_close(o, 0.43, -0.5) > 7.0                               # market moved our way: NOP now favoured
     assert beat_close(o, 0.43, 8.5) < 0                                  # market moved hard against us
 
