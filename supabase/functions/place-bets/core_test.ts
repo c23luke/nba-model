@@ -574,3 +574,50 @@ Deno.test("near ties go to the number that wins more often; a clearly better pri
   await runOnce(db2, { kalshi: new FakeVenue() }, NOW);
   eq(db2.orders_[0].contract, "NOP +1.5");
 });
+
+// ------------------------------------------------------------------ not enough money on a site
+class RefusingVenue extends FakeVenue {
+  override async order(_o: OrderRow, _id: string): Promise<any> {
+    throw new Error(`Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance"}}`);
+  }
+}
+
+Deno.test("a site that refuses the order (e.g. insufficient balance) doesn't lock the bet: the next site gets it", async () => {
+  const kal = kq({ ev: 0.12 });
+  const other = kq({ venue: "betopenly2", venue_name: "Other", ticker: "B1", ev: 0.11, win: 0.56, max_cost: 0.56 });
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", venues: ["kalshi", "betopenly2"] }), [feedRow({}, [kal, other])]);
+  const k = new RefusingVenue(), b = new FakeVenue();
+  b.name = "Other";
+  await runOnce(db, { kalshi: k, betopenly2: b }, NOW);
+  eq(db.orders_.map((o) => [o.venue, o.status]), [["kalshi", "unfilled"], ["betopenly2", "filled"]]);
+  ok(String(db.orders_[0].reason).startsWith("rejected by Kalshi"), String(db.orders_[0].reason));
+  eq(b.sent.length, 1);
+});
+
+Deno.test("a timeout or server error still locks the bet (it might have gone through)", async () => {
+  class Down extends FakeVenue { override async order(): Promise<any> { throw new Error("Kalshi POST /x → 503: unavailable"); } }
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", venues: ["kalshi", "b"] }),
+    [feedRow({}, [kq({ ev: 0.12 }), kq({ venue: "b", ticker: "B1", ev: 0.11 })])]);
+  const b = new FakeVenue();
+  await runOnce(db, { kalshi: new Down(), b }, NOW);
+  eq(db.orders_.map((o) => o.status), ["error"]);
+  eq(b.sent.length, 0);
+});
+
+Deno.test("money spent earlier in the same run counts against the site's balance (balances can lag)", async () => {
+  const rows = [feedRow({ key: "a", game_id: "g1" }), feedRow({ key: "b", game_id: "g2", pick: "X +1" }, [kq({ ticker: "T2" })])];
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", max_dollars_per_game: 50 }), rows);
+  const k = new FakeVenue(0.49, true, 8);                  // $8 on Kalshi; each bet costs ~$5.08
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 1);
+});
+
+Deno.test("a resting order isn't sent when the site doesn't have the money", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", to_win_dollars: 20, max_dollars_per_game: 50 }),
+    [feedRow({ status: "limit", to_win: 20 }, [kq({ ev: -0.01 })])]);
+  const k = new RestVenue();
+  k.bal = 5;
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.rested.length, 0);
+  ok(r.skips.some((x) => x.reason.includes("Kalshi balance $5.00 is under")), JSON.stringify(r.skips));
+});

@@ -203,6 +203,12 @@ export function outcomeAt(m: Model, line: number): { win: number; push: number }
 
 export const americanCost = (a: number) => (a > 0 ? 100 / (a + 100) : -a / (-a + 100));
 
+/** A clear refusal from the site (HTTP 4xx: not enough money, bad price, market closed...). Nothing was placed.
+ * Timeouts, network errors and 5xx stay "unknown" and are never retried. */
+export function rejected(e: unknown): boolean {
+  return /→ 4\d\d\b/.test(msg(e)) && !/→ 40[89]\b|→ 425\b|→ 429\b/.test(msg(e));
+}
+
 // Caden (2026-10-22): when two prices make about the same money, take the one that wins more often.
 export const POINTS_TIEBREAK = 0.02;
 /** Best first; among quotes within POINTS_TIEBREAK of the top expected return, the most likely to cash goes first. */
@@ -284,8 +290,11 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
   const gameDollars = (g: string) => counted.filter((o) => o.game_id === g)
     .reduce((t, o) => t + (o.fill_cost ?? o.stake ?? 0), 0);
 
+  // money committed on each site during THIS run: a site's reported balance can lag right after a fill
+  const spent: Record<string, number> = {};
+  const available = async (vn: string) => (await venues[vn].balance()) - (spent[vn] ?? 0);
   if (live) await manageResting(db, venues, recent, allFeed, now, res);
-  await placeResting(db, venues, s, live, on, limits, recent, counted, openNow, gameDollars, now, res);
+  await placeResting(db, venues, s, live, on, limits, recent, counted, openNow, gameDollars, now, res, available, spent);
 
   for (const row of feed.sort((a, b) => best(b) - best(a))) {
     const skip = (reason: string) => res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason });
@@ -395,7 +404,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       }
       if (!v.hasKeys) { why.push(`${v.name}: no API keys in Supabase secrets`); continue; }
       try {
-        const bal = await v.balance();
+        const bal = await available(q.venue);
         if (bal < stake + fee) { why.push(`${v.name} balance ${money(bal)} is under ${money(stake + fee)}`); continue; }
       } catch (e) {
         why.push(`${v.name}: balance check failed (${msg(e)})`);
@@ -415,9 +424,19 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
           { order_id: r.order_id, fill_count: r.fill_count, fill_cost: r.fill_cost, fees: r.fees });
         res.actions.push(`${status}: ${text}`);
         if (r.fill_count > 0) counted.push({ ...order, status, fill_cost: r.fill_cost });
+        spent[q.venue] = (spent[q.venue] ?? 0) + (r.fill_cost ?? 0) + (r.fees ?? 0);
         done = status !== "unfilled";
       } catch (e) {
-        // Rule 7: log it and never retry blindly — the row stays 'error' and blocks this market
+        if (rejected(e)) {
+          // the site refused the order outright (e.g. not enough money there): nothing was placed,
+          // so it's safe to try the next-best site in this same run
+          await db.updateOrder(ins.id, { status: "unfilled", reason: `rejected by ${v.name}: ${msg(e)}` });
+          await db.log("warn", `REJECTED by ${v.name} (nothing placed, trying the next site): ${text}: ${msg(e)}`);
+          why.push(`${v.name} refused it (${msg(e).slice(0, 120)})`);
+          continue;
+        }
+        // Rule 7: anything else (timeout, server error) might have gone through — log it, never retry blindly;
+        // the row stays 'error' and blocks this bet
         await db.updateOrder(ins.id, { status: "error", reason: msg(e) });
         await db.updateFeed(row.key, { order_status: "error", order_venue: q.venue });
         await db.log("error", `ORDER FAILED (not retried): ${text}: ${msg(e)}`);
@@ -523,7 +542,9 @@ async function manageResting(db: Db, venues: Record<string, Venue>, recent: Orde
  * so the bet fills if the price comes to us. One resting order per bet; it expires before tip. */
 async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, live: boolean, on: string[],
                             limits: FeedRow[], recent: OrderRow[], counted: OrderRow[], openNow: () => OrderRow[],
-                            gameDollars: (g: string) => number, now: Date, res: RunResult) {
+                            gameDollars: (g: string) => number, now: Date, res: RunResult,
+                            available: (vn: string) => Promise<number> = async () => Infinity,
+                            spent: Record<string, number> = {}) {
   const k = venues.kalshi;
   if (!on.includes("kalshi") || !k?.rest) return;
   for (const row of limits) {
@@ -568,10 +589,15 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
       res.actions.push(`would have placed: ${text}`);
       continue;
     }
+    try {
+      const bal = await available("kalshi");
+      if (bal < stake + fee) { skip(`resting order: Kalshi balance ${money(bal)} is under ${money(stake + fee)}`); continue; }
+    } catch (e) { skip(`resting order: Kalshi balance check failed (${msg(e)})`); continue; }
     const ins = await db.insertOrder(order);
     if (ins.conflict || !ins.id) { skip("another order for this bet or market is already active"); continue; }
     try {
       const r = await k.rest(order, ins.id, expires);
+      spent.kalshi = (spent.kalshi ?? 0) + stake + fee;          // a resting order reserves its cost
       const status = r.fill_count >= count ? "filled" : "resting";
       await db.updateOrder(ins.id, { status, order_id: r.order_id, fill_count: r.fill_count, fill_cost: r.fill_cost,
                                      fees: r.fees, response: r.raw });
@@ -580,6 +606,12 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
       res.actions.push(`${status}: ${text}`);
       counted.push({ ...order, status, fill_cost: r.fill_cost, created_at: now.toISOString() });
     } catch (e) {
+      if (rejected(e)) {
+        await db.updateOrder(ins.id, { status: "unfilled", reason: `rejected by Kalshi: ${msg(e)}` });
+        await db.log("warn", `RESTING ORDER REJECTED by Kalshi (nothing placed): ${text}: ${msg(e)}`);
+        skip(`resting order refused by Kalshi (${msg(e).slice(0, 120)})`);
+        continue;
+      }
       await db.updateOrder(ins.id, { status: "error", reason: msg(e) });
       await db.log("error", `RESTING ORDER FAILED (not retried): ${text}: ${msg(e)}`);
       res.actions.push(`error: ${text}: ${msg(e)}`);
