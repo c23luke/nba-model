@@ -79,6 +79,14 @@ def fetch_box(game_id: str, game_date: str, fetch=get_json) -> list[dict]:
     return parse_summary(fetch(SUMMARY.format(game_id)), game_id, game_date)
 
 
+def team_dates(rows: list[dict]) -> dict[str, list[str]]:
+    """Each team's game dates this season (games with a box score), oldest first."""
+    out: dict[str, set] = defaultdict(set)
+    for r in rows:
+        out[r["team"]].add(str(r["game_date"]))
+    return {t: sorted(d) for t, d in out.items()}
+
+
 def season_impact(rows: list[dict]) -> dict[str, dict]:
     """Per player (keyed by ESPN id): minutes, games, minutes per game and box impact (BPM scale)."""
     acc: dict[str, dict] = {}
@@ -105,5 +113,5 @@ def season_impact(rows: list[dict]) -> dict[str, dict]:
         out[pid] = {"name": p["name"], "min": p["min"], "games": p["games"],
                     "mpg": p["min"] / p["games"], "bpm_live": bpm,
                     "w_min": sum(w * m for w, (_, m) in zip(wts, log)), "w_games": sum(wts),
-                    "last3": [m for _, m in log[-RECENT_GAMES:]]}
+                    "last3": [m for _, m in log[-RECENT_GAMES:]], "last_date": log[-1][0]}
     return out

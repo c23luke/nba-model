@@ -229,3 +229,42 @@ def test_back_to_back_moves_the_fair_line():
     a = P.rate_team("NYK", [ath("Role Wing")] * 9, LAST)
     h = P.rate_team("BOS", [ath("Role Wing")] * 9, LAST)
     assert P.fair_home_spread(h, a, home_b2b=True) - P.fair_home_spread(h, a) == P.B2B
+
+
+def test_missed_last_game_is_priced_both_ways_until_cleared():
+    # Charlotte, Oct 2026: the best player sat both games without being listed; the model used to
+    # count him in full. Now he's priced plays/sits until he plays again or the report clears him.
+    roster = [ath("Star Guard")] + [ath("Role Wing")] * 8
+    live = {}
+    dates = ["2026-10-21", "2026-10-23"]
+    t = P.rate_team("BOS", roster, LAST, live=live, team_dates=dates)
+    star = next(p for p in t.players if p.name == "Star Guard")
+    assert star.status == "day-to-day" and any("missed BOS's last 2 game(s)" in s for s in star.steps)
+    sit = P.rate_team("BOS", roster, LAST, live=live, dtd_sit=True, team_dates=dates)
+    assert sit.rating < t.rating
+
+    # cleared on the official report -> plays, no flag
+    cleared = [dict(ath("Star Guard"), official_status="Probable")] + [ath("Role Wing")] * 8
+    t2 = P.rate_team("BOS", cleared, LAST, team_dates=dates)
+    assert next(p for p in t2.players if p.name == "Star Guard").status == "active"
+
+    # played the latest game -> no flag
+    roster3 = [dict(ath("Star Guard"), id="7")] + [ath("Role Wing")] * 8
+    lv = {"7": {"min": 60, "games": 2, "mpg": 30, "bpm_live": 5.0, "last_date": "2026-10-23"}}
+    t3 = P.rate_team("BOS", roster3, LAST, live=lv, team_dates=dates)
+    assert next(p for p in t3.players if p.name == "Star Guard").status == "active"
+
+    # no games played yet -> nothing to miss
+    t4 = P.rate_team("BOS", roster, LAST, team_dates=[])
+    assert next(p for p in t4.players if p.name == "Star Guard").status == "active"
+
+
+def test_t13_waits_when_the_edge_needs_a_missing_star():
+    roster = [ath("Star Guard")] + [ath("Role Wing")] * 8
+    dates = ["2026-10-21"]
+    home = P.rate_team("BOS", roster, LAST, team_dates=dates)
+    home.sit = P.rate_team("BOS", roster, LAST, dtd_sit=True, team_dates=dates)
+    away = P.rate_team("NYK", [ath("Role Wing")] * 9, LAST)
+    v = P.game_view(away, home, 0.0, None)
+    gaps = [s["gap"] for s in v["scenarios"]]
+    assert len(gaps) == 2 and min(gaps) < max(gaps)        # the edge depends on whether he plays

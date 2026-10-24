@@ -247,6 +247,7 @@ class Player:
 
     prior: dict | None = None         # rookie prior from draft slot (measured)
     live: dict | None = None          # this season so far: min, games, mpg, bpm_live
+    official: str | None = None       # status on the NBA's official injury report, if listed
     wanted: float = 0.0               # projected role minutes before fitting the team into 240
 
     @property
@@ -295,17 +296,47 @@ def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
     return out
 
 
+CLEARED = ("Probable", "Available")      # official-report statuses that mean he plays
+
+
+def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None) -> None:
+    """A player who missed his team's most recent game(s) is NOT assumed to play the next one.
+    ESPN's injury list and the official report often don't list him yet when we bet (the night
+    before), so the model used to give him his full role. Charlotte, Oct 2026: Kon Knueppel
+    (+3.4, 31 projected min, CHA's best player) missed both games, wasn't listed, and the model
+    counted him in full: a 3-point 'edge' that was really his empty chair.
+    Now he's priced both ways (plays / sits), like any day-to-day player, until the official
+    report clears him (Probable / Available) or he plays again. T13 only bets if the edge holds
+    either way, so an unknown star can no longer create a bet."""
+    if not team_dates:
+        return
+    for p in tr.players:
+        if p.status != "active" or p.official in CLEARED:
+            continue
+        seen = (p.live or {}).get("last_date")
+        missed = sorted(d for d in team_dates if seen is None or d > seen)
+        if not missed:
+            continue
+        if not p.known and not p.draft:
+            continue                               # nobody we'd give minutes to anyway
+        p.status = "day-to-day"
+        p.steps.append(f"missed {tr.team}'s last {len(missed)} game(s) ({', '.join(missed[-3:])}) and no "
+                       f"report has cleared him: priced both ways (plays / sits) until one does")
+
+
 def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
               drafts: dict[str, dict] | None = None, live: dict[str, dict] | None = None,
-              dtd_sit: bool = False) -> TeamRead:
-    """dtd_sit=True prices the version of tonight where every day-to-day player sits."""
+              dtd_sit: bool = False, team_dates: list[str] | None = None) -> TeamRead:
+    """dtd_sit=True prices the version of tonight where every day-to-day player sits.
+    team_dates: the dates of this team's games already played this season (from the box scores)."""
     tr = TeamRead(team)
     for a in athletes:
         name = a.get("displayName") or a.get("fullName") or ""
         exp = (a.get("experience") or {}).get("years")
         tr.players.append(Player(name, _status(a), exp, find(last, name),
                                  espn_id=str(a.get("id") or "") or None,
-                                 age_now=int(a["age"]) if a.get("age") else None))
+                                 age_now=int(a["age"]) if a.get("age") else None,
+                                 official=a.get("official_status")))
     for p in tr.players:
         if p.last is None and drafts and p.espn_id in drafts:
             p.draft = drafts[p.espn_id]
@@ -319,6 +350,7 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
     for p in tr.players:
         if live and p.espn_id in live:
             p.live = live[p.espn_id]
+    flag_missed_games(tr, team_dates)
 
     avail = [p for p in tr.players if p.status != "out" and p.known
              and not (dtd_sit and p.status == "day-to-day")]
@@ -485,7 +517,8 @@ def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) ->
 
 def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
              live: dict[str, dict] | None = None, official: dict | None = None,
-             notes: list | None = None, games=None) -> dict[str, TeamRead]:
+             notes: list | None = None, games=None,
+             team_games: dict[str, list[str]] | None = None) -> dict[str, TeamRead]:
     """official: the NBA's latest injury report (engine/injury_report.latest()); it overrides ESPN's statuses."""
     last = load_last_season(path, prev_path)
     rosters = fetch_rosters(fetch)
@@ -499,8 +532,9 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
     drafts = lookup_drafts(rosters, last, fetch)
     reads = {}
     for t, ath in rosters.items():
-        tr = rate_team(t, ath, last, drafts, live)
-        tr.sit = rate_team(t, ath, last, drafts, live, dtd_sit=True) if tr.dtd else None
+        td = (team_games or {}).get(t)
+        tr = rate_team(t, ath, last, drafts, live, team_dates=td)
+        tr.sit = rate_team(t, ath, last, drafts, live, dtd_sit=True, team_dates=td) if tr.dtd else None
         reads[t] = tr
     return reads
 

@@ -71,10 +71,17 @@ def players_gap(pick: dict, slate: list[dict]) -> float | None:
         return None
     for g in slate:
         if g.get("game_id") == pick["game_id"]:
-            gap = (g.get("personnel") or {}).get("gap")
+            view = g.get("personnel") or {}
+            gap = view.get("gap")
             if gap is None:
                 return None
-            return round(gap if pick["side"] == g.get("home") else -gap, 1)
+            # with day-to-day players, count only what holds in EVERY version of tonight (plays or
+            # sits) — the same rule T13 bets on. The early-combo history (26-10) was measured with
+            # lineups known, so assuming an uncertain player plays overstates the agreement.
+            gaps = [s["gap"] for s in view.get("scenarios") or [] if s.get("gap") is not None] or [gap]
+            home = pick["side"] == g.get("home")
+            mine = [x if home else -x for x in gaps]
+            return round(min(mine), 1)
     return None
 SPREAD_SD = 14.14        # measured: home margin minus spread, 979 games 2025-26
 TOTAL_SD = 18.18         # measured: actual total minus closing total, 1,194 games 2025-26

@@ -128,7 +128,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     store.save_games(list({r["id"]: r for r in changed}.values()))
 
     # ---- 2a. this season's box scores (only games not stored yet)
-    live = {}
+    live, played = {}, {}
     try:
         box_rows = store.load_player_games()
         have = {r["game_id"] for r in box_rows}
@@ -143,6 +143,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             store.save_player_games(new_rows)
             log.append(f"Box scores: {len({r['game_id'] for r in new_rows})} new games stored")
         live = boxscore.season_impact(box_rows + new_rows)
+        played = boxscore.team_dates(box_rows + new_rows)
     except Exception as e:
         log.append(f"Box score step failed: {e}")
 
@@ -159,7 +160,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 official = None
                 log.append(f"Official injury report failed (using ESPN): {e}")
             return personnel_mod.read_all(live=live, official=official, notes=log,
-                                          games=[(g.game_date, g.away, g.home) for g in upcoming])
+                                          games=[(g.game_date, g.away, g.home) for g in upcoming],
+                                          team_games=played)
     if personnel_fetch:
         try:
             reads = personnel_fetch()

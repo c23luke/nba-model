@@ -218,3 +218,13 @@ def test_near_ties_go_to_the_number_that_wins_more_often():
     # a clearly better price (more than 2 points of expected return) still wins
     big = {**plus15, "ev": 0.14}
     assert prefer_points([plus35, big])[0]["contract"] == "NOP +1.5"
+
+
+def test_players_gap_uses_the_version_that_holds_either_way():
+    from engine.pricing import players_gap
+    slate = [{"game_id": "g", "home": "CHA", "personnel": {"gap": 4.1, "scenarios": [
+        {"gap": 4.1}, {"gap": 1.6}]}}]
+    assert players_gap({"bet": "spread", "game_id": "g", "side": "CHA"}, slate) == 1.6
+    assert players_gap({"bet": "spread", "game_id": "g", "side": "MIA"}, slate) == -4.1
+    slate[0]["personnel"]["scenarios"] = []
+    assert players_gap({"bet": "spread", "game_id": "g", "side": "CHA"}, slate) == 4.1
