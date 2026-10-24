@@ -297,20 +297,24 @@ def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
     return out
 
 
-OUT_AFTER_MISSED = 2       # straight games missed (no injury listed) before he's treated as out of the rotation
 MISSING_BLIND_MPG = 15     # a rotation player the roster feed doesn't show → we can't rate the team, no bet
 CLEARED = ("Probable", "Available")      # official-report statuses that mean he plays
 
 
-def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None) -> None:
-    """A player who missed his team's most recent game(s) is NOT assumed to play the next one.
-    ESPN's injury list and the official report often don't list him yet when we bet (the night
-    before), so the model used to give him his full role. Charlotte, Oct 2026: Kon Knueppel
-    (+3.4, 31 projected min, CHA's best player) missed both games, wasn't listed, and the model
-    counted him in full: a 3-point 'edge' that was really his empty chair.
-    Now he's priced both ways (plays / sits), like any day-to-day player, until the official
-    report clears him (Probable / Available) or he plays again. T13 only bets if the edge holds
-    either way, so an unknown star can no longer create a bet."""
+def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None, report_in: bool = False) -> None:
+    """A player who sat his team's latest game is checked, not assumed — every run, in this order:
+      1. The NBA's official report for TODAY's game: Out → out; Doubtful/Questionable → priced both ways;
+         Probable/Available → he plays, full role. (Applied before this, from injury_report.)
+      2. ESPN's injury list: Out → out; Day-To-Day → both ways. (Also applied before this.)
+      3. Why he sat: a coach's-decision DNP is in the box score as a 0-minute game, so his role
+         minutes shrink with each one (real data, nothing ruled out). Only a player who wasn't in
+         the box score at all (inactive) reaches the step below.
+      4. Inactive, nothing listed anywhere:
+         - today's report is in for his team and he isn't on it → he's available → plays
+         - today's report isn't out yet → priced both ways (plays / sits); T13 waits, and the next
+           15-minute run re-checks when the report lands.
+    Charlotte, Oct 2026: Kon Knueppel (31 projected min, CHA's best player) was inactive with an
+    unlisted hamstring when we bet the night before; the model counted him in full."""
     if not team_dates:
         return
     for p in tr.players:
@@ -318,25 +322,20 @@ def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None) -> None:
             continue
         seen = (p.live or {}).get("last_date")
         missed = sorted(d for d in team_dates if seen is None or d > seen)
-        if not missed:
+        if not missed or (not p.known and not p.draft):
             continue
-        if not p.known and not p.draft:
-            continue                               # nobody we'd give minutes to anyway
-        if len(missed) >= OUT_AFTER_MISSED:
-            # two straight games sitting with no injury listed = out of the rotation (coach's decision or an
-            # unreported injury): either way he isn't playing, so he gets no minutes until he plays again
-            p.status = "out"
-            p.steps.append(f"missed {tr.team}'s last {len(missed)} games ({', '.join(missed[-3:])}) with no injury "
-                           f"listed: out of the rotation, no minutes until he plays or a report clears him")
-        else:
-            p.status = "day-to-day"
-            p.steps.append(f"missed {tr.team}'s last game ({missed[-1]}) and no report has cleared him: "
-                           f"priced both ways (plays / sits) until one does")
+        what = f"inactive for {tr.team}'s last {len(missed)} game(s) ({', '.join(missed[-3:])}), no injury listed"
+        if report_in:
+            p.steps.append(f"{what}; today's official report is in and doesn't list him → available, plays")
+            continue
+        p.status = "day-to-day"
+        p.steps.append(f"missed: {what}; today's official report isn't out yet → priced both ways (plays / sits) "
+                       f"until it is")
 
 
 def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
               drafts: dict[str, dict] | None = None, live: dict[str, dict] | None = None,
-              dtd_sit: bool = False, team_dates: list[str] | None = None) -> TeamRead:
+              dtd_sit: bool = False, team_dates: list[str] | None = None, report_in: bool = False) -> TeamRead:
     """dtd_sit=True prices the version of tonight where every day-to-day player sits.
     team_dates: the dates of this team's games already played this season (from the box scores)."""
     tr = TeamRead(team)
@@ -360,7 +359,7 @@ def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
     for p in tr.players:
         if live and p.espn_id in live:
             p.live = live[p.espn_id]
-    flag_missed_games(tr, team_dates)
+    flag_missed_games(tr, team_dates, report_in)
 
     avail = [p for p in tr.players if p.status != "out" and p.known
              and not (dtd_sit and p.status == "day-to-day")]
@@ -535,9 +534,11 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
     """official: the NBA's latest injury report (engine/injury_report.latest()); it overrides ESPN's statuses."""
     last = load_last_season(path, prev_path)
     rosters = fetch_rosters(fetch)
+    submitted: set = set()
     if official:
-        from .injury_report import apply
+        from .injury_report import apply, submitted_for
         changed = apply(rosters, official, games)
+        submitted = submitted_for(official, games) if games else set()
         if notes is not None:
             notes.append(f"Official injury report {official['at']:%I:%M %p} ET: {len(official['rows'])} players listed"
                          + (f"; differs from ESPN on {len(changed)}: " + "; ".join(changed[:8]) if changed else "")
@@ -546,8 +547,9 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
     reads = {}
     for t, ath in rosters.items():
         td = (team_games or {}).get(t)
-        tr = rate_team(t, ath, last, drafts, live, team_dates=td)
-        tr.sit = rate_team(t, ath, last, drafts, live, dtd_sit=True, team_dates=td) if tr.dtd else None
+        tr = rate_team(t, ath, last, drafts, live, team_dates=td, report_in=t in submitted)
+        tr.sit = rate_team(t, ath, last, drafts, live, dtd_sit=True, team_dates=td,
+                           report_in=t in submitted) if tr.dtd else None
         ids = {p.espn_id for p in tr.players} | {norm(p.name) for p in tr.players}
         tr.missing = [m for m in (recent or {}).get(t, []) if m["espn_id"] not in ids and norm(m["name"]) not in ids]
         if tr.sit:
@@ -564,9 +566,8 @@ def roster_audit(reads: dict[str, TeamRead]) -> dict:
     for t, tr in reads.items():
         miss = [{"name": m["name"], "mpg": round(m["mpg"], 1)} for m in tr.missing]
         unseen = [{"name": p.name, "min": round(p.minutes), "status": p.status,
-                   "why": next(x for x in p.steps if x.startswith("missed "))}
-                  for p in tr.players if any(x.startswith("missed ") for x in p.steps)
-                  and (p.minutes >= 10 or p.status == "out")]
+                   "why": next(x for x in p.steps if x.startswith("missed") or x.startswith("inactive"))}
+                  for p in tr.players if any(x.startswith("missed") or x.startswith("inactive") for x in p.steps)]
         if miss or unseen:
             out[t] = {"missing": miss, "not_seen": unseen}
     return out

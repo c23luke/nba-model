@@ -131,7 +131,12 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     live, played, recent = {}, {}, {}
     try:
         box_rows = store.load_player_games()
-        have = {r["game_id"] for r in box_rows}
+        # games with a 0-minute (coach's decision) row were parsed with DNPs; recent games without one are
+        # fetched again once so last week's benchings count (older games don't change who plays tonight)
+        recent_cut = (today - timedelta(days=7)).isoformat()
+        dnp_done = {r["game_id"] for r in box_rows if not r.get("min")}
+        have = {r["game_id"] for r in box_rows
+                if r["game_id"] in dnp_done or str(r.get("game_date")) < recent_cut}
         new_rows = []
         for g in finals:
             if g.id not in have and fetch_box:
@@ -142,9 +147,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         if new_rows:
             store.save_player_games(new_rows)
             log.append(f"Box scores: {len({r['game_id'] for r in new_rows})} new games stored")
-        live = boxscore.season_impact(box_rows + new_rows)
-        played = boxscore.team_dates(box_rows + new_rows)
-        recent = boxscore.recent_players(box_rows + new_rows)
+        refetched = {r["game_id"] for r in new_rows}
+        box_rows = [r for r in box_rows if r["game_id"] not in refetched] + new_rows
+        live = boxscore.season_impact(box_rows)
+        played = boxscore.team_dates(box_rows)
+        recent = boxscore.recent_players(box_rows)
     except Exception as e:
         log.append(f"Box score step failed: {e}")
 

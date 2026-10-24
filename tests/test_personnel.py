@@ -232,27 +232,27 @@ def test_back_to_back_moves_the_fair_line():
 
 
 def test_missed_last_game_is_priced_both_ways_until_cleared():
-    # Charlotte, Oct 2026: the best player sat both games without being listed; the model used to
-    # count him in full. Now he's priced plays/sits until he plays again or the report clears him.
+    # Charlotte, Oct 2026: the best player was inactive, not listed, and counted in full.
     roster = [ath("Star Guard")] + [ath("Role Wing")] * 8
-    live = {}
     dates = ["2026-10-21", "2026-10-23"]
-    t = P.rate_team("BOS", roster, LAST, live=live, team_dates=dates[:1])
+    t = P.rate_team("BOS", roster, LAST, team_dates=dates)
     star = next(p for p in t.players if p.name == "Star Guard")
-    assert star.status == "day-to-day" and any("missed BOS's last game" in s for s in star.steps)
-    sit = P.rate_team("BOS", roster, LAST, live=live, dtd_sit=True, team_dates=dates[:1])
+    assert star.status == "day-to-day" and star.minutes > 0           # never ruled out just for sitting
+    assert any("inactive for BOS's last 2 game(s)" in s and "isn't out yet" in s for s in star.steps)
+    sit = P.rate_team("BOS", roster, LAST, dtd_sit=True, team_dates=dates)
     assert sit.rating < t.rating
-    # two straight with no injury listed -> out of the rotation, no minutes
-    t0 = P.rate_team("BOS", roster, LAST, live=live, team_dates=dates)
-    star0 = next(p for p in t0.players if p.name == "Star Guard")
-    assert star0.status == "out" and star0.minutes == 0
+
+    # today's report is in and doesn't list him -> available, plays in full
+    t1 = P.rate_team("BOS", roster, LAST, team_dates=dates, report_in=True)
+    s1 = next(p for p in t1.players if p.name == "Star Guard")
+    assert s1.status == "active" and any("doesn't list him" in s for s in s1.steps)
 
     # cleared on the official report -> plays, no flag
     cleared = [dict(ath("Star Guard"), official_status="Probable")] + [ath("Role Wing")] * 8
     t2 = P.rate_team("BOS", cleared, LAST, team_dates=dates)
     assert next(p for p in t2.players if p.name == "Star Guard").status == "active"
 
-    # played the latest game -> no flag
+    # played (or sat as a coach's decision, which is a 0-minute game) in the latest game -> no flag
     roster3 = [dict(ath("Star Guard"), id="7")] + [ath("Role Wing")] * 8
     lv = {"7": {"min": 60, "games": 2, "mpg": 30, "bpm_live": 5.0, "last_date": "2026-10-23"}}
     t3 = P.rate_team("BOS", roster3, LAST, live=lv, team_dates=dates)
@@ -261,6 +261,32 @@ def test_missed_last_game_is_priced_both_ways_until_cleared():
     # no games played yet -> nothing to miss
     t4 = P.rate_team("BOS", roster, LAST, team_dates=[])
     assert next(p for p in t4.players if p.name == "Star Guard").status == "active"
+
+
+def test_coachs_decision_dnp_shrinks_role_from_data():
+    from engine import boxscore
+    js = {"boxscore": {"players": [{"team": {"abbreviation": "BOS"}, "statistics": [{"keys": ["minutes", "points"],
+          "athletes": [{"athlete": {"id": "7", "displayName": "Star Guard"}, "didNotPlay": True, "stats": []},
+                       {"athlete": {"id": "8", "displayName": "Ghost"}, "stats": []}]}]}]}}
+    rows = boxscore.parse_summary(js, "g1", "2026-10-23")
+    assert [(r["name"], r["min"]) for r in rows] == [("Star Guard", 0)]      # inactive/empty rows aren't invented
+    live = boxscore.season_impact(rows)
+    assert live["7"]["last_date"] == "2026-10-23" and live["7"]["games"] == 1 and live["7"]["min"] == 0
+    roster = [dict(ath("Star Guard"), id="7")] + [ath("Role Wing")] * 8
+    base = P.rate_team("BOS", roster, LAST)
+    benched = P.rate_team("BOS", roster, LAST, live=live, team_dates=["2026-10-23"])
+    sb = next(p for p in base.players if p.name == "Star Guard")
+    sd = next(p for p in benched.players if p.name == "Star Guard")
+    assert sd.status == "active" and sd.wanted < sb.wanted                  # role shrinks; not ruled out
+
+
+def test_report_submitted_for_next_game():
+    from datetime import date
+    from engine.injury_report import submitted_for
+    rep = {"rows": [{"date": "10/24/2026", "matchup": "MIA@CHA", "team": "CHA", "key": "x", "status": "Out"}],
+           "not_submitted": ["MIA"]}
+    games = [(date(2026, 10, 24), "MIA", "CHA"), (date(2026, 10, 24), "GSW", "PHX")]
+    assert submitted_for(rep, games) == {"CHA"}
 
 
 def test_t13_waits_when_the_edge_needs_a_missing_star():

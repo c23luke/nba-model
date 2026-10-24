@@ -25,9 +25,11 @@ SUMMARY = {"boxscore": {"players": [
 ]}}
 
 
-def test_parse_summary_skips_dnp_and_adds_possessions():
+def test_parse_summary_records_dnp_as_zero_minutes_and_adds_possessions():
     rows = B.parse_summary(SUMMARY, "g1", "2026-10-20")
-    assert len(rows) == 10 and not any(r["name"] == "Bench Guy" for r in rows)
+    # a coach's-decision DNP is kept as a 0-minute game (he was there), with no stats and no effect on possessions
+    bench = [r for r in rows if r["name"] == "Bench Guy"]
+    assert len(rows) == 11 and len(bench) == 1 and bench[0]["min"] == 0 and bench[0]["fga"] == 0
     star = next(r for r in rows if r["name"] == "Star Guard")
     assert (star["fgm"], star["fga"], star["fg3m"], star["fta"], star["pm"]) == (12, 22, 4, 8, 12)
     # NY: 62 FGA + 0.44 x 16 FTA - 5 ORB + 6 TOV = 70.04

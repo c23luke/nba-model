@@ -44,16 +44,22 @@ def parse_summary(js: dict, game_id: str, game_date: str) -> list[dict]:
         st = t["statistics"][0]
         keys = st["keys"]
         for a in st.get("athletes", []):
-            if a.get("didNotPlay") or not a.get("stats"):
-                continue
-            d = dict(zip(keys, a["stats"]))
-            mins = _int(d.get("minutes"))
+            ath = a.get("athlete") or {}
+            d = dict(zip(keys, a.get("stats") or []))
+            mins = 0 if a.get("didNotPlay") else _int(d.get("minutes"))
+            if mins <= 0 and not a.get("didNotPlay"):
+                continue                     # no minutes and not marked DNP: nothing reliable to record
             if mins <= 0:
+                # dressed but didn't play (coach's decision): a real 0-minute game for his role, so a
+                # benched player's minutes shrink from data. (Inactive players aren't in the box at all.)
+                rows.append({"id": f"{game_id}-{ath.get('id')}", "game_id": game_id, "game_date": game_date,
+                             "team": team, "espn_id": str(ath.get("id")), "name": ath.get("displayName", ""),
+                             "min": 0, **{k: 0 for k in ("pts", "fgm", "fga", "fg3m", "fg3a", "ftm", "fta",
+                                                         "orb", "drb", "ast", "stl", "blk", "tov", "pf", "pm")}})
                 continue
             fgm, fga = _pair(d.get("fieldGoalsMade-fieldGoalsAttempted"))
             f3m, f3a = _pair(d.get("threePointFieldGoalsMade-threePointFieldGoalsAttempted"))
             ftm, fta = _pair(d.get("freeThrowsMade-freeThrowsAttempted"))
-            ath = a.get("athlete") or {}
             rows.append({
                 "id": f"{game_id}-{ath.get('id')}", "game_id": game_id, "game_date": game_date,
                 "team": team, "espn_id": str(ath.get("id")), "name": ath.get("displayName", ""),
@@ -128,6 +134,12 @@ def season_impact(rows: list[dict]) -> dict[str, dict]:
     out = {}
     for pid, p in acc.items():
         if p["poss"] <= 0:
+            # only coach's-decision DNPs so far: no impact number, but he WAS there (not inactive) and his
+            # role shrinks with every 0-minute game
+            log = sorted(p["log"])
+            out[pid] = {"name": p["name"], "min": 0.0, "games": p["games"], "mpg": 0.0, "bpm_live": 0.0,
+                        "w_min": 0.0, "w_games": float(p["games"]), "last3": [m for _, m in log[-RECENT_GAMES:]],
+                        "last_date": log[-1][0]}
             continue
         per100 = {s: p[s] / p["poss"] * 100 for s in STATS}
         bpm = BOX_COEF["const"] + sum(BOX_COEF[s] * per100[s] for s in STATS)

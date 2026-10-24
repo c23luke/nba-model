@@ -146,6 +146,28 @@ def for_games(rows: list[dict], games) -> list[dict]:
     return keep
 
 
+def submitted_for(report: dict | None, games) -> set[str]:
+    """Teams whose report for their NEXT game is in: the matchup appears in the report and the team
+    isn't marked NOT YET SUBMITTED. (A matchup with nobody hurt on either side may not appear; then we
+    treat it as not in yet, which only means waiting — never assuming.)"""
+    if not report:
+        return set()
+    seen = {(r["team"], r.get("date"), r.get("matchup")) for r in for_games(report["rows"], games)}
+    matchups = {(d, m) for _, d, m in seen}
+    want = {}
+    for gd, away, home in games:
+        for t in (away, home):
+            if t not in want or gd < want[t][0]:
+                want[t] = (gd, away, home)
+    out = set()
+    for t, (gd, away, home) in want.items():
+        key = (gd.strftime("%m/%d/%Y") if hasattr(gd, "strftime") else str(gd))
+        if any(d == key and m and {code(x) for x in m.split("@")} == {away, home} for d, m in matchups) \
+                and t not in (report.get("not_submitted") or []):
+            out.add(t)
+    return out
+
+
 def apply(rosters: dict[str, list[dict]], report: dict | None, games=None) -> list[str]:
     """Overwrite ESPN's status with the official one for every listed player (for each team's next game
     when `games` = [(date, away, home), ...] is given). Returns what changed."""
