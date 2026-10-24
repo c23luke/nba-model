@@ -297,6 +297,7 @@ def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
     return out
 
 
+OUT_AFTER_MISSED = 2       # straight games missed (no injury listed) before he's treated as out of the rotation
 MISSING_BLIND_MPG = 15     # a rotation player the roster feed doesn't show → we can't rate the team, no bet
 CLEARED = ("Probable", "Available")      # official-report statuses that mean he plays
 
@@ -321,9 +322,16 @@ def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None) -> None:
             continue
         if not p.known and not p.draft:
             continue                               # nobody we'd give minutes to anyway
-        p.status = "day-to-day"
-        p.steps.append(f"missed {tr.team}'s last {len(missed)} game(s) ({', '.join(missed[-3:])}) and no "
-                       f"report has cleared him: priced both ways (plays / sits) until one does")
+        if len(missed) >= OUT_AFTER_MISSED:
+            # two straight games sitting with no injury listed = out of the rotation (coach's decision or an
+            # unreported injury): either way he isn't playing, so he gets no minutes until he plays again
+            p.status = "out"
+            p.steps.append(f"missed {tr.team}'s last {len(missed)} games ({', '.join(missed[-3:])}) with no injury "
+                           f"listed: out of the rotation, no minutes until he plays or a report clears him")
+        else:
+            p.status = "day-to-day"
+            p.steps.append(f"missed {tr.team}'s last game ({missed[-1]}) and no report has cleared him: "
+                           f"priced both ways (plays / sits) until one does")
 
 
 def rate_team(team: str, athletes: list[dict], last: dict[str, dict],
@@ -555,8 +563,10 @@ def roster_audit(reads: dict[str, TeamRead]) -> dict:
     out = {}
     for t, tr in reads.items():
         miss = [{"name": m["name"], "mpg": round(m["mpg"], 1)} for m in tr.missing]
-        unseen = [{"name": p.name, "min": round(p.minutes), "why": next(x for x in p.steps if x.startswith("missed "))}
-                  for p in tr.players if p.minutes >= 10 and any(x.startswith("missed ") for x in p.steps)]
+        unseen = [{"name": p.name, "min": round(p.minutes), "status": p.status,
+                   "why": next(x for x in p.steps if x.startswith("missed "))}
+                  for p in tr.players if any(x.startswith("missed ") for x in p.steps)
+                  and (p.minutes >= 10 or p.status == "out")]
         if miss or unseen:
             out[t] = {"missing": miss, "not_seen": unseen}
     return out

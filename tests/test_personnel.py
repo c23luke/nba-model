@@ -237,11 +237,15 @@ def test_missed_last_game_is_priced_both_ways_until_cleared():
     roster = [ath("Star Guard")] + [ath("Role Wing")] * 8
     live = {}
     dates = ["2026-10-21", "2026-10-23"]
-    t = P.rate_team("BOS", roster, LAST, live=live, team_dates=dates)
+    t = P.rate_team("BOS", roster, LAST, live=live, team_dates=dates[:1])
     star = next(p for p in t.players if p.name == "Star Guard")
-    assert star.status == "day-to-day" and any("missed BOS's last 2 game(s)" in s for s in star.steps)
-    sit = P.rate_team("BOS", roster, LAST, live=live, dtd_sit=True, team_dates=dates)
+    assert star.status == "day-to-day" and any("missed BOS's last game" in s for s in star.steps)
+    sit = P.rate_team("BOS", roster, LAST, live=live, dtd_sit=True, team_dates=dates[:1])
     assert sit.rating < t.rating
+    # two straight with no injury listed -> out of the rotation, no minutes
+    t0 = P.rate_team("BOS", roster, LAST, live=live, team_dates=dates)
+    star0 = next(p for p in t0.players if p.name == "Star Guard")
+    assert star0.status == "out" and star0.minutes == 0
 
     # cleared on the official report -> plays, no flag
     cleared = [dict(ath("Star Guard"), official_status="Probable")] + [ath("Role Wing")] * 8
