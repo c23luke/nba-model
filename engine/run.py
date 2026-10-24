@@ -128,7 +128,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     store.save_games(list({r["id"]: r for r in changed}.values()))
 
     # ---- 2a. this season's box scores (only games not stored yet)
-    live, played = {}, {}
+    live, played, recent = {}, {}, {}
     try:
         box_rows = store.load_player_games()
         have = {r["game_id"] for r in box_rows}
@@ -144,6 +144,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             log.append(f"Box scores: {len({r['game_id'] for r in new_rows})} new games stored")
         live = boxscore.season_impact(box_rows + new_rows)
         played = boxscore.team_dates(box_rows + new_rows)
+        recent = boxscore.recent_players(box_rows + new_rows)
     except Exception as e:
         log.append(f"Box score step failed: {e}")
 
@@ -161,7 +162,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 log.append(f"Official injury report failed (using ESPN): {e}")
             return personnel_mod.read_all(live=live, official=official, notes=log,
                                           games=[(g.game_date, g.away, g.home) for g in upcoming],
-                                          team_games=played)
+                                          team_games=played, recent=recent)
     if personnel_fetch:
         try:
             reads = personnel_fetch()
@@ -349,6 +350,12 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
                         orders=orders, games=stored, bench_cfg=bench_cfg, exclude_cfg=exclude_cfg)
     board["scoring"] = scoring
+    if reads:
+        audit = personnel_mod.roster_audit(reads)
+        board["roster_audit"] = audit
+        miss = [f"{t}: {m['name']} ({m['mpg']:.0f} mpg)" for t, a in audit.items() for m in a["missing"]]
+        if miss:
+            board.setdefault("notes", []).append("Roster check — playing but not on the roster we used: " + "; ".join(miss))
     board["placer"] = placer
     # keep each card bet's reasoning on its pick, so a placed bet can still explain itself after it tips
     from .placed import snapshot

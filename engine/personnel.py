@@ -264,6 +264,7 @@ class TeamRead:
     rating: float = 0.0
     unknown_minutes: float = 0.0
     continuity: float = 0.0          # share of minutes from players who ended last season here
+    missing: list = field(default_factory=list)   # playing for this team now, but not on the roster we used
 
     @property
     def out(self):      return [p for p in self.players if p.status == "out"]
@@ -296,6 +297,7 @@ def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
     return out
 
 
+MISSING_BLIND_MPG = 15     # a rotation player the roster feed doesn't show → we can't rate the team, no bet
 CLEARED = ("Probable", "Available")      # official-report statuses that mean he plays
 
 
@@ -518,7 +520,10 @@ def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) ->
 def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
              live: dict[str, dict] | None = None, official: dict | None = None,
              notes: list | None = None, games=None,
-             team_games: dict[str, list[str]] | None = None) -> dict[str, TeamRead]:
+             team_games: dict[str, list[str]] | None = None,
+             recent: dict[str, list[dict]] | None = None) -> dict[str, TeamRead]:
+    """team_games: each team's game dates so far. recent: who actually played in each team's last 3
+    games (boxscore.recent_players) — checked against the roster so nobody real is left out."""
     """official: the NBA's latest injury report (engine/injury_report.latest()); it overrides ESPN's statuses."""
     last = load_last_season(path, prev_path)
     rosters = fetch_rosters(fetch)
@@ -535,8 +540,26 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
         td = (team_games or {}).get(t)
         tr = rate_team(t, ath, last, drafts, live, team_dates=td)
         tr.sit = rate_team(t, ath, last, drafts, live, dtd_sit=True, team_dates=td) if tr.dtd else None
+        ids = {p.espn_id for p in tr.players} | {norm(p.name) for p in tr.players}
+        tr.missing = [m for m in (recent or {}).get(t, []) if m["espn_id"] not in ids and norm(m["name"]) not in ids]
+        if tr.sit:
+            tr.sit.missing = tr.missing
         reads[t] = tr
     return reads
+
+
+def roster_audit(reads: dict[str, TeamRead]) -> dict:
+    """Per team, the two ways the roster can be wrong — shown on the board every run:
+    missing: playing real minutes for the team but not on the roster the model used (team goes blind if 15+ mpg)
+    not_seen: on the roster with a projected role but missed the team's latest game(s), priced plays/sits"""
+    out = {}
+    for t, tr in reads.items():
+        miss = [{"name": m["name"], "mpg": round(m["mpg"], 1)} for m in tr.missing]
+        unseen = [{"name": p.name, "min": round(p.minutes), "why": next(x for x in p.steps if x.startswith("missed "))}
+                  for p in tr.players if p.minutes >= 10 and any(x.startswith("missed ") for x in p.steps)]
+        if miss or unseen:
+            out[t] = {"missing": miss, "not_seen": unseen}
+    return out
 
 
 def report(reads: dict[str, TeamRead], games: list[tuple[str, str, float | None, float | None]]) -> str:
@@ -631,6 +654,9 @@ def blind_reasons(tr: TeamRead) -> list[str]:
         out.append(f"{tr.team}: {rookie_min:.0f} minutes rated only on draft slot")
     if tr.unknown_minutes > BLIND_UNKNOWN_MIN:
         out.append(f"{tr.team}: {tr.unknown_minutes:.0f} minutes from players with no NBA numbers")
+    for m in tr.missing:
+        if m["mpg"] >= MISSING_BLIND_MPG:
+            out.append(f"{tr.team}: {m['name']} plays {m['mpg']:.0f} mpg for {tr.team} but isn't on the roster the model used")
     for p in top8:
         if p.last and p.last.get("missed_last") and norm(p.name) not in RETURNS and p.minutes >= 20:
             out.append(f"{tr.team}: {p.name} ({p.minutes:.0f} mpg) missed last season, cause not on file")

@@ -87,6 +87,30 @@ def team_dates(rows: list[dict]) -> dict[str, list[str]]:
     return {t: sorted(d) for t, d in out.items()}
 
 
+def recent_players(rows: list[dict], last_n: int = 3) -> dict[str, list[dict]]:
+    """Who played for each team in its last `last_n` games — only players whose latest game was for
+    that team (a traded player counts for his new team). {team: [{espn_id, name, mpg, games}]}"""
+    latest: dict[str, tuple] = {}
+    for r in rows:
+        k = r["espn_id"]
+        if k not in latest or str(r["game_date"]) > latest[k][0]:
+            latest[k] = (str(r["game_date"]), r["team"])
+    dates = team_dates(rows)
+    acc: dict[tuple, dict] = {}
+    for r in rows:
+        t = r["team"]
+        if latest[r["espn_id"]][1] != t or str(r["game_date"]) not in dates[t][-last_n:] or r["min"] <= 0:
+            continue
+        a = acc.setdefault((t, r["espn_id"]), {"espn_id": str(r["espn_id"]), "name": r["name"], "min": 0.0, "games": 0})
+        a["min"] += r["min"]
+        a["games"] += 1
+    out: dict[str, list[dict]] = defaultdict(list)
+    for (t, _), a in acc.items():
+        n = len(dates[t][-last_n:])
+        out[t].append({**a, "mpg": a["min"] / n})
+    return dict(out)
+
+
 def season_impact(rows: list[dict]) -> dict[str, dict]:
     """Per player (keyed by ESPN id): minutes, games, minutes per game and box impact (BPM scale)."""
     acc: dict[str, dict] = {}

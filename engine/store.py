@@ -156,7 +156,10 @@ class SupabaseStore:
     def get_config(self, key):
         """Private settings (e.g. the phone-alert channel). Table has no public read policy."""
         rows = self._req("GET", f"/config?key=eq.{key}&select=value") or []
-        return rows[0]["value"] if rows else None
+        v = rows[0]["value"] if rows else None
+        if isinstance(v, str) and v.strip()[:1] in "[{":      # the value column is text; JSON settings come back as strings
+            v = json.loads(v)
+        return v
 
 
 def get_store():

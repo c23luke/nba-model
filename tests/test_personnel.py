@@ -268,3 +268,19 @@ def test_t13_waits_when_the_edge_needs_a_missing_star():
     v = P.game_view(away, home, 0.0, None)
     gaps = [s["gap"] for s in v["scenarios"]]
     assert len(gaps) == 2 and min(gaps) < max(gaps)        # the edge depends on whether he plays
+
+
+def test_player_on_court_but_missing_from_roster_blinds_the_team():
+    from engine import boxscore
+    rows = [{"espn_id": "9", "name": "New Guy", "team": "BOS", "game_date": "2026-10-23", "min": 30},
+            {"espn_id": "9", "name": "New Guy", "team": "NYK", "game_date": "2026-10-21", "min": 30},
+            {"espn_id": "1", "name": "Star Guard", "team": "BOS", "game_date": "2026-10-23", "min": 34}]
+    rec_ = boxscore.recent_players(rows)
+    assert [m["name"] for m in rec_["BOS"]] == ["New Guy", "Star Guard"] and "NYK" not in rec_   # traded: counts for BOS
+    tr = P.rate_team("BOS", [dict(ath("Star Guard"), id="1")] + [ath("Role Wing")] * 8, LAST)
+    ids = {p.espn_id for p in tr.players} | {P.norm(p.name) for p in tr.players}
+    tr.missing = [m for m in rec_["BOS"] if m["espn_id"] not in ids and P.norm(m["name"]) not in ids]
+    assert [m["name"] for m in tr.missing] == ["New Guy"]
+    assert any("isn't on the roster" in r for r in P.blind_reasons(tr))
+    audit = P.roster_audit({"BOS": tr})
+    assert audit["BOS"]["missing"] == [{"name": "New Guy", "mpg": 30.0}]
