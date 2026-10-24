@@ -271,3 +271,31 @@ def test_a_benched_system_stays_on_the_card_but_is_not_a_bet(tmp_path, monkeypat
     assert c["verdict"] == "BENCHED" and "benched by hand" in c["why"] and "S1" in b["benched"]
     feed = {r["key"]: r for r in store._read("bet_feed", [])}
     assert feed[c["key"]]["status"] == "benched"                      # the order placer only bets status 'bet'
+
+
+def test_excluded_bets_leave_every_record_but_stay_visible():
+    from engine.run import excluded_keys
+    ex = excluded_keys([{"game_id": 401909843, "side": "CHA", "why": "model bug"}, {"side": "X"}])
+    assert ex == {("401909843", "CHA"): "model bug"}
+
+
+def test_excluded_game_leaves_records_and_placed_ledger(tmp_path):
+    store = LocalStore(tmp_path)
+    morning = datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc)
+    board = run(now=morning, fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)),
+                fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    b = board["bets"][0]
+    store._write("bet_orders", [{"id": "o1", "mode": "live", "status": "filled", "venue": "kalshi", "bet_key": b["key"],
+                                 "game_id": b["game_id"], "side": "LAL", "line": 6.5, "bet": "spread", "pick": "LAL +6",
+                                 "fill_count": 40, "fill_cost": 22.0, "fees": 0.5, "tip_utc": b["tip_utc"],
+                                 "created_at": "2025-11-15T15:00:00+00:00", "system": "S1"}])
+    store._write("config", {"exclude": [{"game_id": b["game_id"], "side": "LAL", "why": "test bug"}]})
+    nxt = datetime(2025, 11, 16, 15, 0, tzinfo=timezone.utc)
+    board = run(now=nxt, fetch_day=make_fetch_day(date(2025, 11, 16), date(2025, 11, 15)),
+                fetch_lines=lambda: ({}, {}), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    assert board["systems"][1]["w"] == 0 and board["systems"][1]["l"] == 0          # out of the system record
+    assert not [p for p in board["history"] if p["key"] == b["key"]]
+    assert board["placed"]["bets"] == [] and board["placed"]["summary"]["w"] == 0  # out of the money record
+    ex = board["placed"]["excluded"]
+    assert len(ex) == 1 and ex[0]["result"] == "W" and ex[0]["why"] == "test bug"      # but still shown
+    assert board["placed"]["summary"]["excluded_pnl"] == ex[0]["pnl"] > 0

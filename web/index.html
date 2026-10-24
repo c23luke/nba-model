@@ -410,6 +410,9 @@ function renderBets(placed, b) {
       np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
         <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +
     (done.length ? `<h2>Settled</h2>` + done.slice().reverse().map(ticket).join("") : "") +
+    ((placed.excluded || []).length ? `<p class="foot"><b>Left out of all records (model bug):</b> ` +
+      placed.excluded.map(x => `${esc(x.holding)} on ${esc(x.venue_name)}${x.result ? ` (${x.result}, ${x.pnl >= 0 ? "+" : "−"}${money(Math.abs(x.pnl))})` : " (open)"}`).join(", ") +
+      `. ${esc(placed.excluded[0].why || "")} That money is real, so it's shown here: ${(placed.summary.excluded_pnl || 0) >= 0 ? "+" : "−"}${money(Math.abs(placed.summary.excluded_pnl || 0))} settled so far.</p>` : "") +
     (placed.summary && placed.summary.since ? `<p class="foot">Live betting since ${esc(tipDay(placed.summary.since))}. Each bet is graded at the number we actually hold. "Beat the close" compares what we paid with what our exact number was worth at the closing line.</p>` : "");
   for (const [id, set] of [["f-site", v => fSite = v], ["f-sys", v => fSys = v], ["f-conf", v => fConf = v]]) {
     const el = $(id); if (el) el.onchange = () => { set(el.value); renderBets(placed, b); };

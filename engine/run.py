@@ -331,6 +331,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     except Exception as e:
         bench_cfg = None
         log.append(f"bench settings: {e}")
+    try:
+        exclude_cfg = store.get_config("exclude")
+    except Exception as e:
+        exclude_cfg = None
+        log.append(f"excluded bets: {e}")
     orders, placer = [], None
     try:
         orders = store.load_orders() if hasattr(store, "load_orders") else []
@@ -342,7 +347,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         log.append(f"order placer notes: {e}")
     board = build_board(now, today, slate, list(all_picks.values()), usage, log,
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
-                        orders=orders, games=stored, bench_cfg=bench_cfg)
+                        orders=orders, games=stored, bench_cfg=bench_cfg, exclude_cfg=exclude_cfg)
     board["scoring"] = scoring
     board["placer"] = placer
     # keep each card bet's reasoning on its pick, so a placed bet can still explain itself after it tips
@@ -544,9 +549,21 @@ def live_stacks(live: list[dict]) -> list[dict]:
     return sorted(out, key=lambda x: (-len(x["systems"]), x["tip_utc"] or ""))
 
 
+def excluded_keys(cfg) -> dict:
+    """Bets taken out of all tracking because a model bug made them (private config 'exclude'):
+    [{"game_id": "401909843", "side": "CHA", "why": "..."}]. Matches every system's pick and every
+    placed order on that side of that game. Nothing is deleted; they're listed on the site separately."""
+    return {(str(x["game_id"]), x["side"]): x.get("why") or "excluded" for x in (cfg or []) if x.get("game_id") and x.get("side")}
+
+
 def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None,
-                bench_cfg=None):
-    picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks]
+                bench_cfg=None, exclude_cfg=None):
+    ex = excluded_keys(exclude_cfg)
+    out_picks = [p for p in picks if (str(p["game_id"]), p["side"]) in ex]
+    picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks
+             if (str(p["game_id"]), p["side"]) not in ex]
+    out_orders = [o for o in (orders or []) if (str(o.get("game_id")), o.get("side")) in ex]
+    orders = [o for o in (orders or []) if (str(o.get("game_id")), o.get("side")) not in ex]
     t = today.isoformat()
     open_ = lambda p: p.get("result") is None and p["game_date"] >= t
     live = sorted([p for p in picks if p.get("active") and open_(p)],
@@ -620,6 +637,13 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
     placed = placed_bets(orders or [], {p["key"]: p for p in picks}, games or {}, {c["key"]: c for c in card},
                          season_wl, now, market_now,
                          {label(i): x.get("name") for d in (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS) for i, x in d.items()})
+    if out_orders:
+        gone = placed_bets(out_orders, {p["key"]: p for p in out_picks}, games or {}, {}, lambda p: {"w": 0, "l": 0, "p": 0},
+                           now, None, {})
+        placed["excluded"] = [{"holding": r["holding"], "venue_name": r["venue_name"], "status": r["status"],
+                               "result": r["result"], "pnl": r["pnl"], "risk": r["risk"], "tip_utc": r["tip_utc"],
+                               "why": ex.get((str(r["game_id"]), r["side"]))} for r in gone["bets"]]
+        placed["summary"]["excluded_pnl"] = round(sum(r["pnl"] or 0 for r in gone["bets"]), 2)
     for p in picks:
         p.pop("shop", None)        # every venue's prices live on the card; keep the rest of the board lean
     return {
