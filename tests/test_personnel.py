@@ -314,3 +314,25 @@ def test_player_on_court_but_missing_from_roster_blinds_the_team():
     assert any("isn't on the roster" in r for r in P.blind_reasons(tr))
     audit = P.roster_audit({"BOS": tr})
     assert audit["BOS"]["missing"] == [{"name": "New Guy", "mpg": 30.0}]
+
+
+def test_bottom_ten_team_gets_no_players_model_bet():
+    from engine.systems import personnel_call
+    from engine.pricing import players_gap
+    teams = [f"T{i:02d}" for i in range(30)]
+    # T00 best ... T29 worst: each team is the home favourite over the next one by a margin that falls with rank
+    rows = [{"game_date": "2026-10-22", "home": teams[i], "away": teams[(i + 1) % 30],
+             "home_spread": -(10 - i * 0.6)} for i in range(30)]
+    ranks = P.market_ranks(rows, "2026-10-20", "2026-10-25")
+    assert len(ranks) == 30 and ranks["T00"]["rank"] < ranks["T25"]["rank"] and ranks["T25"]["rank"] > 20
+    v = {"gap": 4.0, "scenarios": []}                 # model likes the home side, T25 (bottom 10)
+    P.flag_bad_team(v, "T05", "T25", ranks)
+    assert v["bad_team"]["team"] == "T25" and personnel_call(v)["call"] == "none"
+    slate = [{"game_id": "g", "home": "T25", "personnel": v}]
+    assert players_gap({"bet": "spread", "game_id": "g", "side": "T25"}, slate) is None
+    v2 = {"gap": -4.0, "scenarios": []}               # model likes the away side, T05 (top 10) → still bets
+    P.flag_bad_team(v2, "T05", "T25", ranks)
+    assert "bad_team" not in v2 and personnel_call(v2)["call"] == "now"
+    v3 = {"gap": 4.0}
+    P.flag_bad_team(v3, "T05", "T25", {k: ranks[k] for k in list(ranks)[:20]})   # not a full league yet
+    assert "bad_team" not in v3

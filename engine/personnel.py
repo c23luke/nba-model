@@ -653,6 +653,41 @@ BLIND_UNKNOWN_MIN = 20
 GAP_TO_FIRE = 3.0
 
 
+BAD_TEAM_RANK = 20   # MEASURED (engine/measure_badteams.py, 2024-25 + 2025-26, 688 bets at the open):
+                     # 3+ gaps on teams the market ranks 21-30 went 163-185 (46.8%), on ranks 1-20 195-145 (57.4%);
+                     # both seasons below 50%. The players model rates bad teams too close to average.
+
+
+def market_ranks(rows: list[dict], season_start: str, through: str) -> dict[str, dict]:
+    """How good the MARKET thinks each team is so far this season: the average point margin its lines
+    implied (home edge taken out), over every game with a line from season_start through `through`
+    (today's lines included — they're known when we bet). Rank 1 = best."""
+    tot, n = {}, {}
+    for r in rows:
+        d, hs = str(r.get("game_date") or ""), r.get("home_spread")
+        if hs is None or not (season_start <= d <= through):
+            continue
+        exp_home = -float(hs) - HOME_COURT
+        for t, v in ((r["home"], exp_home), (r["away"], -exp_home)):
+            tot[t] = tot.get(t, 0.0) + v
+            n[t] = n.get(t, 0) + 1
+    order = sorted(tot, key=lambda t: -tot[t] / n[t])
+    return {t: {"rank": i + 1, "rating": round(tot[t] / n[t], 1), "games": n[t], "teams": len(order)}
+            for i, t in enumerate(order)}
+
+
+def flag_bad_team(view: dict, away: str, home: str, ranks: dict) -> None:
+    """If the side the players model likes is a team the market ranks bottom 10, mark the view: no
+    players-model bet on it (T13 or an early combo leaning on it). Needs a full league of ranks."""
+    gap = view.get("gap")
+    if gap is None or not gap or len(ranks) < 30:
+        return
+    side = home if gap > 0 else away
+    r = ranks.get(side)
+    if r and r["rank"] > BAD_TEAM_RANK:
+        view["bad_team"] = {"team": side, "rank": r["rank"], "rating": r["rating"]}
+
+
 def blind_reasons(tr: TeamRead) -> list[str]:
     """Where this model can't see what the market sees. A gap here is not an edge."""
     top8 = tr.rotation[:8]

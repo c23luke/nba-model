@@ -382,7 +382,7 @@ def personnel_call(view: dict | None, gap_to_fire: float = 3.0) -> dict:
     now      → the gap is 3+ the same way whether the day-to-day players play or sit
     waiting  → the gap is 3+ only in some versions: hold, the 15-minute runs will catch the news
     none     → no edge in any version (or the model is blind on this game)"""
-    if not view or view.get("gap") is None or view.get("blind"):
+    if not view or view.get("gap") is None or view.get("blind") or view.get("bad_team"):
         return {"call": "none"}
     gaps = [s["gap"] for s in view.get("scenarios") or [] if s["gap"] is not None] or [view["gap"]]
     pos = [g for g in gaps if g >= gap_to_fire]
@@ -431,7 +431,7 @@ def evaluate_personnel_shadow(game: Game, home_spread: float | None, view: dict 
         f"Personnel likes {side} by {abs(gap):.1f} vs the market"], {
         "gap": round(abs(gap), 1),
         "worst_gap": round(min(same), 1) if len(same) == len(gaps) else 0.0,   # 0 = versions disagree on side
-        "call": "blind" if view.get("blind") else c["call"],
+        "call": "blind" if view.get("blind") else "bad_team" if view.get("bad_team") else c["call"],
         "dtd": len(view.get("waiting_on") or []),
     })]
 

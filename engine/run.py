@@ -180,10 +180,13 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             raw = {g.id: personnel_mod.fair_home_spread(reads[g.home], reads[g.away], *rest[g.id])
                    for g in upcoming if g.home in reads and g.away in reads}
             cal = personnel_mod.calibrate([(stored[gid].get("home_spread"), f) for gid, f in raw.items()])
+            ranks = personnel_mod.market_ranks(list(stored.values()), season_start.isoformat(),
+                                               (today + timedelta(1)).isoformat())
             for g in upcoming:
                 if g.id in raw:
                     views[g.id] = personnel_mod.game_view(reads[g.away], reads[g.home],
                                                           stored[g.id].get("home_spread"), cal, *rest[g.id])
+                    personnel_mod.flag_bad_team(views[g.id], g.away, g.home, ranks)
             try:
                 stress = personnel_mod.stress_lines(
                     reads, [(g.id, g.away, g.home, stored[g.id].get("home_spread")) for g in upcoming if g.id in raw],

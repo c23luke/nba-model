@@ -75,6 +75,8 @@ def players_gap(pick: dict, slate: list[dict]) -> float | None:
             gap = view.get("gap")
             if gap is None:
                 return None
+            if (view.get("bad_team") or {}).get("team") == pick["side"]:
+                return None          # players model doesn't back bottom-10 teams (measured: 46.8%)
             # with day-to-day players, count only what holds in EVERY version of tonight (plays or
             # sits) — the same rule T13 bets on. The early-combo history (26-10) was measured with
             # lineups known, so assuming an uncertain player plays overstates the agreement.
