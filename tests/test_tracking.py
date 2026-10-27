@@ -24,8 +24,18 @@ def test_stacks_combos_and_conflicts():
     t = tracking(picks)
     assert t["by_combo"]["E2+T1+T13"]["w"] == 1
     assert t["by_groups"]["EARLY+FAV+TEST"]["w"] == 1      # T1 is TEST since the 2-season replay
-    assert t["by_count"]["3+ systems"]["w"] == 1 and t["by_count"]["1 system"]["n"] == 3
+    assert t["by_count"]["3 systems"]["w"] == 1 and t["by_count"]["1 system"]["n"] == 3
+    assert t["by_pair"]["E2+T13"]["w"] == 1 and t["by_pair"]["T1+T13"]["w"] == 1 and t["by_pair"]["E2+T1"]["w"] == 1
     assert t["conflicts"] == 1
+
+
+def test_four_plus_stacks_and_stack_plus_players():
+    picks = [pk(301, "g1", "H", "W", meta={"gap": 6.5, "call": "now"})] + \
+            [pk(s, "g1", "H", "W") for s in (1, 102, 112, 202)]
+    t = tracking(picks)
+    assert t["by_count"]["4+ systems"]["w"] == 1
+    assert t["stack_vs_personnel"]["4+ systems + players agree 6+"]["w"] == 1
+    assert t["each_system_vs_personnel"]["S1 + players agree 6+"]["w"] == 1
 
 
 def test_system_vs_personnel_and_personnel_buckets():
@@ -34,8 +44,9 @@ def test_system_vs_personnel_and_personnel_buckets():
              pk(301, "g3", "H", "W", meta={"gap": 3.1, "call": "waiting"}),
              pk(202, "g1", "H", "W"), pk(202, "g2", "H", "W")]
     t = tracking(picks)
-    assert t["system_vs_personnel"]["EARLY + agrees by 3-5"]["w"] == 1          # same side, players model by 3.4
-    assert t["system_vs_personnel"]["EARLY + players model disagrees"]["w"] == 1
+    assert t["system_vs_personnel"]["EARLY + players agree 3-6"]["w"] == 1      # same side, players model by 3.4
+    assert t["system_vs_personnel"]["EARLY + players disagree 0-3"]["w"] == 1   # other side by 0.6
+    assert t["each_system_vs_personnel"]["E2 + players agree 3-6"]["w"] == 1
     assert t["personnel_by_gap"]["3–4"]["w"] == 2 and t["personnel_by_gap"]["0–1"]["l"] == 1
     assert t["personnel_by_call"]["waiting"]["w"] == 1
 

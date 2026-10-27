@@ -544,13 +544,20 @@ function renderLab(b) {
       <div class="r n" style="font-size:18px;text-align:right">${esc(line)}<div class="muted">${g.total ?? "—"}</div></div></div>`;
   }).join("") : `<div class="muted">No games today or tomorrow.</div>`;
   const T = b.tracking || {};
-  const tbl = (title, obj) => { const rows = Object.entries(obj || {}); return `<div><h3>${title}</h3>${rows.length ? `<table>${rows.map(([k, r]) => `<tr><td>${esc(k)}</td><td class="r">${r && r.n ? wl(r) + " · " + (r.units > 0 ? "+" : "") + r.units + "u" : "—"}</td></tr>`).join("")}</table>` : `<div class="muted">Nothing graded yet.</div>`}</div>`; };
+  const H = T.history || {};
+  const cell = r => r && r.n ? `${wl(r)} · ${r.units > 0 ? "+" : ""}${r.units}u` : "—";
+  const tbl = (title, key) => {
+    const obj = T[key] || {}, hist = H[key] || {};
+    const keys = [...new Set([...Object.keys(obj), ...Object.keys(hist)])]
+      .sort((a, b) => ((obj[b] || {}).n || 0) - ((obj[a] || {}).n || 0) || ((hist[b] || {}).n || 0) - ((hist[a] || {}).n || 0));
+    return `<div><h3>${title}</h3>${keys.length ? `<table><tr><th></th><th class="r">This season</th><th class="r">Last 2 seasons</th></tr>${keys.map(k =>
+      `<tr><td>${esc(k)}</td><td class="r">${cell(obj[k])}</td><td class="r muted">${cell(hist[k])}</td></tr>`).join("")}</table>` : `<div class="muted">Nothing graded yet.</div>`}</div>`; };
   const allSys = { ...(b.systems || {}), ...(b.test_systems || {}), ...(b.early_systems || {}), ...(b.shadow_systems || {}) };
   const sysRows = Object.values(allSys).filter(s => s.if_first && s.if_first.n);
   const rec = r => r && r.n ? `${wl(r)} · ${r.units > 0 ? "+" : ""}${r.units}u` : "—";
   const firstTbl = `<h3 style="font:600 16px var(--cond);color:var(--muted);margin:16px 0 4px">Each system: official, at first line, and how much the line moved our way</h3>${sysRows.length ? `<table><tr><th></th><th class="r">Official</th><th class="r">At first line</th><th class="r">Avg CLV</th></tr>${sysRows.map(s =>
       `<tr><td>${badge(s.group)}${esc(s.tag)}</td><td class="r">${rec(s)}</td><td class="r">${rec(s.if_first)}</td><td class="r">${s.avg_clv == null ? "—" : (s.avg_clv > 0 ? "+" : "") + s.avg_clv}</td></tr>`).join("")}</table>` : `<div class="muted">Fills in after the first games are graded.</div>`}`;
-  const variations = `<div class="grid2">${tbl("Stacks by group", T.by_groups)}${tbl("Stacks by exact systems", T.by_combo)}${tbl("How many systems agreed", T.by_count)}${tbl("Systems vs the players model", T.system_vs_personnel)}${tbl("Players model by gap", T.personnel_by_gap)}${tbl("Players model by status", T.personnel_by_call)}</div>${firstTbl}<p class="muted" style="font-size:14px">Games where systems landed on opposite sides: ${T.conflicts ?? 0}</p>`;
+  const variations = `<p class="muted" style="font-size:14px">This season is live results; "last 2 seasons" is the same thing replayed on 2024-25 and 2025-26 at the opening line. Small samples are noise until they aren't.</p><div class="grid2">${tbl("How many systems agreed", "by_count")}${tbl("Stacks + the players model", "stack_vs_personnel")}${tbl("Each group vs the players model", "system_vs_personnel")}${tbl("Each system vs the players model", "each_system_vs_personnel")}${tbl("Every pair of systems", "by_pair")}${tbl("Stacks by group", "by_groups")}${tbl("Stacks by exact systems", "by_combo")}${tbl("Players model by gap", "personnel_by_gap")}${tbl("Players model by status", "personnel_by_call")}</div>${firstTbl}<p class="muted" style="font-size:14px">Games where systems landed on opposite sides: ${T.conflicts ?? 0}</p>`;
   const testsToday = (b.tests || []).length ? b.tests.map(p => `<div class="game"><div><div class="t">${badge(p.group)}${esc(p.tag)} ${esc(p.label)}</div><div class="muted" style="font-size:14px">${esc(p.away)} @ ${esc(p.home)}, ${esc(when(p.tip_utc))}. ${(p.evidence || []).map(esc).join(". ")}</div></div><div></div></div>`).join("") : `<div class="muted">No test systems fired on today's games.</div>`;
   const early = (b.early || []).length ? b.early.map(p => `<div class="game"><div><div class="t">${badge(p.group)}${esc(p.tag)} ${esc(p.label)}</div><div class="muted" style="font-size:14px">${esc(p.away)} @ ${esc(p.home)}, ${esc(when(p.tip_utc))}. ${(p.evidence || []).map(esc).join(". ")}</div></div><div></div></div>`).join("") : `<div class="muted">No early-season systems fired on today's games.</div>`;
   const sc = b.scoring;

@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -498,52 +499,77 @@ def benched_systems(recs: dict, cfg: dict | None) -> dict:
 
 
 def _bucket(g):
-    for lo, hi, name in ((0, 1, "0–1"), (1, 2, "1–2"), (2, 3, "2–3"), (3, 4, "3–4"), (4, 99, "4+")):
+    g = abs(g)
+    for lo, hi, name in ((0, 1, "0–1"), (1, 2, "1–2"), (2, 3, "2–3"), (3, 4, "3–4"), (4, 6, "4–6"), (6, 99, "6+")):
         if lo <= g < hi:
             return name
     return "4+"
 
 
+def track_agree(gap_on_side: float) -> str:
+    """Finer buckets for tracking (the card itself still uses 3+)."""
+    g = gap_on_side
+    return ("players disagree 3+" if g <= -3 else "players disagree 0-3" if g < 0 else
+            "players agree 0-3" if g < 3 else "players agree 3-6" if g < 6 else "players agree 6+")
+
+
+def stack_key_count(n: int) -> str:
+    return "1 system" if n == 1 else f"{n} systems" if n < 4 else "4+ systems"
+
+
 def tracking(picks: list[dict]) -> dict:
-    """Every variation, graded: stacks of systems on the same side, systems vs the personnel line,
-    and the personnel line split by gap size and by day-to-day / blind status."""
+    """Every variation, graded: stacks of systems on the same side (by count, by group, by exact systems,
+    every pair), each group AND each system vs the players model in fine buckets, stacks + players model,
+    and the players model by gap size and status. history (2 seasons, vs the open) sits next to each."""
     graded = [p for p in picks if p.get("result") and p.get("active")]
     real = [p for p in graded if p["system"] < 300]
     shadow = {p["game_id"]: p for p in graded if p["system"] == 301}
+
+    def gap_for(gid, side):
+        sh = shadow.get(gid)
+        if not sh:
+            return None
+        gap = _meta(sh, "gap_first") or _meta(sh, "gap") or 0
+        return gap if sh["side"] == side else -gap
 
     # same game, same bet, same side → one stack
     stacks = {}
     for p in real:
         stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(p)
-    by_combo, by_groups, by_count = {}, {}, {}
+    by_combo, by_groups, by_count, by_pair, stack_players = {}, {}, {}, {}, {}
     for (gid, bet, side), ps in stacks.items():
         res = ps[0]["result"]
-        n = len({p["system"] for p in ps})
-        by_count.setdefault("1 system" if n == 1 else "2 systems" if n == 2 else "3+ systems", []).append(res)
+        tags = sorted({label(p["system"]) for p in ps})
+        n = len(tags)
+        by_count.setdefault(stack_key_count(n), []).append(res)
+        if bet == "spread":
+            g = gap_for(gid, side)
+            if g is not None and not any(p["system"] == 113 for p in ps):
+                stack_players.setdefault(f"{stack_key_count(n)} + {track_agree(g)}", []).append(res)
         if n < 2:
             continue
-        combo = "+".join(sorted({label(p["system"]) for p in ps}))
-        groups = "+".join(sorted({group(p["system"]) for p in ps}))
-        by_combo.setdefault(combo, []).append(res)
-        by_groups.setdefault(groups, []).append(res)
+        by_combo.setdefault("+".join(tags), []).append(res)
+        by_groups.setdefault("+".join(sorted({group(p["system"]) for p in ps})), []).append(res)
+        for i in range(n):
+            for j in range(i + 1, n):
+                by_pair.setdefault(f"{tags[i]}+{tags[j]}", []).append(res)
 
     # opposite sides of the same game
-    conflicts = 0
     per_game = {}
     for (gid, bet, side) in stacks:
         per_game.setdefault((gid, bet), set()).add(side)
     conflicts = sum(len(v) > 1 for v in per_game.values())
 
-    # each system's spread picks: did the players model agree, and by how much?
-    from .pricing import agree_bucket
-    vs_pers = {}
+    # each group and each system, spread picks: did the players model agree, and by how much?
+    vs_pers, sys_pers = {}, {}
     for p in real:
-        sh = shadow.get(p["game_id"])
-        if p["bet"] != "spread" or not sh or p["system"] == 113:
+        if p["bet"] != "spread" or p["system"] == 113:
             continue
-        gap = _meta(sh, "gap_first") or _meta(sh, "gap") or 0
-        k = f"{group(p['system'])} + {agree_bucket(gap if sh['side'] == p['side'] else -gap)}"
-        vs_pers.setdefault(k, []).append(p["result"])
+        g = gap_for(p["game_id"], p["side"])
+        if g is None:
+            continue
+        vs_pers.setdefault(f"{group(p['system'])} + {track_agree(g)}", []).append(p["result"])
+        sys_pers.setdefault(f"{label(p['system'])} + {track_agree(g)}", []).append(p["result"])
 
     pers_gap, pers_call = {}, {}
     for p in shadow.values():
@@ -551,9 +577,16 @@ def tracking(picks: list[dict]) -> dict:
         pers_call.setdefault(_meta(p, "call") or "none", []).append(p["result"])
 
     t = lambda d: {k: _wl(v) for k, v in sorted(d.items())}
-    return {"by_combo": t(by_combo), "by_groups": t(by_groups), "by_count": t(by_count),
-            "conflicts": conflicts, "system_vs_personnel": t(vs_pers),
-            "personnel_by_gap": t(pers_gap), "personnel_by_call": t(pers_call)}
+    out = {"by_combo": t(by_combo), "by_groups": t(by_groups), "by_count": t(by_count), "by_pair": t(by_pair),
+           "stack_vs_personnel": t(stack_players), "conflicts": conflicts, "system_vs_personnel": t(vs_pers),
+           "each_system_vs_personnel": t(sys_pers),
+           "personnel_by_gap": t(pers_gap), "personnel_by_call": t(pers_call)}
+    try:      # the same tables from the 2-season replay at the opener (engine/measure_stacks.py)
+        hist = json.loads((personnel_mod.STATIC / "stack_history.json").read_text())
+        out["history"] = hist
+    except Exception:
+        out["history"] = {}
+    return out
 
 
 GAP_BUCKETS = [("0-2", 0, 2), ("2-3", 2, 3), ("3-4", 3, 4), ("4-5", 4, 5), ("5+", 5, 99)]
