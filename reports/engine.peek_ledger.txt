@@ -1,0 +1,10 @@
+orders loaded: 36
+   T13 BOS -11.5 filled 25.48 tip '2026-10-27T23:30:00+00:00' created 2026-10-27T12:34:24.462502+00:00
+   T13 DET +4 filled 46 tip '2026-10-28T00:00:00+00:00' created 2026-10-27T12:34:05.279999+00:00
+   T13 LAL -3 filled 25.01 tip '2026-10-28T03:00:00+00:00' created 2026-10-27T04:52:05.221876+00:00
+   S4 OVER 230.5 filled 45 tip '2026-10-28T00:00:00+00:00' created 2026-10-27T02:03:00.897698+00:00
+   S4 OVER 222.5 filled 45 tip '2026-10-27T23:30:00+00:00' created 2026-10-27T02:01:01.408663+00:00
+   E7 PHX +10 partial 62.99 tip '2026-10-27T00:00:00+00:00' created 2026-10-26T18:17:06.19486+00:00
+   E3 PHX +10 partial 0.02 tip '2026-10-27T00:00:00+00:00' created 2026-10-26T18:17:04.247366+00:00
+kept after restart filter: [('T13', 'BOS -11.5'), ('T13', 'DET +4'), ('T13', 'LAL -3'), ('S4', 'OVER 230.5'), ('S4', 'OVER 222.5')]
+exclude: {('401909843', 'CHA'): 'Model bug: counted Kon Knueppel, who had missed every game and was out.', ('401909853', 'CHA'): 'Model bug: counted Kon Knueppel, who had missed every game and was out.'}
