@@ -1,0 +1,57 @@
+2024-25: 1231 games, totals lines cached
+2025-26: 1231 games, totals lines cached
+
+=== 2024-25
+  players only (as tested before) 3+: 296-291 (50%) vs open | CLV +0.17 pts, moved our way 270 / against 276 | vs close 299-289
+                                 5+: 204-176 (54%) vs open | CLV +0.07 pts, moved our way 174 / against 177 | vs close 201-181
+                                 first 30 days 3+: 48-57 (46%) vs open | CLV +0.08 pts, moved our way 50 / against 49 | vs close 48-55
+                                 result beats open by +0.053/pt of gap (t 0.6); market moves toward us +0.028/pt (t 1.6); 1007 games
+  + this season's scoring K=5    3+: 186-169 (52%) vs open | CLV +0.82 pts, moved our way 200 / against 126 | vs close 180-176
+                                 5+: 80-71 (53%) vs open | CLV +1.26 pts, moved our way 89 / against 51 | vs close 77-73
+                                 first 30 days 3+: 27-28 (49%) vs open | CLV +0.62 pts, moved our way 29 / against 23 | vs close 25-28
+                                 result beats open by +0.111/pt of gap (t 0.7); market moves toward us +0.185/pt (t 6.1); 1007 games
+  + this season's scoring K=10   3+: 187-174 (52%) vs open | CLV +0.82 pts, moved our way 207 / against 129 | vs close 183-179
+                                 5+: 76-69 (52%) vs open | CLV +1.14 pts, moved our way 83 / against 50 | vs close 75-69
+                                 first 30 days 3+: 30-32 (48%) vs open | CLV +0.76 pts, moved our way 34 / against 26 | vs close 29-32
+                                 result beats open by +0.136/pt of gap (t 0.8); market moves toward us +0.185/pt (t 6.1); 1007 games
+  + this season's scoring K=20   3+: 205-181 (53%) vs open | CLV +0.85 pts, moved our way 220 / against 137 | vs close 199-187
+                                 5+: 86-74 (54%) vs open | CLV +1.02 pts, moved our way 93 / against 56 | vs close 83-76
+                                 first 30 days 3+: 36-36 (50%) vs open | CLV +0.80 pts, moved our way 41 / against 29 | vs close 34-37
+                                 result beats open by +0.143/pt of gap (t 0.9); market moves toward us +0.170/pt (t 5.8); 1007 games
+  + this season's scoring K=40   3+: 231-209 (52%) vs open | CLV +0.61 pts, moved our way 238 / against 170 | vs close 226-214
+                                 5+: 105-86 (55%) vs open | CLV +0.99 pts, moved our way 109 / against 69 | vs close 101-90
+                                 first 30 days 3+: 42-47 (47%) vs open | CLV +0.45 pts, moved our way 47 / against 39 | vs close 40-47
+                                 result beats open by +0.122/pt of gap (t 0.8); market moves toward us +0.136/pt (t 5.0); 1007 games
+
+=== 2025-26
+  players only (as tested before) 3+: 314-299 (51%) vs open | CLV +0.12 pts, moved our way 279 / against 263 | vs close 302-306
+                                 5+: 192-195 (50%) vs open | CLV +0.17 pts, moved our way 188 / against 153 | vs close 186-197
+                                 first 30 days 3+: 49-38 (56%) vs open | CLV +0.53 pts, moved our way 36 / against 35 | vs close 45-41
+                                 result beats open by +0.063/pt of gap (t 0.6); market moves toward us +0.017/pt (t 0.7); 1030 games
+  + this season's scoring K=5    3+: 175-179 (49%) vs open | CLV +0.91 pts, moved our way 191 / against 115 | vs close 162-188
+                                 5+: 70-58 (55%) vs open | CLV +1.36 pts, moved our way 79 / against 37 | vs close 60-66
+                                 first 30 days 3+: 32-29 (52%) vs open | CLV +0.66 pts, moved our way 28 / against 20 | vs close 32-29
+                                 result beats open by -0.067/pt of gap (t -0.4); market moves toward us +0.137/pt (t 3.4); 1030 games
+  + this season's scoring K=10   3+: 184-174 (51%) vs open | CLV +0.89 pts, moved our way 200 / against 114 | vs close 168-185
+                                 5+: 72-68 (51%) vs open | CLV +1.31 pts, moved our way 87 / against 39 | vs close 63-74
+                                 first 30 days 3+: 31-22 (58%) vs open | CLV +0.58 pts, moved our way 26 / against 16 | vs close 30-22
+                                 result beats open by -0.039/pt of gap (t -0.2); market moves toward us +0.147/pt (t 3.7); 1030 games
+  + this season's scoring K=20   3+: 198-209 (49%) vs open | CLV +0.93 pts, moved our way 231 / against 127 | vs close 182-221
+                                 5+: 83-80 (51%) vs open | CLV +1.31 pts, moved our way 99 / against 46 | vs close 73-86
+                                 first 30 days 3+: 36-30 (55%) vs open | CLV +0.80 pts, moved our way 32 / against 22 | vs close 34-31
+                                 result beats open by +0.006/pt of gap (t 0.0); market moves toward us +0.150/pt (t 4.1); 1030 games
+  + this season's scoring K=40   3+: 226-233 (49%) vs open | CLV +0.84 pts, moved our way 246 / against 155 | vs close 209-245
+                                 5+: 108-110 (50%) vs open | CLV +0.98 pts, moved our way 125 / against 68 | vs close 96-118
+                                 first 30 days 3+: 42-34 (55%) vs open | CLV +0.50 pts, moved our way 32 / against 28 | vs close 40-35
+                                 result beats open by +0.026/pt of gap (t 0.2); market moves toward us +0.126/pt (t 3.9); 1030 games
+
+=== CHOSEN ON 2024-25: K=20
+    2025-26 players only   3+ 314-299 (51%) vs open | CLV +0.12 pts, moved our way 279 / against 263 | vs close 302-306 | 5+ 192-195 (50%) vs open | CLV +0.17 pts, moved our way 188 / against 153 | vs close 186-197 | info +0.063/pt (t 0.6)
+    2025-26 K=20           3+ 198-209 (49%) vs open | CLV +0.93 pts, moved our way 231 / against 127 | vs close 182-221 | 5+ 83-80 (51%) vs open | CLV +1.31 pts, moved our way 99 / against 46 | vs close 73-86 | info +0.006/pt (t 0.0)
+
+=== BOTH SEASONS, 3+ / 5+ vs the opener
+    players only   3+: 610-590 (50.8%) | 5+: 396-371 (51.6%)
+    K=5            3+: 361-348 (50.9%) | 5+: 150-129 (53.8%)
+    K=10           3+: 371-348 (51.6%) | 5+: 148-137 (51.9%)
+    K=20           3+: 403-390 (50.8%) | 5+: 169-154 (52.3%)
+    K=40           3+: 457-442 (50.8%) | 5+: 213-196 (52.1%)
