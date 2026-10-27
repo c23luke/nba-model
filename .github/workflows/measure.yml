@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 50
     env:
       ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
