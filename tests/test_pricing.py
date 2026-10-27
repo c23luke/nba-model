@@ -257,3 +257,10 @@ def test_moneyball_replaces_the_other_bets_on_its_side_and_wins_30():
     card = build_card(live, slate, now=NOW)
     assert [c["tag"] for c in card] == ["MONEYBALL"] and card[0]["to_win"] == 30
     assert set(card[0]["with"]) == {"T12", "T2"}
+
+
+def test_t13_at_a_3_to_4_gap_is_sized_10():
+    for gap, want in ((3.6, 10), (4.4, 20)):
+        slate = [{"game_id": "g2", "personnel": {"gap": gap, "case": {"side": "NOP", "win_est": 0.56, "level": "Medium"}}}]
+        c = build_card([pk(113, "NOP", [kq("NOP", 3.5, 0.48)], game="g2", line=3.5)], slate, now=NOW)[0]
+        assert c["to_win"] == want, (gap, c["to_win"])

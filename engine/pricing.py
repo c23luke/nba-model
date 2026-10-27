@@ -66,6 +66,17 @@ def players_history(grp: str, gap_on_side: float | None) -> dict | None:
     return {"w": w, "l": l, "label": name} if w + l else None
 
 
+def small_gap(pick: dict, slate: list[dict]) -> bool:
+    """T13 at a 3-4 point gap is sized like Low confidence ($10). MEASURED (engine/measure_moneyball_stack.py,
+    2 seasons at the open, live players model): gap 3-4 went 131-116 (53.0%; 2024-25 62-65), gap 4-6 164-120
+    (57.7%; both seasons 55.7% / 59.7%)."""
+    for g in slate:
+        if g.get("game_id") == pick["game_id"]:
+            gap = (g.get("personnel") or {}).get("gap")
+            return gap is not None and abs(gap) < 4
+    return False
+
+
 def players_gap(pick: dict, slate: list[dict]) -> float | None:
     """How many points the players model likes this side by, vs the market (negative = it likes the
     other side). Spreads only; the personnel model has no edge on totals."""
@@ -398,7 +409,9 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
                      # bet size: to win $20; Low-confidence personnel bets to win $10
-                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else LOW_TO_WIN if level == "Low" else TO_WIN,
+                     "to_win": (MONEYBALL_TO_WIN if p["system"] == 130
+                                else LOW_TO_WIN if level == "Low" or (p["system"] == 113 and small_gap(p, slate))
+                                else TO_WIN),
                      # what an order placer needs to price ANY number on this bet (e.g. P2P offers)
                      "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
                                "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,
