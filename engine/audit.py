@@ -121,7 +121,7 @@ def main():
         print(f"  {tag:4} {g:6} {auto:38} official {r.get('w', 0)}-{r.get('l', 0)}-{r.get('p', 0)}"
               f"  if-first {ff.get('w', 0)}-{ff.get('l', 0)}-{ff.get('p', 0)}"
               f"  CLV {r.get('avg_clv') if r.get('avg_clv') is not None else '-'} ({r.get('n_clv', 0)})"
-              f"  | {NAMES.get(int(tag[1:]) + {'S': 0, 'T': 100, 'E': 200, 'X': 300}[tag[0]], '')[:48]}")
+              f"  | {(r.get('name') or '')[:48]}")
 
     print()
     print("=" * 100)
