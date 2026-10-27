@@ -186,8 +186,10 @@ def _rest(st: TeamState) -> str:
 
 
 def evaluate(game: Game, home: TeamState, away: TeamState,
-             home_spread: float | None, total: float | None) -> list[Pick]:
-    """Run all 4 systems on one game. Spread systems are checked from both sides."""
+             home_spread: float | None, total: float | None, tot_avg: float | None | str = "legacy") -> list[Pick]:
+    """Run all 4 systems on one game. Spread systems are checked from both sides.
+    tot_avg: this season's average closing total over games already played (S4's bar; None = not enough
+    games yet, so no S4). "legacy" = the old fixed 220, kept only for old replays."""
     picks: list[Pick] = []
     sides = [
         (game.home, home, away, True, home_spread),
@@ -226,11 +228,16 @@ def evaluate(game: Game, home: TeamState, away: TeamState,
             ]))
 
         # ---- System 4: heavy favorite over
-        if (spread is not None and spread < -9.0 and total is not None and total > 220.0
+        # The total bar was a fixed 220, set when 220 was a high total; by 2025-26, 90% of games were
+        # above it. Now: above THIS season's average so far. MEASURED (engine/measure_walkforward.py):
+        # 2024-26 at the open 106-67 (61.3%) vs 155-117 (57.0%) with 220; found-on 2020-24 59.5% vs 58.0%.
+        bar = 220.0 if tot_avg == "legacy" else tot_avg
+        if (spread is not None and spread < -9.0 and total is not None and bar is not None and total > bar
                 and t.last_won is True and o.last_won is False):
             picks.append(Pick(4, game.id, "total", "OVER", total, [
                 f"{team} is favored by {abs(spread):g} (more than 9)",
-                f"Total is {total:g} (above 220)",
+                (f"Total is {total:g} (above 220)" if tot_avg == "legacy"
+                 else f"Total is {total:g}, above this season's average of {bar:.1f}"),
                 f"{team} won its last game: {t.last_game.score_line()}",
                 f"{o.team} lost its last game: {o.last_game.score_line()}",
             ]))

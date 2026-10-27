@@ -386,6 +386,18 @@ function ticket(x) {
   </article>`;
 }
 
+function rulesNowBlock(R) {
+  if (!R || !(R.w + R.l + R.p + (R.dropped || []).length)) return "";
+  const row = (x, extra) => `<li>${esc(x.holding)} <span class="muted">(${esc(x.system)}, ${x.result === "W" ? "won" : x.result === "L" ? "lost" : "push"})</span> — ${extra}</li>`;
+  return `<div class="chart"><div class="top"><span>Under today's rules: <b>${wl(R)}</b>, <b class="${R.pnl > 0 ? "pos" : R.pnl < 0 ? "neg" : ""}">${signed$(R.pnl)}</b></span>
+      <span>${R.risked ? pct(R.pnl / R.risked) + " return" : ""}</span></div>
+    <div class="muted" style="font-size:14px">Every settled bet re-judged by the current model, at the price we actually got: full $20 size (MONEYBALL $30), T13 only at a 4+ gap, never both sides of a game. The real money above is what actually happened.</div>
+    ${(R.dropped || []).length || (R.resized || []).length ? `<details class="more"><summary>${(R.dropped || []).length} wouldn't be bet today · ${(R.resized || []).length} would be a different size</summary><ul class="why">
+      ${(R.dropped || []).map(x => row(x, `not bet today: ${esc(x.why)} (was ${signed$(x.pnl)})`)).join("")}
+      ${(R.resized || []).map(x => row(x, `won ${money(x.had)} → now ${money(x.now)}: ${signed$(x.pnl_had)} → ${signed$(x.pnl_now)}`)).join("")}
+    </ul></details>` : ""}</div>`;
+}
+
 function sizeLine(x) {
   const T = x.target || 20, got = x.to_win;
   let t = `Size: to win <b>${money(T)}</b> — ${T === 10 ? "the old Low-confidence size (that rule is retired)" : sizeRule(x.system)}.`;
@@ -462,6 +474,7 @@ function renderBets(placed, b) {
       <div><div class="k">Expected on open bets</div><div class="v n ${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</div><div class="s">${Object.entries(sites).map(([v, n]) => `${esc(v)} ${n}`).join(", ") || "no bets"}</div></div>
     </div>
     ${profitChart(bets)}
+    ${rulesNowBlock(placed.rules_now)}
     <div class="filters">Show
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>

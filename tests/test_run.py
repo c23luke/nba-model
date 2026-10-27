@@ -61,6 +61,12 @@ def test_full_pass_fires_prices_and_grades(tmp_path):
     assert board["systems"][1]["w"] == 1 and board["systems"][1]["l"] == 0
 
 
+def seed_totals(store, day, total=224.0):
+    """S4's bar is this season's average total over games already played: give the store those games."""
+    from engine.run import row_from_game
+    store.save_games([{**row_from_game(x, None), "total": total} for x in ALL if x.game_date < day])
+
+
 def test_bet_drops_when_line_moves_out(tmp_path):
     from engine.state import team_state
     # first game in the fixture where the home team won its last game and the road team lost its last
@@ -77,12 +83,13 @@ def test_bet_drops_when_line_moves_out(tmp_path):
                                                  "source": "test", "books": 5}}, {})
 
     store = LocalStore(tmp_path)
+    seed_totals(store, day)                      # season average 224: 228.5 is above it, 219.5 below
     fd = make_fetch_day(day, day - timedelta(1))
     b = run(now=t(15), fetch_day=fd,
             fetch_lines=lines(228.5), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
     assert any(p["system"] == 4 and p["game_id"] == g.id for p in b["bets"])
 
-    # total drops to 219.5 an hour later → System 4 no longer qualifies
+    # total drops to 219.5 an hour later (below the 224 average) → System 4 no longer qualifies
     b = run(now=t(16), fetch_day=fd,
             fetch_lines=lines(219.5), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
     assert not any(p["system"] == 4 and p["game_id"] == g.id for p in b["bets"])
@@ -124,6 +131,7 @@ def test_dropped_pick_still_graded_but_not_official(tmp_path):
     lines = lambda total: (lambda: ({(day, g.away, g.home): {"home_spread": -10.5, "total": total,
                                                              "source": "t", "books": 5}}, {}))
     store = LocalStore(tmp_path)
+    seed_totals(store, day)
     kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
     run(now=t(day, 15), fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_lines=lines(228.5), **kw)
     run(now=t(day, 16), fetch_day=make_fetch_day(day, day - timedelta(1)), fetch_lines=lines(219.5), **kw)

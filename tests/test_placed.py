@@ -135,3 +135,22 @@ def test_resting_orders_are_listed_as_waiting_for_a_price():
          "contract": "NO · IND wins by over 3.5 (= NOP +3.5)"}
     out = placed_bets([o], {}, {}, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)
     assert out["bets"] == [] and out["resting"][0]["holding"] == "NOP +3.5" and out["resting"][0]["american"] == -117
+
+
+def test_rules_now_drops_small_t13_and_both_sides_and_resizes_to_20():
+    from engine.placed import rules_now
+    base = {"status": "FINAL", "bet": "spread", "manual": False}
+    rows = [
+        {**base, "game_id": "g1", "side": "DET", "system": "T13", "t13_gap": 3.4, "holding": "DET +4",
+         "result": "W", "pnl": 20.0, "risk": 24.6, "to_win": 20.0},                     # gap under 4 -> dropped
+        {**base, "game_id": "g2", "side": "BOS", "system": "T13", "t13_gap": 5.0, "holding": "BOS -7",
+         "result": "L", "pnl": -11.0, "risk": 11.0, "to_win": 10.0},                     # $10 bet -> $20 at -110
+        {**base, "game_id": "g3", "side": "MIA", "system": "S4", "t13_gap": None, "holding": "MIA +3",
+         "result": "W", "pnl": 20.0, "risk": 22.0, "to_win": 20.0},
+        {**base, "game_id": "g3", "side": "NYK", "system": "T2", "t13_gap": None, "holding": "NYK -3",
+         "result": "L", "pnl": -22.0, "risk": 22.0, "to_win": 20.0},                     # both sides of g3 -> both dropped
+    ]
+    r = rules_now(rows)
+    assert (r["w"], r["l"]) == (0, 1)
+    assert r["pnl"] == -22.0 and len(r["dropped"]) == 3
+    assert r["resized"][0]["had"] == 10.0 and r["resized"][0]["pnl_now"] == -22.0

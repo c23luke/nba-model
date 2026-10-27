@@ -71,13 +71,20 @@ def test_tipped_games_leave_the_card():
 
 
 def test_pass_when_no_edge_and_no_market():
-    from engine.systems import TEST_SYSTEMS
-    TEST_SYSTEMS[112]["win_est"], old = 0.51, TEST_SYSTEMS[112]["win_est"]
+    from engine.pricing import PRICE_WIN          # the win rate a system is priced at lives here now
+    PRICE_WIN[112], old = 0.51, PRICE_WIN[112]
     try:
         card = build_card([pk(112, "BOS")], [], now=NOW)
         assert card[0]["verdict"] == "PASS"
     finally:
-        TEST_SYSTEMS[112]["win_est"] = old
+        PRICE_WIN[112] = old
+
+
+def test_systems_are_priced_at_recent_records_not_30_year_cards():
+    from engine.pricing import PRICE_WIN, win_estimate
+    assert PRICE_WIN[2] < 0.60 < 0.6593                      # S2's 30-year 65.9% no longer sets the price
+    assert PRICE_WIN[122] < 110 / 210                        # T22 held up worst on unseen seasons: below break-even
+    assert win_estimate({"system": 2, "line": -3.0, "bet": "spread", "game_id": "g"}, []) == PRICE_WIN[2]
 
 
 def test_feed_rows_carry_what_a_scanner_needs():

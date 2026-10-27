@@ -158,11 +158,45 @@ def early_stack(pick: dict, slate: list[dict]) -> bool:
     return pg is not None and pg >= EARLY_STACK_MIN_GAP
 
 
+def _price_win(w: int, l: int, prior: float = 0.5) -> float:
+    return round((w + 100 * prior) / (w + l + 100), 4)
+
+
+def _og_prior(card_rate: float) -> float:
+    return 0.5 + (card_rate - 0.5) / 2
+
+
+# The win rate each system is PRICED at: it decides the most we'll pay (2026-10-27, Caden: "consider the
+# price ... be smarter on that"). Before, the OG systems were priced at their 30-year records (S2 at
+# 65.9%), so the bettor would pay far more than they've been worth lately.
+# Rule: the system's record at the OPENING line on 2024-25 + 2025-26, plus 100 games at a prior, which
+# pulls small samples toward a coin flip. Prior = 50% for our own systems; for the OG systems, 50% plus
+# half the edge of their long outside record (long records found by searching overstate the edge).
+# Records: engine/backtest_og.py (OG, T2, T12) and engine/measure_walkforward.py (S4's new total bar,
+# T21-T25 graded on seasons the search never used).
+PRICE_WIN = {
+    1: _price_win(14, 6, _og_prior(0.6039)),       # S1  -> 57.7%
+    2: _price_win(11, 10, _og_prior(0.6593)),      # S2  -> 57.0%
+    3: _price_win(5, 5, _og_prior(0.6006)),        # S3  -> 54.6%
+    4: _price_win(106, 67, _og_prior(0.5742)),     # S4 with the season-average total -> 58.5%
+    102: _price_win(56, 43),                       # T2  -> 53.3%
+    112: _price_win(79, 62),                       # T12 -> 53.5%
+    121: _price_win(79, 50),                       # T21 -> 56.3%
+    122: _price_win(46, 39),                       # T22 -> 51.9%: under break-even, so it won't bet at normal prices
+    123: _price_win(72, 40),                       # T23 -> 57.5%
+    124: _price_win(25, 10),                       # T24 -> 55.6%
+    125: _price_win(86, 58),                       # T25 -> 55.7%
+    130: _price_win(29, 11),                       # MONEYBALL -> 56.4%
+}
+
+
 def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | None]:
     """Expected win rate and the line it applies to. System rates apply at the pick's current line;
     the personnel case is rebuilt every run at the CURRENT market line, so a T13 bet that locked at an
     earlier number is shopped from where the market is now, not from the old number."""
     sid = pick["system"]
+    if sid in PRICE_WIN:
+        return PRICE_WIN[sid], pick.get("line")
     if sid in SYSTEMS:
         return SYSTEMS[sid]["card_win_rate"], pick.get("line")
     if group(sid) == "EARLY":

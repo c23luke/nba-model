@@ -145,6 +145,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "players": snap.get("players"), "players_history": snap.get("players_history"),
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
+            "t13_gap": (p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13" else None,
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
@@ -164,7 +165,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         v["bets"] += 1
         v["open"] += r["status"] != "FINAL"
         v["pnl"] = round(v["pnl"] + (r["pnl"] or 0), 2)
-    return {"bets": rows, "resting": waiting, "summary": {
+    return {"bets": rows, "resting": waiting, "rules_now": rules_now(rows), "summary": {
         "open": len(open_), "at_risk": round(sum(r["risk"] for r in open_), 2),
         "open_to_win": round(sum(r["to_win"] for r in open_), 2),
         "w": w, "l": l, "p": pu, "pnl": pnl, "risked": risked,
@@ -173,3 +174,43 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         "avg_beat_close": (lambda xs: round(sum(xs) / len(xs), 1) if xs else None)(
             [r["market"]["beat_close"] for r in rows if r["market"] and r["market"]["closed"] and r["market"]["beat_close"] is not None]),
         "by_venue": by_venue}}
+
+
+T13_GAP_NOW = 4.0      # engine/systems.T13_GAP
+
+
+def rules_now(rows: list[dict]) -> dict:
+    """Every settled bet re-judged under TODAY's rules, at the price we actually got:
+      - T13 only at a 4+ gap (worst case over day-to-day players): smaller ones would not be placed
+      - both sides of one game: neither is placed
+      - every bet sized to win $20 (MONEYBALL $30), even ones the old Low-confidence rule cut to $10
+        or that only part-filled
+    The real money (what actually happened) stays as it is; this is the record the current model
+    would have, so the systems are judged fairly."""
+    done = [r for r in rows if r["status"] == "FINAL" and not r.get("manual")]
+    sides = {}
+    for r in rows:
+        sides.setdefault(r["game_id"], set()).add((r.get("bet"), r.get("side")))
+    out = {"w": 0, "l": 0, "p": 0, "pnl": 0.0, "risked": 0.0, "dropped": [], "resized": []}
+    for r in done:
+        why = None
+        if r["system"] == "T13" and r.get("t13_gap") is not None and r["t13_gap"] < T13_GAP_NOW:
+            why = f"T13 gap {r['t13_gap']:g}: today it needs 4+"
+        spreads = {sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}
+        if len(spreads) > 1:
+            why = "we held both sides of this game: today neither is bet"
+        if why:
+            out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
+                                   "pnl": r["pnl"], "why": why})
+            continue
+        target = 30.0 if r["system"] == "MONEYBALL" else 20.0
+        odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
+        pnl = target if r["result"] == "W" else -target * odds if r["result"] == "L" else 0.0
+        if abs(r["to_win"] - target) >= 1:
+            out["resized"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
+                                   "had": round(r["to_win"], 2), "now": target, "pnl_had": r["pnl"], "pnl_now": round(pnl, 2)})
+        out[{"W": "w", "L": "l"}.get(r["result"], "p")] += 1
+        out["pnl"] += pnl
+        out["risked"] += target * odds
+    out["pnl"], out["risked"] = round(out["pnl"], 2), round(out["risked"], 2)
+    return out

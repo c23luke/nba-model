@@ -225,6 +225,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     slate = []
     totals_seen = sorted(r["total"] for r in stored.values() if r.get("total") is not None)
     tot_low_cut = totals_seen[len(totals_seen) // 4] if len(totals_seen) >= 100 else None
+    done_ids = {str(f.id) for f in finals}
+    played_tot = [r["total"] for gid, r in stored.items() if str(gid) in done_ids and r.get("total") is not None]
+    tot_avg = round(sum(played_tot) / len(played_tot), 1) if len(played_tot) >= 30 else None     # S4's bar
     for g in upcoming:
         row = stored[g.id]
         hs, at = team_state(g.home, finals, g.game_date), team_state(g.away, finals, g.game_date)
@@ -232,7 +235,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                "tot_low_cut": tot_low_cut,
                "home_4in6": games_in(g.home, finals, g.game_date, 5) >= 3,
                "away_4in6": games_in(g.away, finals, g.game_date, 5) >= 3}
-        picks = (evaluate(g, hs, at, row.get("home_spread"), row.get("total"))
+        picks = (evaluate(g, hs, at, row.get("home_spread"), row.get("total"), tot_avg)
                  + evaluate_tests(g, hs, at, row.get("home_spread"), row.get("total"))
                  + evaluate_early(g, hs, at, row.get("home_spread"), row.get("total"),
                                   (g.game_date - season_start).days)

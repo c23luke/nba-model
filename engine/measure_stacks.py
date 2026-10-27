@@ -34,8 +34,9 @@ def season_rows(season):
     by_day = defaultdict(list)
     for g in gl:
         by_day[g.game_date].append(g)
-    finals, out = [], []
+    finals, out, played_tot = [], [], []
     for day in sorted(by_day):
+        tot_avg = sum(played_tot) / len(played_tot) if len(played_tot) >= 30 else None     # S4's bar, as live
         for g in by_day[day]:
             k = f"{day.isoformat()}|{g.away}|{g.home}"
             op = (lines.get(k) or {}).get("open")
@@ -43,7 +44,7 @@ def season_rows(season):
             if op is None and ot is None:
                 continue
             hs, as_ = team_state(g.home, finals, day), team_state(g.away, finals, day)
-            picks = (evaluate(g, hs, as_, op, ot) + evaluate_tests(g, hs, as_, op, ot)
+            picks = (evaluate(g, hs, as_, op, ot, tot_avg) + evaluate_tests(g, hs, as_, op, ot)
                      + evaluate_early(g, hs, as_, op, ot, (day - start).days))
             gap = cal.get((day, g.away, g.home))
             if gap is not None and op is not None and abs(gap) >= 3:
@@ -70,6 +71,8 @@ def season_rows(season):
                 out.append({"game": g.id, "bet": "x1", "side": None, "system": 301,
                             "res": "W" if r > 0 else "L" if r < 0 else "P", "gap": abs(gap)})
         finals += by_day[day]
+        played_tot += [(totals.get(f"{day.isoformat()}|{g.away}|{g.home}") or {}).get("close") for g in by_day[day]]
+        played_tot = [x for x in played_tot if x is not None]
     return out
 
 
