@@ -45,6 +45,11 @@ class LocalStore:
         cur.update({r["key"]: r for r in shape("picks", rows)})     # same columns as the Supabase table
         self._write("picks", list(cur.values()))
 
+    def save_injury_log(self, rows):
+        cur = {r["id"]: r for r in self._read("injury_log", [])}
+        for r in rows:
+            cur[r["id"]] = {**cur.get(r["id"], {"first_seen": r["last_seen"]}), **r}
+        self._write("injury_log", list(cur.values()))
     def load_player_games(self):  return self._read("player_games", [])
     def save_player_games(self, rows):
         cur = {r["id"]: r for r in self.load_player_games()}
@@ -136,6 +141,10 @@ class SupabaseStore:
         rows = self._req("GET", "/bet_log?message=like.run%20(*&select=ts,data&order=ts.desc&limit=1") or []
         return {"at": rows[0]["ts"], "skips": (rows[0].get("data") or {}).get("skips", [])} if rows else None
 
+    def save_injury_log(self, rows):
+        """Every official-report status we see, kept so Questionable/Doubtful play rates can be measured
+        later (first_seen is kept on updates; last_seen moves)."""
+        if rows: self._upsert("injury_log", rows, "id")
     def load_player_games(self):  return self._all("player_games")
     def save_player_games(self, rows):
         if rows: self._upsert("player_games", shape("player_games", rows), "id")

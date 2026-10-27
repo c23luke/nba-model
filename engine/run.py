@@ -169,6 +169,16 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             from . import injury_report
             try:
                 official = injury_report.latest(now)
+                if official is not None and hasattr(store, "save_injury_log"):
+                    try:
+                        rows = injury_report.for_games(official["rows"], [(g.game_date, g.away, g.home) for g in upcoming])
+                        store.save_injury_log([{
+                            "id": f"{r['date']}|{r['team']}|{r['key']}|{r['status']}", "team": r["team"],
+                            "game_date": datetime.strptime(r["date"], "%m/%d/%Y").date().isoformat(),
+                            "player": r["player"], "player_key": r["key"], "status": r["status"],
+                            "reason": (r.get("reason") or "")[:200], "last_seen": now.isoformat()} for r in rows])
+                    except Exception as e:
+                        log.append(f"injury log: {e}")
                 if official is None:
                     log.append("Official injury report: none found in the last 3 hours (using ESPN)")
             except Exception as e:
