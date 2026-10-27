@@ -1,0 +1,26 @@
+MONEYBALL: 2+ systems + players agree 4-6      BOTH 13-4 (76.5%, +8.6u)   [2024-25: 6-2 (75.0%, +3.8u) | 2025-26: 7-2 (77.8%, +4.8u)]
+2+ systems + players agree 4+                  BOTH 16-7 (69.6%, +8.3u)   [2024-25: 7-2 (77.8%, +4.8u) | 2025-26: 9-5 (64.3%, +3.5u)]
+2+ systems + players agree 3+                  BOTH 29-11 (72.5%, +16.9u)   [2024-25: 11-4 (73.3%, +6.6u) | 2025-26: 18-7 (72.0%, +10.3u)]
+2+ systems + players agree 3-4                 BOTH 13-4 (76.5%, +8.6u)   [2024-25: 4-2 (66.7%, +1.8u) | 2025-26: 9-2 (81.8%, +6.8u)]
+1 system + players agree 4-6                   BOTH 39-22 (63.9%, +14.8u)   [2024-25: 18-14 (56.2%, +2.6u) | 2025-26: 21-8 (72.4%, +12.2u)]
+players model alone, gap 4-6                   BOTH 164-120 (57.7%, +32.0u)   [2024-25: 78-62 (55.7%, +9.8u) | 2025-26: 86-58 (59.7%, +22.2u)]
+players model alone, gap 3-4                   BOTH 131-116 (53.0%, +3.4u)   [2024-25: 62-65 (48.8%, -9.5u) | 2025-26: 69-51 (57.5%, +12.9u)]
+
+Every MONEYBALL bet:
+    2024-25 CLE gap +4.1 systems [107, 205] → W
+    2024-25 BKN gap +4.8 systems [202, 205] → W
+    2024-25 TOR gap +4.0 systems [107, 203, 205] → W
+    2024-25 ATL gap +4.7 systems [106, 204] → W
+    2024-25 MIA gap +4.1 systems [107, 205] → W
+    2024-25 TOR gap +5.5 systems [102, 106] → L
+    2024-25 ATL gap +5.3 systems [102, 107] → W
+    2024-25 DAL gap +4.9 systems [102, 106] → L
+    2025-26 BKN gap +5.2 systems [203, 204] → W
+    2025-26 POR gap +4.7 systems [107, 205] → W
+    2025-26 BKN gap +4.2 systems [204, 205, 206] → L
+    2025-26 ATL gap +4.2 systems [107, 205] → W
+    2025-26 BKN gap +4.8 systems [204, 206] → W
+    2025-26 POR gap +5.1 systems [109, 205, 207] → W
+    2025-26 WAS gap +5.0 systems [106, 204] → L
+    2025-26 SAS gap +4.9 systems [102, 107] → W
+    2025-26 MEM gap +4.5 systems [106, 107] → W
