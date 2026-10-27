@@ -156,6 +156,53 @@ def separate(rows):
     return w, l, u, conflicts
 
 
+def card_sides(r):
+    """The sides today's card would bet on this game (one entry per card source)."""
+    sides = []
+    for sid, gr, v in r["fired"]:
+        if gr in ("OG", "FAV"):
+            sides.append(v)
+        elif gr == "EARLY" and (r["gap"] if v > 0 else -r["gap"]) >= 3:
+            sides.append(v)
+    if abs(r["gap"]) >= 3:
+        side_rank = r["home_rank"] if r["gap"] > 0 else r["away_rank"]
+        if not (r["nteams"] >= 30 and side_rank and side_rank > 20):
+            sides.append(1 if r["gap"] > 0 else -1)
+    return sides
+
+
+def one_per_game(rows, stake_for):
+    """Same card sources, but ONE bet per game: skip games where they disagree; stake by agreement."""
+    w = l = 0
+    u = staked = 0.0
+    skipped = 0
+    for r in rows:
+        sides = card_sides(r)
+        if not sides:
+            continue
+        if 1 in sides and -1 in sides:
+            skipped += 1
+            continue
+        if r["res"] == 0:
+            continue
+        stake = stake_for(len(sides))
+        won = (r["res"] > 0) == (sides[0] > 0)
+        w += won; l += not won; u += units(won, stake); staked += stake
+    return w, l, u, staked, skipped
+
+
+def by_agreement(rows):
+    out = defaultdict(lambda: [0, 0])
+    for r in rows:
+        sides = card_sides(r)
+        if not sides or (1 in sides and -1 in sides) or r["res"] == 0:
+            continue
+        k = min(len(sides), 3)
+        won = (r["res"] > 0) == (sides[0] > 0)
+        out[k][0] += won; out[k][1] += not won
+    return out
+
+
 def combined(rows, wts, bar, tiers=((0.0, 1),)):
     w = l = 0
     u = staked = 0.0
@@ -190,6 +237,14 @@ def main():
         print(f"\n=== {label_}")
         w, l, u, c = separate(rows)
         show("TODAY'S WAY: every system bets alone, 1u each", w, l, u, f"  ({c} games with bets on both sides)")
+        for name, fn in (("ONE PER GAME, conflicts skipped, 1u", lambda n: 1),
+                         ("ONE PER GAME, 2u when 2+ sources agree", lambda n: 1 if n == 1 else 2),
+                         ("ONE PER GAME, 1u / 2u / 3u by sources agreeing", lambda n: min(n, 3))):
+            w, l, u, st, sk = one_per_game(rows, fn)
+            show(name, w, l, u, f"  ({st:.0f}u staked, {u / max(st, 1):+.1%} per unit, {sk} conflict games skipped)")
+        ag = by_agreement(rows)
+        print("    record by how many card sources agree: " + " | ".join(
+            f"{k}{'+' if k == 3 else ''}: {a}-{b} ({a / max(a + b, 1):.1%})" for k, (a, b) in sorted(ag.items())))
         for bar in (0.53, 0.54, 0.55, 0.56, 0.58):
             w, l, u, st = combined(rows, wts, bar)
             show(f"COMBINED, flat 1u, bet when chance ≥ {bar:.0%}", w, l, u, f"  ({st:.0f}u staked)")
