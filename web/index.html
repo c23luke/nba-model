@@ -325,13 +325,15 @@ function plainWhy(o) {
   S.push(`We're betting ${lineTxt}.`);
   if (o.gap != null && o.gap >= 3 && !total) {
     const b = gapBucket(o.gap), h = two((R.players_gap || {})[b]);
-    S.push(`Our player ratings, built from who is actually playing tonight, make the ${team(o.side)} about ${o.gap.toFixed(1)} points better than the betting market does, even if their day-to-day players sit.`
+    S.push(`${o.placed ? "When we placed it, our" : "Our"} player ratings, built from who is actually playing tonight, made the ${team(o.side)} about ${o.gap.toFixed(1)} points better than the betting market, even if their day-to-day players sat.`
       + (h ? ` Over the last two seasons, bets with a gap that size won ${h.p}% of the time (${h.w}-${h.l}).` : ""));
   }
   if (sys.length) {
     const parts = sys.map(t => { const h = two((R.systems || {})[t]); const nm = sysName(t);
       return `${t}${nm ? ` (${nm.toLowerCase()})` : ""}${h ? `, ${h.w}-${h.l} over the last two seasons` : ""}`; });
-    S.push(`${sys.length > 1 ? "These betting systems" : "A betting system"} also point${sys.length > 1 ? "" : "s"} this way: ${parts.join("; ")}.`);
+    const main = sys.includes(o.tag);
+    S.push(main ? `${sys.length > 1 ? "The betting systems behind it" : "The betting system behind it"}: ${parts.join("; ")}.`
+      : `${sys.length > 1 ? "These betting systems" : "A betting system"} also point${sys.length > 1 ? "" : "s"} this way: ${parts.join("; ")}.`);
   }
   if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
     const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
@@ -339,7 +341,7 @@ function plainWhy(o) {
   }
   if (!total && o.market != null && o.line != null && o.line > o.market) S.push(`We got ${o.line - o.market} extra point${o.line - o.market === 1 ? "" : "s"} compared with the market number (${o.market > 0 ? "+" : ""}${o.market}).`);
   if (o.price && o.ev != null) {
-    const be = Math.round(o.price * 100), win = Math.round(o.price * (1 + o.ev) * 100);
+    const be = (o.price * 100).toFixed(1), win = (o.price * (1 + o.ev) * 100).toFixed(1);
     S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
   S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet" : ""}.`);
@@ -442,7 +444,7 @@ function ticket(x) {
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
       ${marketLine(x)}
-      ${plainWhy({ tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
+      ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price, ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
