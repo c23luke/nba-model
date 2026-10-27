@@ -1,0 +1,179 @@
+REAL: {'w': 14, 'l': 14, 'p': 0, 'pnl': -28.28, 'risked': 459.83, 'roi': -0.0615, 'avg_beat_close': 0.6}
+TODAY'S RULES: {
+ "l": 6,
+ "p": 0,
+ "w": 5,
+ "pnl": -26.97,
+ "risked": 251.45,
+ "dropped": [
+  {
+   "pnl": -10.55,
+   "why": "T13 gap 3.3: today it needs 4+",
+   "result": "L",
+   "system": "T13",
+   "holding": "MIL +4.5"
+  },
+  {
+   "pnl": -22.33,
+   "why": "T13 gap 3.4: today it needs 4+",
+   "result": "L",
+   "system": "T13",
+   "holding": "ORL \u22121"
+  },
+  {
+   "pnl": -16.54,
+   "why": "T13 gap 3.1: today it needs 4+",
+   "result": "L",
+   "system": "T13",
+   "holding": "NOP +1.5"
+  },
+  {
+   "pnl": 10.38,
+   "why": "T13 gap 3: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "MEM +1.5"
+  },
+  {
+   "pnl": -11.6,
+   "why": "T13 gap 3.3: today it needs 4+",
+   "result": "L",
+   "system": "T13",
+   "holding": "DEN +8.5"
+  },
+  {
+   "pnl": -25.96,
+   "why": "T13 gap 3.3: today it needs 4+",
+   "result": "L",
+   "system": "T13",
+   "holding": "ORL +3.5"
+  },
+  {
+   "pnl": 20.07,
+   "why": "T13 gap 3.6: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "DAL +5.5"
+  },
+  {
+   "pnl": 2.86,
+   "why": "T13 gap 3: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "HOU +7.5"
+  },
+  {
+   "pnl": 10.36,
+   "why": "T13 gap 3.5: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "LAL \u22127.5"
+  },
+  {
+   "pnl": 10.41,
+   "why": "T13 gap 3.9: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "SAC +10.5"
+  },
+  {
+   "pnl": 10.7,
+   "why": "T13 gap 3.8: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "HOU +1.5"
+  },
+  {
+   "pnl": -5.37,
+   "why": "we held both sides of this game: today neither is bet",
+   "result": "L",
+   "system": "E4",
+   "holding": "GSW +8.5"
+  },
+  {
+   "pnl": 20.37,
+   "why": "we held both sides of this game: today neither is bet",
+   "result": "W",
+   "system": "T13",
+   "holding": "GSW +9.5"
+  },
+  {
+   "pnl": -15.52,
+   "why": "we held both sides of this game: today neither is bet",
+   "result": "L",
+   "system": "T2",
+   "holding": "PHX \u221211.5"
+  },
+  {
+   "pnl": -18.74,
+   "why": "T13 gap 3.8: today it needs 4+",
+   "result": "L",
+   "system": "T13",
+   "holding": "OKC \u221212.5"
+  },
+  {
+   "pnl": 10.34,
+   "why": "T13 gap 3: today it needs 4+",
+   "result": "W",
+   "system": "T13",
+   "holding": "MEM ML"
+  }
+ ],
+ "resized": [
+  {
+   "had": 3.09,
+   "now": 20.0,
+   "result": "L",
+   "system": "S4",
+   "holding": "OVER 223.5",
+   "pnl_had": -2.95,
+   "pnl_now": -19.09
+  },
+  {
+   "had": 0.01,
+   "now": 20.0,
+   "result": "W",
+   "system": "E3",
+   "holding": "PHX +12.5",
+   "pnl_had": 0.01,
+   "pnl_now": 20.0
+  },
+  {
+   "had": 10.39,
+   "now": 20.0,
+   "result": "L",
+   "system": "T13",
+   "holding": "DEN \u22125.5",
+   "pnl_had": -14.61,
+   "pnl_now": -28.12
+  }
+ ]
+}
+  DET +1.5     T13       W to_win   20.0 risk   20.8 pnl    20.0 t13_gap 3.5 target 20 players None
+  MIL +4.5     T13       L to_win  10.65 risk  10.55 pnl  -10.55 t13_gap 3.3 target 10 players None
+  ORL −1       T13       L to_win  20.84 risk  22.33 pnl  -22.33 t13_gap 3.4 target 20 players None
+  NOP +1.5     T13       L to_win  20.46 risk  16.54 pnl  -16.54 t13_gap 3.1 target 10 players None
+  MEM +1.5     T13       W to_win  10.38 risk  13.62 pnl   10.38 t13_gap 3.0 target 10 players None
+  DEN +8.5     T13       L to_win   10.4 risk   11.6 pnl   -11.6 t13_gap 3.3 target 10 players None
+  MIL +1       E2        L to_win  20.08 risk  21.51 pnl  -21.51 t13_gap None target 20 players 3.9
+  ORL +3.5     T13       L to_win  20.04 risk  25.96 pnl  -25.96 t13_gap 3.3 target 10 players None
+  DAL +5.5     E4        W to_win  20.45 risk  22.55 pnl   20.45 t13_gap None target 20 players 4.1
+  DAL +5.5     T13       W to_win  20.07 risk  15.52 pnl   20.07 t13_gap 3.6 target 20 players None
+  HOU +7.5     T13       W to_win   2.86 risk   3.17 pnl    2.86 t13_gap 3.0 target 10 players None
+  OVER 236.5   S4        W to_win   20.5 risk  16.09 pnl    20.5 t13_gap None target 20 players None
+  LAL −7.5     T13       W to_win  10.36 risk  13.43 pnl   10.36 t13_gap 3.5 target 10 players None
+  SAC +10.5    T13       W to_win  10.41 risk  11.57 pnl   10.41 t13_gap 3.9 target 10 players None
+  OVER 230.5   S4        W to_win  20.05 risk  24.95 pnl   20.05 t13_gap None target 20 players None
+  PHI −13.5    T12       L to_win  20.08 risk  17.51 pnl  -17.51 t13_gap None target 20 players None
+  HOU +1.5     T13       W to_win   10.7 risk  11.47 pnl    10.7 t13_gap 3.8 target 20 players None
+  DEN −12.5    T12       L to_win  20.59 risk   17.2 pnl   -17.2 t13_gap None target 20 players None
+  GSW +8.5     E4        L to_win   3.63 risk   5.37 pnl   -5.37 t13_gap None target 20 players 4.9
+  GSW +9.5     T13       W to_win  20.37 risk  28.63 pnl   20.37 t13_gap 4.6 target 10 players None
+  PHX −11.5    T2        L to_win  20.08 risk  15.52 pnl  -15.52 t13_gap None target 20 players None
+  OVER 223.5   S4        L to_win   3.09 risk   2.95 pnl   -2.95 t13_gap None target 20 players None
+  OKC −12.5    T13       L to_win  10.26 risk  18.74 pnl  -18.74 t13_gap 3.8 target 10 players None
+  OVER 233.5   S4        L to_win  20.37 risk  24.63 pnl  -24.63 t13_gap None target 20 players None
+  PHX +12.5    E3        W to_win   0.01 risk   0.01 pnl    0.01 t13_gap None target 20 players None
+  PHX +14      E7        W to_win  20.24 risk  42.34 pnl   20.24 t13_gap None target 20 players 4.1
+  MEM ML       T13       W to_win  10.34 risk  10.66 pnl   10.34 t13_gap 3.0 target 10 players None
+  DEN −5.5     T13       L to_win  10.39 risk  14.61 pnl  -14.61 t13_gap 4.3 target 20 players None
