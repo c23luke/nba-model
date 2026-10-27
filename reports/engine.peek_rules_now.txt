@@ -3,13 +3,41 @@ TODAY'S RULES: {
  "l": 6,
  "p": 0,
  "w": 5,
- "pnl": -26.97,
- "risked": 251.45,
+ "pnl": -26.96,
+ "roi": -0.1072,
+ "open": 3,
+ "risked": 251.44,
+ "at_risk": 74.87,
  "dropped": [
+  {
+   "pnl": null,
+   "why": "T13 gap 3.9: today it needs 4+",
+   "result": null,
+   "status": "OPEN",
+   "system": "T13",
+   "holding": "BOS \u22127.5"
+  },
+  {
+   "pnl": null,
+   "why": "T13 gap 3.3: today it needs 4+",
+   "result": null,
+   "status": "OPEN",
+   "system": "T13",
+   "holding": "LAL ML"
+  },
+  {
+   "pnl": 20.0,
+   "why": "T13 gap 3.5: today it needs 4+",
+   "result": "W",
+   "status": "FINAL",
+   "system": "T13",
+   "holding": "DET +1.5"
+  },
   {
    "pnl": -10.55,
    "why": "T13 gap 3.3: today it needs 4+",
    "result": "L",
+   "status": "FINAL",
    "system": "T13",
    "holding": "MIL +4.5"
   },
@@ -17,6 +45,7 @@ TODAY'S RULES: {
    "pnl": -22.33,
    "why": "T13 gap 3.4: today it needs 4+",
    "result": "L",
+   "status": "FINAL",
    "system": "T13",
    "holding": "ORL \u22121"
   },
@@ -24,6 +53,7 @@ TODAY'S RULES: {
    "pnl": -16.54,
    "why": "T13 gap 3.1: today it needs 4+",
    "result": "L",
+   "status": "FINAL",
    "system": "T13",
    "holding": "NOP +1.5"
   },
@@ -31,6 +61,7 @@ TODAY'S RULES: {
    "pnl": 10.38,
    "why": "T13 gap 3: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "MEM +1.5"
   },
@@ -38,6 +69,7 @@ TODAY'S RULES: {
    "pnl": -11.6,
    "why": "T13 gap 3.3: today it needs 4+",
    "result": "L",
+   "status": "FINAL",
    "system": "T13",
    "holding": "DEN +8.5"
   },
@@ -45,6 +77,7 @@ TODAY'S RULES: {
    "pnl": -25.96,
    "why": "T13 gap 3.3: today it needs 4+",
    "result": "L",
+   "status": "FINAL",
    "system": "T13",
    "holding": "ORL +3.5"
   },
@@ -52,6 +85,7 @@ TODAY'S RULES: {
    "pnl": 20.07,
    "why": "T13 gap 3.6: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "DAL +5.5"
   },
@@ -59,6 +93,7 @@ TODAY'S RULES: {
    "pnl": 2.86,
    "why": "T13 gap 3: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "HOU +7.5"
   },
@@ -66,6 +101,7 @@ TODAY'S RULES: {
    "pnl": 10.36,
    "why": "T13 gap 3.5: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "LAL \u22127.5"
   },
@@ -73,6 +109,7 @@ TODAY'S RULES: {
    "pnl": 10.41,
    "why": "T13 gap 3.9: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "SAC +10.5"
   },
@@ -80,6 +117,7 @@ TODAY'S RULES: {
    "pnl": 10.7,
    "why": "T13 gap 3.8: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "HOU +1.5"
   },
@@ -87,6 +125,7 @@ TODAY'S RULES: {
    "pnl": -5.37,
    "why": "we held both sides of this game: today neither is bet",
    "result": "L",
+   "status": "FINAL",
    "system": "E4",
    "holding": "GSW +8.5"
   },
@@ -94,6 +133,7 @@ TODAY'S RULES: {
    "pnl": 20.37,
    "why": "we held both sides of this game: today neither is bet",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "GSW +9.5"
   },
@@ -101,6 +141,7 @@ TODAY'S RULES: {
    "pnl": -15.52,
    "why": "we held both sides of this game: today neither is bet",
    "result": "L",
+   "status": "FINAL",
    "system": "T2",
    "holding": "PHX \u221211.5"
   },
@@ -108,6 +149,7 @@ TODAY'S RULES: {
    "pnl": -18.74,
    "why": "T13 gap 3.8: today it needs 4+",
    "result": "L",
+   "status": "FINAL",
    "system": "T13",
    "holding": "OKC \u221212.5"
   },
@@ -115,6 +157,7 @@ TODAY'S RULES: {
    "pnl": 10.34,
    "why": "T13 gap 3: today it needs 4+",
    "result": "W",
+   "status": "FINAL",
    "system": "T13",
    "holding": "MEM ML"
   }
@@ -147,7 +190,8 @@ TODAY'S RULES: {
    "pnl_had": -14.61,
    "pnl_now": -28.12
   }
- ]
+ ],
+ "open_to_win": 60.0
 }
   DET +1.5     T13       W to_win   20.0 risk   20.8 pnl    20.0 t13_gap 3.5 target 20 players None
   MIL +4.5     T13       L to_win  10.65 risk  10.55 pnl  -10.55 t13_gap 3.3 target 10 players None
