@@ -265,6 +265,7 @@ class TeamRead:
     unknown_minutes: float = 0.0
     continuity: float = 0.0          # share of minutes from players who ended last season here
     missing: list = field(default_factory=list)   # playing for this team now, but not on the roster we used
+    results: dict | None = None      # this season's results vs the players model (engine/results_adj.py)
 
     @property
     def out(self):      return [p for p in self.players if p.status == "out"]
@@ -476,6 +477,11 @@ def evidence(tr: TeamRead) -> list[str]:
     for p in [p for p in tr.rotation if p.last and p.last["missed_last"]]:
         lines.append(f"Back from a missed season — {p.name}, rated {p.bpm_used:+.2f}, "
                      f"{p.minutes:.0f} mpg: " + "; ".join(p.steps))
+    if tr.results:
+        r = tr.results
+        lines.append(f"{tr.team} this season: {abs(r['miss']):.1f} pts/game {'better' if r['miss'] >= 0 else 'worse'} "
+                     f"than its players predicted, over {r['games']} game(s) → rating {r['adj']:+.1f} "
+                     f"(results count more with every game)")
     moved = [p for p in tr.rotation if p.live and p.live["min"] > 0]
     if moved:
         lines.append("This season so far: " + ", ".join(
@@ -528,7 +534,8 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
              live: dict[str, dict] | None = None, official: dict | None = None,
              notes: list | None = None, games=None,
              team_games: dict[str, list[str]] | None = None,
-             recent: dict[str, list[dict]] | None = None) -> dict[str, TeamRead]:
+             recent: dict[str, list[dict]] | None = None,
+             results: dict[str, dict] | None = None) -> dict[str, TeamRead]:
     """team_games: each team's game dates so far. recent: who actually played in each team's last 3
     games (boxscore.recent_players) — checked against the roster so nobody real is left out."""
     """official: the NBA's latest injury report (engine/injury_report.latest()); it overrides ESPN's statuses."""
@@ -554,6 +561,13 @@ def read_all(fetch=get_json, path: Path = DATA, prev_path: Path = DATA_PREV,
         tr.missing = [m for m in (recent or {}).get(t, []) if m["espn_id"] not in ids and norm(m["name"]) not in ids]
         if tr.sit:
             tr.sit.missing = tr.missing
+        r = (results or {}).get(t)
+        if r and r.get("games"):
+            # this season's results vs what the players model expected (measured: K=5, full weight)
+            for v in (tr, tr.sit):
+                if v is not None:
+                    v.results = r
+                    v.rating += r["adj"]
         reads[t] = tr
     return reads
 
@@ -775,6 +789,10 @@ def _topdown_minutes(players) -> dict:
 def stress_rating(tr: TeamRead, topdown: bool, no_penalty: bool) -> float:
     if tr is None:
         return 0.0
+    return _stress_players(tr, topdown, no_penalty) + ((tr.results or {}).get("adj") or 0.0)
+
+
+def _stress_players(tr: TeamRead, topdown: bool, no_penalty: bool) -> float:
     rows = []
     for p in tr.players:
         if p.bpm_used is None or p.wanted <= 0:

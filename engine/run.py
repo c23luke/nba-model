@@ -128,7 +128,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     store.save_games(list({r["id"]: r for r in changed}.values()))
 
     # ---- 2a. this season's box scores (only games not stored yet)
-    live, played, recent = {}, {}, {}
+    live, played, recent, results = {}, {}, {}, {}
     try:
         box_rows = store.load_player_games()
         # games with a 0-minute (coach's decision) row were parsed with DNPs; recent games without one are
@@ -152,6 +152,13 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         live = boxscore.season_impact(box_rows)
         played = boxscore.team_dates(box_rows)
         recent = boxscore.recent_players(box_rows)
+        try:
+            from . import results_adj
+            results = results_adj.team_results(
+                box_rows, [g for g in finals if g.game_date >= season_start],
+                personnel_mod.load_last_season())
+        except Exception as e:
+            log.append(f"This season's results step failed (players model runs without it): {e}")
     except Exception as e:
         log.append(f"Box score step failed: {e}")
 
@@ -169,7 +176,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 log.append(f"Official injury report failed (using ESPN): {e}")
             return personnel_mod.read_all(live=live, official=official, notes=log,
                                           games=[(g.game_date, g.away, g.home) for g in upcoming],
-                                          team_games=played, recent=recent)
+                                          team_games=played, recent=recent, results=results)
     if personnel_fetch:
         try:
             reads = personnel_fetch()
