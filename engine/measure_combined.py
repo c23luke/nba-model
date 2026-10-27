@@ -82,21 +82,43 @@ def feats(r):
     return [1.0, r["gap"]] + [float(r["votes"].get(g, 0)) for g in GROUPS]
 
 
-def fit(rows, l2=1.0, iters=400, lr=0.05):
-    """Plain logistic regression (no libraries), small ridge penalty so rare groups don't run wild."""
+def fit(rows, l2=1.0, iters=50):
+    """Logistic regression by Newton's method (stable; no libraries), with a small ridge penalty on
+    everything but the intercept so rarely-firing groups can't run wild."""
     data = [(feats(r), 1.0 if r["res"] > 0 else 0.0) for r in rows if r["res"] != 0]
-    w = [0.0] * len(data[0][0])
+    k = len(data[0][0])
+    w = [0.0] * k
     for _ in range(iters):
-        g = [0.0] * len(w)
+        g = [0.0] * k
+        H = [[0.0] * k for _ in range(k)]
         for x, y in data:
             z = sum(a * b for a, b in zip(w, x))
             p = 1 / (1 + math.exp(-max(-30, min(30, z))))
-            for i, xi in enumerate(x):
-                g[i] += (p - y) * xi
-        for i in range(len(w)):
-            g[i] = g[i] / len(data) + (l2 * w[i] / len(data) if i else 0.0)
-            w[i] -= lr * g[i] * 20
+            for i in range(k):
+                g[i] += (p - y) * x[i]
+                for j in range(k):
+                    H[i][j] += p * (1 - p) * x[i] * x[j]
+        for i in range(1, k):
+            g[i] += l2 * w[i]
+            H[i][i] += l2
+        step = solve(H, g)
+        w = [a - b for a, b in zip(w, step)]
+        if max(abs(v) for v in step) < 1e-8:
+            break
     return w
+
+
+def solve(A, b):
+    n = len(b)
+    M = [row[:] + [b[i]] for i, row in enumerate(A)]
+    for c in range(n):
+        piv = max(range(c, n), key=lambda r: abs(M[r][c]))
+        M[c], M[piv] = M[piv], M[c]
+        for r in range(n):
+            if r != c and M[c][c]:
+                f = M[r][c] / M[c][c]
+                M[r] = [a - f * bb for a, bb in zip(M[r], M[c])]
+    return [M[i][n] / M[i][i] for i in range(n)]
 
 
 def prob(w, r):
@@ -158,6 +180,9 @@ def main():
         print(f"{s}: {len(rows)} games with an opener and a players-model gap")
     train, test = data["2024-25"], data["2025-26"]
     wts = fit(train)
+    gap_only = sum(1 for r in train if r["res"] and (r["res"] > 0) == (r["gap"] > 0) and abs(r["gap"]) >= 3)
+    gap_all = sum(1 for r in train if r["res"] and abs(r["gap"]) >= 3)
+    print(f"sanity: 2024-25 players gap 3+ alone, side it likes: {gap_only}-{gap_all - gap_only}")
     print("\nweights fitted on 2024-25 (log-odds per unit):")
     for name, v in zip(["intercept", "players gap (per pt)"] + [f"{g} vote" for g in GROUPS], wts):
         print(f"    {name:22} {v:+.4f}")
