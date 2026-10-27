@@ -322,7 +322,7 @@ function plainWhy(o) {
   const two = h => { if (!h) return null; const a = h[SEASONS[0]] || {}, b = h[SEASONS[1]] || {}; const w = (a.w || 0) + (b.w || 0), l = (a.l || 0) + (b.l || 0);
     return w + l ? { w, l, p: Math.round(w / (w + l) * 100) } : null; };
   const lineTxt = total ? `${o.side === "OVER" ? "over" : "under"} ${o.line}` : `${team(o.side)} ${o.line > 0 ? "+" : o.line < 0 ? "−" : ""}${o.line === 0 ? "pick'em" : Math.abs(o.line)}`;
-  S.push(`We're betting ${lineTxt}.`);
+  S.push(o.placed ? `We're betting ${lineTxt}.` : `The model likes ${lineTxt}.`);
   if (o.gap != null && o.gap >= 3 && !total) {
     const b = gapBucket(o.gap), h = two((R.players_gap || {})[b]);
     S.push(`${o.placed ? "When we placed it, our" : "Our"} player ratings, built from who is actually playing tonight, made the ${team(o.side)} about ${o.gap.toFixed(1)} points better than the betting market, even if their day-to-day players sat.`
@@ -342,9 +342,11 @@ function plainWhy(o) {
   if (!total && o.market != null && o.line != null && o.line > o.market) S.push(`We got ${o.line - o.market} extra point${o.line - o.market === 1 ? "" : "s"} compared with the market number (${o.market > 0 ? "+" : ""}${o.market}).`);
   if (o.price && o.ev != null) {
     const be = (o.price * 100).toFixed(1), win = (o.price * (1 + o.ev) * 100).toFixed(1);
-    S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
+    if (o.verdict === "LIMIT" || o.verdict === "PASS")
+      S.push(`The best price right now is ${amerOf(o.price)}: that needs a ${be}% win rate to break even and the model has it at about ${win}%, so the edge is too thin to take.${o.verdict === "LIMIT" ? " A limit order is waiting in case the price gets better." : ""}`);
+    else S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
-  S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet" : ""}.`);
+  if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet" : ""}.`);
   const N = o.now;
   if (N && N.low != null && o.gap != null && (Math.abs(N.low - o.gap) >= 1 || Math.abs(N.high - o.gap) >= 1)) {
     const who = (N.dtd || []).map(n => n.replace(/^[A-Z]+:\s*/, ""));
@@ -584,7 +586,7 @@ function cardRow(c, reason) {
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
         <div class="why-h">${esc(status)}</div>
         <div class="sub">${esc(reason || c.why || "")}</div>
-        ${plainWhy({ tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
+        ${plainWhy({ verdict: c.verdict, tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
           market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, away: c.away, home: c.home })}
 
         ${whyBets([c.tag, ...(c.with || [])], c.players, c.side)}
