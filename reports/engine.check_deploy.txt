@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/nba-model/nba-model/engine/check_deploy.py", line 21, in <module>
+    main()
+  File "/home/runner/work/nba-model/nba-model/engine/check_deploy.py", line 8, in main
+    s = (st._req("GET", "/bet_settings?select=to_win_dollars,min_ev,mode,max_open_bets") or [{}])[0]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/nba-model/nba-model/engine/store.py", line 110, in _req
+    raise RuntimeError(f"Supabase {method} {path} -> {e.code}: {e.read().decode()[:500]}") from None
+RuntimeError: Supabase GET /bet_settings?select=to_win_dollars,min_ev,mode,max_open_bets -> 400: {"code":"42809","details":null,"hint":null,"message":"WITHIN GROUP is required for ordered-set aggregate mode"}
