@@ -445,7 +445,7 @@ function ticket(x) {
       </div>
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
-        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price, ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
+        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" && x.count ? (x.fees || 0) / x.count : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
