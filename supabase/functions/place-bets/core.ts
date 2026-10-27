@@ -524,8 +524,15 @@ async function manageResting(db: Db, venues: Record<string, Venue>, recent: Orde
       let st = await v.getOrder(o.order_id!);
       const late = Date.parse(o.tip_utc) - now.getTime() < REST_STOP_BEFORE_TIP_MIN * 60e3;
       if (st.status === "resting" && (late || !limitKeys.has(o.bet_key))) {
-        await v.cancel(o.order_id!);
+        try {
+          await v.cancel(o.order_id!);
+        } catch (e) {
+          // Kalshi answers 404 when the order already expired or was cancelled: it's gone, so stop retrying
+          // (this repeated every minute for hours on 10/21-10/26 and left the bet stuck as "resting")
+          if (!/→ 404\b/.test(msg(e))) throw e;
+        }
         st = await v.getOrder(o.order_id!);
+        if (st.status === "resting") st = { ...st, status: "canceled" };
         const why = late ? "game about to start" : "no longer a LIMIT on the card";
         await db.log("info", `CANCELLED resting order (${why}): ${o.contract} for ${o.pick}; filled ${st.fill_count} of ${o.count}`);
         res.actions.push(`cancelled resting ${o.pick}: ${why}`);

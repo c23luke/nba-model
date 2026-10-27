@@ -668,3 +668,20 @@ Deno.test("Kalshi: a rate-limited read waits and retries; an order is never re-s
   try { await k.order({ order_side: "no", limit_price: 0.5, count: 2, market: "M" } as OrderRow, "c1"); } catch { threw = true; }
   ok(threw && n === 3, "POST tried once only");
 });
+
+
+Deno.test("a resting order Kalshi says is already gone (404 on cancel) is closed out, not retried every minute", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), []);           // no LIMIT on the card any more
+  db.orders_.push({ id: "r1", mode: "live", status: "resting", venue: "kalshi", market: "M", order_id: "K9",
+    bet_key: "g1-S113-NOP", game_id: "g1", tip_utc: TIP, count: 20, pick: "NOP +3.5", contract: "c",
+    created_at: NOW.toISOString() } as OrderRow);
+  const k = new FakeVenue();
+  let cancels = 0;
+  (k as any).getOrder = async () => ({ status: "resting", fill_count: 0, fill_cost: 0, fees: 0, raw: {} });
+  (k as any).cancel = async () => { cancels++; throw new Error("Kalshi DELETE /x → 404: {\"error\":{\"code\":\"not_found\"}}"); };
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(db.orders_[0].status, "unfilled");
+  ok(!db.logs.some((l) => l.level === "error"), JSON.stringify(db.logs));
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(cancels, 1, "not retried");
+});
