@@ -587,6 +587,30 @@ def roster_audit(reads: dict[str, TeamRead]) -> dict:
     return out
 
 
+def power_rankings(reads: dict[str, TeamRead], ranks: dict | None = None, records: dict | None = None) -> list[dict]:
+    """Every team, best to worst, by the model's rating tonight (players + this season's results).
+    rating = points per 100 possessions vs an average team, so the gap between two teams is roughly the
+    neutral-court spread. Shows what moved it: the players' number, the results correction, who's out."""
+    out = []
+    for t, tr in reads.items():
+        adj = (tr.results or {}).get("adj") or 0.0
+        top = sorted([p for p in tr.rotation if p.bpm_used is not None],
+                     key=lambda p: -(p.bpm_used * p.minutes))[:3]
+        out.append({
+            "team": t, "rating": round(tr.rating, 1), "players": round(tr.rating - adj, 1), "results_adj": round(adj, 1),
+            "results_games": (tr.results or {}).get("games", 0), "results_miss": (tr.results or {}).get("miss"),
+            "market_rank": (ranks or {}).get(t, {}).get("rank"), "record": (records or {}).get(t),
+            "best": [{"name": p.name, "min": round(p.minutes), "impact": round(p.bpm_used * p.minutes / 48, 1)} for p in top],
+            "out": [p.name for p in tr.out if p.last and p.last.get("mpg", 0) >= 15][:4],
+            "questionable": [p.name for p in tr.dtd if p.minutes >= 10][:4],
+            "unknown_min": round(tr.unknown_minutes), "blind": bool(blind_reasons(tr)),
+        })
+    out.sort(key=lambda r: -r["rating"])
+    for i, r in enumerate(out):
+        r["rank"] = i + 1
+    return out
+
+
 def report(reads: dict[str, TeamRead], games: list[tuple[str, str, float | None, float | None]]) -> str:
     """games: (away, home, market home spread, total)."""
     out = ["ROOKIE PRIOR (measured: 2024 + 2025 drafts, rookie seasons):"]

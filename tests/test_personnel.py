@@ -336,3 +336,14 @@ def test_bottom_ten_team_gets_no_players_model_bet():
     v3 = {"gap": 4.0}
     P.flag_bad_team(v3, "T05", "T25", {k: ranks[k] for k in list(ranks)[:20]})   # not a full league yet
     assert "bad_team" not in v3
+
+
+def test_power_rankings_best_to_worst_with_what_moved_them():
+    good = P.rate_team("BOS", [ath("Star Guard")] + [ath("Role Wing")] * 8, LAST)
+    bad = P.rate_team("NYK", [ath("Role Wing")] * 9, LAST)
+    bad.results = {"games": 3, "miss": -8.0, "adj": -3.0}
+    bad.rating += -3.0
+    pr = P.power_rankings({"NYK": bad, "BOS": good}, {"BOS": {"rank": 4}}, {"BOS": "2-1"})
+    assert [r["team"] for r in pr] == ["BOS", "NYK"] and [r["rank"] for r in pr] == [1, 2]
+    assert pr[1]["results_adj"] == -3.0 and pr[1]["players"] == round(bad.rating + 3.0, 1)
+    assert pr[0]["market_rank"] == 4 and pr[0]["record"] == "2-1" and pr[0]["best"][0]["name"] == "Star Guard"

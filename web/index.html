@@ -186,6 +186,7 @@ td .n { font-size: 18px; }
 <nav><div class="wrap tabs" role="tablist" id="tabs">
   <button role="tab" data-tab="bets" aria-selected="true">Bets<span class="long"> placed</span><span class="c" id="c-bets" hidden></span></button>
   <button role="tab" data-tab="card" aria-selected="false"><span class="long">Today's </span>card<span class="c" id="c-card" hidden></span></button>
+  <button role="tab" data-tab="rankings" aria-selected="false">Rank<span class="long">ings</span></button>
   <button role="tab" data-tab="results" aria-selected="false">Results</button>
   <button role="tab" data-tab="systems" aria-selected="false">Systems</button>
   <button role="tab" data-tab="lab" aria-selected="false"><span class="long">Model </span>lab</button>
@@ -193,6 +194,7 @@ td .n { font-size: 18px; }
 <main class="wrap">
   <section id="tab-bets" role="tabpanel"></section>
   <section id="tab-card" role="tabpanel" hidden></section>
+  <section id="tab-rankings" role="tabpanel" hidden></section>
   <section id="tab-results" role="tabpanel" hidden></section>
   <section id="tab-systems" role="tabpanel" hidden></section>
   <section id="tab-lab" role="tabpanel" class="lab" hidden></section>
@@ -225,7 +227,7 @@ const lineTxt = (bet, side, x) => bet === "total" ? `${side} ${x}` : `${side} ${
 const units = u => `<span class="n ${u > 0 ? "pos" : u < 0 ? "neg" : ""}">${u > 0 ? "+" : ""}${u ?? 0}u</span>`;
 
 // ---------- tabs (remembered per viewer; works without storage too)
-const TABS = ["bets", "card", "results", "systems", "lab"];
+const TABS = ["bets", "card", "rankings", "results", "systems", "lab"];
 function show(tab, push = true) {
   if (!TABS.includes(tab)) tab = "bets";
   for (const t of TABS) {
@@ -563,6 +565,29 @@ function renderLab(b) {
     (sc && sc.season && sc.season.n ? `<p class="foot">Scoring vs closing totals this season: overs ${sc.season.overs}-${sc.season.unders}, ${sc.season.avg > 0 ? "+" : ""}${sc.season.avg} points a game.</p>` : "");
 }
 
+// ---------- power rankings
+function renderRankings(b) {
+  const p = b.power || {};
+  const teams = p.teams || [];
+  const sign = x => x == null ? "—" : `${x > 0 ? "+" : x < 0 ? "−" : ""}${Math.abs(x).toFixed(1)}`;
+  $("tab-rankings").innerHTML = `<h2>Power rankings</h2>
+    <p class="lede">Every team, best to worst, by the model's number for tonight: the players who are available
+    (out players removed, questionable players counted), plus how the team has played this season versus what its players
+    predicted. Rating is points per 100 possessions vs an average team, so two teams' gap is roughly the spread on a neutral court.
+    Updates every time the model runs${p.at ? ` · last ${esc(ago(p.at))}` : ""}.</p>` +
+    (teams.length ? `<div style="overflow-x:auto"><table class="lb"><thead><tr><th>#</th><th>Team</th><th>Rating</th>
+      <th class="hide-s">Players</th><th class="hide-s">Results so far</th><th class="hide-s">Market rank</th><th>Record</th><th class="hide-s">Carries them</th><th class="hide-s">Missing</th></tr></thead><tbody>` +
+      teams.map(t => `<tr><td class="n">${t.rank}</td><td><b>${esc(t.team)}</b>${t.blind ? ` <span class="chip Low" title="The model can't fully rate this team right now">blind spot</span>` : ""}</td>
+        <td class="n ${t.rating > 0 ? "pos" : t.rating < 0 ? "neg" : ""}"><b>${sign(t.rating)}</b></td>
+        <td class="n hide-s">${sign(t.players)}</td>
+        <td class="n hide-s" title="${t.results_games ? `${Math.abs(t.results_miss)} pts/game ${t.results_miss >= 0 ? "better" : "worse"} than its players predicted over ${t.results_games} games` : "no games yet"}">${t.results_games ? `${sign(t.results_adj)} <span class="muted">(${t.results_games} g)</span>` : "—"}</td>
+        <td class="n hide-s">${t.market_rank ?? "—"}</td>
+        <td class="n">${esc(t.record || "0-0")}</td>
+        <td class="hide-s muted" style="font-size:14px">${(t.best || []).map(x => `${esc(x.name)} ${sign(x.impact)}`).join(", ")}</td>
+        <td class="hide-s muted" style="font-size:14px">${[...(t.out || []).map(n => esc(n) + " (out)"), ...(t.questionable || []).map(n => esc(n) + " (?)")].join(", ") || ""}</td></tr>`).join("") +
+      `</tbody></table></div>` : `<p class="muted">Rankings appear after the next model run.</p>`);
+}
+
 function render(b) {
   // keep whatever the viewer opened across the once-a-minute refresh
   const openNow = [...document.querySelectorAll("main details")].map((el, i) => el.open ? i : -1).filter(i => i >= 0);
@@ -571,6 +596,7 @@ function render(b) {
   renderHead(b, placed);
   renderBets(placed, b);
   renderCard(b, placed);
+  renderRankings(b);
   renderResults(b);
   renderSystems(b);
   renderLab(b);

@@ -163,7 +163,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         log.append(f"Box score step failed: {e}")
 
     # ---- 2b. personnel read (current rosters x each player's own last two seasons + this season)
-    views, reads, stress, cal = {}, {}, {}, None
+    views, reads, stress, cal, ranks = {}, {}, {}, None, {}
     if personnel_fetch == "default":
         def personnel_fetch():
             from . import injury_report
@@ -367,6 +367,18 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
                         orders=orders, games=stored, bench_cfg=bench_cfg, exclude_cfg=exclude_cfg)
     board["scoring"] = scoring
+    if reads:
+        try:
+            rec = {}
+            for g in finals:
+                if g.game_date >= season_start and g.home_score is not None:
+                    hw = g.home_score > g.away_score
+                    for t, won in ((g.home, hw), (g.away, not hw)):
+                        r = rec.setdefault(t, [0, 0]); r[0 if won else 1] += 1
+            board["power"] = {"at": now.isoformat(),
+                              "teams": personnel_mod.power_rankings(reads, ranks, {t: f"{w}-{l}" for t, (w, l) in rec.items()})}
+        except Exception as e:
+            log.append(f"power rankings: {e}")
     if reads:
         audit = personnel_mod.roster_audit(reads)
         board["roster_audit"] = audit
