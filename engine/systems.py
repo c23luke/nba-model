@@ -80,6 +80,11 @@ TEST_SYSTEMS.update({
           "rule": "After the All-Star break, favorite by 10+, home team on its 4th game in 6 nights → over. 149-86 (63.4%)"},
     124: {"win_est": 0.595, "name": "Fade the OT winner on 4 games in 6 nights", "bet": "spread", "idea": "fatigue",
           "rule": "Team won its last game in overtime and is on its 4th game in 6 nights → bet against. 69-31 (69.0%)"},
+    # engine/measure_moneyball.py (2026-10-27): last 21 days, teams at .350 or worse after 40+ games
+    # covered 164-212 (43.6%) over 6 seasons vs the close; fading them won 4 of 6 seasons.
+    125: {"win_est": 0.532, "name": "Fade the tanker, last 3 weeks", "bet": "spread", "idea": "late season",
+          "rule": "Last 3 weeks of the season, opponent is .350 or worse after 40+ games (and we aren't) → bet us. "
+                  "6 seasons: 212-164 (56.4%) vs the close"},
 })
 
 # Conservative expected win rates (halfway to 50% from the two-season replay) for the card/alerts
@@ -89,7 +94,7 @@ TEST_SYSTEMS[112]["win_est"] = 0.525      # T12: 86-70 (55.1%)
 # FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
 #   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
 # T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
-FAVORITES = {102, 112, 113, 121, 122, 123, 124}
+FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
@@ -458,6 +463,11 @@ def evaluate_mined(game: Game, home: TeamState, away: TeamState, home_spread: fl
     for team, t, o, spread, o4 in ((game.home, home, away, home_spread, ctx.get("away_4in6")),
                                    (game.away, away, home, None if home_spread is None else -home_spread,
                                     ctx.get("home_4in6"))):
+        if ctx.get("last21") and o.games >= 40 and o.win_pct is not None and o.win_pct <= 0.35 \
+                and not (t.games >= 40 and t.win_pct is not None and t.win_pct <= 0.35):
+            picks.append(Pick(125, game.id, "spread", team, spread, [
+                "Last 3 weeks of the regular season", f"{o.team} is {o.wins}-{o.losses} ({o.win_pct:.3f}): tanking range",
+                "6 seasons: teams at .350 or worse covered 164-212 in the last 3 weeks"]))
         if o4 and o.last_won and o.last_ot:
             picks.append(Pick(124, game.id, "spread", team, spread, [
                 f"{o.team} won last game in overtime: {o.last_game.score_line()}",

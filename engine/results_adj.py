@@ -25,6 +25,10 @@ from . import personnel as P
 
 K = 5
 WEIGHT = 1.0
+# Opponents' three-point shooting is mostly luck, so it's taken out of each game's miss before it counts.
+# MEASURED (engine/measure_moneyball.py, chosen on 2024-25, tested on 2025-26): 3+ gaps 175-133 (56.8%)
+# vs 148-119 (55.4%) without it; both seasons 347-275 (55.8%) vs 304-253 (54.6%).
+REMOVE_OPP_3PT_LUCK = True
 
 
 def _prior(last: dict) -> dict:
@@ -75,8 +79,10 @@ def team_results(box_rows: list[dict], finals, last: dict) -> dict[str, dict]:
     by_day = defaultdict(list)
     for g in games:
         by_day[g.game_date].append(g)
+    m3 = a3 = 0
     for day in sorted(by_day):
         live = boxscore.season_impact(hist) if hist else {}
+        p3 = m3 / a3 if a3 else 0.36
         todays = []
         for g in by_day[day]:
             rows = by_game[str(g.id)]
@@ -89,10 +95,22 @@ def team_results(box_rows: list[dict], finals, last: dict) -> dict[str, dict]:
             pred = (_rating(ppl[g.home], prior, live) - _rating(ppl[g.away], prior, live)
                     + P.HOME_COURT - P.B2B * hb + P.B2B * ab)
             e = (g.home_score - g.away_score) - pred
-            todays.append((g, e))
-        for g, e in todays:
-            res[g.home].append(e)
-            res[g.away].append(-e)
+            sh = defaultdict(lambda: [0, 0])
+            for r in rows:
+                sh[r["team"]][0] += r.get("fg3m") or 0
+                sh[r["team"]][1] += r.get("fg3a") or 0
+            luck_h = 3 * (sh[g.home][0] - sh[g.home][1] * p3)       # home shot this many pts above the league rate
+            luck_a = 3 * (sh[g.away][0] - sh[g.away][1] * p3)
+            todays.append((g, e, luck_h, luck_a, sh))
+        for g, e, luck_h, luck_a, sh in todays:
+            eh, ea = e, -e
+            if REMOVE_OPP_3PT_LUCK:
+                eh += luck_a          # opponents' hot/cold shooting isn't the defense's doing
+                ea += luck_h
+            res[g.home].append(eh)
+            res[g.away].append(ea)
+            for x in sh.values():
+                m3 += x[0]; a3 += x[1]
             last_day[g.home] = last_day[g.away] = day
             hist += by_game[str(g.id)]
     return {t: {"games": len(v), "miss": round(sum(v) / len(v), 1),

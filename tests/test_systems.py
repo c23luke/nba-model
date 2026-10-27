@@ -178,3 +178,15 @@ def test_real_system1_gsw_oct_24():
     picks = evaluate(game, team_state(game.home, gs, game.game_date),
                      team_state(game.away, gs, game.game_date), None, None)
     assert [(p.system, p.side) for p in picks] == [(1, "POR")]
+
+
+def test_t25_fades_a_tanker_in_the_last_three_weeks():
+    from engine.state import Game, TeamState
+    from engine.systems import evaluate_mined
+    g = Game("g", __import__("datetime").date(2027, 4, 1), "WAS", "BOS", tip_utc=None)
+    good, tank = TeamState("BOS", wins=50, losses=20), TeamState("WAS", wins=15, losses=55)
+    picks = evaluate_mined(g, good, tank, -12.0, None, {"last21": True})
+    assert [(p.system, p.side, p.line) for p in picks if p.system == 125] == [(125, "BOS", -12.0)]
+    assert not [p for p in evaluate_mined(g, good, tank, -12.0, None, {"last21": False}) if p.system == 125]
+    both = evaluate_mined(g, TeamState("BOS", wins=20, losses=50), tank, -2.0, None, {"last21": True})
+    assert not [p for p in both if p.system == 125]          # two tankers: no bet
