@@ -1,0 +1,76 @@
+2024-25: 1231 games replayed, lines cached
+2025-26: 1231 games replayed, lines cached
+
+=== 2024-25
+  none (players only)                3+: 172-164 (51%) vs open | CLV +0.39 pts, moved our way 170 / against 115 | vs close 169-165
+                                         first 30 days 3+: 19-13 (59%) vs open | CLV +0.83 pts, moved our way 20 / against 7 | vs close 19-14
+                                         bottom-10 team: 76-90 (46%) vs open | CLV +0.13 pts, moved our way 76 / against 66 | vs close 74-89 | other teams: 96-74 (56%) vs open | CLV +0.63 pts, moved our way 94 / against 49 | vs close 95-76
+                                         result beats open by -0.145/pt of gap (t -1.1); market moves toward us +0.101/pt (t 4.3); 1008 games
+  LIVE: K=5                          3+: 156-134 (54%) vs open | CLV +0.57 pts, moved our way 151 / against 101 | vs close 150-139
+                                         first 30 days 3+: 39-22 (64%) vs open | CLV +0.78 pts, moved our way 31 / against 19 | vs close 38-23
+                                         bottom-10 team: 91-79 (54%) vs open | CLV +0.33 pts, moved our way 81 / against 65 | vs close 87-81 | other teams: 65-55 (54%) vs open | CLV +0.92 pts, moved our way 70 / against 36 | vs close 63-58
+                                         result beats open by +0.240/pt of gap (t 1.7); market moves toward us +0.109/pt (t 4.2); 1008 games
+  K=3                                3+: 166-140 (54%) vs open | CLV +0.55 pts, moved our way 158 / against 105 | vs close 159-145
+                                         first 30 days 3+: 44-23 (66%) vs open | CLV +0.74 pts, moved our way 33 / against 20 | vs close 43-24
+                                         bottom-10 team: 97-80 (55%) vs open | CLV +0.32 pts, moved our way 84 / against 67 | vs close 92-82 | other teams: 69-60 (53%) vs open | CLV +0.87 pts, moved our way 74 / against 38 | vs close 67-63
+                                         result beats open by +0.236/pt of gap (t 1.7); market moves toward us +0.098/pt (t 4.0); 1008 games
+  K=7                                3+: 145-121 (55%) vs open | CLV +0.67 pts, moved our way 143 / against 86 | vs close 139-126
+                                         first 30 days 3+: 32-16 (67%) vs open | CLV +1.01 pts, moved our way 25 / against 13 | vs close 31-17
+                                         bottom-10 team: 81-70 (54%) vs open | CLV +0.43 pts, moved our way 76 / against 54 | vs close 77-73 | other teams: 64-51 (56%) vs open | CLV +0.99 pts, moved our way 67 / against 32 | vs close 62-53
+                                         result beats open by +0.241/pt of gap (t 1.6); market moves toward us +0.119/pt (t 4.5); 1008 games
+  K=5, last 10 games x2              3+: 153-135 (53%) vs open | CLV +0.66 pts, moved our way 153 / against 95 | vs close 146-141
+                                         first 30 days 3+: 39-20 (66%) vs open | CLV +0.78 pts, moved our way 30 / against 18 | vs close 38-21
+                                         bottom-10 team: 85-77 (52%) vs open | CLV +0.40 pts, moved our way 77 / against 61 | vs close 81-80 | other teams: 68-58 (54%) vs open | CLV +0.99 pts, moved our way 76 / against 34 | vs close 65-61
+                                         result beats open by +0.217/pt of gap (t 1.5); market moves toward us +0.115/pt (t 4.4); 1008 games
+  K=5, fade half-life 30 g           3+: 163-132 (55%) vs open | CLV +0.61 pts, moved our way 160 / against 97 | vs close 157-138
+                                         first 30 days 3+: 41-21 (66%) vs open | CLV +0.80 pts, moved our way 32 / against 18 | vs close 40-22
+                                         bottom-10 team: 90-75 (55%) vs open | CLV +0.41 pts, moved our way 81 / against 63 | vs close 86-78 | other teams: 73-57 (56%) vs open | CLV +0.86 pts, moved our way 79 / against 34 | vs close 71-60
+                                         result beats open by +0.233/pt of gap (t 1.6); market moves toward us +0.118/pt (t 4.5); 1008 games
+  K=5, fade half-life 15 g           3+: 162-135 (55%) vs open | CLV +0.51 pts, moved our way 152 / against 104 | vs close 158-139
+                                         first 30 days 3+: 39-22 (64%) vs open | CLV +0.84 pts, moved our way 32 / against 16 | vs close 38-23
+                                         bottom-10 team: 88-76 (54%) vs open | CLV +0.42 pts, moved our way 78 / against 63 | vs close 85-78 | other teams: 74-59 (56%) vs open | CLV +0.63 pts, moved our way 74 / against 41 | vs close 73-61
+                                         result beats open by +0.206/pt of gap (t 1.5); market moves toward us +0.115/pt (t 4.5); 1008 games
+
+=== 2025-26
+  none (players only)                3+: 167-165 (50%) vs open | CLV +0.58 pts, moved our way 166 / against 104 | vs close 165-167
+                                         first 30 days 3+: 20-22 (48%) vs open | CLV +1.21 pts, moved our way 23 / against 9 | vs close 18-22
+                                         bottom-10 team: 73-81 (47%) vs open | CLV +0.46 pts, moved our way 74 / against 50 | vs close 73-80 | other teams: 94-84 (53%) vs open | CLV +0.68 pts, moved our way 92 / against 54 | vs close 92-87
+                                         result beats open by +0.134/pt of gap (t 1.0); market moves toward us +0.123/pt (t 5.0); 1030 games
+  LIVE: K=5                          3+: 148-119 (55%) vs open | CLV +0.78 pts, moved our way 151 / against 67 | vs close 142-123
+                                         first 30 days 3+: 35-24 (59%) vs open | CLV +1.02 pts, moved our way 33 / against 14 | vs close 34-24
+                                         bottom-10 team: 72-68 (51%) vs open | CLV +0.47 pts, moved our way 68 / against 41 | vs close 71-69 | other teams: 76-51 (60%) vs open | CLV +1.12 pts, moved our way 83 / against 26 | vs close 71-54
+                                         result beats open by +0.384/pt of gap (t 2.5); market moves toward us +0.178/pt (t 6.1); 1030 games
+  K=3                                3+: 157-126 (55%) vs open | CLV +0.72 pts, moved our way 152 / against 79 | vs close 152-130
+                                         first 30 days 3+: 37-28 (57%) vs open | CLV +0.92 pts, moved our way 33 / against 18 | vs close 37-28
+                                         bottom-10 team: 76-70 (52%) vs open | CLV +0.41 pts, moved our way 68 / against 47 | vs close 76-71 | other teams: 81-56 (59%) vs open | CLV +1.04 pts, moved our way 84 / against 32 | vs close 76-59
+                                         result beats open by +0.373/pt of gap (t 2.5); market moves toward us +0.165/pt (t 5.8); 1030 games
+  K=7                                3+: 143-115 (55%) vs open | CLV +0.81 pts, moved our way 146 / against 65 | vs close 138-119
+                                         first 30 days 3+: 34-22 (61%) vs open | CLV +1.11 pts, moved our way 32 / against 13 | vs close 33-22
+                                         bottom-10 team: 69-66 (51%) vs open | CLV +0.50 pts, moved our way 66 / against 39 | vs close 68-67 | other teams: 74-49 (60%) vs open | CLV +1.15 pts, moved our way 80 / against 26 | vs close 70-52
+                                         result beats open by +0.392/pt of gap (t 2.5); market moves toward us +0.187/pt (t 6.3); 1030 games
+  K=5, last 10 games x2              3+: 158-123 (56%) vs open | CLV +0.78 pts, moved our way 154 / against 74 | vs close 152-127
+                                         first 30 days 3+: 34-24 (59%) vs open | CLV +1.01 pts, moved our way 32 / against 14 | vs close 33-24
+                                         bottom-10 team: 84-70 (55%) vs open | CLV +0.54 pts, moved our way 75 / against 44 | vs close 82-71 | other teams: 74-53 (58%) vs open | CLV +1.06 pts, moved our way 79 / against 30 | vs close 70-56
+                                         result beats open by +0.425/pt of gap (t 2.8); market moves toward us +0.169/pt (t 5.9); 1030 games
+  K=5, fade half-life 30 g           3+: 153-118 (56%) vs open | CLV +0.89 pts, moved our way 149 / against 73 | vs close 144-125
+                                         first 30 days 3+: 35-23 (60%) vs open | CLV +1.06 pts, moved our way 33 / against 13 | vs close 34-23
+                                         bottom-10 team: 79-67 (54%) vs open | CLV +0.64 pts, moved our way 70 / against 46 | vs close 76-69 | other teams: 74-51 (59%) vs open | CLV +1.18 pts, moved our way 79 / against 27 | vs close 68-56
+                                         result beats open by +0.396/pt of gap (t 2.6); market moves toward us +0.174/pt (t 6.0); 1030 games
+  K=5, fade half-life 15 g           3+: 160-134 (54%) vs open | CLV +0.72 pts, moved our way 153 / against 85 | vs close 153-140
+                                         first 30 days 3+: 37-26 (59%) vs open | CLV +0.94 pts, moved our way 34 / against 15 | vs close 36-26
+                                         bottom-10 team: 87-75 (54%) vs open | CLV +0.49 pts, moved our way 73 / against 52 | vs close 85-77 | other teams: 73-59 (55%) vs open | CLV +1.00 pts, moved our way 80 / against 33 | vs close 68-63
+                                         result beats open by +0.360/pt of gap (t 2.5); market moves toward us +0.153/pt (t 5.5); 1030 games
+
+=== CHOSEN ON 2024-25: K=7 (info +0.241/pt; live K=5 +0.240)
+    2025-26 none (players only)          3+ 167-165 (50%) vs open | CLV +0.58 pts, moved our way 166 / against 104 | vs close 165-167; info +0.134/pt (t 1.0)
+    2025-26 LIVE: K=5                    3+ 148-119 (55%) vs open | CLV +0.78 pts, moved our way 151 / against 67 | vs close 142-123; info +0.384/pt (t 2.5)
+    2025-26 K=7                          3+ 143-115 (55%) vs open | CLV +0.81 pts, moved our way 146 / against 65 | vs close 138-119; info +0.392/pt (t 2.5)
+
+=== BOTH SEASONS, every variant (3+ vs open)
+    none (players only)          339-329 (50.7%)
+    LIVE: K=5                    304-253 (54.6%)
+    K=3                          323-266 (54.8%)
+    K=7                          288-236 (55.0%)
+    K=5, last 10 games x2        311-258 (54.7%)
+    K=5, fade half-life 30 g     316-250 (55.8%)
+    K=5, fade half-life 15 g     322-269 (54.5%)
