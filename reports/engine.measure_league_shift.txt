@@ -1,0 +1,63 @@
+
+=== 2020-21: 1039 games with a closing total (cached); whole-season actual − close +0.26
+    E8-style fixed over, first 30 days: 100-106 (48.5%, -16.6u)
+    follow direction, |miss| ≥ 1 after 30 games → 72-76 (48.6%, -11.6u)   [days 0-30: 60-66 (47.6%, -12.6u) | days 31-71: 12-10 (54.5%, +1.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 30 games → 16-18 (47.1%, -3.8u)   [days 0-30: 16-18 (47.1%, -3.8u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 0-0 (0.0%, +0.0u)   [days 0-30: 0-0 (0.0%, +0.0u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 68-70 (49.3%, -9.0u)   [days 0-30: 56-60 (48.3%, -10.0u) | days 31-71: 12-10 (54.5%, +1.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 60 games → 16-18 (47.1%, -3.8u)   [days 0-30: 16-18 (47.1%, -3.8u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 0-0 (0.0%, +0.0u)   [days 0-30: 0-0 (0.0%, +0.0u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+
+=== 2021-22: 1183 games with a closing total (cached); whole-season actual − close +0.39
+    E8-style fixed over, first 30 days: 85-136 (38.5%, -64.6u)
+    follow direction, |miss| ≥ 1 after 30 games → 203-175 (53.7%, +10.5u)   [days 0-30: 118-71 (62.4%, +39.9u) | days 31-71: 85-104 (45.0%, -29.4u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 30 games → 151-128 (54.1%, +10.2u)   [days 0-30: 118-71 (62.4%, +39.9u) | days 31-71: 33-57 (36.7%, -29.7u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 136-103 (56.9%, +22.7u)   [days 0-30: 118-71 (62.4%, +39.9u) | days 31-71: 18-32 (36.0%, -17.2u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 186-164 (53.1%, +5.6u)   [days 0-30: 101-60 (62.7%, +35.0u) | days 31-71: 85-104 (45.0%, -29.4u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 60 games → 134-117 (53.4%, +5.3u)   [days 0-30: 101-60 (62.7%, +35.0u) | days 31-71: 33-57 (36.7%, -29.7u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 119-92 (56.4%, +17.8u)   [days 0-30: 101-60 (62.7%, +35.0u) | days 31-71: 18-32 (36.0%, -17.2u) | days 72+: 0-0 (0.0%, +0.0u)]
+
+=== 2022-23: 1184 games with a closing total (cached); whole-season actual − close +1.07
+    E8-style fixed over, first 30 days: 107-109 (49.5%, -12.9u)
+    follow direction, |miss| ≥ 1 after 30 games → 335-368 (47.7%, -69.8u)   [days 0-30: 50-51 (49.5%, -6.1u) | days 31-71: 53-46 (53.5%, +2.4u) | days 72+: 232-271 (46.1%, -66.1u)]
+    follow direction, |miss| ≥ 2 after 30 games → 33-31 (51.6%, -1.1u)   [days 0-30: 33-31 (51.6%, -1.1u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 7-8 (46.7%, -1.8u)   [days 0-30: 7-8 (46.7%, -1.8u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 323-352 (47.9%, -64.2u)   [days 0-30: 38-35 (52.1%, -0.5u) | days 31-71: 53-46 (53.5%, +2.4u) | days 72+: 232-271 (46.1%, -66.1u)]
+    follow direction, |miss| ≥ 2 after 60 games → 21-15 (58.3%, +4.5u)   [days 0-30: 21-15 (58.3%, +4.5u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 5-2 (71.4%, +2.8u)   [days 0-30: 5-2 (71.4%, +2.8u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+
+=== 2023-24: 1190 games with a closing total (cached); whole-season actual − close +0.40
+    E8-style fixed over, first 30 days: 119-94 (55.9%, +15.6u)
+    follow direction, |miss| ≥ 1 after 30 games → 314-324 (49.2%, -42.4u)   [days 0-30: 80-68 (54.1%, +5.2u) | days 31-71: 149-131 (53.2%, +4.9u) | days 72+: 85-125 (40.5%, -52.5u)]
+    follow direction, |miss| ≥ 2 after 30 games → 106-108 (49.5%, -12.8u)   [days 0-30: 20-24 (45.5%, -6.4u) | days 31-71: 86-84 (50.6%, -6.4u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 7-9 (43.8%, -2.9u)   [days 0-30: 7-9 (43.8%, -2.9u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 299-308 (49.3%, -39.8u)   [days 0-30: 65-52 (55.6%, +7.8u) | days 31-71: 149-131 (53.2%, +4.9u) | days 72+: 85-125 (40.5%, -52.5u)]
+    follow direction, |miss| ≥ 2 after 60 games → 91-92 (49.7%, -10.2u)   [days 0-30: 5-8 (38.5%, -3.8u) | days 31-71: 86-84 (50.6%, -6.4u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 0-0 (0.0%, +0.0u)   [days 0-30: 0-0 (0.0%, +0.0u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+
+=== 2024-25: 1186 games with a closing total (cached); whole-season actual − close +0.98
+    E8-style fixed over, first 30 days: 122-102 (54.5%, +9.8u)
+    follow direction, |miss| ≥ 1 after 30 games → 110-101 (52.1%, -1.1u)   [days 0-30: 100-88 (53.2%, +3.2u) | days 31-71: 10-13 (43.5%, -4.3u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 30 games → 32-39 (45.1%, -10.9u)   [days 0-30: 32-39 (45.1%, -10.9u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 0-0 (0.0%, +0.0u)   [days 0-30: 0-0 (0.0%, +0.0u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 95-86 (52.5%, +0.4u)   [days 0-30: 85-73 (53.8%, +4.7u) | days 31-71: 10-13 (43.5%, -4.3u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 60 games → 20-25 (44.4%, -7.5u)   [days 0-30: 20-25 (44.4%, -7.5u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 0-0 (0.0%, +0.0u)   [days 0-30: 0-0 (0.0%, +0.0u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+
+=== 2025-26: 1194 games with a closing total (cached); whole-season actual − close +0.56
+    E8-style fixed over, first 30 days: 122-102 (54.5%, +9.8u)
+    follow direction, |miss| ≥ 1 after 30 games → 170-182 (48.3%, -30.2u)   [days 0-30: 99-92 (51.8%, -2.2u) | days 31-71: 71-90 (44.1%, -28.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 30 games → 63-71 (47.0%, -15.1u)   [days 0-30: 63-71 (47.0%, -15.1u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 34-35 (49.3%, -4.5u)   [days 0-30: 34-35 (49.3%, -4.5u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 151-167 (47.5%, -32.7u)   [days 0-30: 80-77 (51.0%, -4.7u) | days 31-71: 71-90 (44.1%, -28.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 2 after 60 games → 44-56 (44.0%, -17.6u)   [days 0-30: 44-56 (44.0%, -17.6u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 15-20 (42.9%, -7.0u)   [days 0-30: 15-20 (42.9%, -7.0u) | days 31-71: 0-0 (0.0%, +0.0u) | days 72+: 0-0 (0.0%, +0.0u)]
+
+=== SIX SEASONS
+    E8-style fixed over, first 30 days: 655-649 (50.2%, -58.9u)
+    follow direction, |miss| ≥ 1 after 30 games → 1204-1226 (49.5%, -144.6u)   [days 0-30: 507-436 (53.8%, +27.4u) | days 31-71: 380-394 (49.1%, -53.4u) | days 72+: 317-396 (44.5%, -118.6u)]
+    follow direction, |miss| ≥ 2 after 30 games → 401-395 (50.4%, -33.5u)   [days 0-30: 282-254 (52.6%, +2.6u) | days 31-71: 119-141 (45.8%, -36.1u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 30 games → 184-155 (54.3%, +13.5u)   [days 0-30: 166-123 (57.4%, +30.7u) | days 31-71: 18-32 (36.0%, -17.2u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 1 after 60 games → 1122-1147 (49.4%, -139.7u)   [days 0-30: 425-357 (54.3%, +32.3u) | days 31-71: 380-394 (49.1%, -53.4u) | days 72+: 317-396 (44.5%, -118.6u)]
+    follow direction, |miss| ≥ 2 after 60 games → 326-323 (50.2%, -29.3u)   [days 0-30: 207-182 (53.2%, +6.8u) | days 31-71: 119-141 (45.8%, -36.1u) | days 72+: 0-0 (0.0%, +0.0u)]
+    follow direction, |miss| ≥ 3 after 60 games → 139-114 (54.9%, +13.6u)   [days 0-30: 121-82 (59.6%, +30.8u) | days 31-71: 18-32 (36.0%, -17.2u) | days 72+: 0-0 (0.0%, +0.0u)]
