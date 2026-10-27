@@ -117,6 +117,7 @@ def team_flags(hist, team, day, game, opp):
     f["under3"] = len(ovs) >= 3 and not any(ovs[-3:])
     n = len(h)
     wp = sum(x["won"] for x in h) / n if n else None
+    f["tank35"] = n >= 40 and wp <= 0.35          # T25's tanking range
     f["good_rec"] = n >= 10 and wp >= 0.6
     f["bad_rec"] = n >= 10 and wp <= 0.4
     f["home_last"] = bool(last and last["home"])
@@ -153,7 +154,10 @@ def build(season, games, lines, start, end=None):
         by_day[g.game_date].append(g)
     allstar = date.fromisoformat(ALL_STAR[season])
     end = end or max(by_day)
+    seen_tot: list[float] = []
     for day in sorted(by_day):
+        avg_sofar = sum(seen_tot) / len(seen_tot) if len(seen_tot) >= 30 else None
+        q1_sofar = sorted(seen_tot)[len(seen_tot) // 4] if len(seen_tot) >= 30 else None
         stage = {"first14": (day - start).days < 14, "first30": (day - start).days < 30,
                  "nov_dec": 14 <= (day - start).days and day < date(start.year + 1, 1, 1),
                  "pre_jan": day < date(start.year + 1, 1, 1), "jan_asb": date(start.year + 1, 1, 1) <= day < allstar,
@@ -175,6 +179,7 @@ def build(season, games, lines, start, end=None):
                                 "G:line0-3": abs(line) <= 3, "G:line3-7": 3 < abs(line) <= 7,
                                 "G:line7-10": 7 < abs(line) <= 10, "G:line10+": abs(line) > 10})
                     row.update({f"G:{k}": v for k, v in stage.items()})
+                    row.update({"_key": f"{day.isoformat()}|{g.away}|{g.home}", "_home": is_home, "_margin": margin})
                     spread_rows.append((row, res > 0, season))
             if tot is not None:
                 pts = g.home_score + g.away_score
@@ -183,12 +188,18 @@ def build(season, games, lines, start, end=None):
                     row.update({f"A:{k}": v for k, v in fa.items()})
                     row.update({"G:tot_low": tot <= lo_t, "G:tot_high": tot >= hi_t,
                                 "G:close_game": hs is not None and abs(hs) <= 3,
-                                "G:mismatch": hs is not None and abs(hs) >= 10})
+                                "G:mismatch": hs is not None and abs(hs) >= 10,
+                                # only games already played this season (the live model can't see the future)
+                                "G:tot_above_avg": avg_sofar is not None and tot > avg_sofar,
+                                "G:tot_low_sofar": q1_sofar is not None and tot <= q1_sofar,
+                                "_hs": hs, "_tot": tot, "_pts": pts, "_key": f"{day.isoformat()}|{g.away}|{g.home}"})
                     row.update({f"G:{k}": v for k, v in stage.items()})
                     total_rows.append((row, pts > tot, season))
         for g in by_day[day]:
             ln = lines.get(f"{day.isoformat()}|{g.away}|{g.home}") or {}
             hs, tot = ln.get("spread"), ln.get("total")
+            if tot is not None:
+                seen_tot.append(tot)
             m = g.home_score - g.away_score
             for team, opp, home, mg in ((g.home, g.away, True, m), (g.away, g.home, False, -m)):
                 cov = None if hs is None else ((mg + (hs if home else -hs)) > 0 if (mg + (hs if home else -hs)) != 0 else None)
@@ -200,7 +211,7 @@ def build(season, games, lines, start, end=None):
 
 # ------------------------------------------------------------------ search
 def search(rows, label, shuffle_seed=None, max_k=3):
-    names = sorted({k for r, _, _ in rows for k in r})
+    names = sorted({k for r, _, _ in rows for k in r if not k.startswith("_")})
     X = np.array([[bool(r.get(k)) for k in names] for r, _, _ in rows], dtype=bool)
     y = np.array([w for _, w, _ in rows], dtype=bool)
     seasons = list(SEASONS)
