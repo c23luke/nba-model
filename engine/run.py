@@ -678,21 +678,50 @@ def report_card() -> dict:
     return out
 
 
-# Caden 2026-10-27: "restart everything from today". Every record and dollar on the site starts here,
-# with today's rules (honest prices, -150 cap, T13 4+, MONEYBALL, no both-sides). Older picks and bets
-# stay in the database but count for nothing on the board.
+# Caden 2026-10-27: "restart everything from today" — for MONEY. The bets ledger starts here, with today's
+# rules (honest prices, -150 cap, T13 4+, MONEYBALL, no both-sides). Older bets stay in the database but
+# count for nothing on the board: we can't know what price today's rules would have got.
+# System TRACKING keeps the whole season, re-judged by today's rules (Caden: "as if we perfected
+# everything from the start"): T13 only at a 4+ gap, S4 only when the total was above that day's
+# season average. Tracking is graded at the pick's own number, so no price is needed.
 RESTART_UTC = "2026-10-27T18:45:00+00:00"
 
 
-def since_restart(picks, orders):
-    picks = [p for p in picks if (p.get("tip_utc") or "9999") >= RESTART_UTC]
+def s4_bars(games: dict | None) -> dict:
+    """date -> this season's average closing total over games finished before that date (30+), like live."""
+    rows = sorted((r for r in (games or {}).values() if r.get("final") and r.get("total") is not None),
+                  key=lambda r: str(r.get("game_date")))
+    out, tot, n = {}, 0.0, 0
+    dates = sorted({str(r.get("game_date")) for r in (games or {}).values() if r.get("game_date")})
+    i = 0
+    for d in dates:
+        while i < len(rows) and str(rows[i]["game_date"]) < d:
+            tot += float(rows[i]["total"]); n += 1; i += 1
+        out[d] = tot / n if n >= 30 else None
+    return out
+
+
+def counts_today(p: dict, bars: dict) -> bool:
+    if not _counts_now(p):
+        return False
+    if p["system"] == 4 and p.get("result"):
+        bar = _meta(p, "bar")
+        if bar is None:
+            bar = bars.get(str(p.get("game_date")))
+        return bar is not None and p.get("line") is not None and float(p["line"]) > bar
+    return True
+
+
+def since_restart(picks, orders, games=None):
+    bars = s4_bars(games)
+    picks = [p for p in picks if counts_today(p, bars)]
     orders = [o for o in orders if (o.get("created_at") or "") >= RESTART_UTC]
     return picks, orders
 
 
 def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None,
                 bench_cfg=None, exclude_cfg=None):
-    picks, orders = since_restart(picks, orders or [])
+    picks, orders = since_restart(picks, orders or [], games)
     ex = excluded_keys(exclude_cfg)
     out_picks = [p for p in picks if (str(p["game_id"]), p["side"]) in ex]
     picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks

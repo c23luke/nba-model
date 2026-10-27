@@ -6,185 +6,198 @@
 <title>Courtside</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* Courtside — arena at night. One loud thing per screen (the scoreboard, then the pick); everything else quiet. */
 :root {
-  --bg: #101B2F; --panel: #172640; --raised: #1E3052; --line: #2A3D5F; --text: #EDF2F8; --muted: #8E9DB5;
-  --amber: #F2A93B; --amber-ink: #1A1206; --win: #43C38A; --loss: #E5604F; --early: #7CC4F2;
-  --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Barlow", system-ui, sans-serif;
+  --floor: #0E1530; --deck: #151E40; --deck2: #1B2650; --line: #283466; --chalk: #EEF1FF; --haze: #8F98C4;
+  --leather: #FF7B29; --leather-ink: #1B0C02; --net: #6BE4FF; --win: #3DDC97; --loss: #FF5C7A;
+  --display: "Big Shoulders Display", "Arial Narrow", sans-serif; --body: "Figtree", system-ui, sans-serif;
+  --cond: var(--display);
   color-scheme: dark;
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #EEF2F7; --panel: #FFFFFF; --raised: #F5F7FB; --line: #D5DDE8; --text: #13203A; --muted: #5A6A84;
-    --amber: #B86E00; --amber-ink: #FFFFFF; --win: #16804F; --loss: #C2412F; --early: #1F6FA8; color-scheme: light;
-  }
-}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
+html { background: var(--floor); }
+body { margin: 0; background: radial-gradient(1200px 600px at 50% -200px, #1A2556 0%, var(--floor) 60%) no-repeat, var(--floor);
+  color: var(--chalk); font: 16px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
-.muted { color: var(--muted); }
-.n { font-family: var(--cond); font-variant-numeric: tabular-nums; }
-.W, .pos { color: var(--win); } .L, .neg { color: var(--loss); } .P { color: var(--muted); }
+:focus-visible { outline: 2px solid var(--net); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+.muted { color: var(--haze); }
+.n { font-family: var(--display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.W, .pos { color: var(--win); } .L, .neg { color: var(--loss); } .P { color: var(--haze); }
 
-/* header + tabs */
-header { padding: 18px 0 6px; }
-.head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.brand { font-family: var(--cond); font-weight: 700; font-size: 26px; letter-spacing: .01em; }
-.fresh { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.fresh i { width: 8px; height: 8px; border-radius: 50%; background: var(--win); display: inline-block; }
-.fresh.stale i { background: var(--loss); } .fresh.stale { color: var(--loss); }
-.status { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+/* header */
+header { padding: 20px 0 8px; }
+.head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brand { font: 800 30px/1 var(--display); letter-spacing: .02em; display: flex; align-items: center; gap: 10px; }
+.brand::before { content: ""; width: 22px; height: 22px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #FFA15E, var(--leather) 55%, #C4510E);
+  box-shadow: inset 0 0 0 1.5px rgba(27,12,2,.55), 0 0 18px rgba(255,123,41,.45); }
+.fresh { font-size: 13px; color: var(--haze); display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.fresh i { width: 8px; height: 8px; border-radius: 50%; background: var(--win); box-shadow: 0 0 10px var(--win); display: inline-block; }
+.fresh.stale i { background: var(--loss); box-shadow: 0 0 10px var(--loss); } .fresh.stale { color: var(--loss); }
+.status { margin: 8px 0 0; color: var(--haze); font-size: 15px; }
 .warn { color: var(--loss); font-size: 14px; margin-top: 4px; }
-nav { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+
+/* tabs */
+nav { position: sticky; top: 0; z-index: 5; background: rgba(14,21,48,.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 .tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.tabs button { font: 600 17px var(--cond); letter-spacing: .02em; color: var(--muted); background: none; border: 0;
-  padding: 12px 14px 10px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
-.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--amber); }
-@media (max-width: 480px) { .tabs { gap: 0; justify-content: space-between; } .tabs button .long { display: none; }
-  .tabs button { padding: 12px 6px 10px; font-size: 16px; text-transform: capitalize; } .tabs button .c { margin-left: 3px; padding: 1px 6px; } }
-@media (max-width: 380px) { .tabs button { padding: 12px 3px 10px; font-size: 15px; } .tabs button .c { padding: 1px 5px; } }
-.tabs button .c { font-size: 13px; background: var(--raised); color: var(--text); border-radius: 9px; padding: 1px 7px; margin-left: 4px; }
-main.wrap { padding: 22px 16px 72px; }
+.tabs button { font: 700 18px var(--display); letter-spacing: .03em; color: var(--haze); background: none; border: 0;
+  padding: 13px 12px 11px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--chalk); border-bottom-color: var(--leather); }
+.tabs button .c { font: 700 13px var(--body); background: var(--leather); color: var(--leather-ink); border-radius: 9px; padding: 1px 7px; margin-left: 5px; vertical-align: 2px; }
+@media (max-width: 480px) { .tabs { justify-content: space-between; gap: 0; } .tabs button .long { display: none; }
+  .tabs button { padding: 12px 5px 10px; font-size: 17px; } .tabs button .c { margin-left: 3px; padding: 1px 6px; } }
+main.wrap { padding: 20px 16px 72px; }
 section[hidden] { display: none; }
-h2 { font: 600 24px/1.2 var(--cond); margin: 30px 0 4px; }
-h2:first-child { margin-top: 6px; }
-.lede { color: var(--muted); margin: 0 0 14px; font-size: 15px; max-width: 68ch; }
-.empty { background: var(--panel); border: 1px dashed var(--line); border-radius: 10px; padding: 18px; color: var(--muted); }
+h2 { font: 800 30px/1.1 var(--display); letter-spacing: .01em; margin: 36px 0 6px; }
+h2:first-child { margin-top: 8px; }
+.lede { color: var(--haze); margin: 0 0 16px; font-size: 15px; max-width: 64ch; }
+.empty { background: var(--deck); border: 1px dashed var(--line); border-radius: 14px; padding: 20px; color: var(--haze); }
 
-/* ledger: what's working for us right now */
-.ledger { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--panel); border-radius: 12px; overflow: hidden; }
-.ledger > div { padding: 14px 16px; border-right: 1px solid var(--line); }
-.ledger > div:last-child { border-right: 0; }
-.ledger .k { font-size: 13px; color: var(--muted); }
-.ledger .v { font: 600 28px/1.1 var(--cond); }
-.ledger .s { font-size: 13px; color: var(--muted); }
-@media (max-width: 680px) { .ledger { grid-template-columns: 1fr 1fr; } .ledger > div:nth-child(2) { border-right: 0; }
-  .ledger > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+/* the scoreboard: the one loud thing on the Bets tab */
+.board { position: relative; overflow: hidden; border-radius: 20px; padding: 22px 22px 18px;
+  background: linear-gradient(160deg, #1D2A5E 0%, #141C3E 70%); border: 1px solid #2E3B78;
+  box-shadow: 0 20px 50px -24px rgba(255,123,41,.35); }
+.board .court { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .22; }
+.board-main { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+.board .big { display: block; font: 800 72px/.9 var(--display); letter-spacing: .01em; }
+.board .lbl { display: block; color: var(--haze); font-size: 14px; margin-top: 6px; }
+.board .profit { text-align: right; }
+.board-row { position: relative; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(143,152,196,.25); font-size: 15px; color: var(--haze); }
+.board-row b { font: 700 20px var(--display); color: var(--chalk); margin-right: 4px; }
+@media (max-width: 520px) { .board .big { font-size: 56px; } .board { padding: 18px 16px 14px; } }
 
-/* the bet ticket: the one loud thing on the page */
-.ticket { display: grid; grid-template-columns: 132px 1fr; background: var(--panel); border-radius: 12px; margin: 12px 0; position: relative; }
-.stub { padding: 16px 14px; border-right: 2px dashed var(--line); display: flex; flex-direction: column; gap: 6px; position: relative; }
-.stub::before, .stub::after { content: ""; position: absolute; right: -9px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); }
-.stub::before { top: -8px; } .stub::after { bottom: -8px; }
-.venue { font: 700 20px/1 var(--cond); }
-.state { align-self: flex-start; font: 700 14px/1 var(--cond); letter-spacing: .03em; padding: 5px 8px 4px; border-radius: 5px; background: var(--raised); }
-.state.OPEN { background: var(--amber); color: var(--amber-ink); }
-.state.LIVE { background: var(--early); color: #0B1A2A; }
-.state.W { background: var(--win); color: #fff; } .state.L { background: var(--loss); color: #fff; }
-.stub .when { font-size: 13px; color: var(--muted); line-height: 1.35; }
-.stub .pl { font: 700 22px/1 var(--cond); margin-top: auto; }
-.body { padding: 14px 18px 12px; min-width: 0; }
-.hold { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-.hold b { font: 700 38px/1 var(--cond); letter-spacing: -.005em; }
-.hold span { color: var(--muted); font-size: 14px; }
-.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 10px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.figs div { font-size: 13px; color: var(--muted); }
-.figs strong { display: block; font: 600 23px/1.15 var(--cond); color: var(--text); }
-.why { font-size: 15px; margin: 0 0 10px; padding-left: 18px; }
-.why li { margin: 1px 0; }
+/* bet ticket */
+.ticket { background: var(--deck); border: 1px solid var(--line); border-radius: 18px; margin: 14px 0; padding: 16px 18px 12px; }
+.t-top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 14px; color: var(--haze); }
+.t-top .venue { font-weight: 600; color: var(--chalk); }
+.t-top .pl { margin-left: auto; font: 800 24px/1 var(--display); }
+.state { font: 700 13px/1 var(--body); padding: 5px 9px; border-radius: 999px; background: var(--deck2); color: var(--chalk); }
+.state.OPEN { background: rgba(255,123,41,.16); color: var(--leather); }
+.state.LIVE { background: rgba(107,228,255,.16); color: var(--net); }
+.state.W { background: rgba(61,220,151,.16); color: var(--win); } .state.L { background: rgba(255,92,122,.16); color: var(--loss); }
+.hold { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin: 8px 0 2px; }
+.hold b { font: 800 46px/1 var(--display); letter-spacing: .01em; }
+.hold span { color: var(--haze); font-size: 15px; }
+.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.figs div { font-size: 13px; color: var(--haze); background: var(--floor); border-radius: 12px; padding: 8px 10px; }
+.figs strong { display: block; font: 700 24px/1.1 var(--display); color: var(--chalk); }
+@media (max-width: 560px) { .figs { grid-template-columns: 1fr 1fr; } .hold b { font-size: 40px; } .ticket { padding: 14px 14px 10px; } }
+.mkt { font-size: 14px; color: var(--haze); margin: 0 0 8px; }
+.mkt b { color: var(--chalk); font-weight: 600; }
+.why-h { font-size: 17px; font-weight: 600; margin: 12px 0 2px; }
+.size-l { font-size: 14px; color: var(--haze); margin-bottom: 8px; }
+.size-l b { color: var(--chalk); }
+.why-t { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 4px; }
+.why-t th { text-align: left; font-weight: 500; color: var(--haze); font-size: 12px; padding: 4px 6px 6px; border-bottom: 1px solid var(--line); }
+.why-t td { padding: 7px 6px; border-bottom: 1px solid rgba(40,52,102,.6); vertical-align: top; }
+.why-t .r { text-align: right; white-space: nowrap; }
+.why-t td b { font: 700 17px var(--display); }
+.why-t td.good b { color: var(--win); } .why-t td.bad b { color: var(--loss); }
+.why-t tr.combo td { background: rgba(255,123,41,.08); }
+.why-t tr.combo td:first-child { box-shadow: inset 3px 0 0 var(--leather); }
+.why-note { font-size: 12px; color: var(--haze); margin-bottom: 4px; }
+@media (max-width: 560px) { .why-t { font-size: 13px; } .why-t .pc { display: block; font-size: 11px; } .why-t td, .why-t th { padding: 5px 3px; } }
+.why { font-size: 15px; margin: 6px 0 4px; padding-left: 18px; }
+.why li { margin: 2px 0; }
+details.more { margin-top: 6px; font-size: 14px; }
+details.more summary { cursor: pointer; color: var(--haze); padding: 4px 0; }
+details.more summary:hover { color: var(--chalk); }
+details.more dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 16px; margin: 6px 0 4px; }
+details.more dt { color: var(--haze); } details.more dd { margin: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.chip { font: 600 14px/1 var(--cond); padding: 5px 8px 4px; border-radius: 5px; border: 1.5px solid var(--line); color: var(--text); }
-.chip.sys { background: var(--raised); border-color: var(--raised); }
-.chip.High { border-color: var(--win); color: var(--win); } .chip.Medium { border-color: var(--amber); color: var(--amber); } .chip.Low { border-color: var(--loss); color: var(--loss); }
-.chip.stack { border-color: var(--win); color: var(--win); }
-.rec { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 14px; color: var(--muted); }
-.rec b { font: 600 19px var(--cond); color: var(--text); margin-right: 4px; }
-details.more { margin-top: 8px; font-size: 14px; }
-details.more summary { cursor: pointer; color: var(--muted); }
-details.more dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 16px; margin: 8px 0 2px; }
-details.more dt { color: var(--muted); } details.more dd { margin: 0; }
-@media (max-width: 600px) {
-  .ticket { grid-template-columns: 1fr; }
-  .stub { flex-direction: row; flex-wrap: wrap; align-items: center; border-right: 0; border-bottom: 2px dashed var(--line); padding: 12px 16px; gap: 6px 10px; }
-  .stub::before, .stub::after { top: auto; bottom: -9px; right: auto; }
-  .stub::before { left: -8px; } .stub::after { right: -8px; }
-  .stub .pl { margin: 0 0 0 auto; }
-  .figs { grid-template-columns: 1fr 1fr; }
-  .hold b { font-size: 32px; }
-}
+.chip { font: 600 13px/1 var(--body); padding: 5px 9px; border-radius: 999px; background: var(--deck2); color: var(--chalk); }
+.chip.Low { background: rgba(255,92,122,.16); color: var(--loss); } .chip.High { background: rgba(61,220,151,.16); color: var(--win); }
+.chip.Medium { background: rgba(255,123,41,.16); color: var(--leather); } .chip.stack { background: rgba(61,220,151,.16); color: var(--win); }
 
-/* card + results rows: quiet */
-.row { display: grid; grid-template-columns: 74px 1fr auto; gap: 4px 14px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: start; }
-.verdict { font: 700 15px/1 var(--cond); text-align: center; padding: 7px 0 6px; border-radius: 6px; border: 1.5px solid var(--line); color: var(--muted); }
-.verdict.BET, .verdict.W { background: var(--win); border-color: var(--win); color: #fff; }
-.verdict.LIMIT { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); }
-.verdict.L { background: var(--loss); border-color: var(--loss); color: #fff; }
-.verdict.BENCHED, .verdict.CONFLICT { border-style: dashed; font-size: 13px; }
-.row .pick { font: 700 24px/1.1 var(--cond); }
-.row .sub { font-size: 14px; color: var(--muted); }
-.row .px { text-align: right; font-size: 14px; color: var(--muted); white-space: nowrap; }
-.row .px b { display: block; font: 600 20px var(--cond); color: var(--text); }
-.row .placed { font-size: 14px; color: var(--win); font-weight: 600; margin-top: 4px; }
-.row .shop { grid-column: 2 / -1; font-size: 13px; color: var(--muted); }
+/* card + results rows */
+.row { display: grid; grid-template-columns: 76px 1fr auto; gap: 4px 16px; padding: 16px; margin: 10px 0; background: var(--deck); border: 1px solid var(--line); border-radius: 16px; align-items: start; }
+.verdict { font: 800 16px/1 var(--display); letter-spacing: .04em; text-align: center; padding: 8px 0 7px; border-radius: 10px; background: var(--deck2); color: var(--haze); }
+.verdict.BET, .verdict.W { background: var(--win); color: #062A1B; }
+.verdict.LIMIT { background: var(--leather); color: var(--leather-ink); }
+.verdict.L { background: var(--loss); color: #2A0610; }
+.verdict.BENCHED, .verdict.CONFLICT { font-size: 13px; background: none; border: 1.5px dashed var(--line); }
+.row .pick { font: 800 30px/1.05 var(--display); }
+.row .sub { font-size: 14px; color: var(--haze); }
+.row .px { text-align: right; font-size: 14px; color: var(--haze); white-space: nowrap; }
+.row .px b { display: block; font: 700 22px var(--display); color: var(--chalk); }
+.row .placed { font-size: 14px; color: var(--win); font-weight: 600; margin-top: 6px; }
+.row .shop { grid-column: 2 / -1; font-size: 13px; color: var(--haze); }
 .row .shop summary { cursor: pointer; }
 .shop table { margin-top: 6px; }
-@media (max-width: 600px) { .row { grid-template-columns: 64px 1fr; } .row .px { grid-column: 2; text-align: left; } .row .shop { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .row { grid-template-columns: 60px 1fr; padding: 14px 12px; } .row .px { grid-column: 2; text-align: left; } .row .shop { grid-column: 1 / -1; } }
 
 /* tables */
 table { width: 100%; border-collapse: collapse; font-size: 15px; }
-th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; padding: 8px; border-bottom: 1px solid var(--line); }
-td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { text-align: left; font-weight: 500; color: var(--haze); font-size: 13px; padding: 8px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px solid rgba(40,52,102,.6); vertical-align: top; }
 td.r, th.r { text-align: right; white-space: nowrap; }
-td .n { font-size: 18px; }
-.seg { display: inline-flex; background: var(--panel); border-radius: 8px; padding: 3px; gap: 2px; margin: 4px 0 12px; flex-wrap: wrap; }
-.seg button { font: 600 15px var(--cond); border: 0; background: none; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--raised); color: var(--text); }
-.badge { display: inline-block; font: 700 13px/1 var(--cond); padding: 3px 6px 2px; border-radius: 4px; margin-right: 6px; vertical-align: 2px; border: 1.5px solid var(--line); color: var(--muted); }
-.badge.OG { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); }
-.badge.FAV { border-color: var(--amber); color: var(--amber); }
-.badge.EARLY { border-color: var(--early); color: var(--early); }
+td .n { font-size: 19px; }
+.seg { display: inline-flex; background: var(--deck); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; margin: 6px 0 14px; flex-wrap: wrap; }
+.seg button { font: 600 14px var(--body); border: 0; background: none; color: var(--haze); padding: 7px 13px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--leather); color: var(--leather-ink); }
+.seg button[aria-pressed="true"] .muted { color: var(--leather-ink); opacity: .7; }
+.badge { display: inline-block; font: 600 12px/1 var(--body); padding: 4px 8px; border-radius: 999px; margin-right: 6px; vertical-align: 2px; background: var(--deck2); color: var(--haze); }
+.badge.OG, .badge.FAV { background: rgba(255,123,41,.16); color: var(--leather); }
+.badge.EARLY { background: rgba(107,228,255,.14); color: var(--net); }
+
+/* systems leaderboard */
+.sys { background: var(--deck); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.sys table td, .sys table th { padding-left: 14px; padding-right: 14px; }
+.sys .nm { font-weight: 600; }
+.sys .nm .tag { font: 800 18px var(--display); margin-right: 6px; }
+.sys .rule { font-size: 13px; color: var(--haze); margin-top: 2px; max-width: 46ch; }
+.dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--haze); margin-top: 4px; }
+.dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--haze); }
+.dot.on { color: var(--leather); } .dot.on::before { background: var(--leather); box-shadow: 0 0 8px var(--leather); }
+.dot.bench { color: var(--loss); } .dot.bench::before { background: var(--loss); }
+.sys td.good b { color: var(--win); } .sys td.bad b { color: var(--loss); }
+.sys td b { font: 700 18px var(--display); }
+@media (max-width: 600px) { .sys .hide-s, .lb .hide-s { display: none; } .sys .pc { display: block; font-size: 11px; } .sys table td, .sys table th { padding-left: 8px; padding-right: 8px; } }
 
 /* lab */
-.lab details.box { background: var(--panel); border-radius: 12px; padding: 4px 16px; margin: 10px 0; }
-.lab details.box > summary { cursor: pointer; font: 600 20px var(--cond); padding: 10px 0; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
-.lab details.box > summary::after { content: "+"; color: var(--muted); }
+.lab details.box { background: var(--deck); border: 1px solid var(--line); border-radius: 16px; padding: 4px 16px; margin: 10px 0; }
+.lab details.box > summary { cursor: pointer; font: 700 22px var(--display); padding: 10px 0; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+.lab details.box > summary::after { content: "+"; color: var(--haze); }
 .lab details.box[open] > summary::after { content: "−"; }
-.lab details.box > summary small { font: 400 14px var(--body); color: var(--muted); margin-left: auto; align-self: center; }
+.lab details.box > summary small { font: 400 14px var(--body); color: var(--haze); margin-left: auto; align-self: center; }
 .lab .inner { padding: 0 0 14px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-.grid2 h3 { font: 600 16px var(--cond); color: var(--muted); margin: 6px 0 4px; }
+.grid2 h3 { font: 700 18px var(--display); color: var(--haze); margin: 6px 0 4px; }
 .case { border-top: 1px solid var(--line); padding: 12px 0; }
-.case .pick { font: 700 24px var(--cond); }
-.case .cl { font-size: 14px; margin: 2px 0; } .case .cl.sub { padding-left: 14px; color: var(--muted); }
+.case .pick { font: 800 26px var(--display); }
+.case .cl { font-size: 14px; margin: 2px 0; } .case .cl.sub { padding-left: 14px; color: var(--haze); }
 .case details { margin-top: 4px; } .case summary { cursor: pointer; font-weight: 600; font-size: 15px; }
 .game { padding: 10px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
-.game .t { font: 600 20px var(--cond); }
-.foot { color: var(--muted); font-size: 13px; margin-top: 40px; }
+.game .t { font: 700 22px var(--display); }
+.foot { color: var(--haze); font-size: 13px; margin-top: 40px; }
 
-/* market line on a ticket, filters, chart, leaderboard */
-.mkt { font-size: 14px; color: var(--muted); margin: -2px 0 10px; }
-.mkt b { color: var(--text); font-weight: 600; }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0 2px; font-size: 14px; color: var(--muted); }
-.filters select { font: 500 15px var(--body); color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
-.chart { background: var(--panel); border-radius: 12px; padding: 14px 16px 10px; margin-top: 12px; }
-.chart .top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
-.chart .top b { font: 600 18px var(--cond); color: var(--text); }
+/* filters, chart, not placed, leaderboard bits */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0 2px; font-size: 14px; color: var(--haze); }
+.filters select { font: 500 15px var(--body); color: var(--chalk); background: var(--deck); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; }
+.chart { background: var(--deck); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px 10px; margin-top: 12px; }
+.chart .top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--haze); }
+.chart .top b { font: 700 20px var(--display); color: var(--chalk); }
 .chart svg { display: block; width: 100%; height: 170px; margin-top: 8px; overflow: visible; }
-.chart .key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); margin-top: 6px; }
+.chart .key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--haze); margin-top: 6px; }
 .chart .key i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: 3px; margin-right: 5px; }
-.np { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.np .pick { font: 700 20px var(--cond); }
-.np .reason { font-size: 14px; color: var(--muted); grid-column: 1 / -1; }
+.np { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.np .pick { font: 700 22px var(--display); }
+.np .reason { font-size: 14px; color: var(--haze); grid-column: 1 / -1; }
 .lb th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-.lb th button[aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.lb th button[aria-pressed="true"] { color: var(--chalk); font-weight: 600; }
 .spark { display: inline-flex; gap: 2px; vertical-align: middle; }
-.spark i { width: 7px; height: 14px; border-radius: 2px; background: var(--line); display: inline-block; }
+.spark i { width: 6px; height: 14px; border-radius: 2px; background: var(--line); display: inline-block; }
 .spark i.W { background: var(--win); } .spark i.L { background: var(--loss); }
-@media (max-width: 600px) { .lb .hide-s { display: none; } }
-@media (prefers-reduced-motion: no-preference) { .tabs button { transition: color .15s, border-color .15s; } }
-.why-h { font-weight: 600; margin: 10px 0 2px; }
-.size-l { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-.why-t { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 2px; }
-.why-t th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
-.why-t td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.why-t .r { text-align: right; white-space: nowrap; }
-.why-t td.good b { color: var(--win); } .why-t td.bad b { color: var(--loss, #d9534f); }
-.why-t tr.combo td { background: color-mix(in srgb, var(--amber) 10%, transparent); }
-.why-note { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-@media (max-width: 560px) { .why-t { font-size: 13px; } .why-t .pc { display: block; font-size: 11px; } .why-t td, .why-t th { padding: 4px 3px; } }
+.rec { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 14px; color: var(--haze); }
+@media (prefers-reduced-motion: no-preference) {
+  .board .big { animation: lift .6s cubic-bezier(.2,.7,.2,1) both; }
+  .board .profit .big { animation-delay: .08s; }
+  @keyframes lift { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .tabs button { transition: color .15s, border-color .15s; }
+}
 </style>
 </head>
 <body>
@@ -353,21 +366,16 @@ function ticket(x) {
   const price = x.venue === "kalshi" ? `${Math.round(x.price * 100)}¢ <span class="muted">${amer(x.american)}</span>` : amer(x.american);
   const card = x.card_pick && x.card_pick !== x.holding ? `card pick ${esc(x.card_pick)}` : "";
   const score = x.score && x.score.home != null ? `${esc(x.away)} ${x.score.away}, ${esc(x.home)} ${x.score.home}` : "";
-  const pl = x.status === "FINAL" ? `<div class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</div>` : "";
+  const pl = x.status === "FINAL" ? `<span class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</span>` : "";
+  const top = x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}, ${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc));
   return `<article class="ticket">
-    <div class="stub">
-      <div class="venue">${esc(x.venue_name)}</div>${x.manual ? `<div class="when">placed by hand</div>` : ""}
-      <div class="state ${stateCls}">${stateTxt}</div>
-      <div class="when">${x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}<br>${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc))}</div>
-      ${pl}
-    </div>
-    <div class="body">
-      <div class="hold"><b>${esc(x.holding)}</b><span>${esc(x.away)} @ ${esc(x.home)}${card ? " · " + card : ""}</span></div>
+      <div class="t-top"><span class="venue">${esc(x.venue_name)}</span><span class="state ${stateCls}">${stateTxt}</span><span>${top}</span>${pl}</div>
+      <div class="hold"><b>${esc(x.holding)}</b><span>${esc(x.away)} @ ${esc(x.home)}${card ? ", " + card : ""}</span></div>
       <div class="figs">
         <div>Price<strong>${price}</strong></div>
         <div>Risked<strong>${money(x.risk)}</strong></div>
         <div>To win<strong>${money(x.to_win)}</strong></div>
-        <div>Expected return<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
+        <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
       ${marketLine(x)}
       <div class="why-h">Why: ${whyHead(x.system, [x.system, ...(x.with || [])], x.players, x.side)}</div>
@@ -382,7 +390,6 @@ function ticket(x) {
         ${x.model_price != null ? `<dt>Most we'd pay</dt><dd>${x.venue === "kalshi" ? Math.round(x.model_price * 100) + "¢" : (x.model_price * 100).toFixed(1) + "%"} (the price the model saw)</dd>` : ""}
         <dt>Placed</dt><dd>${esc(when(x.placed_at))}</dd>
       </dl></details>
-    </div>
   </article>`;
 }
 
@@ -461,25 +468,30 @@ function renderBets(placed, b) {
   const cardSys = [...Object.values(b.systems || {}), ...Object.values(b.test_systems || {}).filter(x => x.group === "FAV")];
   const cardRec = { w: cardSys.reduce((t, x) => t + (x.w || 0), 0), l: cardSys.reduce((t, x) => t + (x.l || 0), 0) };
   const placerAt = (b.placer || {}).at;
-  $("tab-bets").innerHTML = (allBets.length ? `<div class="ledger">
-      <div><div class="k">Open</div><div class="v n">${open.length}</div><div class="s">${money(sum(open, "risk"))} at risk, to win ${money(sum(open, "to_win"))}</div></div>
-      <div><div class="k">Record</div><div class="v n">${w}-${l}${pu ? "-" + pu : ""}</div><div class="s">${w + l ? Math.round(w / (w + l) * 100) + "% of our bets" : "nothing settled yet"}. Card systems this season ${wl(cardRec)}</div></div>
-      <div><div class="k">Profit</div><div class="v n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</div><div class="s">${risked ? pct(pnl / risked) + " return on " + money(risked) : "on settled bets"}</div></div>
-      <div><div class="k">Expected on open bets</div><div class="v n ${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</div><div class="s">${Object.entries(sites).map(([v, n]) => `${esc(v)} ${n}`).join(", ") || "no bets"}</div></div>
+  const court = `<svg class="court" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true" fill="none" stroke="#FF7B29" stroke-width="1.5">
+      <circle cx="200" cy="100" r="34"/><circle cx="200" cy="100" r="10"/><line x1="200" y1="-10" x2="200" y2="210"/>
+      <path d="M-40 10 A120 120 0 0 1 -40 190"/><path d="M440 10 A120 120 0 0 0 440 190"/>
+      <rect x="-10" y="64" width="70" height="72"/><rect x="340" y="64" width="70" height="72"/></svg>`;
+  $("tab-bets").innerHTML = `<div class="board">${court}
+      <div class="board-main">
+        <div><span class="big n">${w}-${l}${pu ? "-" + pu : ""}</span><span class="lbl">Record${w + l ? `, ${Math.round(w / (w + l) * 100)}% won` : ""}</span></div>
+        <div class="profit"><span class="big n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</span><span class="lbl">${risked ? pct(pnl / risked) + " return on " + money(risked) : "Profit"}</span></div>
+      </div>
+      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))}</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets</span></div>
     </div>
-    ${profitChart(bets)}
+    ${allBets.length ? `${profitChart(bets)}
     <div class="filters">Show
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
-    </div>` : "") +
-    `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites (plus any you placed by hand). Every bet is sized to win $20; MONEYBALL bets win $30. Each one lists every system behind it and how each did, season by season.</p>` +
+    </div>` : ""}` +
+    `<h2>Open bets</h2><p class="lede">Placed for you at the best price on Kalshi, ProphetX and BetOpenly. Every bet is sized to win $20, MONEYBALL bets $30.</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     ((placed.resting || []).length ? `<h2>Waiting for a price</h2><p class="lede">LIMIT bets: an order is sitting on Kalshi at the most we'd pay. It fills if the price comes to us, and is cancelled 5 minutes before tip or if the model stops wanting it.</p>` +
-      placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)} · card pick ${esc(r.pick)} · tips ${esc(until(r.tip_utc))}</span></div>
+      placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)}, card pick ${esc(r.pick)}, tips ${esc(until(r.tip_utc))}</span></div>
         <div class="n" style="font-size:18px">${Math.round(r.price * 100)}¢ <span class="muted">${amer(r.american)}</span></div>
         <div class="reason">${esc(r.venue_name)}: ${r.count} contracts, ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. ${esc(r.contract)}</div></div>`).join("") : "") +
     (np.length ? `<h2>On the card, not placed</h2><p class="lede">What the order placer said on its last check${placerAt ? ` (${esc(ago(placerAt))})` : ""}.</p>` +
-      np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
+      np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)}, ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
         <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +
     (done.length ? `<h2>Settled</h2>` + done.slice().reverse().map(ticket).join("") : "") +
     ((placed.excluded || []).length ? `<p class="foot"><b>Left out of all records (model bug):</b> ` +
@@ -519,7 +531,7 @@ function renderCard(b, placed) {
       <div><div class="pick">${esc(r.label)}</div><div class="sub">${esc(r.away)} @ ${esc(r.home)}, ${esc(when(r.tip_utc))}. ${badge(r.group)}${esc(r.tag)}</div>
       <div class="sub">Fired at ${esc(r.label)}; the line is now ${r.now_line == null ? "off the board" : esc(r.now_line)} and the model doesn't want it there. If you already have it, it's graded at the original number.</div></div><div></div></div>`;
   $("tab-card").innerHTML = `<h2>Today's card</h2>
-    <p class="lede">Main systems and the top picks, best first. BET means the price is good now. LIMIT means only at the most we'd pay or better. PASS means skip. BENCHED means the system has been losing to the closing line, so it isn't auto-bet. CONFLICT means two of our systems are on opposite sides of the same game, so neither is bet.</p>` +
+    <p class="lede">Today's bets, best first. BET: the price is good and it gets placed. LIMIT: placed only if the price comes to us. PASS: no bet. CONFLICT: our systems are on both sides of the game, so no bet.</p>` +
     (card.length ? card.map(row).join("") : `<div class="empty">Nothing on the card right now. The model checks again every few minutes.</div>`) +
     (hold.length ? `<h2>Line moved</h2><p class="lede">Fired earlier at a better number. Only counts if you got that number.</p>` + hold.map(moved).join("") : "");
 }
@@ -539,45 +551,44 @@ function renderResults(b) {
       : `<div class="empty">No graded OG bets yet. Results post the morning after each game.</div>`);
 }
 
-// ---------- systems leaderboard
-let sysFilter = "ALL", sysSort = "units";
+// ---------- systems: every system, last two seasons replayed + this season live
+let sysFilter = "ALL";
+function pastFor(tag) {
+  const R = rc();
+  if (tag === "T13") return { seasons: (R.players_gap || {})["4+"] || {}, note: "players model, gap 4+" };
+  if (tag === "MONEYBALL") return { seasons: R.moneyball || {} };
+  if ((R.systems || {})[tag]) return { seasons: R.systems[tag] };
+  if ((R.other || {})[tag]) return { span: R.other[tag] };
+  return { seasons: {} };
+}
 function renderSystems(b) {
   const groups = {
-    OG: Object.entries(b.systems || {}).map(([id, s]) => ({ ...s, tag: "S" + id, group: "OG", rule: s.card })),
+    OG: Object.entries(b.systems || {}).map(([id, s]) => ({ ...s, tag: "S" + id, group: "OG", rule: "" })),
     FAV: Object.values(b.test_systems || {}).filter(s => s.group === "FAV"),
     EARLY: Object.values(b.early_systems || {}),
     TEST: Object.values(b.test_systems || {}).filter(s => s.group !== "FAV"),
   };
   groups.ALL = [...groups.OG, ...groups.FAV, ...groups.EARLY, ...groups.TEST];
-  const names = { ALL: "All", OG: "Main (OG)", FAV: "Favorites", EARLY: "Early season", TEST: "Testing" };
-  // each system's graded results, oldest to newest, for the last-20 strip
-  const res = {};
-  for (const p of [...(b.history || []), ...(b.test_history || []), ...(b.early_history || [])]) {
-    const tag = p.tag || "S" + p.system;
-    (res[tag] = res[tag] || []).push(p);
-  }
-  for (const k in res) res[k].sort((x, y) => (x.tip_utc || "").localeCompare(y.tip_utc || ""));
-  const key = {
-    units: s => s.units ?? 0,
-    win: s => s.w + s.l ? s.w / (s.w + s.l) : -1,
-    record: s => (s.w || 0) + (s.l || 0) + (s.p || 0),
-    clv: s => s.avg_clv ?? -99,
-    name: s => s.tag,
-  };
-  const rows = (groups[sysFilter] || []).slice().sort((x, y) => sysSort === "name" ? key.name(x).localeCompare(key.name(y), undefined, { numeric: true }) : key[sysSort](y) - key[sysSort](x));
-  const th = (k, label, cls = "r") => `<th class="${cls}"><button data-sort="${k}" aria-pressed="${sysSort === k}">${label}${sysSort === k ? (k === "name" ? " ↑" : " ↓") : ""}</button></th>`;
-  const spark = tag => { const r = (res[tag] || []).slice(-20); return r.length ? `<span class="spark" title="last ${r.length}, oldest first">${r.map(p => `<i class="${p.result}"></i>`).join("")}</span>` : `<span class="muted">—</span>`; };
-  $("tab-systems").innerHTML = `<h2>System leaderboard</h2>
-    <p class="lede">This season, graded at the closing line, 1 unit at −110. Main systems bet; favorites held up over the last two seasons; testing is tracked only. A system that falls behind the closing line on average over 30+ picks is benched (not auto-bet) until you switch it back on. Tap a column to sort.</p>
+  const names = { ALL: "All", OG: "OG", FAV: "Card", EARLY: "Early season", TEST: "Tracking only" };
+  const status = s => (b.benched || {})[s.tag] ? `<span class="dot bench">Benched: ${esc(b.benched[s.tag].why)}</span>`
+    : s.group === "OG" || s.group === "FAV" ? `<span class="dot on">Bets</span>`
+    : s.group === "EARLY" ? `<span class="dot on">Bets when the players model agrees by 3+</span>` : `<span class="dot">Tracking only, no money</span>`;
+  const cell = r => `<td class="r ${recCellTone(r)}">${recCell(r)}</td>`;
+  const rows = (groups[sysFilter] || []).map(s => {
+    const P = pastFor(s.tag);
+    const past = P.span ? `<td colspan="2" class="r ${recCellTone(P.span)}">${recCell(P.span)}<span class="pc muted"> ${esc(P.span.label)}</span></td>`
+      : cell((P.seasons || {})[SEASONS[0]]) + cell((P.seasons || {})[SEASONS[1]]);
+    const rule = String(s.rule || "").replace(/\s*\d+ seasons?:.*$/, "").replace(/\.\s*$/, "");
+    return `<tr><td><div class="nm"><span class="tag">${esc(s.tag)}</span>${esc(s.name || "")}</div>${rule ? `<div class="rule">${esc(rule)}</div>` : ""}${status(s)}</td>
+      ${past}${cell(s)}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
+  }).join("");
+  $("tab-systems").innerHTML = `<h2>Systems</h2>
+    <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. This season counts live picks under today's rules. Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>
     <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
-    ${rows.length ? `<table class="lb"><thead><tr>${th("name", "System", "")}${th("record", "Record")}${th("win", "Win %")}${th("units", "Units")}${th("clv", "Beat close", "r hide-s")}<th class="hide-s">Last 20</th></tr></thead><tbody>${rows.map(s => `<tr>
-      <td>${badge(s.group)}<b>${esc(s.tag)}. ${esc(s.name)}</b>${(b.benched || {})[s.tag] ? ` <span class="chip Low" title="${esc(b.benched[s.tag].why)}">Benched</span>` : ""}<div class="muted" style="font-size:14px">${esc(s.rule || "")}${(b.benched || {})[s.tag] ? `<br>Not auto-bet: ${esc(b.benched[s.tag].why)}.` : ""}</div></td>
-      <td class="r"><span class="n">${wl(s)}</span></td><td class="r">${winp(s) || "—"}</td><td class="r">${units(s.units)}</td>
-      <td class="r hide-s">${s.avg_clv == null ? "—" : `<span class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv} pts</span>`}</td>
-      <td class="hide-s">${spark(s.tag)}</td></tr>`).join("")}</tbody></table>`
+    ${rows ? `<div class="sys"><table><thead><tr><th>System</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">This season</th><th class="r hide-s">Beat close</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="why-note" style="margin-top:8px">Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ picks.</p>`
       : `<div class="empty">No systems in this group.</div>`}`;
   $("tab-systems").querySelectorAll(".seg button").forEach(btn => btn.onclick = () => { sysFilter = btn.dataset.f; renderSystems(b); });
-  $("tab-systems").querySelectorAll("th button").forEach(btn => btn.onclick = () => { sysSort = btn.dataset.sort; renderSystems(b); });
 }
 
 // ---------- model lab
