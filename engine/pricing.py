@@ -32,6 +32,7 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
 LOW_TO_WIN = 10      # ...except Low-confidence personnel bets (Caden, 2026-10-20)
+MONEYBALL_TO_WIN = 30  # MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
 MIN_EV = 0.02        # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet
 
 # 2-season replay of every system split by whether the players model agreed (engine/backtest_og.py)
@@ -340,8 +341,12 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
             stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(label(p["system"]))
     main_sides = {(p["game_id"], p["bet"], p["side"]) for p in live
                   if group(p["system"]) in ("OG", "FAV") and p.get("line") is not None}
+    # a MONEYBALL stack replaces every other card bet on that same side (one bigger bet, not several)
+    mb_sides = {(p["game_id"], p["bet"], p["side"]) for p in live if p["system"] == 130 and p.get("line") is not None}
     for p in live:
         if p.get("line") is None:
+            continue
+        if p["system"] != 130 and (p["game_id"], p["bet"], p["side"]) in mb_sides:
             continue
         if group(p["system"]) not in ("OG", "FAV"):
             # EARLY + players model 3+ makes the card, unless an OG/FAV bet already covers that side
@@ -393,7 +398,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
                      # bet size: to win $20; Low-confidence personnel bets to win $10
-                     "to_win": LOW_TO_WIN if level == "Low" else TO_WIN,
+                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else LOW_TO_WIN if level == "Low" else TO_WIN,
                      # what an order placer needs to price ANY number on this bet (e.g. P2P offers)
                      "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
                                "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,

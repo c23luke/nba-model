@@ -249,3 +249,11 @@ def test_both_sides_of_a_game_are_never_bet():
     v = {c["side"]: c["verdict"] for c in card}
     assert v["BOS"] == "CONFLICT" and v["NYK"] == "CONFLICT" and v["LAL"] == "BET"
     assert "other side of this game" in next(c for c in card if c["side"] == "BOS")["why"]
+
+
+def test_moneyball_replaces_the_other_bets_on_its_side_and_wins_30():
+    slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
+    live = [pk(130, "BOS", game="g1"), pk(112, "BOS", game="g1"), pk(102, "BOS", game="g1")]
+    card = build_card(live, slate, now=NOW)
+    assert [c["tag"] for c in card] == ["MONEYBALL"] and card[0]["to_win"] == 30
+    assert set(card[0]["with"]) == {"T12", "T2"}

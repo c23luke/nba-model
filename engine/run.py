@@ -22,13 +22,13 @@ from .state import Game, team_state
 from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
                       evaluate_early, evaluate_personnel, evaluate_personnel_shadow, personnel_call, LOCK_ON_FIRE,
-                      evaluate_mined,
+                      evaluate_mined, evaluate_moneyball,
                       SHADOW_SYSTEMS, grade, label, group)
 from . import personnel as personnel_mod
 from . import boxscore
 from . import case as case_mod
 
-PRICED = {113, 121, 122, 123, 124}          # test systems that also get a live Kalshi price (the main 4 always do)
+PRICED = {113, 121, 122, 123, 124, 125, 130}          # test systems that also get a live Kalshi price (the main 4 always do)
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 SEASON_END = date.fromisoformat(os.environ.get("SEASON_END", "2027-04-11"))      # NBA release
 ALL_STAR = date.fromisoformat(os.environ.get("ALL_STAR", "2027-02-21"))          # All-Star Sunday
@@ -240,6 +240,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                                       season_day=(g.game_date - season_start).days)
                  + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
                  + evaluate_mined(g, hs, at, row.get("home_spread"), row.get("total"), ctx))
+        picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:
             prev = old.get(p.key, {})
@@ -522,7 +523,7 @@ def tracking(picks: list[dict]) -> dict:
     every pair), each group AND each system vs the players model in fine buckets, stacks + players model,
     and the players model by gap size and status. history (2 seasons, vs the open) sits next to each."""
     graded = [p for p in picks if p.get("result") and p.get("active")]
-    real = [p for p in graded if p["system"] < 300]
+    real = [p for p in graded if p["system"] < 300 and p["system"] != 130]   # MONEYBALL is itself a stack
     shadow = {p["game_id"]: p for p in graded if p["system"] == 301}
 
     def gap_for(gid, side):

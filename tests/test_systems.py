@@ -190,3 +190,18 @@ def test_t25_fades_a_tanker_in_the_last_three_weeks():
     assert not [p for p in evaluate_mined(g, good, tank, -12.0, None, {"last21": False}) if p.system == 125]
     both = evaluate_mined(g, TeamState("BOS", wins=20, losses=50), tank, -2.0, None, {"last21": True})
     assert not [p for p in both if p.system == 125]          # two tankers: no bet
+
+
+def test_moneyball_needs_two_systems_and_the_players_model_by_3_either_way():
+    from datetime import date
+    from engine.state import Game
+    from engine.systems import Pick, evaluate_moneyball, label
+    g = Game("g", date(2026, 11, 1), "NYK", "BOS", tip_utc=None)
+    two = [Pick(107, "g", "spread", "BOS", -4.0), Pick(205, "g", "spread", "BOS", -4.0), Pick(113, "g", "spread", "BOS", -4.0)]
+    view = {"gap": 4.5, "scenarios": [{"gap": 4.5}, {"gap": 3.2}]}
+    mb = evaluate_moneyball(g, two, view)
+    assert [(p.system, p.side, p.line) for p in mb] == [(130, "BOS", -4.0)] and label(130) == "MONEYBALL"
+    assert mb[0].meta["systems"] == ["T7", "E5"]                       # T13 doesn't count as a second system
+    assert not evaluate_moneyball(g, two[:1] + two[2:], view)          # one system + T13: no
+    assert not evaluate_moneyball(g, two, {"gap": 4.5, "scenarios": [{"gap": 4.5}, {"gap": 2.0}]})   # fails if he sits
+    assert not evaluate_moneyball(g, two, {"gap": 4.5, "blind": ["x"]})

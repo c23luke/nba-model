@@ -82,6 +82,13 @@ TEST_SYSTEMS.update({
           "rule": "Team won its last game in overtime and is on its 4th game in 6 nights → bet against. 69-31 (69.0%)"},
     # engine/measure_moneyball.py (2026-10-27): last 21 days, teams at .350 or worse after 40+ games
     # covered 164-212 (43.6%) over 6 seasons vs the close; fading them won 4 of 6 seasons.
+    # MONEYBALL (Caden's stack, 2026-10-27; engine/measure_moneyball_stack.py, opening line):
+    #   2+ systems + players agree 3+: 29-11 (72.5%) — 2024-25 11-4, 2025-26 18-7
+    #   the 4-6 slice Caden named: 13-4 (6-2, 7-2). Win estimate shrunk hard for 40 bets: 50% + 22.5 × 40/140.
+    130: {"win_est": 0.564, "name": "MONEYBALL: 2+ systems + players model agrees 3+", "bet": "spread", "idea": "stack",
+          "rule": "Two or more of our systems on the same side AND the players model likes that side by 3+ points "
+                  "(either way day-to-day players go). 2 seasons at the open: 29-11 (72.5%), both seasons 72-73%. "
+                  "Sized to win $30."},
     125: {"win_est": 0.532, "name": "Fade the tanker, last 3 weeks", "bet": "spread", "idea": "late season",
           "rule": "Last 3 weeks of the season, opponent is .350 or worse after 40+ games (and we aren't) → bet us. "
                   "6 seasons: 212-164 (56.4%) vs the close"},
@@ -94,7 +101,7 @@ TEST_SYSTEMS[112]["win_est"] = 0.525      # T12: 86-70 (55.1%)
 # FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
 #   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
 # T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
-FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125}
+FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125, 130}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
@@ -121,7 +128,12 @@ EARLY_SYSTEMS = {
 }
 
 
+MONEYBALL = 130
+
+
 def label(system: int) -> str:
+    if system == MONEYBALL:
+        return "MONEYBALL"
     if system >= 300:
         return f"X{system - 300}"
     if system >= 200:
@@ -473,3 +485,25 @@ def evaluate_mined(game: Game, home: TeamState, away: TeamState, home_spread: fl
                 f"{o.team} won last game in overtime: {o.last_game.score_line()}",
                 f"{o.team} is playing its 4th game in 6 nights", "6 seasons: 69-31 (69.0%) vs the close"]))
     return picks
+
+
+def evaluate_moneyball(game: Game, picks: list[Pick], view: dict | None) -> list[Pick]:
+    """MONEYBALL: 2+ distinct systems (any group, not the players model itself) on the same side of the
+    spread, and the players model agreeing with that side by 3+ in every day-to-day version."""
+    if not view or view.get("gap") is None or view.get("blind"):
+        return []
+    gaps = [s["gap"] for s in view.get("scenarios") or [] if s.get("gap") is not None] or [view["gap"]]
+    out = []
+    for side, sign in ((game.home, 1), (game.away, -1)):
+        ps = [p for p in picks if p.bet == "spread" and p.side == side and p.line is not None
+              and p.system < 300 and p.system not in (113, MONEYBALL)]
+        systems = sorted({p.system for p in ps})
+        worst = min(sign * g for g in gaps)
+        if len(systems) >= 2 and worst >= 3:
+            line = ps[0].line
+            out.append(Pick(MONEYBALL, game.id, "spread", side, line, [
+                "Systems on this side: " + ", ".join(label(s) for s in systems),
+                f"Players model likes {side} by {worst:.1f}+ (whether day-to-day players play or sit)",
+                "2 seasons at the open: 2+ systems + players model 3+ went 29-11 (72.5%)"],
+                {"systems": [label(s) for s in systems], "gap": round(worst, 1)}))
+    return out
