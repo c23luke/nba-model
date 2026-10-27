@@ -215,19 +215,15 @@ tracking.conflicts: 17
 6. HEALTH: order placer heartbeat logs and errors per day (ET)
 ====================================================================================================
   2026-10-20: 13 run summaries, 4 errors, 0 crashes
-  2026-10-21: 64 run summaries, 836 errors, 0 crashes
-    2026-10-21T20:17 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:18 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:19 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:20 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:21 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:22 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:23 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:24 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:25 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:26 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:27 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:28 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:29 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:30 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
-    2026-10-21T20:31 Resting order check failed for DEN +8.5 (01a15cb6-6a08-7b55-931d-3d3b88ab13e2): Kalshi DELETE /trade-api/v2/portfolio/events/orders/01a15cb6-6a08-7b55-931d-3d3b88ab13e2 →
+  2026-10-21: 94 run summaries, 1284 errors, 0 crashes
+  2026-10-22: 95 run summaries, 1196 errors, 0 crashes
+  2026-10-23: 99 run summaries, 1345 errors, 0 crashes
+  2026-10-24: 95 run summaries, 43 errors, 0 crashes
+  2026-10-25: 94 run summaries, 143 errors, 0 crashes
+  2026-10-26: 94 run summaries, 19 errors, 0 crashes
+  2026-10-27: 46 run summaries, 0 errors, 0 crashes
+  errors since 10/24, by kind:
+      162 × Resting order check failed for DEN -7.5 (01a175c9-2d28-7366-a2fb-c38cd974eadd): Kalshi DEL
+       99 × Resting order check failed for HOU +1 (01a16ba3-d730-7519-af4e-8a4aad669af8): Kalshi DELET
+       85 × Resting order check failed for NOP +5.5 (01a164c6-0348-7912-a91e-249b57b9bb18): Kalshi DEL
+        4 × Resting order check failed for GSW +7.5 (01a16c48-9ec8-79f6-8f76-28d383e82b91): Kalshi DEL
