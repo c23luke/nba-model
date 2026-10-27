@@ -279,3 +279,14 @@ def test_never_bets_a_price_worse_than_minus_150_or_far_from_the_number():
         assert fine["verdict"] == "BET" and fine["best"]["line"] == -2.0
     finally:
         PRICE_WIN[102] = old
+
+
+def test_a_3_percent_edge_is_not_a_bet_any_more():
+    from engine.pricing import PRICE_WIN, MIN_EV
+    assert MIN_EV == 0.04
+    PRICE_WIN[102], old = 0.545, PRICE_WIN[102]
+    try:   # 54.5% at -105 (cost 0.5122): +6.4% -> BET; at -115 (0.5349): +1.9% -> not a bet
+        assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -105)])], [], now=NOW)[0]["verdict"] == "BET"
+        assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -112)])], [], now=NOW)[0]["verdict"] != "BET"
+    finally:
+        PRICE_WIN[102] = old

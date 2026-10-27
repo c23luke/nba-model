@@ -458,9 +458,10 @@ Deno.test("a LIMIT bet rests one good-till-canceled order on Kalshi that expires
   await runOnce(db, { kalshi: k }, NOW);
   eq(k.rested.length, 1);
   const r = k.rested[0];
-  eq([r.o.limit_price, r.o.order_side, db.orders_[0].status, db.orders_[0].order_id], [0.54, "no", "resting", "R1"]);
+  // a standing order asks for 1% more edge than a bet taken now: 53c, not the 54c min_ev alone would allow
+  eq([r.o.limit_price, r.o.order_side, db.orders_[0].status, db.orders_[0].order_id], [0.53, "no", "resting", "R1"]);
   eq(r.exp, Date.parse(TIP) / 1000 - 300);
-  ok(r.o.count * (1 - 0.54) - kalshiMakerFee(0.54, r.o.count) >= 20, "sized to win $20 after the maker fee");
+  ok(r.o.count * (1 - 0.53) - kalshiMakerFee(0.53, r.o.count) >= 20, "sized to win $20 after the maker fee");
   await runOnce(db, { kalshi: k }, NOW);                     // next minute: no second order
   eq(k.rested.length, 1);
 });
@@ -694,4 +695,15 @@ Deno.test("never pays worse than -150, even when the model says it's worth it", 
   const res = await runOnce(db, { betopenly: bo }, NOW);
   eq(db.orders_.length, 0, "nothing placed");
   ok(JSON.stringify(res.skips).includes("worse than -150"), JSON.stringify(res.skips).slice(0, 400));
+});
+
+Deno.test("a standing order only rests within 1 point of the market number", async () => {
+  // market 3.5: a Kalshi strike 2 points away is never used for a resting order
+  const far = feedRow({ status: "limit", to_win: 20 }, [kq({ ev: -0.01, line: 5.5 })]);
+  far.model = { ...(far.model as Model), market: 3.5 };
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", to_win_dollars: 20, max_dollars_per_game: 50 }), [far]);
+  const k = new RestVenue();
+  const res = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.rested.length, 0);
+  ok(JSON.stringify(res.skips).includes("within 1 point"), JSON.stringify(res.skips));
 });

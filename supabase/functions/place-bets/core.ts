@@ -49,6 +49,7 @@ export type Settings = {
 /** Never pay worse than -150 per $1 payout (engine/pricing.py MAX_COST): to-win sizing risks $30+ to win $20 past it,
  * and our win rates are measured near the market number, not deep into bought points. */
 export const MAX_COST = 0.60;
+export const RESTING_EXTRA_EV = 0.01, RESTING_WINDOW = 1;
 
 export type Quote = {
   venue: string; venue_name?: string; contract: string; side: string; ml?: boolean; line: number;
@@ -576,12 +577,16 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
     const mine = recent.filter((o) => o.bet_key === row.key && o.mode === mode &&
       (live ? LIVE_STATUSES.includes(o.status) : o.status === "dry_run"));
     if (mine.length) { skip(live ? `already ${mine[0].status} (${mine[0].venue})` : "resting order already logged"); continue; }
-    const qs = (row.quotes || []).filter((q) => q.venue === "kalshi" && q.ticker && q.order_side && q.win && q.max_cost);
-    if (!qs.length) { skip("LIMIT: no Kalshi market to rest an order on"); continue; }
+    // standing orders mostly fill when the other side thinks it's worth less, so they need more cushion:
+    // RESTING_EXTRA_EV on top of min_ev, and only at the market number or within RESTING_WINDOW points of it
+    const anchor = row.model?.market ?? row.model?.base;
+    const qs = (row.quotes || []).filter((q) => q.venue === "kalshi" && q.ticker && q.order_side && q.win && q.max_cost
+      && (anchor == null || Math.abs(q.line - anchor) <= RESTING_WINDOW + 1e-9));
+    if (!qs.length) { skip(`LIMIT: no Kalshi market within ${RESTING_WINDOW} point of the market number to rest an order on`); continue; }
     // the strike where resting at our price is worth the most
     const pick = qs.map((q) => {
       const push = Math.max(0, 1 - q.win / q.max_cost);
-      const limit = Math.min(restingPrice(q.win, push, s.min_ev), MAX_COST);
+      const limit = Math.min(restingPrice(q.win, push, s.min_ev + RESTING_EXTRA_EV), MAX_COST);
       return { q, limit, ev: evAt(q, limit + kalshiMakerFee(limit, 100) / 100) };
     }).sort((a, b) => b.ev - a.ev)[0];
     const { q, limit } = pick;

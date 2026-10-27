@@ -32,7 +32,10 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
 MONEYBALL_TO_WIN = 30  # MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
-MIN_EV = 0.02        # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet
+# the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet.
+# 4% (Caden 2026-10-27, was 2%): bets at a normal price clear it easily; the 2-4% ones were nearly all heavy
+# juice or bought points, where a small error in our win rate turns the edge negative.
+MIN_EV = 0.04
 
 # 2-season replay of every system split by whether the players model agreed (engine/backtest_og.py)
 try:
