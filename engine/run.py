@@ -721,7 +721,8 @@ def since_restart(picks, orders, games=None):
 
 def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None,
                 bench_cfg=None, exclude_cfg=None):
-    raw_picks = {p["key"]: p for p in picks}          # every pick, so old-rule bets can be judged (e.g. T13 gap)
+    # every pick, so old-rule bets can still be judged (e.g. their T13 gap) after the pick stops counting
+    raw_picks = {p["key"]: {**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks}
     picks, orders = since_restart(picks, orders or [], games)
     ex = excluded_keys(exclude_cfg)
     out_picks = [p for p in picks if (str(p["game_id"]), p["side"]) in ex]

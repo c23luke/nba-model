@@ -322,3 +322,20 @@ def test_restart_drops_old_bets_but_keeps_tracking_judged_by_todays_rules(monkey
     orders = [{"created_at": "2026-10-27T15:00:00+00:00"}, {"created_at": "2026-10-27T19:00:00+00:00"}]
     p, o = R.since_restart(picks, orders, games)
     assert [x["result"] for x in p] == ["L", "L", "W"] and o == [orders[1]]
+
+
+def test_bet_on_a_pick_that_no_longer_counts_is_still_judged(tmp_path, monkeypatch):
+    """A T13 bet placed under the old 3-point rule: its pick is out of the records, but the ledger must still
+    see the pick's gap (and group) so the bet is marked not counted, without crashing the board."""
+    import engine.run as R
+    from datetime import date, datetime, timezone
+    pick = {"key": "g1-S113-LAL", "system": 113, "game_id": "g1", "bet": "spread", "side": "LAL", "line": -3.0,
+            "label": "LAL -3", "away": "X", "home": "LAL", "game_date": "2026-10-27", "tip_utc": "2026-10-28T02:00:00+00:00",
+            "active": True, "result": None, "meta": {"worst_gap": 3.3}}
+    order = {"id": 1, "bet_key": "g1-S113-LAL", "game_id": "g1", "side": "LAL", "bet": "spread", "line": -3.0, "system": "T13",
+             "venue": "prophetx", "status": "filled", "fill_count": 24.4, "fill_cost": 14.0, "fees": 0, "pick": "LAL -3",
+             "created_at": "2026-10-27T12:00:00+00:00", "tip_utc": "2026-10-28T02:00:00+00:00"}
+    now = datetime(2026, 10, 27, 20, tzinfo=timezone.utc)
+    b = R.build_board(now, date(2026, 10, 27), [], [pick], {}, [], "t", orders=[order], games={})
+    row = b["placed"]["bets"][0]
+    assert row["t13_gap"] == 3.3 and row["rules"]["counted"] is False
