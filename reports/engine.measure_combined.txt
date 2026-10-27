@@ -12,6 +12,10 @@ weights fitted on 2024-25 (log-odds per unit):
 
 === 2024-25 (fitted here)
     TODAY'S WAY: every system bets alone, 1u each        146-105 (58.2%)  +30.5u  (7 games with bets on both sides)
+    ONE PER GAME, conflicts skipped, 1u                  127-93 (57.7%)  +24.7u  (220u staked, +11.2% per unit, 7 conflict games skipped)
+    ONE PER GAME, 2u when 2+ sources agree               127-93 (57.7%)  +31.3u  (235u staked, +13.3% per unit, 7 conflict games skipped)
+    ONE PER GAME, 1u / 2u / 3u by sources agreeing       127-93 (57.7%)  +32.3u  (236u staked, +13.7% per unit, 7 conflict games skipped)
+    record by how many card sources agree: 1: 116-89 (56.6%) | 2: 10-4 (71.4%) | 3+: 1-0 (100.0%)
     COMBINED, flat 1u, bet when chance ≥ 53%             208-172 (54.7%)  +18.8u  (380u staked)
     COMBINED, flat 1u, bet when chance ≥ 54%             138-101 (57.7%)  +26.9u  (239u staked)
     COMBINED, flat 1u, bet when chance ≥ 55%             98-70 (58.3%)  +21.0u  (168u staked)
@@ -22,6 +26,10 @@ weights fitted on 2024-25 (log-odds per unit):
 
 === 2025-26 (OUT OF SAMPLE)
     TODAY'S WAY: every system bets alone, 1u each        173-126 (57.9%)  +34.4u  (12 games with bets on both sides)
+    ONE PER GAME, conflicts skipped, 1u                  135-97 (58.2%)  +28.3u  (232u staked, +12.2% per unit, 12 conflict games skipped)
+    ONE PER GAME, 2u when 2+ sources agree               135-97 (58.2%)  +31.9u  (265u staked, +12.0% per unit, 12 conflict games skipped)
+    ONE PER GAME, 1u / 2u / 3u by sources agreeing       135-97 (58.2%)  +33.8u  (269u staked, +12.6% per unit, 12 conflict games skipped)
+    record by how many card sources agree: 1: 116-83 (58.3%) | 2: 16-13 (55.2%) | 3+: 3-1 (75.0%)
     COMBINED, flat 1u, bet when chance ≥ 53%             193-171 (53.0%)  +4.9u  (364u staked)
     COMBINED, flat 1u, bet when chance ≥ 54%             127-109 (53.8%)  +7.1u  (236u staked)
     COMBINED, flat 1u, bet when chance ≥ 55%             90-69 (56.6%)  +14.1u  (159u staked)
