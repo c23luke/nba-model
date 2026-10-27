@@ -1,37 +1,38 @@
 2024-25: 1008 games with an opener and a players-model gap
 2025-26: 1030 games with an opener and a players-model gap
+sanity: 2024-25 players gap 3+ alone, side it likes: 156-134
 
 weights fitted on 2024-25 (log-odds per unit):
-    intercept              +0.0506
-    players gap (per pt)   -0.1579
-    OG vote                +0.3415
-    FAV vote               +0.4091
-    EARLY vote             +0.0685
-    TEST vote              -0.0757
+    intercept              +0.0468
+    players gap (per pt)   +0.0331
+    OG vote                +0.3487
+    FAV vote               +0.3798
+    EARLY vote             +0.0678
+    TEST vote              -0.0684
 
 === 2024-25 (fitted here)
     TODAY'S WAY: every system bets alone, 1u each        146-105 (58.2%)  +30.5u  (7 games with bets on both sides)
-    COMBINED, flat 1u, bet when chance ≥ 53%             398-403 (49.7%)  -45.3u  (801u staked)
-    COMBINED, flat 1u, bet when chance ≥ 54%             356-373 (48.8%)  -54.3u  (729u staked)
-    COMBINED, flat 1u, bet when chance ≥ 55%             329-344 (48.9%)  -49.4u  (673u staked)
-    COMBINED, flat 1u, bet when chance ≥ 56%             307-313 (49.5%)  -37.3u  (620u staked)
-    COMBINED, flat 1u, bet when chance ≥ 58%             242-252 (49.0%)  -35.2u  (494u staked)
-    COMBINED, ≥53%: 1u, +3 pts 2u, +6 pts 3u             398-403 (49.7%)  -119.4u  (1863u staked, -6.4% per unit)
-    COMBINED, ≥54%: 1u, +3 pts 2u, +6 pts 3u             356-373 (48.8%)  -128.2u  (1682u staked, -7.6% per unit)
+    COMBINED, flat 1u, bet when chance ≥ 53%             208-172 (54.7%)  +18.8u  (380u staked)
+    COMBINED, flat 1u, bet when chance ≥ 54%             138-101 (57.7%)  +26.9u  (239u staked)
+    COMBINED, flat 1u, bet when chance ≥ 55%             98-70 (58.3%)  +21.0u  (168u staked)
+    COMBINED, flat 1u, bet when chance ≥ 56%             72-53 (57.6%)  +13.7u  (125u staked)
+    COMBINED, flat 1u, bet when chance ≥ 58%             45-25 (64.3%)  +17.5u  (70u staked)
+    COMBINED, ≥53%: 1u, +3 pts 2u, +6 pts 3u             208-172 (54.7%)  +42.6u  (555u staked, +7.7% per unit)
+    COMBINED, ≥54%: 1u, +3 pts 2u, +6 pts 3u             138-101 (57.7%)  +45.0u  (360u staked, +12.5% per unit)
 
 === 2025-26 (OUT OF SAMPLE)
     TODAY'S WAY: every system bets alone, 1u each        173-126 (57.9%)  +34.4u  (12 games with bets on both sides)
-    COMBINED, flat 1u, bet when chance ≥ 53%             386-402 (49.0%)  -56.2u  (788u staked)
-    COMBINED, flat 1u, bet when chance ≥ 54%             354-374 (48.6%)  -57.4u  (728u staked)
-    COMBINED, flat 1u, bet when chance ≥ 55%             328-344 (48.8%)  -50.4u  (672u staked)
-    COMBINED, flat 1u, bet when chance ≥ 56%             286-326 (46.7%)  -72.6u  (612u staked)
-    COMBINED, flat 1u, bet when chance ≥ 58%             232-262 (47.0%)  -56.2u  (494u staked)
-    COMBINED, ≥53%: 1u, +3 pts 2u, +6 pts 3u             386-402 (49.0%)  -183.2u  (1837u staked, -10.0% per unit)
-    COMBINED, ≥54%: 1u, +3 pts 2u, +6 pts 3u             354-374 (48.6%)  -186.9u  (1659u staked, -11.3% per unit)
+    COMBINED, flat 1u, bet when chance ≥ 53%             193-171 (53.0%)  +4.9u  (364u staked)
+    COMBINED, flat 1u, bet when chance ≥ 54%             127-109 (53.8%)  +7.1u  (236u staked)
+    COMBINED, flat 1u, bet when chance ≥ 55%             90-69 (56.6%)  +14.1u  (159u staked)
+    COMBINED, flat 1u, bet when chance ≥ 56%             74-50 (59.7%)  +19.0u  (124u staked)
+    COMBINED, flat 1u, bet when chance ≥ 58%             47-33 (58.8%)  +10.7u  (80u staked)
+    COMBINED, ≥53%: 1u, +3 pts 2u, +6 pts 3u             193-171 (53.0%)  +30.3u  (549u staked, +5.5% per unit)
+    COMBINED, ≥54%: 1u, +3 pts 2u, +6 pts 3u             127-109 (53.8%)  +26.0u  (383u staked, +6.8% per unit)
 
 === CALIBRATION, 2025-26 (does the combined chance mean what it says?)
-    model says 50-52%  → won 80/159 (50.3%)
-    model says 52-54%  → won 64/131 (48.9%)
-    model says 54-56%  → won 68/116 (58.6%)
-    model says 56-58%  → won 54/118 (45.8%)
-    model says 58%+    → won 232/494 (47.0%)
+    model says 50-52%  → won 272/504 (54.0%)
+    model says 52-54%  → won 149/278 (53.6%)
+    model says 54-56%  → won 53/112 (47.3%)
+    model says 56-58%  → won 27/44 (61.4%)
+    model says 58%+    → won 47/80 (58.8%)
