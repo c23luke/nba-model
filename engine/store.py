@@ -141,6 +141,9 @@ class SupabaseStore:
         rows = self._req("GET", "/bet_log?message=like.run%20(*&select=ts,data&order=ts.desc&limit=1") or []
         return {"at": rows[0]["ts"], "skips": (rows[0].get("data") or {}).get("skips", [])} if rows else None
 
+    def save_price_log(self, rows):
+        """Consensus line + exchange prices per game per run (stale-price research). Insert only."""
+        if rows: self._req("POST", "/price_log", rows, {"Prefer": "return=minimal"})
     def save_injury_log(self, rows):
         """Every official-report status we see, kept so Questionable/Doubtful play rates can be measured
         later (first_seen is kept on updates; last_seen moves)."""

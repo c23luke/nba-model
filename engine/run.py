@@ -377,6 +377,24 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
                         orders=orders, games=stored, bench_cfg=bench_cfg, exclude_cfg=exclude_cfg)
     board["scoring"] = scoring
+    # stale-price research: what the books' consensus said and what the exchanges offered, this run
+    if hasattr(store, "save_price_log") and upcoming:
+        try:
+            plog = []
+            for g in upcoming:
+                row = stored.get(g.id) or {}
+                if row.get("home_spread") is None and row.get("total") is None:
+                    continue
+                q = (exch.get("data") or {}).get((g.game_date, g.away, g.home), [])
+                plog.append({"ts": now.isoformat(), "game_id": str(g.id), "game_date": g.game_date.isoformat(),
+                             "away": g.away, "home": g.home, "home_spread": row.get("home_spread"),
+                             "total": row.get("total"), "books": row.get("line_books"),
+                             "quotes": [{k: x.get(k) for k in ("venue", "bet", "side", "line", "ml", "american", "size")}
+                                        for x in q][:60]})
+            store.save_price_log(plog)
+        except Exception as e:
+            if "price_log" not in str(e) or "404" not in str(e):
+                log.append(f"price log: {str(e)[:160]}")
     if reads:
         try:
             rec = {}
