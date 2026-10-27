@@ -60,7 +60,7 @@ h2:first-child { margin-top: 8px; }
 .board { position: relative; overflow: hidden; border-radius: 20px; padding: 22px 22px 18px;
   background: linear-gradient(160deg, #1D2A5E 0%, #141C3E 70%); border: 1px solid #2E3B78;
   box-shadow: 0 20px 50px -24px rgba(255,123,41,.35); }
-.board .court { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .22; }
+.board .court { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .14; }
 .board-main { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
 .board .big { display: block; font: 800 72px/.9 var(--display); letter-spacing: .01em; }
 .board .lbl { display: block; color: var(--haze); font-size: 14px; margin-top: 6px; }
@@ -155,7 +155,18 @@ td .n { font-size: 19px; }
 .dot.bench { color: var(--loss); } .dot.bench::before { background: var(--loss); }
 .sys td.good b { color: var(--win); } .sys td.bad b { color: var(--loss); }
 .sys td b { font: 700 18px var(--display); }
-@media (max-width: 600px) { .sys .hide-s, .lb .hide-s { display: none; } .sys .pc { display: block; font-size: 11px; } .sys table td, .sys table th { padding-left: 8px; padding-right: 8px; } }
+.sys .rule { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 600px) {
+  .sys .hide-s, .lb .hide-s { display: none; }
+  .sys thead { display: none; }
+  .sys tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--line); padding: 12px 14px 10px; }
+  .sys td { border: 0; padding: 0; }
+  .sys td:first-child { grid-column: 1 / -1; margin-bottom: 8px; }
+  .sys td.r { text-align: left; }
+  .sys td.span { grid-column: span 2; }
+  .sys td.r::before { content: attr(data-label); display: block; font: 500 12px var(--body); color: var(--haze); }
+  .sys .pc { display: block; font-size: 11px; }
+}
 
 /* lab */
 .lab details.box { background: var(--deck); border: 1px solid var(--line); border-radius: 16px; padding: 4px 16px; margin: 10px 0; }
@@ -208,11 +219,11 @@ td .n { font-size: 19px; }
 </header>
 <nav><div class="wrap tabs" role="tablist" id="tabs">
   <button role="tab" data-tab="bets" aria-selected="true">Bets<span class="long"> placed</span><span class="c" id="c-bets" hidden></span></button>
-  <button role="tab" data-tab="card" aria-selected="false"><span class="long">Today's </span>card<span class="c" id="c-card" hidden></span></button>
+  <button role="tab" data-tab="card" aria-selected="false"><span class="long">Today's </span>Card<span class="c" id="c-card" hidden></span></button>
   <button role="tab" data-tab="rankings" aria-selected="false">Rank<span class="long">ings</span></button>
   <button role="tab" data-tab="results" aria-selected="false">Results</button>
   <button role="tab" data-tab="systems" aria-selected="false">Systems</button>
-  <button role="tab" data-tab="lab" aria-selected="false"><span class="long">Model </span>lab</button>
+  <button role="tab" data-tab="lab" aria-selected="false">Lab</button>
 </div></nav>
 <main class="wrap">
   <section id="tab-bets" role="tabpanel"></section>
@@ -443,7 +454,8 @@ function notPlaced(b, placed) {
   const resting = new Set((placed.resting || []).map(x => x.key));
   const why = Object.fromEntries(((b.placer || {}).skips || []).map(k => [k.pick, k.reason]));
   return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !resting.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
-    .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }));
+    .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }))
+    .filter(c => !/^already (filled|partial)/.test(c.reason || ""));          // held from before the Oct 27 restart
 }
 
 let fSite = "", fSys = "";
@@ -573,14 +585,14 @@ function renderSystems(b) {
   const status = s => (b.benched || {})[s.tag] ? `<span class="dot bench">Benched: ${esc(b.benched[s.tag].why)}</span>`
     : s.group === "OG" || s.group === "FAV" ? `<span class="dot on">Bets</span>`
     : s.group === "EARLY" ? `<span class="dot on">Bets when the players model agrees by 3+</span>` : `<span class="dot">Tracking only, no money</span>`;
-  const cell = r => `<td class="r ${recCellTone(r)}">${recCell(r)}</td>`;
+  const cell = (r, lab) => `<td class="r ${recCellTone(r)}" data-label="${lab}">${recCell(r)}</td>`;
   const rows = (groups[sysFilter] || []).map(s => {
     const P = pastFor(s.tag);
-    const past = P.span ? `<td colspan="2" class="r ${recCellTone(P.span)}">${recCell(P.span)}<span class="pc muted"> ${esc(P.span.label)}</span></td>`
-      : cell((P.seasons || {})[SEASONS[0]]) + cell((P.seasons || {})[SEASONS[1]]);
+    const past = P.span ? `<td colspan="2" class="r span ${recCellTone(P.span)}" data-label="Earlier seasons">${recCell(P.span)}<span class="pc muted"> ${esc(P.span.label)}</span></td>`
+      : cell((P.seasons || {})[SEASONS[0]], SEASONS[0]) + cell((P.seasons || {})[SEASONS[1]], SEASONS[1]);
     const rule = String(s.rule || "").replace(/\s*\d+ seasons?:.*$/, "").replace(/\.\s*$/, "");
     return `<tr><td><div class="nm"><span class="tag">${esc(s.tag)}</span>${esc(s.name || "")}</div>${rule ? `<div class="rule">${esc(rule)}</div>` : ""}${status(s)}</td>
-      ${past}${cell(s)}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
+      ${past}${cell(s, "This season")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
   }).join("");
   $("tab-systems").innerHTML = `<h2>Systems</h2>
     <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. This season counts live picks under today's rules. Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>

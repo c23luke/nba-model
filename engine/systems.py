@@ -49,8 +49,8 @@ TEST_SYSTEMS = {
           "rule": "Favorite by 10+, total 225+ → bet the over (control test for System 4)"},
     112: {"name": "Big rested favorite vs tired dog", "bet": "spread", "idea": "mismatch",
           "rule": "Favorite by 8+ with rest vs dog on a back-to-back → bet the favorite"},
-    113: {"name": "Personnel gap", "bet": "spread", "idea": "personnel",
-          "rule": "Personnel fair line 3+ pts off the market, and no blind spots → bet the side personnel likes"},
+    113: {"name": "Players model", "bet": "spread", "idea": "personnel",
+          "rule": "The players model's line is 4+ pts off the market whether day-to-day players play or sit, the team isn't bottom-10, and no blind spots → bet that side"},
 }
 
 
