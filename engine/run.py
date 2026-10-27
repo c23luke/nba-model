@@ -654,6 +654,20 @@ def excluded_keys(cfg) -> dict:
     return {(str(x["game_id"]), x["side"]): x.get("why") or "excluded" for x in (cfg or []) if x.get("game_id") and x.get("side")}
 
 
+def report_card() -> dict:
+    """Every system's record by season, replayed at the open (engine/measure_report_card.py)."""
+    try:
+        out = json.loads((personnel_mod.STATIC / "report_card.json").read_text())
+    except Exception:
+        out = {}
+    # systems the season replay doesn't cover (the mined T21-T25): their longer record instead
+    from .pricing import HISTORY
+    have = out.get("systems") or {}
+    out["other"] = {label(sid): {"w": w, "l": l, "label": lab} for sid, (w, l, lab) in HISTORY.items()
+                    if label(sid) not in have}
+    return out
+
+
 def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None,
                 bench_cfg=None, exclude_cfg=None):
     ex = excluded_keys(exclude_cfg)
@@ -749,6 +763,7 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         "card": card, "card_done": card_done, "card_holding": holding,
         "gap_tracker": gap_tracker(picks, season_day),
         "tracking": tracking(picks), "stacks": live_stacks(live),
+        "report_card": report_card(),
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
         "odds_api": usage, "notes": log, "slate": slate,

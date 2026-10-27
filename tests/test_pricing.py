@@ -139,14 +139,15 @@ def test_quote_far_off_the_market_is_treated_as_bad_data():
     assert [q["venue"] for q in c["shop"]] == ["prophetx"]
 
 
-def test_low_confidence_personnel_bet_is_a_half_size_bet():
+def test_every_card_bet_wins_20_whatever_the_stress_test_level():
+    # Caden 2026-10-27: confidence sizing removed; T13 needs a 4+ gap instead
     slate = [{"game_id": "g1", "home": "H", "home_spread": 1.0,
               "personnel": {"case": {"side": "MEM", "win_est": 0.529, "line": -1.0, "level": "Low"}}}]
     c = build_card([pk(113, "MEM", [xq("prophetx", "MEM", 1.0, -116)], line=-1.0)], slate, now=NOW)[0]
-    assert c["verdict"] == "BET" and c["confidence"] == "Low" and c["to_win"] == 10
+    assert c["verdict"] == "BET" and c["to_win"] == 20 and "confidence" not in c
     slate[0]["personnel"]["case"]["level"] = "Medium"
     c = build_card([pk(113, "MEM", [xq("prophetx", "MEM", 1.0, -116)], line=-1.0)], slate, now=NOW)[0]
-    assert c["verdict"] == "BET" and c["confidence"] == "Medium" and c["to_win"] == 20
+    assert c["verdict"] == "BET" and c["to_win"] == 20
     assert feed_rows([c], NOW)[0]["to_win"] == 20
     m = feed_rows([c], NOW)[0]["model"]
     assert m["win0"] == 0.529 and m["base"] == -1.0 and m["side"] == "MEM" and m["sd"] == 14.14

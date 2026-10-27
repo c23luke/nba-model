@@ -31,7 +31,6 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
-LOW_TO_WIN = 10      # ...except Low-confidence personnel bets (Caden, 2026-10-20)
 MONEYBALL_TO_WIN = 30  # MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
 MIN_EV = 0.02        # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet
 
@@ -128,7 +127,7 @@ def _card_wl(card: str) -> tuple[int, int]:
 HISTORY = {**{sid: (*_card_wl(m["card"]), f"{m['card'].split('·')[-1].strip()} card") for sid, m in SYSTEMS.items()},
            102: (56, 43, "2 seasons, at the open"), 112: (79, 62, "2 seasons, at the open"),
            121: (194, 124, "6 seasons"), 122: (149, 91, "6 seasons"), 123: (149, 86, "6 seasons"),
-           124: (69, 31, "6 seasons")}
+           124: (69, 31, "6 seasons"), 125: (212, 164, "6 seasons")}
 
 
 def history(pick: dict, slate: list[dict]) -> dict | None:
@@ -364,9 +363,8 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
         at_line = min(kalshi, key=lambda q: (abs(q["line"] - p["line"]), -q["ev"])) if kalshi else None
         cap = max_price(at_line["max_cost"]) if at_line else None
-        pg = players_gap(p, slate) if p["system"] != 113 else None      # T13 IS the players model
+        pg = players_gap(p, slate)          # for T13 this is its own gap (worst day-to-day case)
         pb = agree_bucket(pg) if pg is not None else None
-        level = confidence(p, slate) if p["system"] == 113 else None
         if best and best["ev"] >= MIN_EV:
             verdict = "BET"
             why = f"Best price: {_desc(best)}, {best['ev']:+.1%} expected return"
@@ -396,9 +394,10 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "group": group(p["system"]), "name": name, "win": round(win, 3),
                      "price": at_line["price"] if at_line else k.get("price"),
                      "cost": at_line["cost"] if at_line else None, "max": cap,
-                     "verdict": verdict, "why": why, "edge": round(edge, 4), "confidence": level,
-                     # bet size: to win $20; Low-confidence personnel bets to win $10
-                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else LOW_TO_WIN if level == "Low" else TO_WIN,
+                     "verdict": verdict, "why": why, "edge": round(edge, 4),
+                     # bet size: every card bet wins $20; MONEYBALL wins $30. (Confidence sizing removed
+                     # 2026-10-27: T13 now needs a 4+ gap, so the small, weak edges it shrank are gone.)
+                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else TO_WIN,
                      # what an order placer needs to price ANY number on this bet (e.g. P2P offers)
                      "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
                                "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,
@@ -449,7 +448,7 @@ def feed_rows(card: list[dict], now: datetime) -> list[dict]:
             "best_price": b.get("price") if b.get("venue") == "kalshi" else b.get("american"),
             "best_cost": b.get("cost"), "best_ev": b.get("ev"), "best_contract": b.get("contract"),
             "best_ticker": b.get("ticker"), "best_url": b.get("url"), "max_price": c.get("max"),
-            "why": c["why"], "confidence": c.get("confidence"), "to_win": c.get("to_win"), "model": c.get("model"),
+            "why": c["why"], "to_win": c.get("to_win"), "model": c.get("model"),
             "quotes": [{k: q.get(k) for k in ("venue", "venue_name", "contract", "side", "ml", "line", "price",
                                               "american", "cost", "fee_counted", "size", "win", "ev", "max_cost",
                                               "ticker", "order_side", "price_txt")}

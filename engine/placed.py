@@ -16,7 +16,7 @@ VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "P
                "polymarket": "Polymarket", "prophetx": "ProphetX", "manual": "Other book"}
 
 # what the website needs from a card row to explain a bet later, after the row has left the card
-SNAP_KEYS = ("name", "why", "confidence", "win", "players", "players_bucket", "players_history",
+SNAP_KEYS = ("name", "why", "confidence", "to_win", "win", "players", "players_bucket", "players_history",
              "also_combo", "with", "label", "line")
 
 
@@ -144,6 +144,8 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "evidence": p.get("evidence") or [], "price_note": snap.get("why"), "confidence": snap.get("confidence"), "win": snap.get("win"),
             "players": snap.get("players"), "players_history": snap.get("players_history"),
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
+            # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
+            "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
             "manual": venue == "manual", "status": status, "result": res, "pnl": pnl, "market": market, "covering": mg,

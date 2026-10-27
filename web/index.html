@@ -175,6 +175,16 @@ td .n { font-size: 18px; }
 .spark i.W { background: var(--win); } .spark i.L { background: var(--loss); }
 @media (max-width: 600px) { .lb .hide-s { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .tabs button { transition: color .15s, border-color .15s; } }
+.why-h { font-weight: 600; margin: 10px 0 2px; }
+.size-l { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.why-t { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 2px; }
+.why-t th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.why-t td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.why-t .r { text-align: right; white-space: nowrap; }
+.why-t td.good b { color: var(--win); } .why-t td.bad b { color: var(--loss, #d9534f); }
+.why-t tr.combo td { background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.why-note { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+@media (max-width: 560px) { .why-t { font-size: 13px; } .why-t .pc { display: block; font-size: 11px; } .why-t td, .why-t th { padding: 4px 3px; } }
 </style>
 </head>
 <body>
@@ -217,14 +227,70 @@ const pct = (x, dp = 1) => x == null ? "—" : `${x > 0 ? "+" : ""}${(x * 100).t
 const amer = a => a == null ? "" : (a > 0 ? "+" : "−") + Math.abs(a);
 const wl = r => r && (r.w + r.l) ? `${r.w}-${r.l}${r.p ? "-" + r.p : ""}` : "0-0";
 const winp = r => r && (r.w + r.l) ? `${Math.round(r.w / (r.w + r.l) * 100)}%` : "";
-const GROUP_NAMES = { OG: "OG system · auto-bet $20", FAV: "Proven test system · auto-bet $20",
-  EARLY: "Early-season combo · auto-bet $20", TEST: "Tracked only, not bet", SHADOW: "Tracked only, not bet" };
+const GROUP_NAMES = { OG: "OG system · bet", FAV: "Card system · bet",
+  EARLY: "Early system · bet with players 3+", TEST: "Tracked only, not bet", SHADOW: "Tracked only, not bet" };
 const badge = g => g ? `<span class="badge ${g}" title="${GROUP_NAMES[g] || g}">${GROUP_NAMES[g] || g}</span>` : "";
 const etDate = iso => iso ? d(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) : "";
 const until = iso => { const m = Math.round((d(iso) - Date.now()) / 60000); if (m <= 0) return "any minute";
   const h = Math.floor(m / 60); return h >= 24 ? `in ${Math.floor(h / 24)}d ${h % 24}h` : h ? `in ${h}h ${m % 60}m` : `in ${m}m`; };
 const lineTxt = (bet, side, x) => bet === "total" ? `${side} ${x}` : `${side} ${x > 0 ? "+" : x < 0 ? "−" : ""}${x === 0 ? "PK" : Math.abs(x)}`;
 const units = u => `<span class="n ${u > 0 ? "pos" : u < 0 ? "neg" : ""}">${u > 0 ? "+" : ""}${u ?? 0}u</span>`;
+
+
+// ---------- "why we bet": every system on the side, graded season by season
+let BOARD = {};
+const SEASONS = ["2024-25", "2025-26"];
+const rc = () => BOARD.report_card || {};
+const pctOf = r => r && (r.w + r.l) ? Math.round(r.w / (r.w + r.l) * 100) : null;
+const recCell = r => r && (r.w + r.l) ? `<b>${wl(r)}</b><span class="pc muted"> ${pctOf(r)}%</span>` : `<span class="muted">—</span>`;
+const recCellTone = r => { const p = pctOf(r); return p == null || r.w + r.l < 20 ? "" : p >= 55 ? "good" : p < 52.4 ? "bad" : ""; };
+function seasonRecByTag(tag) {
+  const all = { ...(BOARD.systems || {}), ...(BOARD.test_systems || {}), ...(BOARD.early_systems || {}) };
+  return Object.values(all).find(s => s.tag === tag) || null;
+}
+function sysName(tag) { const s = seasonRecByTag(tag); return s ? s.name || "" : ""; }
+const gapBucket = g => g == null || g < 3 ? null : g >= 6 ? "6+" : g >= 4 ? "4-6" : "3-4";
+function playersSeason(bucket) {
+  const t = (BOARD.tracking || {}).personnel_by_gap || {}, k = bucket.replace("-", "–");
+  return t[k] || null;
+}
+// tags: every system on this side; gap: players model points on this side (null = no read)
+function whyBets(tags, gap, side) {
+  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
+  const rows = [];
+  for (const t of sys) {
+    const h = (R.systems || {})[t], o = (R.other || {})[t];
+    const name = `${esc(t)}${sysName(t) ? ` <span class="muted">· ${esc(sysName(t))}</span>` : ""}`;
+    if (h || !o) rows.push({ name, cells: [(h || {})[SEASONS[0]], (h || {})[SEASONS[1]], seasonRecByTag(t)] });
+    else rows.push({ name, span: `${recCell(o)} <span class="muted">${esc(o.label)}</span>`, tone: recCellTone(o), cells: [seasonRecByTag(t)] });
+  }
+  const b = gapBucket(gap);
+  if (gap != null) {
+    const txt = gap >= 0 ? `likes ${esc(side)} by ${gap.toFixed(1)} pts` : `likes the other side by ${Math.abs(gap).toFixed(1)}`;
+    if (b) { const h = (R.players_gap || {})[b] || {};
+      rows.push({ name: `Players model <span class="muted">· ${txt} (gap ${b})</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], playersSeason(b)] }); }
+    else rows.push({ name: `Players model <span class="muted">· ${txt} — too small to count</span>`, cells: null });
+  }
+  if (sys.length >= 2 && gap != null && gap >= 3) {
+    const h = R.moneyball || {};
+    rows.push({ name: `<b>All together: MONEYBALL</b> <span class="muted">· 2+ systems + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], seasonRecByTag("MONEYBALL")], combo: true });
+  } else if (sys.some(t => t && t[0] === "E") && gap != null && gap >= 3) {
+    const h = R.early_combo || {};
+    rows.push({ name: `<b>All together</b> <span class="muted">· early system + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], null], combo: true });
+  }
+  if (!rows.length) return "";
+  return `<table class="why-t"><tr><th>What's behind it</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">This season</th></tr>` +
+    rows.map(r => `<tr class="${r.combo ? "combo" : ""}"><td>${r.name}</td>${r.span ? `<td colspan="2" class="r ${r.tone}">${r.span}</td>` : ""}${r.cells ? r.cells.map(c => `<td class="r ${recCellTone(c)}">${recCell(c)}</td>`).join("") : `<td colspan="3"></td>`}</tr>`).join("") +
+    `</table><div class="why-note">Past seasons replayed at the opening line. Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ bets.</div>`;
+}
+function whyHead(tag, tags, gap, side) {
+  const sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
+  if (tag === "MONEYBALL") return `MONEYBALL: ${sys.length} systems on ${esc(side)} and the players model agrees by ${gap != null ? gap.toFixed(1) : "3+"}`;
+  if (tag === "T13") return `Players model: rates ${esc(side)} ${gap != null ? gap.toFixed(1) + " pts" : ""} better than the market${sys.length ? `, and ${sys.map(esc).join(", ")} agree${sys.length === 1 ? "s" : ""}` : ""}`;
+  if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
+  return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
+}
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $30" : "every card bet is sized to win $20 (MONEYBALL $30)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "card", "rankings", "results", "systems", "lab"];
@@ -287,7 +353,6 @@ function ticket(x) {
   const price = x.venue === "kalshi" ? `${Math.round(x.price * 100)}¢ <span class="muted">${amer(x.american)}</span>` : amer(x.american);
   const card = x.card_pick && x.card_pick !== x.holding ? `card pick ${esc(x.card_pick)}` : "";
   const score = x.score && x.score.home != null ? `${esc(x.away)} ${x.score.away}, ${esc(x.home)} ${x.score.home}` : "";
-  const r = x.record || {}, h = r.history;
   const pl = x.status === "FINAL" ? `<div class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</div>` : "";
   return `<article class="ticket">
     <div class="stub">
@@ -305,19 +370,10 @@ function ticket(x) {
         <div>Expected return<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
       ${marketLine(x)}
-      <div class="chips">
-        ${badge(x.group)}<span class="chip sys">${esc(x.system)}${x.name ? " · " + esc(x.name) : ""}</span>
-        ${x.confidence ? `<span class="chip ${x.confidence}">${x.confidence} confidence${x.confidence === "Low" ? " · $10 size" : ""}</span>` : ""}
-        ${x.players != null ? `<span class="chip ${x.players >= 3 ? "stack" : ""}">Players model ${x.players >= 0 ? "+" : ""}${x.players}</span>` : ""}
-        ${(x.with || []).length ? `<span class="chip">Also on it: ${x.with.map(esc).join(", ")}</span>` : ""}
-      </div>
-      ${(x.evidence || []).length ? `<ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
-      <div class="rec">
-        <span><b>${wl(r)}</b>${winp(r)} all-time</span>
-        <span><b>${wl(r.season)}</b>this season</span>
-        ${h ? `<span>history: ${wl(h)}, ${esc(h.label || "backtest")}</span>` : ""}
-      </div>
-      ${x.also_combo ? `<div class="rec" style="margin-top:4px"><span><b>${wl(x.also_combo)}</b>early combo (${esc(x.also_combo.tag)} + players model 3+)</span></div>` : ""}
+      <div class="why-h">Why: ${whyHead(x.system, [x.system, ...(x.with || [])], x.players, x.side)}</div>
+      <div class="size-l">${sizeLine(x)}</div>
+      ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
+      ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
       <details class="more"><summary>Order details</summary><dl>
         <dt>Bought</dt><dd>${esc(x.contract)}</dd>
         ${x.price_note ? `<dt>Price check</dt><dd>${esc(x.price_note)}</dd>` : ""}
@@ -328,6 +384,13 @@ function ticket(x) {
       </dl></details>
     </div>
   </article>`;
+}
+
+function sizeLine(x) {
+  const T = x.target || 20, got = x.to_win;
+  let t = `Size: to win <b>${money(T)}</b> — ${T === 10 ? "the old Low-confidence size (that rule is retired)" : sizeRule(x.system)}.`;
+  if (got != null && got < T - 1) t += x.status === "OPEN" ? ` Got ${money(got)} so far: only part filled at our price, and it tops up when more is offered.` : ` Only ${money(got)} filled.`;
+  return t;
 }
 
 function marketLine(x) {
@@ -376,10 +439,10 @@ function notPlaced(b, placed) {
     .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }));
 }
 
-let fSite = "", fSys = "", fConf = "";
+let fSite = "", fSys = "";
 function renderBets(placed, b) {
   const allBets = placed.bets || [];
-  const bets = allBets.filter(x => (!fSite || x.venue_name === fSite) && (!fSys || x.system === fSys) && (!fConf || (x.confidence || "None") === fConf));
+  const bets = allBets.filter(x => (!fSite || x.venue_name === fSite) && (!fSys || x.system === fSys));
   const open = bets.filter(x => x.status !== "FINAL"), done = bets.filter(x => x.status === "FINAL");
   const sum = (xs, k) => Math.round(xs.reduce((t, x) => t + (x[k] || 0), 0) * 100) / 100;
   const w = done.filter(x => x.result === "W").length, l = done.filter(x => x.result === "L").length, pu = done.filter(x => x.result === "P").length;
@@ -402,10 +465,9 @@ function renderBets(placed, b) {
     <div class="filters">Show
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
-      <select id="f-conf" aria-label="Confidence">${opts(uniq("confidence"), fConf, "Any confidence")}</select>
     </div>` : "") +
-    `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites (plus any you placed by hand). Sized to win $20, or $10 when confidence is Low.</p>` +
-    (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys || fConf) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
+    `<h2>Open bets</h2><p class="lede">Placed automatically at the best price across your sites (plus any you placed by hand). Every bet is sized to win $20; MONEYBALL bets win $30. Each one lists every system behind it and how each did, season by season.</p>` +
+    (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     ((placed.resting || []).length ? `<h2>Waiting for a price</h2><p class="lede">LIMIT bets: an order is sitting on Kalshi at the most we'd pay. It fills if the price comes to us, and is cancelled 5 minutes before tip or if the model stops wanting it.</p>` +
       placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)} · card pick ${esc(r.pick)} · tips ${esc(until(r.tip_utc))}</span></div>
         <div class="n" style="font-size:18px">${Math.round(r.price * 100)}¢ <span class="muted">${amer(r.american)}</span></div>
@@ -418,7 +480,7 @@ function renderBets(placed, b) {
       placed.excluded.map(x => `${esc(x.holding)} on ${esc(x.venue_name)}${x.result ? ` (${x.result}, ${x.pnl >= 0 ? "+" : "−"}${money(Math.abs(x.pnl))})` : " (open)"}`).join(", ") +
       `. ${esc(placed.excluded[0].why || "")} That money is real, so it's shown here: ${(placed.summary.excluded_pnl || 0) >= 0 ? "+" : "−"}${money(Math.abs(placed.summary.excluded_pnl || 0))} settled so far.</p>` : "") +
     (placed.summary && placed.summary.since ? `<p class="foot">Live betting since ${esc(tipDay(placed.summary.since))}. Each bet is graded at the number we actually hold. "Beat the close" compares what we paid with what our exact number was worth at the closing line.</p>` : "");
-  for (const [id, set] of [["f-site", v => fSite = v], ["f-sys", v => fSys = v], ["f-conf", v => fConf = v]]) {
+  for (const [id, set] of [["f-site", v => fSite = v], ["f-sys", v => fSys = v]]) {
     const el = $(id); if (el) el.onchange = () => { set(el.value); renderBets(placed, b); };
   }
 }
@@ -430,14 +492,15 @@ function renderCard(b, placed) {
   const card = b.card || [], hold = b.card_holding || [];
   const row = c => {
     const p = byKey[c.key];
-    const r = c.record || {};
     const best = c.best;
     return `<div class="row">
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
-        <div class="chips" style="margin:6px 0 4px">${badge(c.group)}<span class="chip sys">${esc(c.tag)}${c.name ? " · " + esc(c.name) : ""}</span>${c.confidence ? `<span class="chip ${c.confidence}">${c.confidence}${c.confidence === "Low" ? " · $10 size" : ""}</span>` : ""}${c.players != null ? `<span class="chip ${c.players >= 3 ? "stack" : ""}">Players ${c.players >= 0 ? "+" : ""}${c.players}</span>` : ""}</div>
-        <div class="sub">${r.w + r.l ? `<b class="n" style="font-size:17px;color:var(--text)">${wl(r)}</b> ${winp(r)} all-time · ${wl(r.season)} this season. ` : ""}${esc(c.why || "")}</div>
+        <div class="why-h">Why: ${whyHead(c.tag, [c.tag, ...(c.with || [])], c.players, c.side)}</div>
+        ${c.verdict === "BET" || c.verdict === "LIMIT" ? `<div class="size-l">Size: to win <b>${money(c.to_win || 20)}</b> — ${sizeRule(c.tag)}.</div>` : ""}
+        ${whyBets([c.tag, ...(c.with || [])], c.players, c.side)}
+        <div class="sub">${esc(c.why || "")}</div>
         ${p ? `<div class="placed">Placed on ${esc(p.venue_name)}: ${esc(p.holding)} at ${p.venue === "kalshi" ? Math.round(p.price * 100) + "¢" : amer(p.american)}, to win ${money(p.to_win)}</div>`
           : skipWhy[c.key] ? `<div class="sub" style="margin-top:4px">Not placed: ${esc(skipWhy[c.key])}</div>` : ""}
       </div>
@@ -519,10 +582,9 @@ function renderLab(b) {
   if (G) {
     const live = r => r && r.n ? `${wl(r)} · ${r.win_pct == null ? "—" : Math.round(r.win_pct * 100) + "%"} · ${r.units > 0 ? "+" : ""}${r.units}u` : "—";
     const hist = g => g && (g.w + g.l) ? `${g.w}-${g.l} · ${Math.round(g.w / (g.w + g.l) * 100)}%` : "—";
-    const W = G.window, hw = G.history_by_gap || {}, hc = G.history_by_confidence || {};
+    const W = G.window, hw = G.history_by_gap || {};
     const head = `<tr><th></th><th class="r">This season</th><th class="r">2 seasons, ${esc(W)}</th><th class="r">2 seasons, full</th></tr>`;
-    gaps = `<div class="grid2"><div><h3>By gap size</h3><table>${head}${["0-2", "2-3", "3-4", "4-5", "5+", "3+"].map(k => `<tr><td>${k === "3+" ? "<b>3+ (T13)</b>" : "gap " + k}</td><td class="r">${live(G.by_gap[k])}</td><td class="r">${hist((hw[W] || {})[k])}</td><td class="r">${hist((hw["whole season"] || {})[k])}</td></tr>`).join("")}</table></div>
-      <div><h3>By confidence, gap 3+</h3><table>${head}${["High", "Medium", "Low"].map(k => `<tr><td>${k}</td><td class="r">${live(G.by_confidence[k])}</td><td class="r">${hist((hc[W] || {})[k])}</td><td class="r">${hist((hc["whole season"] || {})[k])}</td></tr>`).join("")}</table></div></div>`;
+    gaps = `<div class="grid2"><div><h3>By gap size</h3><table>${head}${["0-2", "2-3", "3-4", "4-5", "5+", "3+"].map(k => `<tr><td>${k === "3+" ? "<b>3+ (T13)</b>" : "gap " + k}</td><td class="r">${live(G.by_gap[k])}</td><td class="r">${hist((hw[W] || {})[k])}</td><td class="r">${hist((hw["whole season"] || {})[k])}</td></tr>`).join("")}</table></div></div>`;
   }
   const st = b.stacks || [];
   const stacks = st.length ? st.map(x => `<div class="game"><div><div class="t">${esc(x.label)}</div><div class="muted" style="font-size:14px">${esc(x.away)} @ ${esc(x.home)}, ${esc(when(x.tip_utc))}</div></div><div>${x.groups.map(badge).join("")}<span class="muted">${esc(x.systems.join(" + "))}</span></div></div>`).join("") : `<div class="muted">No stacks on today's games.</div>`;
@@ -599,6 +661,7 @@ function render(b) {
   // keep whatever the viewer opened across the once-a-minute refresh
   const openNow = [...document.querySelectorAll("main details")].map((el, i) => el.open ? i : -1).filter(i => i >= 0);
   const placed = b.placed || { bets: [], summary: null };
+  BOARD = b;
   placedKeys = new Set((placed.bets || []).map(x => x.key));
   renderHead(b, placed);
   renderBets(placed, b);
