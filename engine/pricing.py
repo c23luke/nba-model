@@ -89,7 +89,12 @@ def players_gap(pick: dict, slate: list[dict]) -> float | None:
 SPREAD_SD = 14.14        # measured: home margin minus spread, 979 games 2025-26
 TOTAL_SD = 18.18         # measured: actual total minus closing total, 1,194 games 2025-26
 MIN_SIZE = 10            # skip a quote with less than this much available
-WINDOW = {"spread": 4.0, "total": 6.0}     # only compare numbers this close to the pick's line
+# Price guards (2026-10-27). Our win rates are measured at the market number. Buying many points away
+# from it (we paid -183 and -209 for big alt lines) leans on the point-value table far from where it was
+# measured, and to-win sizing risks $40+ to win $20 there. So: at most 2 points (3 on totals) from the
+# pick's number, and never a price worse than -150. Re-check with price_log once ~100 bets have settled.
+WINDOW = {"spread": 2.0, "total": 3.0}     # only compare numbers this close to the pick's line
+MAX_COST = 0.60                            # -150: the most we pay per $1 payout, at any venue
 _N = NormalDist()
 
 
@@ -296,7 +301,7 @@ SUSPECT = 0.10     # a quote 10+ points of probability cheaper than the consensu
 LINE_BOUNDS = {
     2: (-99.0, -0.5),     # S2 road FAVORITE
     3: (-99.0, -0.5),     # S3 home FAVORITE
-    4: (220.5, 999.0),    # S4 over: total above 220
+    4: (220.5, 999.0),    # S4 over: total above 220 (live: above this season's average, from the pick's meta)
     112: (-99.0, -8.0),   # T12 favorite by 8+
     202: (0.5, 7.0),      # E2 home underdog of 7 or less
     203: (10.0, 99.0),    # E3 underdog of 10+
@@ -308,6 +313,9 @@ LINE_BOUNDS = {
 def allowed_lines(p: dict, slate: list[dict]) -> tuple[float, float]:
     """Lowest and highest number this bet may be taken at."""
     lo, hi = LINE_BOUNDS.get(p["system"], (-999.0, 999.0))
+    bar = (p.get("meta") or {}).get("bar")
+    if p["system"] == 4 and bar is not None:      # S4: the total must stay above this season's average
+        lo = max(lo, bar + 0.01)
     if p["system"] == 113:               # T13: the players-model edge must stay 3+ at the number we take
         for g in slate:
             c = ((g.get("personnel") or {}).get("case") or {})
@@ -327,8 +335,8 @@ def shop(p: dict, win0: float, base: float | None = None, market: float | None =
             continue                      # outside what the system allows
         if q.get("size") is not None and q["size"] < MIN_SIZE:
             continue
-        if abs(q["line"] - p["line"]) > WINDOW[p["bet"]]:
-            continue
+        if abs(q["line"] - base) > WINDOW[p["bet"]]:
+            continue                        # measured from the number the win rate applies to (the market now)
         win, push = outcome(win0, base, p["bet"], p["side"], q["line"])
         if market is not None:
             mw, mp = outcome(0.5, market, p["bet"], p["side"], q["line"])
@@ -338,7 +346,7 @@ def shop(p: dict, win0: float, base: float | None = None, market: float | None =
         out.append({**q, "win": round(win, 4), "push": round(push, 4),
                     "ev": round(expected_return(win, push, q["cost"]), 4),
                     "max_cost": round(breakeven, 4), "price_txt": price_text(q),
-                    "mine": q["venue"] in MY_VENUES})
+                    "mine": q["venue"] in MY_VENUES, "too_pricey": q["cost"] > MAX_COST + 1e-9})
     return prefer_points(out)
 
 
@@ -392,23 +400,25 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
             continue
         quotes = shop(p, win, base, market_line(p, slate), allowed_lines(p, slate))
         mine = [q for q in quotes if q["mine"]]
-        best = mine[0] if mine else None
+        ok = [q for q in mine if not q["too_pricey"]]             # never worse than -150
+        best = ok[0] if ok else (mine[0] if mine else None)
         kalshi = [q for q in mine if q["venue"] == "kalshi"]
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
         at_line = min(kalshi, key=lambda q: (abs(q["line"] - p["line"]), -q["ev"])) if kalshi else None
-        cap = max_price(at_line["max_cost"]) if at_line else None
+        cap = max_price(min(at_line["max_cost"], MAX_COST)) if at_line else None
         pg = players_gap(p, slate)          # for T13 this is its own gap (worst day-to-day case)
         pb = agree_bucket(pg) if pg is not None else None
-        if best and best["ev"] >= MIN_EV:
+        if best and best["ev"] >= MIN_EV and not best["too_pricey"]:
             verdict = "BET"
             why = f"Best price: {_desc(best)}, {best['ev']:+.1%} expected return"
-            runner = next((q for q in mine[1:] if q["venue"] != best["venue"]), None)
+            runner = next((q for q in ok[1:] if q["venue"] != best["venue"]), None)
             if runner:
                 why += f". Next best: {_desc(runner)}, {runner['ev']:+.1%}"
         elif best:
             if cap is not None and (win > BREAK_EVEN_110 or cap >= 0.45):
                 verdict = "LIMIT"
-                why = (f"No venue clears the {MIN_EV:.0%} bar right now (best: {_desc(best)}, {best['ev']:+.1%}). "
+                why = (("Only prices worse than -150 right now" if best["too_pricey"] else
+                        f"No venue clears the {MIN_EV:.0%} bar right now") + f" (best: {_desc(best)}, {best['ev']:+.1%}). "
                        f"Set a limit on Kalshi {at_line['contract']} at {round(cap * 100)}¢")
             else:
                 verdict, why = "PASS", f"Not enough edge at today's prices (best: {_desc(best)}, {best['ev']:+.1%})"

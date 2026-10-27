@@ -50,6 +50,10 @@ export type Settings = {
   watch_venues?: string[] | null;    // test-only sites: log "WOULD HAVE PLACED" every run, never place, even when live
 };
 
+/** Never pay worse than -150 per $1 payout (engine/pricing.py MAX_COST): to-win sizing risks $30+ to win $20 past it,
+ * and our win rates are measured near the market number, not deep into bought points. */
+export const MAX_COST = 0.60;
+
 export type Quote = {
   venue: string; venue_name?: string; contract: string; side: string; ml?: boolean; line: number;
   price?: number | null; american?: number | null; cost: number; win: number; ev: number; max_cost: number;
@@ -328,7 +332,9 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
         res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason: `${venues[vn].name} offers failed: ${msg(e)}` });
       }
     }
-    quotes = preferPoints(quotes.filter((q) => q.ev >= s.min_ev));
+    const pricey = quotes.filter((q) => q.ev >= s.min_ev && q.cost > MAX_COST);
+    quotes = preferPoints(quotes.filter((q) => q.ev >= s.min_ev && q.cost <= MAX_COST));
+    if (!quotes.length && pricey.length) { skip(`only prices worse than -150 (best ${pricey[0].contract} at ${pricey[0].american ?? pricey[0].cost})`); continue; }
     if (!quotes.length) {
       const notes = on.map((vn) => venues[vn].explain?.(row) ?? "").filter(Boolean).join(" · ");
       skip(`no quote on ${on.join("/") || "any switched-on venue"} with expected return ≥ ${pct(s.min_ev)}${notes ? ` — ${notes}` : ""}`);
@@ -579,7 +585,7 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
     // the strike where resting at our price is worth the most
     const pick = qs.map((q) => {
       const push = Math.max(0, 1 - q.win / q.max_cost);
-      const limit = restingPrice(q.win, push, s.min_ev);
+      const limit = Math.min(restingPrice(q.win, push, s.min_ev), MAX_COST);
       return { q, limit, ev: evAt(q, limit + kalshiMakerFee(limit, 100) / 100) };
     }).sort((a, b) => b.ev - a.ev)[0];
     const { q, limit } = pick;
@@ -904,7 +910,7 @@ export function teamCode(t: { abbreviation?: string; displayName?: string; displ
   for (const [code, nick] of Object.entries(TEAM_NICKNAMES)) if (low.includes(nick.toLowerCase())) return code;
   return null;
 }
-const SPREAD_WINDOW = 4, TOTAL_WINDOW = 6;
+const SPREAD_WINDOW = 2, TOTAL_WINDOW = 3;     // same guards as engine/pricing.py WINDOW
 const toMs = (t: unknown) => { const n = Number(t); return n > 1e12 ? n : n * 1000; };
 
 export class BetOpenly implements Venue {

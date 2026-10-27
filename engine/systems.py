@@ -240,7 +240,7 @@ def evaluate(game: Game, home: TeamState, away: TeamState,
                  else f"Total is {total:g}, above this season's average of {bar:.1f}"),
                 f"{team} won its last game: {t.last_game.score_line()}",
                 f"{o.team} lost its last game: {o.last_game.score_line()}",
-            ]))
+            ], {"bar": bar}))
     return picks
 
 

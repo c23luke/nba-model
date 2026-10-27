@@ -361,12 +361,12 @@ Deno.test("BetOpenly: reads offers from our side, skips parlays/expired/other ga
     offer({ id: "ind" }, { team: "Indiana Pacers", teamAbbv: "IND", lines: -4 }),   // other side
     offer({ id: "half" }, { timeframe: "1h" }),
     offer({ id: "far" }, { lines: 8.5 }),                                // past the system's max (7.5)
-    offer({ id: "ml" }, { betType: "moneyline", lines: null, odds: 150 }), // NOP ML = -0.5, inside window? 4 pts from 3.5
+    offer({ id: "ml" }, { betType: "moneyline", lines: null, odds: 150 }), // NOP ML = -0.5: 4 pts from 3.5, past the 2-pt window
     offer({ id: "nyk" }, { homeTeam: { abbreviation: "NY" }, awayTeam: { abbreviation: "BOS" } }),
   ];
   const { bo } = fakeBO(book);
   const qs = await bo.offers(boRow());
-  eq(qs.map((q) => q.offer_id).sort(), ["ml", "off1"]);
+  eq(qs.map((q) => q.offer_id).sort(), ["off1"]);
   const q = qs.find((q) => q.offer_id === "off1")!;
   eq([q.contract, q.line, q.american, q.side, q.size], ["NOP +4", 4, -105, "NOP", 50]);
 });
@@ -684,4 +684,14 @@ Deno.test("a resting order Kalshi says is already gone (404 on cancel) is closed
   ok(!db.logs.some((l) => l.level === "error"), JSON.stringify(db.logs));
   await runOnce(db, { kalshi: k }, NOW);
   eq(cancels, 1, "not retried");
+});
+
+
+Deno.test("never pays worse than -150, even when the model says it's worth it", async () => {
+  const { bo } = fakeBO([offer({ id: "steep" }, { odds: -160 })]);
+  const db = new FakeDb(settings({ venues: ["betopenly"], to_win_dollars: 20, max_dollars_per_game: 50 }),
+    [boRow({ model: { ...MODEL, win0: 0.72 } })]);
+  const res = await runOnce(db, { betopenly: bo }, NOW);
+  eq(db.orders_.length, 0, "nothing placed");
+  ok(JSON.stringify(res.skips).includes("worse than -150"), JSON.stringify(res.skips).slice(0, 400));
 });

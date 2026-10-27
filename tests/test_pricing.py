@@ -265,3 +265,17 @@ def test_moneyball_replaces_the_other_bets_on_its_side_and_wins_30():
     card = build_card(live, slate, now=NOW)
     assert [c["tag"] for c in card] == ["MONEYBALL"] and card[0]["to_win"] == 30
     assert set(card[0]["with"]) == {"T12", "T2"}
+
+
+def test_never_bets_a_price_worse_than_minus_150_or_far_from_the_number():
+    from engine.pricing import PRICE_WIN
+    PRICE_WIN[102], old = 0.70, PRICE_WIN[102]           # huge edge on paper: the guards must still hold
+    try:
+        pricey = build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -160)])], [], now=NOW)[0]
+        assert pricey["verdict"] != "BET" and pricey["best"]["too_pricey"]
+        far = build_card([pk(102, "BOS", [xq("prophetx", "BOS", 0.5, -110)])], [], now=NOW)[0]   # 3.5 pts bought
+        assert not far["shop"] or all(abs(q["line"] - -3.0) <= 2.0 for q in far["shop"])
+        fine = build_card([pk(102, "BOS", [xq("prophetx", "BOS", -2.0, -140)])], [], now=NOW)[0]
+        assert fine["verdict"] == "BET" and fine["best"]["line"] == -2.0
+    finally:
+        PRICE_WIN[102] = old
