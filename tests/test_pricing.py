@@ -228,3 +228,13 @@ def test_players_gap_uses_the_version_that_holds_either_way():
     assert players_gap({"bet": "spread", "game_id": "g", "side": "MIA"}, slate) == -4.1
     slate[0]["personnel"]["scenarios"] = []
     assert players_gap({"bet": "spread", "game_id": "g", "side": "CHA"}, slate) == 4.1
+
+
+def test_card_bet_means_the_placer_will_bet_it():
+    # +1% expected return: above zero but under the placer's 2% bar → LIMIT (rests at a 2% price), not BET
+    from engine.pricing import MIN_EV
+    slate = [{"game_id": "g2", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
+    for price, want in ((0.53, "LIMIT"), (0.50, "BET")):
+        c = build_card([pk(113, "NOP", [kq("NOP", 3.5, price)], game="g2", line=3.5)], slate, now=NOW)[0]
+        assert c["verdict"] == want, (price, c["best"]["ev"], c["verdict"])
+        assert (c["best"]["ev"] >= MIN_EV) == (want == "BET")

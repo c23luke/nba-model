@@ -32,6 +32,7 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
 LOW_TO_WIN = 10      # ...except Low-confidence personnel bets (Caden, 2026-10-20)
+MIN_EV = 0.02        # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet
 
 # 2-season replay of every system split by whether the players model agreed (engine/backtest_og.py)
 try:
@@ -361,7 +362,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         pg = players_gap(p, slate) if p["system"] != 113 else None      # T13 IS the players model
         pb = agree_bucket(pg) if pg is not None else None
         level = confidence(p, slate) if p["system"] == 113 else None
-        if best and best["ev"] > 0:
+        if best and best["ev"] >= MIN_EV:
             verdict = "BET"
             why = f"Best price: {_desc(best)}, {best['ev']:+.1%} expected return"
             runner = next((q for q in mine[1:] if q["venue"] != best["venue"]), None)
@@ -370,7 +371,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         elif best:
             if cap is not None and (win > BREAK_EVEN_110 or cap >= 0.45):
                 verdict = "LIMIT"
-                why = (f"No venue has value right now (best: {_desc(best)}, {best['ev']:+.1%}). "
+                why = (f"No venue clears the {MIN_EV:.0%} bar right now (best: {_desc(best)}, {best['ev']:+.1%}). "
                        f"Set a limit on Kalshi {at_line['contract']} at {round(cap * 100)}¢")
             else:
                 verdict, why = "PASS", f"Not enough edge at today's prices (best: {_desc(best)}, {best['ev']:+.1%})"

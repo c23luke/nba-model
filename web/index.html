@@ -215,7 +215,9 @@ const pct = (x, dp = 1) => x == null ? "—" : `${x > 0 ? "+" : ""}${(x * 100).t
 const amer = a => a == null ? "" : (a > 0 ? "+" : "−") + Math.abs(a);
 const wl = r => r && (r.w + r.l) ? `${r.w}-${r.l}${r.p ? "-" + r.p : ""}` : "0-0";
 const winp = r => r && (r.w + r.l) ? `${Math.round(r.w / (r.w + r.l) * 100)}%` : "";
-const badge = g => g ? `<span class="badge ${g}">${g}</span>` : "";
+const GROUP_NAMES = { OG: "OG system · auto-bet $20", FAV: "Proven test system · auto-bet $20",
+  EARLY: "Early-season combo · auto-bet $20", TEST: "Tracked only, not bet", SHADOW: "Tracked only, not bet" };
+const badge = g => g ? `<span class="badge ${g}" title="${GROUP_NAMES[g] || g}">${GROUP_NAMES[g] || g}</span>` : "";
 const etDate = iso => iso ? d(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) : "";
 const until = iso => { const m = Math.round((d(iso) - Date.now()) / 60000); if (m <= 0) return "any minute";
   const h = Math.floor(m / 60); return h >= 24 ? `in ${Math.floor(h / 24)}d ${h % 24}h` : h ? `in ${h}h ${m % 60}m` : `in ${m}m`; };
@@ -302,8 +304,8 @@ function ticket(x) {
       </div>
       ${marketLine(x)}
       <div class="chips">
-        <span class="chip sys">${esc(x.system)}${x.name ? " · " + esc(x.name) : ""}</span>
-        ${x.confidence ? `<span class="chip ${x.confidence}">${x.confidence} confidence</span>` : ""}
+        ${badge(x.group)}<span class="chip sys">${esc(x.system)}${x.name ? " · " + esc(x.name) : ""}</span>
+        ${x.confidence ? `<span class="chip ${x.confidence}">${x.confidence} confidence${x.confidence === "Low" ? " · $10 size" : ""}</span>` : ""}
         ${x.players != null ? `<span class="chip ${x.players >= 3 ? "stack" : ""}">Players model ${x.players >= 0 ? "+" : ""}${x.players}</span>` : ""}
         ${(x.with || []).length ? `<span class="chip">Also on it: ${x.with.map(esc).join(", ")}</span>` : ""}
       </div>

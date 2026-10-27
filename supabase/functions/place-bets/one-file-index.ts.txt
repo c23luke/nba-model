@@ -24,6 +24,12 @@ export const POLY_GATEWAY = "https://gateway.polymarket.us";
 // Until a preview order confirms it, Polymarket US can only ever dry-run.
 export const POLY_LIVE_VERIFIED = false;
 const MAX_UNFILLED_TRIES = 3;
+// A bet that only partly filled (Kalshi fills what's in the book, cancels the rest) is topped up on
+// later runs — any site, best price — until it's within this many dollars of its to-win target.
+// (Audit, Oct 26: S4 OVER 221 won $3.09 of $20, E3 PHX +10 $0.01 of $20, GSW +6.5 $3.63 of $20.)
+const TOP_UP_MIN = 2;
+const wonSoFar = (o: OrderRow) => (o.fill_count ?? 0) > 0
+  ? Math.max(0, (o.fill_count ?? 0) - (o.fill_cost ?? 0) - (o.fees ?? 0)) : 0;
 const HEARTBEAT_MINUTES = 15;
 const LIVE_STATUSES = ["pending", "filled", "partial", "error", "resting"];
 
@@ -305,7 +311,12 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
 
     // Rule 5: never the same bet twice (live). A bet that errored is never retried automatically.
     const liveForBet = recent.filter((o) => o.mode === "live" && o.bet_key === row.key && LIVE_STATUSES.includes(o.status));
-    if (live && liveForBet.length) { skip(`already ${liveForBet[0].status} (${liveForBet[0].venue})`); continue; }
+    const target = s.to_win_dollars && s.to_win_dollars > 0
+      ? (row.to_win && row.to_win > 0 ? Math.min(row.to_win, s.to_win_dollars) : s.to_win_dollars) : 0;
+    const already = round2(liveForBet.reduce((t, o) => t + wonSoFar(o), 0));
+    const topUp = live && target > 0 && liveForBet.length > 0 && liveForBet.every((o) => o.status === "partial")
+      && target - already >= TOP_UP_MIN;
+    if (live && liveForBet.length && !topUp) { skip(`already ${liveForBet[0].status} (${liveForBet[0].venue})`); continue; }
 
     let quotes = (row.quotes || []).filter((q) => on.includes(q.venue) && !venues[q.venue].offers &&
       (q.venue !== "kalshi" || (q.ticker && q.order_side)) && (q.venue !== "polymarket_us" || q.ml));
@@ -339,7 +350,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       const market = chk.market;
       // Rule 5: never the same market twice
       const marketTaken = recent.find((o) => o.mode === "live" && o.venue === q.venue && o.market === market &&
-        LIVE_STATUSES.includes(o.status));
+        LIVE_STATUSES.includes(o.status) && !(topUp && o.status === "partial"));
       if (live && marketTaken) { why.push(`${v.name} ${market}: already ${marketTaken.status}`); continue; }
       const unfilled = recent.filter((o) => o.mode === "live" && o.venue === q.venue && o.market === market && o.status === "unfilled");
       if (live && unfilled.length >= MAX_UNFILLED_TRIES) { why.push(`${v.name} ${market}: ${unfilled.length} unfilled tries already`); continue; }
@@ -360,8 +371,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
 
       // Rule 2: same size every bet — to win a fixed amount (default), or a fixed stake
       const limit = round4(seen);
-      const toWin = s.to_win_dollars && s.to_win_dollars > 0
-        ? (row.to_win && row.to_win > 0 ? Math.min(row.to_win, s.to_win_dollars) : s.to_win_dollars) : 0;
+      const toWin = topUp ? round2(target - already) : target;     // a top-up only buys what's still missing
       const count = toWin > 0
         ? contractsToWin(limit, toWin, (p, c) => v.fee(p, c))
         : Math.floor(s.stake_dollars / limit + 1e-9);
@@ -708,7 +718,7 @@ export async function kalshiSigner(pem: string): Promise<Signer> {
 export class Kalshi implements Venue {
   name = "Kalshi";
   constructor(private base: string, private keyId: string | undefined, private signer: Signer | undefined,
-              private dataBase = base, private http: typeof fetch = fetch) {}
+              private dataBase = base, private http: typeof fetch = fetch, private retryMs = 1500) {}
   get hasKeys() { return !!(this.keyId && this.signer); }
 
   private async call(method: string, path: string, body?: unknown, auth = true, base = this.base) {
@@ -721,7 +731,17 @@ export class Kalshi implements Venue {
       headers["KALSHI-ACCESS-TIMESTAMP"] = ts;
       headers["KALSHI-ACCESS-SIGNATURE"] = await this.signer(ts + method + new URL(url).pathname);
     }
-    const r = await this.http(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    let r = await this.http(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    // rate limited on a read (shared account): wait and try again, twice. Orders are never re-sent here.
+    for (let i = 0; r.status === 429 && method === "GET" && i < 2; i++) {
+      await new Promise((ok) => setTimeout(ok, this.retryMs * (i + 1)));
+      if (auth) {
+        const ts = String(Date.now());
+        headers["KALSHI-ACCESS-TIMESTAMP"] = ts;
+        headers["KALSHI-ACCESS-SIGNATURE"] = await this.signer!(ts + method + new URL(url).pathname);
+      }
+      r = await this.http(url, { method, headers });
+    }
     const txt = await r.text();
     if (!r.ok) throw new Error(`Kalshi ${method} ${new URL(url).pathname} → ${r.status}: ${txt.slice(0, 300)}`);
     return txt ? JSON.parse(txt) : {};
@@ -1039,7 +1059,12 @@ export class ProphetX implements Venue {
     return { status: r.status, js };
   }
   private async call(method: string, path: string, body?: unknown) {
-    const { status, js } = await this.raw(method, path, body);
+    let { status, js } = await this.raw(method, path, body);
+    // rate limited on a read (the Exchange Scanner shares this account): wait and try again, twice
+    for (let i = 0; status === 429 && method === "GET" && i < 2; i++) {
+      await this.sleep(1500 * (i + 1));
+      ({ status, js } = await this.raw(method, path, body));
+    }
     if (status < 200 || status >= 300) throw new Error(`ProphetX ${method} ${path} → ${status}: ${JSON.stringify(js).slice(0, 300)}`);
     return js?.data ?? js;
   }
@@ -1286,6 +1311,7 @@ export async function buildVenues(s: Settings, db?: Db): Promise<Record<string, 
   };
 }
 
+// place-bets entry point. All logic lives in core.ts (tested in core_test.ts).
 
 Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,

@@ -37,7 +37,7 @@ class FakeDb implements Db {
   async feed() { return this.rows; }
   async orders() { return this.orders_.map((o) => ({ ...o })); }
   async insertOrder(row: OrderRow) {
-    const active = ["pending", "filled", "partial", "error"];
+    const active = ["pending", "filled", "error", "resting"];      // same as the DB's unique indexes (partial excluded: it can be topped up)
     if (row.mode === "live" && this.orders_.some((o) => o.mode === "live" && active.includes(o.status) &&
       (o.bet_key === row.bet_key || (o.venue === row.venue && o.market === row.market)))) return { conflict: true };
     const id = `id${++this.n}`;
@@ -620,4 +620,51 @@ Deno.test("a resting order isn't sent when the site doesn't have the money", asy
   const r = await runOnce(db, { kalshi: k }, NOW);
   eq(k.rested.length, 0);
   ok(r.skips.some((x) => x.reason.includes("Kalshi balance $5.00 is under")), JSON.stringify(r.skips));
+});
+
+
+Deno.test("a partial fill is topped up on the next run until the bet reaches its to-win target", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, to_win_dollars: 20, max_dollars_per_game: 60 }), [feedRow()]);
+  const k = new FakeVenue();
+  let calls = 0;
+  k.order = async (o: OrderRow, id: string) => {             // first order: only 10 of 41 contracts fill
+    k.sent.push({ o, id });
+    const fill = calls++ === 0 ? 10 : o.count;
+    return { order_id: `K${calls}`, fill_count: fill, fill_cost: fill * o.limit_price, fees: 0.1, raw: {} };
+  };
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(db.orders_[0].status, "partial");
+  const first = 10 - 10 * 0.49 - 0.1;                            // $5.00 won so far
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 2, "the rest is bought on the next run (same market is allowed for a top-up)");
+  const o2 = k.sent[1].o;
+  ok(o2.count * (1 - o2.limit_price) - o2.est_fee >= 20 - first - 0.01 && o2.count < 41, `top-up sized to what's missing: ${o2.count}`);
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 2, "full now: nothing more");
+});
+
+Deno.test("a partial fill within $2 of the target is left alone", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true, to_win_dollars: 20, max_dollars_per_game: 60 }), [feedRow()]);
+  db.orders_.push({ mode: "live", status: "partial", venue: "kalshi", market: "KXNBASPREAD-26OCT21INDNOP-IND4",
+    bet_key: "g1-S113-NOP", game_id: "g1", fill_count: 40, fill_cost: 19.6, fees: 0.7, created_at: NOW.toISOString() } as OrderRow);
+  const k = new FakeVenue();
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.includes("already partial"), r.skips[0].reason);
+});
+
+Deno.test("Kalshi: a rate-limited read waits and retries; an order is never re-sent", async () => {
+  let n = 0;
+  const http = (async (url: string, init: any) => {
+    n++;
+    if (init.method === "GET" && n === 1) return new Response('{"error":{"code":"too_many_requests"}}', { status: 429 });
+    if (init.method === "POST") return new Response('{"error":{"code":"too_many_requests"}}', { status: 429 });
+    return new Response(JSON.stringify({ balance: 8432 }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const k = new Kalshi("https://x/trade-api/v2", "kid", async () => "sig", "https://x/trade-api/v2", http, 1);
+  eq(await k.balance(), 84.32);
+  eq(n, 2);
+  let threw = false;
+  try { await k.order({ order_side: "no", limit_price: 0.5, count: 2, market: "M" } as OrderRow, "c1"); } catch { threw = true; }
+  ok(threw && n === 3, "POST tried once only");
 });
