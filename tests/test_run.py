@@ -307,3 +307,14 @@ def test_excluded_game_leaves_records_and_placed_ledger(tmp_path):
     ex = board["placed"]["excluded"]
     assert len(ex) == 1 and ex[0]["result"] == "W" and ex[0]["why"] == "test bug"      # but still shown
     assert board["placed"]["summary"]["excluded_pnl"] == ex[0]["pnl"] > 0
+
+
+def test_restart_drops_everything_before_the_cutoff(monkeypatch):
+    import engine.run as R
+    monkeypatch.setattr(R, "RESTART_UTC", "2026-10-27T18:45:00+00:00")
+    picks = [{"result": "W", "tip_utc": "2026-10-26T23:00:00+00:00"},          # old graded: gone
+             {"result": None, "tip_utc": "2026-10-27T23:30:00+00:00"},         # tonight: kept
+             {"result": "L", "tip_utc": "2026-10-28T23:30:00+00:00"}]          # after: kept
+    orders = [{"created_at": "2026-10-27T15:00:00+00:00"}, {"created_at": "2026-10-27T19:00:00+00:00"}]
+    p, o = R.since_restart(picks, orders)
+    assert len(p) == 2 and p[0]["result"] is None and o == [orders[1]]

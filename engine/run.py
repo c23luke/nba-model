@@ -678,8 +678,21 @@ def report_card() -> dict:
     return out
 
 
+# Caden 2026-10-27: "restart everything from today". Every record and dollar on the site starts here,
+# with today's rules (honest prices, -150 cap, T13 4+, MONEYBALL, no both-sides). Older picks and bets
+# stay in the database but count for nothing on the board.
+RESTART_UTC = "2026-10-27T18:45:00+00:00"
+
+
+def since_restart(picks, orders):
+    picks = [p for p in picks if (p.get("tip_utc") or "9999") >= RESTART_UTC]
+    orders = [o for o in orders if (o.get("created_at") or "") >= RESTART_UTC]
+    return picks, orders
+
+
 def build_board(now, today, slate, picks, usage, log, source, season_day: int = 0, orders=None, games=None,
                 bench_cfg=None, exclude_cfg=None):
+    picks, orders = since_restart(picks, orders or [])
     ex = excluded_keys(exclude_cfg)
     out_picks = [p for p in picks if (str(p["game_id"]), p["side"]) in ex]
     picks = [{**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks
