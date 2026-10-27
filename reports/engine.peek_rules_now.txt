@@ -5,10 +5,29 @@ TODAY'S RULES: {
  "w": 0,
  "pnl": 0.0,
  "roi": null,
- "open": 0,
+ "open": 3,
  "risked": 0.0,
- "at_risk": 0.0,
+ "at_risk": 76.7,
  "dropped": [],
- "resized": [],
- "open_to_win": 0.0
+ "resized": [
+  {
+   "had": 11.51,
+   "now": 20.0,
+   "result": null,
+   "system": "T13",
+   "holding": "BOS \u22127.5",
+   "pnl_had": null,
+   "pnl_now": null
+  },
+  {
+   "had": 10.39,
+   "now": 20.0,
+   "result": null,
+   "system": "T13",
+   "holding": "LAL ML",
+   "pnl_had": null,
+   "pnl_now": null
+  }
+ ],
+ "open_to_win": 60.0
 }
