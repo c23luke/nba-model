@@ -802,7 +802,8 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         return None if hs is None else (hs if side == g.get("home") else -hs)
     placed = placed_bets(orders or [], {**raw_picks, **{p["key"]: p for p in picks}}, games or {}, {c["key"]: c for c in card},
                          season_wl, now, market_now,
-                         {label(i): x.get("name") for d in (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS) for i, x in d.items()})
+                         {label(i): x.get("name") for d in (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS) for i, x in d.items()},
+                         s4_bars(games))
     if out_orders:
         gone = placed_bets(out_orders, {p["key"]: p for p in out_picks}, games or {}, {}, lambda p: {"w": 0, "l": 0, "p": 0},
                            now, None, {})

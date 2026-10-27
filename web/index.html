@@ -356,10 +356,13 @@ function renderHead(b, placed) {
   const warn = (b.notes || []).filter(n => /fail|error/i.test(n));
   $("warn").hidden = !warn.length;
   $("warn").textContent = warn.length ? `${warn.length} warning${warn.length > 1 ? "s" : ""}: ${warn[0].slice(0, 120)}` : "";
-  const s = placed.summary || {};
+  // counts follow today's rules, like the scoreboard (bets the current model wouldn't make aren't counted)
+  const counted = (placed.bets || []).filter(x => !(x.rules && x.rules.counted === false)).map(asRules);
+  const openC = counted.filter(x => x.status !== "FINAL");
+  const s = { ...(placed.summary || {}), open: openC.length, at_risk: openC.reduce((t, x) => t + (x.risk || 0), 0), open_to_win: openC.reduce((t, x) => t + (x.to_win || 0), 0) };
   const held = new Set((placed.bets || []).map(x => `${x.game_id}|${x.side}`));
   const toBet = notPlaced(b, placed).filter(c => c.verdict === "BET").length;
-  const nextTip = (placed.bets || []).filter(x => x.status === "OPEN").map(x => x.tip_utc).sort()[0];
+  const nextTip = openC.filter(x => x.status === "OPEN").map(x => x.tip_utc).sort()[0];
   const parts = [];
   if (s.open) parts.push(`${s.open} bet${s.open > 1 ? "s" : ""} open, ${money(s.at_risk)} at risk to win ${money(s.open_to_win)}`);
   if (nextTip) parts.push(`First tip ${when(nextTip)}`);

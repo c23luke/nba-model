@@ -81,7 +81,7 @@ def beat_close(o: dict, per: float, close: float) -> float | None:
 
 
 def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season_wl, now: datetime,
-                line_now=None, names: dict | None = None) -> dict:
+                line_now=None, names: dict | None = None, s4_bars: dict | None = None) -> dict:
     """orders: filled live bet_orders rows. picks: key -> pick (meta.card_snap holds the snapshot).
     games: id -> game row. card: key -> current card row. season_wl(pick) -> {w, l, p} this season.
     line_now(game_id, bet, side) -> the market line on our side right now (before tip), or None."""
@@ -146,6 +146,8 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
             "t13_gap": (p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13" else None,
+            # S4's bar: this season's average total that day (the pick's own, else from the games played before it)
+            "s4_bar": ((p.get("meta") or {}).get("bar") or (s4_bars or {}).get(str(p.get("game_date")))) if o.get("system") == "S4" else None,
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
@@ -199,6 +201,9 @@ def rules_now(rows: list[dict]) -> dict:
         why = None
         if r["system"] == "T13" and r.get("t13_gap") is not None and r["t13_gap"] < T13_GAP_NOW:
             why = f"T13 gap {r['t13_gap']:g}: today it needs 4+"
+        if r["system"] == "S4" and r.get("line") is not None and (r.get("s4_bar") is None or float(r["line"]) <= r["s4_bar"]):
+            why = (f"S4 total {float(r['line']):g} isn't above this season's average ({r['s4_bar']:.1f})" if r.get("s4_bar")
+                   else "S4 before 30 games were played: today it waits for a season average")
         if len({sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}) > 1:
             why = "we held both sides of this game: today neither is bet"
         if why:
