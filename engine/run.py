@@ -218,7 +218,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 3 + 4. run systems on every game that hasn't tipped
     old = {p["key"]: p for p in store.load_picks()}
-    t13 = [p for p in old.values() if p["system"] == 113 and p.get("active") and p.get("result")]
+    t13 = [p for p in old.values() if p["system"] == 113 and p.get("active") and p.get("result") and _counts_now(p)]
     t13_record = {"w": sum(p["result"] == "W" for p in t13), "l": sum(p["result"] == "L" for p in t13)}
     seen_now = set()
     pick_rows = []
@@ -804,6 +804,17 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
                          season_wl, now, market_now,
                          {label(i): x.get("name") for d in (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS) for i, x in d.items()},
                          s4_bars(games))
+    # who is day-to-day on each open bet's game, and the players-model gap on our side if they play / sit
+    views = {g["game_id"]: g for g in slate}
+    for r in placed["bets"]:
+        g = views.get(r.get("game_id")) or {}
+        v = g.get("personnel") or {}
+        if r["status"] == "FINAL" or r.get("bet") != "spread" or not v:
+            continue
+        sign = 1 if r.get("side") == g.get("home") else -1
+        gaps = [sign * x["gap"] for x in v.get("scenarios") or [] if x.get("gap") is not None]
+        r["now"] = {"dtd": v.get("waiting_on") or [], "low": round(min(gaps), 1) if gaps else None,
+                    "high": round(max(gaps), 1) if gaps else None}
     if out_orders:
         gone = placed_bets(out_orders, {p["key"]: p for p in out_picks}, games or {}, {}, lambda p: {"w": 0, "l": 0, "p": 0},
                            now, None, {})

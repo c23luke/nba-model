@@ -16,6 +16,7 @@ import json
 import math
 
 from . import personnel as P
+from .systems import T13_GAP
 
 _BT_FILE = json.loads((P.STATIC / "backtest_open.json").read_text())
 BACKTEST = _BT_FILE["live (top-down, bench fill, B2B)"]
@@ -188,7 +189,7 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
     low_s = min(list(cushion_stress.values()) + cushion_dtd)
     # 5. why we took it
     sections.append({"title": "Why we took it", "lines": [
-        f"T13 fires only when our line is 3+ points off the market in every day-to-day version and the "
+        f"T13 fires only when our line is {T13_GAP:g}+ points off the market in every day-to-day version and the "
         f"model has no blind spots on either team. This game: {min(cushion_dtd):+.1f} at the worst across the "
         f"day-to-day versions, {low_s:+.1f} at the worst across every check, no blind spots.",
     ]})

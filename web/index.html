@@ -294,7 +294,7 @@ function whyBets(tags, gap, side) {
     const txt = gap >= 0 ? `likes ${esc(side)} by ${gap.toFixed(1)} pts` : `likes the other side by ${Math.abs(gap).toFixed(1)}`;
     if (b) { const h = (R.players_gap || {})[b] || {};
       rows.push({ name: `Players model <span class="muted">· ${txt} (gap ${b})</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], playersSeason(b)] }); }
-    else rows.push({ name: `Players model <span class="muted">· ${txt} — too small to count</span>`, cells: null });
+    else rows.push({ name: `Players model <span class="muted">· ${txt}, under our 3-point bar</span>`, cells: null });
   }
   if (sys.length >= 2 && gap != null && gap >= 3) {
     const h = R.moneyball || {};
@@ -343,6 +343,17 @@ function plainWhy(o) {
     S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
   S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet" : ""}.`);
+  const N = o.now;
+  if (N && N.low != null && o.gap != null && (Math.abs(N.low - o.gap) >= 1 || Math.abs(N.high - o.gap) >= 1)) {
+    const who = (N.dtd || []).map(n => n.replace(/^[A-Z]+:\s*/, ""));
+    let t = "Since we bet: ";
+    t += who.length ? `${who.join(" and ")} ${who.length > 1 ? "are" : "is"} now listed day-to-day. ` : "the numbers have moved. ";
+    t += N.low === N.high ? `The model now has the ${team(o.side)} ${N.low.toFixed(1)} points better than the market. `
+      : `If they play, the model has the ${team(o.side)} ${N.high.toFixed(1)} points better than the market; if they sit, ${N.low.toFixed(1)}. `;
+    t += N.low >= 4 ? "Either way it still clears our 4-point bar." : N.high >= 4 ? "If they sit it would be under our 4-point bar, so we wouldn't place it fresh, but we're still on the side the model likes."
+      : N.low > 0 ? "It's under our 4-point bar now, so we wouldn't place it fresh, but we're still on the side the model likes." : "The model no longer likes this side; we keep the bet, it can't be undone.";
+    S.push(t);
+  }
   return `<p class="plain">${S.map(esc).join(" ")}</p>`;
 }
 
@@ -431,7 +442,7 @@ function ticket(x) {
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
       ${marketLine(x)}
-      ${plainWhy({ tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, side: x.side, bet: x.bet, line: x.line,
+      ${plainWhy({ tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price, ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
