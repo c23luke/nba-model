@@ -1,0 +1,155 @@
+====================================================================================================
+1. EVERY LIVE ORDER (oldest first)
+====================================================================================================
+2026-10-20T18:00  T13  FAV    manual    filled    DET +1.5       | DET +1.5 at -104 (placed by hand at another  | asked to win +$20.20 got +$20.00
+2026-10-21T01:28  T13  FAV    kalshi    unfilled  NOP +3.5       | NO · IND wins by over 1.5  (= NOP +1.5)      | asked to win +$20.45 got    -   
+                    reason: Kalshi POST /trade-api/v2/portfolio/orders → 410: {"error":{"code":"deprecated_v1_order_endpoint","message":"Please switch to the V2 endpoints","details":"https
+2026-10-21T01:28  T13  FAV    kalshi    unfilled  MEM -1         | NO · UTA wins by over 1.5  (= MEM +1.5)      | asked to win +$10.38 got    -   
+                    reason: Kalshi POST /trade-api/v2/portfolio/orders → 410: {"error":{"code":"deprecated_v1_order_endpoint","message":"Please switch to the V2 endpoints","details":"https
+2026-10-21T01:39  T13  FAV    kalshi    unfilled  NOP +3.5       | NO · IND wins by over 1.5  (= NOP +1.5)      | asked to win +$20.45 got    -   
+                    reason: Kalshi POST /trade-api/v2/portfolio/orders → 410: {"error":{"code":"deprecated_v1_order_endpoint","message":"Please switch to the V2 endpoints","details":"https
+2026-10-21T01:39  T13  FAV    kalshi    unfilled  MEM -1         | NO · UTA wins by over 1.5  (= MEM +1.5)      | asked to win +$10.38 got    -   
+                    reason: Kalshi POST /trade-api/v2/portfolio/orders → 410: {"error":{"code":"deprecated_v1_order_endpoint","message":"Please switch to the V2 endpoints","details":"https
+2026-10-21T01:40  T13  FAV    kalshi    filled    NOP +3.5       | NO · IND wins by over 1.5  (= NOP +1.5)      | asked to win +$20.45 got +$20.46
+2026-10-21T01:40  T13  FAV    kalshi    filled    MEM -1         | NO · UTA wins by over 1.5  (= MEM +1.5)      | asked to win +$10.38 got +$10.38
+2026-10-21T04:27  T13  FAV    kalshi    unfilled  DEN +8.5       | NO · OKC wins by over 10.5  (= DEN +10.5)    | asked to win +$10.02 got    -   
+                    reason: resting order expired or cancelled with nothing filled
+2026-10-21T14:01  T13  FAV    prophetx  filled    MIL +5         | MIL +4.5                                     | asked to win +$10.24 got +$10.65
+2026-10-21T22:17  T13  FAV    prophetx  filled    ORL -2.5       | ORL -1                                       | asked to win +$20.26 got +$20.84
+2026-10-22T04:08  T13  FAV    kalshi    filled    ORL +1.5       | NO · MIN wins by over 3.5  (= ORL +3.5)      | asked to win +$20.04 got +$20.04
+2026-10-22T05:20  T13  FAV    kalshi    partial   HOU +7         | NO · SAS wins by over 7.5  (= HOU +7.5)      | asked to win +$10.46 got +$2.86  SMALL (partial fill: 6.03 of 22 contracts)
+2026-10-22T05:29  T13  FAV    kalshi    unfilled  NOP +5.5       | NO · UTA wins by over 7.5  (= NOP +7.5)      | asked to win +$20.04 got    -   
+                    reason: resting order expired or cancelled with nothing filled
+2026-10-22T05:41  T13  FAV    kalshi    unfilled  CHA +2.5       | NO · ATL wins by over 4.5  (= CHA +4.5)      | asked to win +$20.28 got    -    [EXCLUDED: model bug]
+                    reason: resting order expired or cancelled with nothing filled
+2026-10-22T05:47  E4   EARLY  kalshi    filled    DAL +6         | NO · IND wins by over 5.5  (= DAL +5.5)      | asked to win +$20.45 got +$20.45
+2026-10-22T09:36  T13  FAV    kalshi    filled    CHA +2.5       | NO · ATL wins by over 1.5  (= CHA +1.5)      | asked to win +$20.08 got +$20.08 [EXCLUDED: model bug]
+2026-10-22T09:37  T13  FAV    kalshi    unfilled  NOP +5.5       | NO · UTA wins by over 3.5  (= NOP +3.5)      | asked to win +$10.05 got    -   
+                    reason: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}} [unlocked: Kalshi refused, n
+2026-10-22T14:01  T13  FAV    kalshi    unfilled  DEN +8.5       | NO · OKC wins by over 12.5  (= DEN +12.5)    | asked to win +$10.31 got    -   
+                    reason: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}} [unlocked: Kalshi refused, n
+2026-10-22T17:01  T13  FAV    kalshi    filled    DEN +8.5       | NO · OKC wins by over 8.5  (= DEN +8.5)      | asked to win +$10.39 got +$10.40
+2026-10-22T18:01  T13  FAV    kalshi    unfilled  NOP +5.5       | NO · UTA wins by over 5.5  (= NOP +5.5)      | asked to win +$10.02 got    -   
+                    reason: resting order expired or cancelled with nothing filled
+2026-10-23T05:30  E2   EARLY  prophetx  filled    MIL +1         | MIL +1                                       | asked to win +$20.08 got +$20.08
+2026-10-23T15:58  S4   OG     prophetx  filled    OVER 233       | Over 236.5                                   | asked to win +$20.49 got +$20.50
+2026-10-23T15:59  T13  FAV    prophetx  filled    DAL +7.5       | DAL +5.5                                     | asked to win +$20.07 got +$20.07
+2026-10-23T17:12  T13  FAV    prophetx  filled    LAL -9         | LAL -7.5                                     | asked to win +$10.36 got +$10.36
+2026-10-23T23:01  T13  FAV    prophetx  filled    SAC +10        | SAC +10.5                                    | asked to win +$10.22 got +$10.41
+2026-10-24T02:01  T13  FAV    kalshi    unfilled  HOU +1         | NO · ATL wins by over 4.5  (= HOU +4.5)      | asked to win +$20.18 got    -   
+                    reason: resting order expired or cancelled with nothing filled
+2026-10-24T02:08  S4   OG     kalshi    filled    OVER 230.5     | YES · Over 230.5                             | asked to win +$20.05 got +$20.05
+2026-10-24T03:16  E2   EARLY  kalshi    filled    CHA +3.5       | NO · MIA wins by over 3.5  (= CHA +3.5)      | asked to win +$20.19 got +$20.20 [EXCLUDED: model bug]
+2026-10-24T03:17  E4   EARLY  kalshi    filled    CHA +3.5       | NO · MIA wins by over 2.5  (= CHA +2.5)      | asked to win +$20.50 got +$20.50 [EXCLUDED: model bug]
+2026-10-24T03:21  E4   EARLY  kalshi    partial   GSW +6.5       | NO · PHX wins by over 8.5  (= GSW +8.5)      | asked to win +$20.14 got +$3.63  SMALL (partial fill: 9 of 50 contracts)
+2026-10-24T05:01  T13  FAV    kalshi    filled    GSW +7.5       | NO · PHX wins by over 9.5  (= GSW +9.5)      | asked to win +$20.37 got +$20.37
+2026-10-24T05:21  T13  FAV    kalshi    unfilled  HOU +1         | NO · ATL wins by over 4.5  (= HOU +4.5)      | asked to win +$20.28 got    -   
+                    reason: rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}
+2026-10-24T13:57  T13  FAV    prophetx  filled    HOU +1         | HOU +1.5                                     | asked to win +$10.32 got +$10.70  SMALL (asked for only +$10.32 to win — the offer/market had no more at that price (or the stake was capped))
+2026-10-24T14:07  T12  FAV    prophetx  filled    DEN -11.5      | DEN -12.5                                    | asked to win +$20.38 got +$20.59
+2026-10-24T14:23  T12  FAV    prophetx  filled    PHI -12.5      | PHI -13.5                                    | asked to win +$20.08 got +$20.08
+2026-10-24T14:35  T2   FAV    prophetx  filled    PHX -9.5       | PHX -11.5                                    | asked to win +$20.07 got +$20.08
+2026-10-25T01:41  S4   OG     kalshi    partial   OVER 221       | YES · Over 223.5                             | asked to win +$20.50 got +$3.09  SMALL (partial fill: 6.04 of 40 contracts)
+2026-10-25T22:01  T13  FAV    kalshi    filled    OKC -16.5      | YES · OKC wins by over 12.5                  | asked to win +$10.25 got +$10.26
+2026-10-26T00:09  S4   OG     kalshi    filled    OVER 234       | YES · Over 233.5                             | asked to win +$20.36 got +$20.37
+2026-10-26T01:18  T13  FAV    kalshi    filled    DEN -7.5       | YES · DEN wins by over 5.5                   | asked to win +$10.39 got +$10.39  SMALL (asked for only +$10.39 to win — the offer/market had no more at that price (or the stake was capped))
+2026-10-26T02:46  T13  FAV    kalshi    filled    MEM +1.5       | YES · MEM to win                             | asked to win +$10.34 got +$10.34
+2026-10-26T18:17  E3   EARLY  kalshi    partial   PHX +10        | NO · OKC wins by over 12.5  (= PHX +12.5)    | asked to win +$20.16 got +$0.01  SMALL (partial fill: 0.02 of 54 contracts)
+2026-10-26T18:17  E7   EARLY  prophetx  partial   PHX +10        | PHX +14                                      | asked to win +$20.25 got +$20.24
+2026-10-27T02:01  S4   OG     kalshi    filled    OVER 222.5     | YES · Over 222.5                             | asked to win +$20.05 got +$20.05
+2026-10-27T02:03  S4   OG     kalshi    filled    OVER 230.5     | YES · Over 230.5                             | asked to win +$20.05 got +$20.05
+
+6 filled bets won under 75% of the target:
+  HOU +7 (T13, kalshi): to win +$2.86 — partial fill: 6.03 of 22 contracts
+  GSW +6.5 (E4, kalshi): to win +$3.63 — partial fill: 9 of 50 contracts
+  HOU +1 (T13, prophetx): to win +$10.70 — asked for only +$10.32 to win — the offer/market had no more at that price (or the stake was capped)
+  OVER 221 (S4, kalshi): to win +$3.09 — partial fill: 6.04 of 40 contracts
+  DEN -7.5 (T13, kalshi): to win +$10.39 — asked for only +$10.39 to win — the offer/market had no more at that price (or the stake was capped)
+  PHX +10 (E3, kalshi): to win +$0.01 — partial fill: 0.02 of 54 contracts
+
+====================================================================================================
+2. PLACED RESULTS (from the site's ledger; excluded model-bug bets left out)
+====================================================================================================
+  by system
+    E7           1-0 (100.0%)       P&L   +$20.24  risked $  42.34  open 0  beat close +2.7¢ (1)
+    E4           1-1 (50.0%)        P&L   +$15.08  risked $  27.92  open 0  beat close -10.6¢ (2)
+    S4           2-2 (50.0%)        P&L   +$12.97  risked $  68.62  open 2  beat close +0.1¢ (4)
+    E3           1-0 (100.0%)       P&L    +$0.01  risked $   0.01  open 0  beat close +14.5¢ (1)
+    T13          8-6 (57.1%)        P&L    -$0.57  risked $ 223.93  open 2  beat close +0.9¢ (16)
+    T2           0-1 (0.0%)         P&L   -$15.52  risked $  15.52  open 0  beat close +1.3¢ (1)
+    E2           0-1 (0.0%)         P&L   -$21.51  risked $  21.51  open 0  beat close +6.0¢ (1)
+    T12          0-2 (0.0%)         P&L   -$34.71  risked $  34.71  open 0  beat close -0.3¢ (2)
+  by group
+    EARLY        3-2 (60.0%)        P&L   +$13.82  risked $  91.78  open 0  beat close +0.4¢ (5)
+    OG           2-2 (50.0%)        P&L   +$12.97  risked $  68.62  open 2  beat close +0.1¢ (4)
+    FAV          8-9 (47.1%)        P&L   -$50.80  risked $ 274.16  open 2  beat close +0.8¢ (19)
+  by site
+    Other book   1-0 (100.0%)       P&L   +$20.00  risked $  20.80  open 0  beat close -1.0¢ (1)
+    ProphetX     6-6 (50.0%)        P&L   -$12.34  risked $ 215.04  open 0  beat close +0.7¢ (12)
+    Kalshi       6-7 (46.2%)        P&L   -$31.67  risked $ 198.72  open 4  beat close +0.6¢ (15)
+  TOTAL: 13-13-0  P&L -$24.01  risked $434.56  avg beat close 0.6¢  | excluded (model bug) P&L +$23.78
+
+====================================================================================================
+3. EVERY SYSTEM THIS SEASON (the model's own picks, graded at the pick's line)
+   official = still qualified at tip; if-first = every time it fired, graded at the first line
+   CLV = points the line moved our way from first fire to close (+ good)
+====================================================================================================
+  S1   OG     AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Fade OT winner on no rest
+  S2   OG     AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Road favorite on 4+ game losing streak
+  S3   OG     AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Home favorite vs hot team on no rest
+  S4   OG     AUTO-BET                               official 2-1-1  if-first 2-2-0  CLV 1.25 (4)  | Heavy favorite over
+  T12  FAV    AUTO-BET                               official 0-3-0  if-first 2-2-0  CLV 1.62 (4)  | Big rested favorite vs tired dog
+  T13  FAV    AUTO-BET                               official 10-9-0  if-first 10-9-0  CLV 0.58 (19)  | Personnel gap
+  T2   FAV    AUTO-BET                               official 0-1-0  if-first 3-1-0  CLV 2.12 (4)  | 3rd game in 4 nights vs rested team
+  T21  FAV    AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Late-season mismatch over
+  T22  FAV    AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Late-season low total over
+  T23  FAV    AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Post-All-Star mismatch, tired home team over
+  T24  FAV    AUTO-BET                               official 0-0-0  if-first 0-0-0  CLV - (0)  | Fade the OT winner on 4 games in 6 nights
+  E1   EARLY  AUTO-BET when players model agrees 3+  official 5-9-0  if-first 14-15-0  CLV 0.26 (29)  | Season-opener over
+  E2   EARLY  AUTO-BET when players model agrees 3+  official 2-7-1  if-first 5-12-0  CLV 0.35 (17)  | Early home underdog
+  E3   EARLY  AUTO-BET when players model agrees 3+  official 6-4-0  if-first 7-5-0  CLV -0.33 (12)  | Fade early big favorite
+  E4   EARLY  AUTO-BET when players model agrees 3+  official 6-4-1  if-first 6-6-0  CLV -0.88 (12)  | Early blowout bounce-back
+  E5   EARLY  AUTO-BET when players model agrees 3+  official 4-3-0  if-first 3-5-0  CLV -0.62 (8)  | Fade early blowout winner
+  E6   EARLY  AUTO-BET when players model agrees 3+  official 1-1-0  if-first 1-1-0  CLV 0.25 (2)  | Back the winless team
+  E7   EARLY  AUTO-BET when players model agrees 3+  official 0-2-0  if-first 1-2-0  CLV 2.0 (3)  | Fade the unbeaten favorite
+  E8   EARLY  AUTO-BET when players model agrees 3+  official 18-28-3  if-first 20-30-0  CLV -0.33 (50)  | Early-season over
+  T1   TEST   tracked only                           official 0-0-0  if-first 0-0-0  CLV - (0)  | Double-OT hangover
+  T10  TEST   tracked only                           official 0-0-0  if-first 0-0-0  CLV - (0)  | Game 2 of a two-game set
+  T11  TEST   tracked only                           official 5-2-1  if-first 6-3-0  CLV -0.5 (9)  | Heavy favorite over, no filters
+  T3   TEST   tracked only                           official 0-1-0  if-first 0-1-0  CLV -0.5 (1)  | Back-to-back at altitude
+  T4   TEST   tracked only                           official 0-0-0  if-first 0-0-0  CLV - (0)  | Cross-country back-to-back
+  T5   TEST   tracked only                           official 3-1-0  if-first 2-2-0  CLV 1.5 (4)  | Both teams tired: under
+  T6   TEST   tracked only                           official 2-2-0  if-first 2-3-0  CLV -0.4 (5)  | Bounce-back after blowout loss
+  T7   TEST   tracked only                           official 3-1-0  if-first 2-3-0  CLV -0.8 (5)  | Fade the blowout winner
+  T8   TEST   tracked only                           official 0-1-0  if-first 0-1-0  CLV -0.5 (1)  | Home favorite on a losing streak
+  T9   TEST   tracked only                           official 0-0-0  if-first 0-0-0  CLV - (0)  | Home dog vs a hot team
+  X1   SHADOW tracked only                           official 18-25-2  if-first 33-35-1  CLV 0.29 (69)  | 
+
+====================================================================================================
+4. CARD BETS THAT WERE NEVER PLACED (picks the card showed, no live order)
+====================================================================================================
+  40 picks were on the card; 31 placed; 9 never placed (graded: 5-2 (71.4%))
+  2026-10-24 NOP +5.5 (T13) NOP@UTA             result W      why not placed: already resting (kalshi) / already error (kalshi)
+  2026-10-24 MIA -3.5 (T2) MIA@CHA              result L      why not placed: no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (193 open offers in all) · ProphetX on / no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (220 open offers in all) · ProphetX on
+  2026-10-25 SAS -11.5 (T12) SAS@DAL            result W      why not placed: no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (185 open offers in all) · ProphetX on / no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (196 open offers in all) · ProphetX on
+  2026-10-25 SAS -11.5 (T2) SAS@DAL             result W      why not placed: no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (185 open offers in all) · ProphetX on / no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (196 open offers in all) · ProphetX on
+  2026-10-25 HOU +1.5 (T2) HOU@ATL              result W      why not placed: no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (185 open offers in all) · ProphetX on / no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (196 open offers in all) · ProphetX on
+  2026-10-25 PHX -10 (T12) GSW@PHX              result L      why not placed: ProphetX: price check failed (ProphetX GET /v4/mm/get_markets?event_id=1704701573 → 429: {"error":"rate_limit_reached","message":"rate limit / ProphetX offers failed: ProphetX GET /v4/mm/get_markets?event_id=1704701573 → 429: {"error":"rate_limit_reached","message":"rate limit reach
+  2026-10-25 LAL -6 (T13) LAL@UTA               result W      why not placed: no placer log (card row was PASS/LIMIT or off-card before the placer ran)
+  2026-10-27 MEM +1.5 (T2) MEM@UTA              result open   why not placed: no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (56 open offers in all) · ProphetX on  / no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly: no offers on this game (63 open offers in all) · ProphetX on 
+  2026-10-28 LAL -3 (T13) POR@LAL               result open   why not placed: no quote on kalshi/betopenly/prophetx with expected return ≥ 2.0% — BetOpenly offers on this game: LAL Under 236.5 ++100 ($400): not our bet
+
+====================================================================================================
+5. PLAYERS MODEL SHADOW (X1, every game) by gap and call
+====================================================================================================
+  call bad_team    5-3 (62.5%)
+  call blind       6-6 (50.0%)
+  call none        17-20-1 (45.9%)
+  call now         4-5-1 (44.4%)
+  call waiting     2-1 (66.7%)
+  gap 0-2          20-24 (45.5%)
+  gap 2-3          6-6 (50.0%)
+  gap 3-4          7-2 (77.8%)
+  gap 4+           1-3-2 (25.0%)
+
+tracking (board): {'by_count': {'1 system': {'l': 37, 'n': 67, 'p': 3, 'w': 27, 'units': -13.7, 'win_pct': 0.4219}, '2 systems': {'l': 16, 'n': 26, 'p': 1, 'w': 9, 'units': -8.6, 'win_pct': 0.36}, '3+ systems': {'l': 3, 'n': 10, 'p': 1, 'w': 6, 'units': 2.7, 'win_pct': 0.6667}}, 'by_groups': {'EARLY': {'l': 9, 'n': 12, 'p': 0, 'w': 3, 'units': -6.9, 'win_pct': 0.25}, 'EARLY+OG': {'l': 1, 'n': 1, 'p': 0, 'w': 0, 'units': -1.1, 'win_pct': 0.0}, 'FAV+TEST': {'l': 1, 'n': 1, 'p': 0, 'w': 0, 'units': -1.1, 'win_pct': 0.0}, 'EARLY+FAV': {'l': 2, 'n': 6, 'p': 1, 'w': 3, 'units': 0.8, 'win_pct': 0.6}, 'EARLY+TEST': {'l': 5, 'n': 10, 'p': 0, 'w': 5, 'units': -0.5, 'win_pct': 0.5}, 'EARLY+OG+TEST': {'l': 0, 'n': 3, 'p': 1, 'w': 2, 'units': 2.0, 'win_pct': 1.0}, 'EARLY+FAV+TEST': {'l': 1, 'n': 3, 'p': 0, 'w': 2, 'units': 0.9, 'win_pct': 0.6667}}, 'conflicts': 14, 'personnel_by_gap': {'4+': {'l': 1, 'n': 2, 'p': 0, 'w': 1, 'units': -0.1, 'win_pct': 0.5}, '0–1': {'l': 7, 'n': 9, 'p': 0, 'w': 2, 'units': -5.7, 'win_pct': 0.2222}, '1–2': {'l': 7, 'n': 14, 'p': 1, 'w': 6, 'units': -1.7, 'win_pct': 0.4615}, '2–3': {'l': 6, 'n': 11, 'p': 0, 'w': 5, 'units': -1.6, 'win_pct': 0.4545}, '3–4': {'l': 4, 'n': 9, 'p': 1, 'w': 4, 'units': -0.4, 'win_pct': 0.5}}, 'personnel_by_call': {'now': {'l': 4, 'n': 9, 'p': 1, 'w': 4, 'units': -0.4, 'win_pct': 0.5}, 'none': {'l': 14, 'n': 22, 'p': 1, 'w': 7, 'units': -8.4, 'win_pct': 0.3333}, 'blind': {'l': 4, 'n': 8, 'p': 0, 'w': 4, 'units': -0.4, 'win_pct': 0.5}, 'bad_team': {'l': 3, 'n': 6, 'p': 0, 'w': 3, 'units': -0.3, 'win_pct': 0.5}}, 'system_vs_personnel': {'FAV + agrees by 0-3': {'l': 1, 'n': 1, 'p': 0, 'w': 0, 'units': -1.1, 'win_pct': 0.0}, 'EARLY + agrees by 5+': {'l': 1, 'n': 2, 'p': 1, 'w': 0, 'units': -1.1, 'win_pct': 0.0}, 'TEST + agrees by 0-3': {'l': 3, 'n': 5, 'p': 0, 'w': 2, 'units': -1.3, 'win_pct': 0.4}, 'TEST + agrees by 3-5': {'l': 0, 'n': 2, 'p': 0, 'w': 2, 'units': 2.0, 'win_pct': 1.0}, 'EARLY + agrees by 0-3': {'l': 9, 'n': 15, 'p': 0, 'w': 6, 'units': -3.9, 'win_pct': 0.4}, 'EARLY + agrees by 3-5': {'l': 2, 'n': 8, 'p': 0, 'w': 6, 'units': 3.8, 'win_pct': 0.75}, 'FAV + players model disagrees': {'l': 3, 'n': 3, 'p': 0, 'w': 0, 'units': -3.3, 'win_pct': 0.0}, 'TEST + players model disagrees': {'l': 2, 'n': 3, 'p': 0, 'w': 1, 'units': -1.2, 'win_pct': 0.3333}, 'EARLY + players model disagrees': {'l': 7, 'n': 13, 'p': 1, 'w': 5, 'units': -2.7, 'win_pct': 0.4167}}}
