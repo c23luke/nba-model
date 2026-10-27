@@ -171,7 +171,15 @@ def main():
     print("=" * 100)
     print("6. HEALTH: order placer heartbeat logs and errors per day (ET)")
     print("=" * 100)
-    logs = st._req("GET", "/bet_log?ts=gte.2026-10-20&select=ts,level,message&order=ts.asc&limit=20000") or []
+    logs, start = [], 0
+    while True:      # the API returns 1,000 rows at a time
+        chunk = st._req("GET", "/bet_log?ts=gte.2026-10-20&or=(level.eq.error,message.like.run%20(*)"
+                               "&select=ts,level,message&order=ts.asc",
+                        extra={"Range": f"{start}-{start + 999}"}) or []
+        logs += chunk
+        if len(chunk) < 1000:
+            break
+        start += 1000
     per = defaultdict(lambda: Counter())
     for r in logs:
         from datetime import datetime, timedelta
@@ -183,9 +191,11 @@ def main():
     for d in sorted(per):
         c = per[d]
         print(f"  {d}: {c['runs']} run summaries, {c['errors']} errors, {c['crashed']} crashes")
-    errs = [r for r in logs if r["level"] == "error"]
-    for r in errs[-15:]:
-        print(f"    {r['ts'][:16]} {r['message'][:170]}")
+    errs = Counter(r["message"][:90] for r in logs if r["level"] == "error"
+                   and r["ts"] >= "2026-10-24")
+    print("  errors since 10/24, by kind:")
+    for m, n in errs.most_common(12):
+        print(f"    {n:5} × {m}")
 
 
 def group_of(o):
