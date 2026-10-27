@@ -415,7 +415,17 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                 if h:
                     r["also_combo"] = {**h, "tag": label(p["system"])}
                 break
-    order = {"BET": 0, "LIMIT": 1, "PASS": 2}
+    # never bet both sides of the same game: when card bets disagree, none of them is bet.
+    # MEASURED (engine/measure_combined.py, 2025-26 out of sample): 12 such games; betting both sides
+    # only pays the vig twice. One bet per game with conflicts skipped: 135-97, +12.2% per unit.
+    live_ = [r for r in rows if r["verdict"] in ("BET", "LIMIT")]
+    for r in live_:
+        other = [x for x in live_ if x["game_id"] == r["game_id"] and x["bet"] == r["bet"] and x["side"] != r["side"]]
+        if other:
+            r["verdict"] = "CONFLICT"
+            r["why"] = ("Not bet: " + ", ".join(f"{x['tag']} ({x['label']})" for x in other)
+                        + " is on the other side of this game. Betting both sides only pays the vig twice.")
+    order = {"BET": 0, "LIMIT": 1, "PASS": 2, "CONFLICT": 3}
     rows.sort(key=lambda r: (order[r["verdict"]], -r["edge"]))
     return rows
 

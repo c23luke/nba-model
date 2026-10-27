@@ -112,7 +112,7 @@ details.more dt { color: var(--muted); } details.more dd { margin: 0; }
 .verdict.BET, .verdict.W { background: var(--win); border-color: var(--win); color: #fff; }
 .verdict.LIMIT { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); }
 .verdict.L { background: var(--loss); border-color: var(--loss); color: #fff; }
-.verdict.BENCHED { border-style: dashed; font-size: 13px; }
+.verdict.BENCHED, .verdict.CONFLICT { border-style: dashed; font-size: 13px; }
 .row .pick { font: 700 24px/1.1 var(--cond); }
 .row .sub { font-size: 14px; color: var(--muted); }
 .row .px { text-align: right; font-size: 14px; color: var(--muted); white-space: nowrap; }
@@ -450,7 +450,7 @@ function renderCard(b, placed) {
       <div><div class="pick">${esc(r.label)}</div><div class="sub">${esc(r.away)} @ ${esc(r.home)}, ${esc(when(r.tip_utc))}. ${badge(r.group)}${esc(r.tag)}</div>
       <div class="sub">Fired at ${esc(r.label)}; the line is now ${r.now_line == null ? "off the board" : esc(r.now_line)} and the model doesn't want it there. If you already have it, it's graded at the original number.</div></div><div></div></div>`;
   $("tab-card").innerHTML = `<h2>Today's card</h2>
-    <p class="lede">Main systems and the top picks, best first. BET means the price is good now. LIMIT means only at the most we'd pay or better. PASS means skip. BENCHED means the system has been losing to the closing line, so it isn't auto-bet.</p>` +
+    <p class="lede">Main systems and the top picks, best first. BET means the price is good now. LIMIT means only at the most we'd pay or better. PASS means skip. BENCHED means the system has been losing to the closing line, so it isn't auto-bet. CONFLICT means two of our systems are on opposite sides of the same game, so neither is bet.</p>` +
     (card.length ? card.map(row).join("") : `<div class="empty">Nothing on the card right now. The model checks again every few minutes.</div>`) +
     (hold.length ? `<h2>Line moved</h2><p class="lede">Fired earlier at a better number. Only counts if you got that number.</p>` + hold.map(moved).join("") : "");
 }

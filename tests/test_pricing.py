@@ -238,3 +238,14 @@ def test_card_bet_means_the_placer_will_bet_it():
         c = build_card([pk(113, "NOP", [kq("NOP", 3.5, price)], game="g2", line=3.5)], slate, now=NOW)[0]
         assert c["verdict"] == want, (price, c["best"]["ev"], c["verdict"])
         assert (c["best"]["ev"] >= MIN_EV) == (want == "BET")
+
+
+def test_both_sides_of_a_game_are_never_bet():
+    slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
+    live = [pk(112, "BOS", game="g1"), pk(102, "NYK", game="g1"), pk(112, "LAL", game="g9")]
+    for p in live[:2]:
+        p["away"], p["home"] = "NYK", "BOS"
+    card = build_card(live, slate, now=NOW)
+    v = {c["side"]: c["verdict"] for c in card}
+    assert v["BOS"] == "CONFLICT" and v["NYK"] == "CONFLICT" and v["LAL"] == "BET"
+    assert "other side of this game" in next(c for c in card if c["side"] == "BOS")["why"]
