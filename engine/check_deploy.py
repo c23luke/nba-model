@@ -5,8 +5,8 @@ from .store import get_store
 
 def main():
     st = get_store()
-    s = (st._req("GET", "/bet_settings?select=to_win_dollars,min_ev,mode,max_open_bets") or [{}])[0]
-    print("bet_settings:", s)
+    s = (st._req("GET", "/bet_settings?select=*") or [{}])[0]
+    print("bet_settings:", {k: v for k, v in s.items() if "token" not in k and "key" not in k})
     try:
         n = st._req("GET", "/price_log?select=id&order=id.desc&limit=3") or []
         print("price_log newest ids:", [r["id"] for r in n])
