@@ -354,6 +354,7 @@ function ticket(x) {
   const card = x.card_pick && x.card_pick !== x.holding ? `card pick ${esc(x.card_pick)}` : "";
   const score = x.score && x.score.home != null ? `${esc(x.away)} ${x.score.away}, ${esc(x.home)} ${x.score.home}` : "";
   const pl = x.status === "FINAL" ? `<div class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</div>` : "";
+  const A = x.actual, diff = A && Math.abs((A.to_win || 0) - (x.to_win || 0)) >= 1;
   return `<article class="ticket">
     <div class="stub">
       <div class="venue">${esc(x.venue_name)}</div>${x.manual ? `<div class="when">placed by hand</div>` : ""}
@@ -370,6 +371,7 @@ function ticket(x) {
         <div>Expected return<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
       ${marketLine(x)}
+      ${diff ? `<div class="size-l">Counted at the full ${money(x.to_win)} size. Actual account: risked ${money(A.risk)} to win ${money(A.to_win)}${A.pnl != null ? `, ${signed$(A.pnl)}` : ""}.</div>` : ""}
       <div class="why-h">Why: ${whyHead(x.system, [x.system, ...(x.with || [])], x.players, x.side)}</div>
       <div class="size-l">${sizeLine(x)}</div>
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
@@ -386,22 +388,10 @@ function ticket(x) {
   </article>`;
 }
 
-function rulesNowBlock(R) {
-  if (!R || !(R.w + R.l + R.p + (R.dropped || []).length)) return "";
-  const row = (x, extra) => `<li>${esc(x.holding)} <span class="muted">(${esc(x.system)}, ${x.result === "W" ? "won" : x.result === "L" ? "lost" : "push"})</span> — ${extra}</li>`;
-  return `<div class="chart"><div class="top"><span>Under today's rules: <b>${wl(R)}</b>, <b class="${R.pnl > 0 ? "pos" : R.pnl < 0 ? "neg" : ""}">${signed$(R.pnl)}</b></span>
-      <span>${R.risked ? pct(R.pnl / R.risked) + " return" : ""}</span></div>
-    <div class="muted" style="font-size:14px">Every settled bet re-judged by the current model, at the price we actually got: full $20 size (MONEYBALL $30), T13 only at a 4+ gap, never both sides of a game. The real money above is what actually happened.</div>
-    ${(R.dropped || []).length || (R.resized || []).length ? `<details class="more"><summary>${(R.dropped || []).length} wouldn't be bet today · ${(R.resized || []).length} would be a different size</summary><ul class="why">
-      ${(R.dropped || []).map(x => row(x, `not bet today: ${esc(x.why)} (was ${signed$(x.pnl)})`)).join("")}
-      ${(R.resized || []).map(x => row(x, `won ${money(x.had)} → now ${money(x.now)}: ${signed$(x.pnl_had)} → ${signed$(x.pnl_now)}`)).join("")}
-    </ul></details>` : ""}</div>`;
-}
-
 function sizeLine(x) {
-  const T = x.target || 20, got = x.to_win;
-  let t = `Size: to win <b>${money(T)}</b> — ${T === 10 ? "the old Low-confidence size (that rule is retired)" : sizeRule(x.system)}.`;
-  if (got != null && got < T - 1) t += x.status === "OPEN" ? ` Got ${money(got)} so far: only part filled at our price, and it tops up when more is offered.` : ` Only ${money(got)} filled.`;
+  const T = x.system === "MONEYBALL" ? 30 : 20, got = x.actual ? x.actual.to_win : x.to_win;
+  let t = `Size: to win <b>${money(T)}</b> — ${sizeRule(x.system)}.`;
+  if (got != null && got < T - 1 && x.status === "OPEN") t += ` Got ${money(got)} so far: only part filled at our price, and it tops up when more is offered.`;
   return t;
 }
 
@@ -452,8 +442,14 @@ function notPlaced(b, placed) {
 }
 
 let fSite = "", fSys = "";
+// Caden 2026-10-27: show every bet as if today's rules ran all season (full $20 size, T13 only at 4+,
+// never both sides). The real account money rides along on each bet as x.actual.
+const asRules = x => { const R = x.rules; if (!R || R.counted === false) return x;
+  return { ...x, actual: { pnl: x.pnl, risk: x.risk, to_win: x.to_win }, pnl: R.pnl ?? x.pnl, risk: R.risk ?? x.risk, to_win: R.to_win ?? x.to_win }; };
 function renderBets(placed, b) {
-  const allBets = placed.bets || [];
+  const rawBets = placed.bets || [];
+  const dropped = rawBets.filter(x => x.rules && x.rules.counted === false);
+  const allBets = rawBets.filter(x => !(x.rules && x.rules.counted === false)).map(asRules);
   const bets = allBets.filter(x => (!fSite || x.venue_name === fSite) && (!fSys || x.system === fSys));
   const open = bets.filter(x => x.status !== "FINAL"), done = bets.filter(x => x.status === "FINAL");
   const sum = (xs, k) => Math.round(xs.reduce((t, x) => t + (x[k] || 0), 0) * 100) / 100;
@@ -474,7 +470,7 @@ function renderBets(placed, b) {
       <div><div class="k">Expected on open bets</div><div class="v n ${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</div><div class="s">${Object.entries(sites).map(([v, n]) => `${esc(v)} ${n}`).join(", ") || "no bets"}</div></div>
     </div>
     ${profitChart(bets)}
-    ${rulesNowBlock(placed.rules_now)}
+    <p class="foot" style="margin-top:6px">Every record and dollar here is as if today's rules ran all season: each bet at the full $20 (MONEYBALL $30) at the price we got, T13 only at a 4+ gap, never both sides of a game.${placed.summary ? ` Actual account so far: ${placed.summary.w}-${placed.summary.l}${placed.summary.p ? "-" + placed.summary.p : ""}, ${signed$(placed.summary.pnl)}.` : ""}</p>
     <div class="filters">Show
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
@@ -489,6 +485,8 @@ function renderBets(placed, b) {
       np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)} · ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
         <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +
     (done.length ? `<h2>Settled</h2>` + done.slice().reverse().map(ticket).join("") : "") +
+    (dropped.length ? `<details class="more" style="margin-top:18px"><summary>Not counted: ${dropped.length} bet${dropped.length > 1 ? "s" : ""} today's rules wouldn't place</summary><ul class="why">` +
+      dropped.map(x => `<li>${esc(x.holding)} <span class="muted">(${esc(x.system)}, ${x.status === "FINAL" ? (x.result === "W" ? "won" : x.result === "L" ? "lost" : "push") + ", " + signed$(x.pnl) + " real money" : "open"})</span> — ${esc(x.rules.why)}</li>`).join("") + `</ul></details>` : "") +
     ((placed.excluded || []).length ? `<p class="foot"><b>Left out of all records (model bug):</b> ` +
       placed.excluded.map(x => `${esc(x.holding)} on ${esc(x.venue_name)}${x.result ? ` (${x.result}, ${x.pnl >= 0 ? "+" : "−"}${money(Math.abs(x.pnl))})` : " (open)"}`).join(", ") +
       `. ${esc(placed.excluded[0].why || "")} That money is real, so it's shown here: ${(placed.summary.excluded_pnl || 0) >= 0 ? "+" : "−"}${money(Math.abs(placed.summary.excluded_pnl || 0))} settled so far.</p>` : "") +

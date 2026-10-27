@@ -180,37 +180,50 @@ T13_GAP_NOW = 4.0      # engine/systems.T13_GAP
 
 
 def rules_now(rows: list[dict]) -> dict:
-    """Every settled bet re-judged under TODAY's rules, at the price we actually got:
-      - T13 only at a 4+ gap (worst case over day-to-day players): smaller ones would not be placed
-      - both sides of one game: neither is placed
+    """Caden 2026-10-27: "pretend we had this correct system the whole time". Every bet is re-judged
+    under TODAY's rules, at the price we actually got, and each row gets a "rules" block the site shows
+    as the main record:
+      - T13 only at a 4+ gap (worst case over day-to-day players): smaller ones don't count
+      - both sides of one game: neither counts
       - every bet sized to win $20 (MONEYBALL $30), even ones the old Low-confidence rule cut to $10
         or that only part-filled
-    The real money (what actually happened) stays as it is; this is the record the current model
-    would have, so the systems are judged fairly."""
-    done = [r for r in rows if r["status"] == "FINAL" and not r.get("manual")]
+    The real account money is kept on each row (pnl, risk, to_win) and in the summary, shown smaller.
+    Bets today's rules would have ADDED (e.g. S4 with the new total bar) can't be added: there is no
+    real price for them. Their records are on the Systems tab."""
     sides = {}
     for r in rows:
         sides.setdefault(r["game_id"], set()).add((r.get("bet"), r.get("side")))
-    out = {"w": 0, "l": 0, "p": 0, "pnl": 0.0, "risked": 0.0, "dropped": [], "resized": []}
-    for r in done:
+    out = {"w": 0, "l": 0, "p": 0, "pnl": 0.0, "risked": 0.0, "open": 0, "at_risk": 0.0, "open_to_win": 0.0,
+           "dropped": [], "resized": []}
+    for r in rows:
         why = None
         if r["system"] == "T13" and r.get("t13_gap") is not None and r["t13_gap"] < T13_GAP_NOW:
             why = f"T13 gap {r['t13_gap']:g}: today it needs 4+"
-        spreads = {sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}
-        if len(spreads) > 1:
+        if len({sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}) > 1:
             why = "we held both sides of this game: today neither is bet"
         if why:
+            r["rules"] = {"counted": False, "why": why}
             out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
-                                   "pnl": r["pnl"], "why": why})
+                                   "status": r["status"], "pnl": r["pnl"], "why": why})
             continue
         target = 30.0 if r["system"] == "MONEYBALL" else 20.0
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
-        pnl = target if r["result"] == "W" else -target * odds if r["result"] == "L" else 0.0
+        risk = round(target * odds, 2)
+        pnl = None
+        if r["status"] == "FINAL":
+            pnl = round(target if r["result"] == "W" else -risk if r["result"] == "L" else 0.0, 2)
+            out[{"W": "w", "L": "l"}.get(r["result"], "p")] += 1
+            out["pnl"] += pnl
+            out["risked"] += risk
+        else:
+            out["open"] += 1
+            out["at_risk"] += risk
+            out["open_to_win"] += target
+        r["rules"] = {"counted": True, "to_win": target, "risk": risk, "pnl": pnl}
         if abs(r["to_win"] - target) >= 1:
             out["resized"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
-                                   "had": round(r["to_win"], 2), "now": target, "pnl_had": r["pnl"], "pnl_now": round(pnl, 2)})
-        out[{"W": "w", "L": "l"}.get(r["result"], "p")] += 1
-        out["pnl"] += pnl
-        out["risked"] += target * odds
-    out["pnl"], out["risked"] = round(out["pnl"], 2), round(out["risked"], 2)
+                                   "had": round(r["to_win"], 2), "now": target, "pnl_had": r["pnl"], "pnl_now": pnl})
+    for k in ("pnl", "risked", "at_risk", "open_to_win"):
+        out[k] = round(out[k], 2)
+    out["roi"] = round(out["pnl"] / out["risked"], 4) if out["risked"] else None
     return out

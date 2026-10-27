@@ -23,7 +23,7 @@ from .store import get_store
 from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, evaluate_tests,
                       evaluate_early, evaluate_personnel, evaluate_personnel_shadow, personnel_call, LOCK_ON_FIRE,
                       evaluate_mined, evaluate_moneyball,
-                      SHADOW_SYSTEMS, grade, label, group)
+                      SHADOW_SYSTEMS, T13_GAP, grade, label, group)
 from . import personnel as personnel_mod
 from . import boxscore
 from . import case as case_mod
@@ -468,7 +468,14 @@ def _meta(p, k):
     return (p.get("meta") or {}).get(k)
 
 
+def _counts_now(p) -> bool:
+    """Caden 2026-10-27: records as if today's rules ran all season. T13 picks fired under the old 3-point
+    rule (worst-case gap under 4) don't count toward T13's record."""
+    return not (p["system"] == 113 and (_meta(p, "worst_gap") if _meta(p, "worst_gap") is not None else 99) < T13_GAP)
+
+
 def _records(defs, picks):
+    picks = [p for p in picks if _counts_now(p)]
     out = {}
     for sid, meta in defs.items():
         official = [p for p in picks if p["system"] == sid and p.get("result") and p.get("active")]
