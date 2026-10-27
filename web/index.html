@@ -221,7 +221,6 @@ td .n { font-size: 19px; }
 </header>
 <nav><div class="wrap tabs" role="tablist" id="tabs">
   <button role="tab" data-tab="bets" aria-selected="true">Bets<span class="long"> placed</span><span class="c" id="c-bets" hidden></span></button>
-  <button role="tab" data-tab="card" aria-selected="false"><span class="long">Today's </span>Card<span class="c" id="c-card" hidden></span></button>
   <button role="tab" data-tab="rankings" aria-selected="false">Rank<span class="long">ings</span></button>
   <button role="tab" data-tab="results" aria-selected="false">Results</button>
   <button role="tab" data-tab="systems" aria-selected="false">Systems</button>
@@ -229,7 +228,6 @@ td .n { font-size: 19px; }
 </div></nav>
 <main class="wrap">
   <section id="tab-bets" role="tabpanel"></section>
-  <section id="tab-card" role="tabpanel" hidden></section>
   <section id="tab-rankings" role="tabpanel" hidden></section>
   <section id="tab-results" role="tabpanel" hidden></section>
   <section id="tab-systems" role="tabpanel" hidden></section>
@@ -319,8 +317,9 @@ function whyHead(tag, tags, gap, side) {
 const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $30" : "every card bet is sized to win $20 (MONEYBALL $30)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
-const TABS = ["bets", "card", "rankings", "results", "systems", "lab"];
+const TABS = ["bets", "rankings", "results", "systems", "lab"];
 function show(tab, push = true) {
+  if (tab === "card") tab = "bets";                       // the card now lives on the Bets tab
   if (!TABS.includes(tab)) tab = "bets";
   for (const t of TABS) {
     $("tab-" + t).hidden = t !== tab;
@@ -364,11 +363,10 @@ function renderHead(b, placed) {
   const parts = [];
   if (s.open) parts.push(`${s.open} bet${s.open > 1 ? "s" : ""} open, ${money(s.at_risk)} at risk to win ${money(s.open_to_win)}`);
   if (nextTip) parts.push(`First tip ${when(nextTip)}`);
-  if (toBet) parts.push(`${toBet} card bet${toBet > 1 ? "s" : ""} not placed yet (see why on the Bets tab)`);
+  if (toBet) parts.push(`${toBet} of today's pick${toBet > 1 ? "s" : ""} not placed yet (see why below)`);
   $("status").textContent = parts.length ? parts.join(". ") + "." : "No open bets. New bets are placed automatically when the card fires.";
   document.title = s.open ? `(${s.open}) Courtside` : "Courtside";
   const cb = $("c-bets"); cb.hidden = !s.open; cb.textContent = s.open || "";
-  const nCard = (b.card || []).length; const cc = $("c-card"); cc.hidden = !nCard; cc.textContent = nCard;
 }
 
 // ---------- bets placed
@@ -479,6 +477,7 @@ function renderBets(placed, b) {
   const opts = (vals, cur, all) => `<option value="">${all}</option>` + vals.map(v => `<option${v === cur ? " selected" : ""}>${esc(v)}</option>`).join("");
   const uniq = k => [...new Set(allBets.map(x => x[k] || "None"))].sort();
   const np = notPlaced(b, placed);
+  const passed = (b.card || []).filter(c => c.verdict !== "BET" && c.verdict !== "LIMIT");
   const cardSys = [...Object.values(b.systems || {}), ...Object.values(b.test_systems || {}).filter(x => x.group === "FAV")];
   const cardRec = { w: cardSys.reduce((t, x) => t + (x.w || 0), 0), l: cardSys.reduce((t, x) => t + (x.l || 0), 0) };
   const placerAt = (b.placer || {}).at;
@@ -498,15 +497,15 @@ function renderBets(placed, b) {
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
     </div>` : ""}` +
-    `<h2>Open bets</h2><p class="lede">Placed for you at the best price on Kalshi, ProphetX and BetOpenly. Every bet is sized to win $20, MONEYBALL bets $30.</p>` +
+    `<h2>Open bets</h2><p class="lede">Everything the model bets lives on this tab. Open bets are bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $30).</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     ((placed.resting || []).length ? `<h2>Waiting for a price</h2><p class="lede">LIMIT bets: an order is sitting on Kalshi at the most we'd pay. It fills if the price comes to us, and is cancelled 5 minutes before tip or if the model stops wanting it.</p>` +
       placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)}, card pick ${esc(r.pick)}, tips ${esc(until(r.tip_utc))}</span></div>
         <div class="n" style="font-size:18px">${Math.round(r.price * 100)}¢ <span class="muted">${amer(r.american)}</span></div>
         <div class="reason">${esc(r.venue_name)}: ${r.count} contracts, ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. ${esc(r.contract)}</div></div>`).join("") : "") +
-    (np.length ? `<h2>On the card, not placed</h2><p class="lede">What the order placer said on its last check${placerAt ? ` (${esc(ago(placerAt))})` : ""}.</p>` +
-      np.map(c => `<div class="np"><div class="pick">${esc(c.label)} <span class="muted" style="font:400 14px var(--body)">${esc(c.tag)}, ${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</span></div><div class="verdict ${c.verdict}" style="padding:5px 8px">${c.verdict}</div>
-        <div class="reason">${esc(c.reason || "Not checked yet: the order placer looks every minute and logs its reasons every 15.")}</div></div>`).join("") : "") +
+    (np.length ? `<h2>Today, not placed yet</h2><p class="lede">On today's card but not bought yet. The bettor checks every minute${placerAt ? `; its last note was ${esc(ago(placerAt))}` : ""}.</p>` +
+      np.map(c => cardRow(c, c.reason || "Not checked yet: the bettor looks every minute.")).join("") : "") +
+    (passed.length ? `<details class="more" style="margin:22px 0 4px"><summary>${passed.length} more fired today but won't be bet (price, conflict or benched)</summary>${passed.map(c => cardRow(c)).join("")}</details>` : "") +
     (done.length ? `<h2>Settled</h2>` + done.slice().reverse().map(ticket).join("") : "") +
     ((placed.excluded || []).length ? `<p class="foot"><b>Left out of all records (model bug):</b> ` +
       placed.excluded.map(x => `${esc(x.holding)} on ${esc(x.venue_name)}${x.result ? ` (${x.result}, ${x.pnl >= 0 ? "+" : "−"}${money(Math.abs(x.pnl))})` : " (open)"}`).join(", ") +
@@ -518,36 +517,25 @@ function renderBets(placed, b) {
 }
 
 // ---------- today's card
-function renderCard(b, placed) {
-  const byKey = Object.fromEntries((placed.bets || []).map(x => [x.key, x]));
-  const skipWhy = Object.fromEntries(notPlaced(b, placed).filter(c => c.reason).map(c => [c.key, c.reason]));
-  const card = b.card || [], hold = b.card_holding || [];
-  const row = c => {
-    const p = byKey[c.key];
-    const best = c.best;
-    return `<div class="row">
+// a card bet that isn't placed (yet): why not, and what's behind it
+function cardRow(c, reason) {
+  const best = c.best;
+  const status = c.verdict === "LIMIT" ? "Waiting for a price" : c.verdict === "BET" ? "Not placed yet"
+    : c.verdict === "CONFLICT" ? "No bet: our systems are on both sides" : c.verdict === "BENCHED" ? "No bet: system benched" : "No bet: price isn't good enough";
+  return `<div class="row">
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
-        <div class="why-h">Why: ${whyHead(c.tag, [c.tag, ...(c.with || [])], c.players, c.side)}</div>
+        <div class="why-h">${esc(status)}</div>
+        <div class="sub">${esc(reason || c.why || "")}</div>
+        <div class="why-h">Why the model likes it: ${whyHead(c.tag, [c.tag, ...(c.with || [])], c.players, c.side)}</div>
         ${c.verdict === "BET" || c.verdict === "LIMIT" ? `<div class="size-l">Size: to win <b>${money(c.to_win || 20)}</b> — ${sizeRule(c.tag)}.</div>` : ""}
         ${whyBets([c.tag, ...(c.with || [])], c.players, c.side)}
-        <div class="sub">${esc(c.why || "")}</div>
-        ${p ? `<div class="placed">Placed on ${esc(p.venue_name)}: ${esc(p.holding)} at ${p.venue === "kalshi" ? Math.round(p.price * 100) + "¢" : amer(p.american)}, to win ${money(p.to_win)}</div>`
-          : skipWhy[c.key] ? `<div class="sub" style="margin-top:4px">Not placed: ${esc(skipWhy[c.key])}</div>` : ""}
       </div>
-      <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} expected` : "no price yet"}</div>
+      <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} edge` : "no price yet"}</div>
       ${(c.shop || []).length > 1 ? `<details class="shop"><summary>Every price (${c.shop.length})</summary><table>${c.shop.map(q =>
         `<tr><td>${esc(q.venue_name)}${q.mine ? "" : " <span class='muted'>(no account)</span>"}</td><td>${esc(q.contract)}</td><td class="r n">${esc(q.price_txt)}</td><td class="r">${pct(q.ev)}${q.fee_counted ? "" : "*"}</td></tr>`).join("")}</table><div>* fees not counted</div></details>` : ""}
     </div>`;
-  };
-  const moved = r => `<div class="row"><div class="verdict">MOVED</div>
-      <div><div class="pick">${esc(r.label)}</div><div class="sub">${esc(r.away)} @ ${esc(r.home)}, ${esc(when(r.tip_utc))}. ${badge(r.group)}${esc(r.tag)}</div>
-      <div class="sub">Fired at ${esc(r.label)}; the line is now ${r.now_line == null ? "off the board" : esc(r.now_line)} and the model doesn't want it there. If you already have it, it's graded at the original number.</div></div><div></div></div>`;
-  $("tab-card").innerHTML = `<h2>Today's card</h2>
-    <p class="lede">Today's bets, best first. BET: the price is good and it gets placed. LIMIT: placed only if the price comes to us. PASS: no bet. CONFLICT: our systems are on both sides of the game, so no bet.</p>` +
-    (card.length ? card.map(row).join("") : `<div class="empty">Nothing on the card right now. The model checks again every few minutes.</div>`) +
-    (hold.length ? `<h2>Line moved</h2><p class="lede">Fired earlier at a better number. Only counts if you got that number.</p>` + hold.map(moved).join("") : "");
 }
 
 // ---------- results
@@ -696,7 +684,6 @@ function render(b) {
   placedKeys = new Set((placed.bets || []).map(x => x.key));
   renderHead(b, placed);
   renderBets(placed, b);
-  renderCard(b, placed);
   renderRankings(b);
   renderResults(b);
   renderSystems(b);
