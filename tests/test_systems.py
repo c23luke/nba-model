@@ -205,3 +205,13 @@ def test_moneyball_needs_two_systems_and_the_players_model_by_3_either_way():
     assert not evaluate_moneyball(g, two[:1] + two[2:], view)          # one system + T13: no
     assert not evaluate_moneyball(g, two, {"gap": 4.5, "scenarios": [{"gap": 4.5}, {"gap": 2.0}]})   # fails if he sits
     assert not evaluate_moneyball(g, two, {"gap": 4.5, "blind": ["x"]})
+
+
+def test_t13_needs_a_4_point_gap_now():
+    from datetime import date
+    from engine.state import Game
+    from engine.systems import evaluate_personnel
+    g = Game("g", date(2026, 11, 1), "NYK", "BOS", tip_utc=None)
+    view = lambda gap: {"gap": gap, "fair": -3.0, "away_rating": 0.0, "home_rating": 1.0, "scenarios": []}
+    assert evaluate_personnel(g, -1.0, view(3.6)) == []
+    assert [p.side for p in evaluate_personnel(g, -1.0, view(4.2))] == ["BOS"]

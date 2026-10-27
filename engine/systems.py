@@ -414,9 +414,15 @@ def personnel_call(view: dict | None, gap_to_fire: float = 3.0) -> dict:
     return {"call": "none"}
 
 
+T13_GAP = 4.0   # MEASURED (engine/measure_moneyball_stack.py, 2 seasons at the open, live players model):
+                # gap 3-4 went 131-116 (53.0%: 2024-25 62-65, 2025-26 69-51) — about break-even after the vig;
+                # gap 4-6 went 164-120 (57.7%), up both seasons. A 3-4 gap is only bet as part of a MONEYBALL
+                # stack (2+ systems agreeing) or an early combo.
+
+
 def evaluate_personnel(game: Game, home_spread: float | None, view: dict | None,
-                       gap_to_fire: float = 3.0, season_day: int = 0) -> list[Pick]:
-    """T13: bet the side the personnel line likes when the gap is 3+ in every day-to-day version
+                       gap_to_fire: float = T13_GAP, season_day: int = 0) -> list[Pick]:
+    """T13: bet the side the personnel line likes when the gap is 4+ in every day-to-day version
     of tonight and the model isn't blind on the game."""
     if home_spread is None:
         return []
