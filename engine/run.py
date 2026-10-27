@@ -715,7 +715,7 @@ def counts_today(p: dict, bars: dict) -> bool:
 def since_restart(picks, orders, games=None):
     bars = s4_bars(games)
     picks = [p for p in picks if counts_today(p, bars)]
-    orders = [o for o in orders if (o.get("created_at") or "") >= RESTART_UTC]
+    orders = [o for o in orders if (o.get("tip_utc") or o.get("created_at") or "") >= RESTART_UTC]   # games from Oct 27 on
     return picks, orders
 
 

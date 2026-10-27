@@ -319,7 +319,8 @@ def test_restart_drops_old_bets_but_keeps_tracking_judged_by_todays_rules(monkey
              {"system": 113, "result": "W", "line": 3.0, "game_date": "2026-10-26", "meta": {"worst_gap": 3.4}},                           # old T13: out
              {"system": 113, "result": "L", "line": 3.0, "game_date": "2026-10-26", "meta": {"worst_gap": 4.4}},                           # kept
              {"system": 102, "result": "W", "line": -3.0, "game_date": "2026-10-22", "meta": {}}]                                          # kept
-    orders = [{"created_at": "2026-10-27T15:00:00+00:00"}, {"created_at": "2026-10-27T19:00:00+00:00"}]
+    orders = [{"created_at": "2026-10-26T15:00:00+00:00", "tip_utc": "2026-10-26T23:00:00+00:00"},   # yesterday's game: out
+              {"created_at": "2026-10-26T22:00:00+00:00", "tip_utc": "2026-10-28T00:00:00+00:00"}]   # bet last night on tonight's game: in
     p, o = R.since_restart(picks, orders, games)
     assert [x["result"] for x in p] == ["L", "L", "W"] and o == [orders[1]]
 
