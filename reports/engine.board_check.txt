@@ -1,0 +1,27 @@
+generated: 2026-10-27T15:47:06.288195+00:00
+
+NOTES:
+  - Box scores: 5 new games stored
+  - Official injury report 11:45 AM ET: 28 players listed; differs from ESPN on 15: Joshua Jefferson (BKN): Out — G League - On Assignment; Grant Nelson (BKN): Out — G League - Two-Way; Drake Powell (BKN): Out — G League - On Assignment; Ben Saraf (BKN): Out — G League - On Assignment; Elijah Harkless (
+  - Personnel: 16 games rated, not calibrated (under 6 lines)
+
+CARD:
+  BET      S4   OVER 232.5  SAC@SAS  players=None
+  BET      S4   OVER 223  BKN@BOS  players=None
+  BET      T13  DET +4  DET@NYK  players=None
+
+POWER (top 5 / bottom 5):
+   1 BOS +9.7 (players +7.8, results +1.9, 3 g) 2-1
+   2 SAS +8.8 (players +8.0, results +0.8, 3 g) 1-2
+   3 MIN +8.7 (players +2.8, results +5.8, 4 g) 3-1
+   4 DET +8.2 (players +4.3, results +3.9, 3 g) 3-0
+   5 OKC +7.9 (players +8.1, results -0.2, 4 g) 4-0
+  26 CHA -4.1 (players -2.5, results -1.5, 4 g) 3-1
+  27 WAS -4.7 (players -3.7, results -1.0, 4 g) 2-2
+  28 MIL -6.3 (players -3.1, results -3.2, 4 g) 1-3
+  29 CHI -7.4 (players -4.4, results -3.0, 4 g) 1-3
+  30 SAC -10.4 (players -7.3, results -3.1, 3 g) 0-3
+
+injury_log: 28 rows (first 1000)
+
+price_log: Supabase GET /price_log?select=id&limit=1000 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.price_log' in the schema cache"}
