@@ -6,7 +6,7 @@
 <title>Courtside</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Figtree:wght@400;500;600;700&family=Graduate&family=Source+Sans+3:wght@400;600;700&family=Doto:wght@700;900&family=Barlow:wght@400;500;600;700&family=Archivo:wdth,wght@100..125,400..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* Courtside — arena at night. One loud thing per screen (the scoreboard, then the pick); everything else quiet. */
 :root {
@@ -211,66 +211,6 @@ td .n { font-size: 19px; }
   .tabs button { transition: color .15s, border-color .15s; }
 }
 
-/* ===== preview looks: ?look=hardwood | led | clean ===== */
-/* HARDWOOD — a gym floor in daylight: maple planks, varsity lettering, home-team red and navy */
-[data-look="hardwood"] { --floor: #E7C08C; --deck: #FFFDF8; --deck2: #F2E7D6; --line: #D9C6A8; --chalk: #17213A; --haze: #6B5B45;
-  --leather: #C8102E; --leather-ink: #FFFFFF; --net: #13294B; --win: #127A45; --loss: #C8102E;
-  --display: "Graduate", Georgia, serif; --body: "Source Sans 3", system-ui, sans-serif; color-scheme: light; }
-[data-look="hardwood"] body { background: repeating-linear-gradient(90deg, #E7C08C 0 118px, #DDB27A 118px 120px, #EBC897 120px 238px, #DDB27A 238px 240px); }
-[data-look="hardwood"] nav { background: #13294B; border-bottom: 4px solid #C8102E; }
-[data-look="hardwood"] .tabs button { color: #B9C3D9; font-size: 15px; }
-[data-look="hardwood"] .tabs button[aria-selected="true"] { color: #fff; border-bottom-color: #fff; }
-[data-look="hardwood"] header { color: #13294B; }
-[data-look="hardwood"] .brand { font-size: 28px; }
-[data-look="hardwood"] .board { background: #13294B; border: 0; border-radius: 6px; box-shadow: 0 6px 0 #0B1A33; color: #fff; }
-[data-look="hardwood"] .board .court { opacity: .25; } [data-look="hardwood"] .board .court * { stroke: #fff; }
-[data-look="hardwood"] .board .big { font-size: 56px; color: #fff; } [data-look="hardwood"] .board .big.pos { color: #7BE0A6; } [data-look="hardwood"] .board .big.neg { color: #FF8A9B; }
-[data-look="hardwood"] .board .lbl, [data-look="hardwood"] .board-row { color: #B9C3D9; } [data-look="hardwood"] .board-row b { color: #fff; }
-[data-look="hardwood"] .ticket, [data-look="hardwood"] .row, [data-look="hardwood"] .sys, [data-look="hardwood"] .chart, [data-look="hardwood"] .empty, [data-look="hardwood"] .lab details.box {
-  border-radius: 6px; border: 0; border-top: 6px solid #13294B; box-shadow: 0 2px 0 rgba(23,33,58,.15); }
-[data-look="hardwood"] .figs div { background: #F2E7D6; border-radius: 4px; }
-[data-look="hardwood"] h2 { font-size: 26px; color: #13294B; }
-[data-look="hardwood"] .lede, [data-look="hardwood"] .status, [data-look="hardwood"] .fresh { color: #3E3226; }
-[data-look="hardwood"] .hold b, [data-look="hardwood"] .row .pick { font-size: 34px; }
-[data-look="hardwood"] .why-t td b, [data-look="hardwood"] .sys td b, [data-look="hardwood"] .figs strong { font-family: "Source Sans 3", sans-serif; font-weight: 700; }
-[data-look="hardwood"] .verdict { font-family: "Source Sans 3", sans-serif; }
-
-/* LED — the jumbotron: black arena, dot-matrix scoreboard digits, amber bulbs */
-[data-look="led"] { --floor: #050608; --deck: #0C0E13; --deck2: #161A22; --line: #232833; --chalk: #F4F1E8; --haze: #8A8F99;
-  --leather: #FFB000; --leather-ink: #1A1200; --net: #FF3B3B; --win: #34F28A; --loss: #FF3B3B;
-  --display: "Barlow", system-ui, sans-serif; --body: "Barlow", system-ui, sans-serif; }
-[data-look="led"] body { background: radial-gradient(circle, #14161C 1px, transparent 1.2px) 0 0 / 6px 6px, #050608; }
-[data-look="led"] nav { background: rgba(5,6,8,.92); }
-[data-look="led"] .board { background: #000; border: 2px solid #2A2E38; border-radius: 8px; box-shadow: inset 0 0 40px rgba(255,176,0,.08); }
-[data-look="led"] .board .court { display: none; }
-[data-look="led"] .board .big, [data-look="led"] .hold b, [data-look="led"] .figs strong, [data-look="led"] .row .pick, [data-look="led"] h2, [data-look="led"] .brand {
-  font-family: "Doto", monospace; font-weight: 900; color: #FFB000; text-shadow: 0 0 12px rgba(255,176,0,.55); letter-spacing: .02em; }
-[data-look="led"] .board .big.pos, [data-look="led"] .figs strong.pos { color: #34F28A; text-shadow: 0 0 12px rgba(52,242,138,.5); }
-[data-look="led"] .board .big.neg { color: #FF3B3B; text-shadow: 0 0 12px rgba(255,59,59,.5); }
-[data-look="led"] .brand::before { background: #FFB000; box-shadow: 0 0 14px #FFB000; }
-[data-look="led"] .ticket, [data-look="led"] .row, [data-look="led"] .sys, [data-look="led"] .chart { border-radius: 8px; }
-[data-look="led"] .figs div { background: #000; border: 1px solid #1E222B; }
-[data-look="led"] .why-t td b, [data-look="led"] .sys td b { font-family: "Barlow", sans-serif; font-weight: 700; }
-[data-look="led"] .tabs button { font-weight: 600; letter-spacing: .06em; }
-
-/* CLEAN — a modern sports app in daylight: white cards, big black numbers, one electric blue */
-[data-look="clean"] { --floor: #F1F3F7; --deck: #FFFFFF; --deck2: #F1F3F7; --line: #E3E7EE; --chalk: #0B1220; --haze: #5E6879;
-  --leather: #2F5BFF; --leather-ink: #FFFFFF; --net: #2F5BFF; --win: #0E9F6E; --loss: #E02424;
-  --display: "Archivo", system-ui, sans-serif; --body: "Archivo", system-ui, sans-serif; color-scheme: light; }
-[data-look="clean"] body { background: #F1F3F7; }
-[data-look="clean"] nav { background: rgba(241,243,247,.9); }
-[data-look="clean"] .brand::before { background: #2F5BFF; box-shadow: none; border-radius: 8px; }
-[data-look="clean"] .board { background: #FFFFFF; border: 0; border-radius: 28px; box-shadow: 0 1px 2px rgba(11,18,32,.06), 0 12px 32px -12px rgba(11,18,32,.18); }
-[data-look="clean"] .board .court { display: none; }
-[data-look="clean"] .board .big, [data-look="clean"] .hold b, [data-look="clean"] .row .pick, [data-look="clean"] h2, [data-look="clean"] .brand, [data-look="clean"] .figs strong {
-  font-stretch: 112%; font-weight: 800; letter-spacing: -.02em; }
-[data-look="clean"] .board-row { border-top-color: #E3E7EE; }
-[data-look="clean"] .ticket, [data-look="clean"] .row, [data-look="clean"] .sys, [data-look="clean"] .chart, [data-look="clean"] .empty, [data-look="clean"] .lab details.box {
-  border: 0; border-radius: 24px; box-shadow: 0 1px 2px rgba(11,18,32,.05), 0 8px 24px -14px rgba(11,18,32,.2); }
-[data-look="clean"] .figs div { background: #F1F3F7; border-radius: 14px; }
-[data-look="clean"] .tabs button { font-weight: 700; font-size: 16px; }
-[data-look="clean"] .verdict.BET, [data-look="clean"] .verdict.W { color: #fff; }
-[data-look="clean"] .why-t tr.combo td { background: rgba(47,91,255,.07); }
 </style>
 </head>
 <body>
@@ -299,7 +239,6 @@ td .n { font-size: 19px; }
 
 <script src="config.js" onerror="void 0"></script>
 <script>
-try { const lk = new URLSearchParams(location.search).get("look"); if (lk) document.documentElement.dataset.look = lk; } catch (e) {}
 const cfg = window.BOARD_CONFIG || {};
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
