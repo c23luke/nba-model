@@ -87,6 +87,7 @@ h2:first-child { margin-top: 8px; }
 @media (max-width: 560px) { .figs { grid-template-columns: 1fr 1fr; } .hold b { font-size: 40px; } .ticket { padding: 14px 14px 10px; } }
 .mkt { font-size: 14px; color: var(--haze); margin: 0 0 8px; }
 .mkt b { color: var(--chalk); font-weight: 600; }
+.plain { font-size: 16px; line-height: 1.6; margin: 12px 0 4px; padding: 12px 14px; background: rgba(255,123,41,.07); border-left: 3px solid var(--leather); border-radius: 0 12px 12px 0; }
 .why-h { font-size: 17px; font-weight: 600; margin: 12px 0 2px; }
 .size-l { font-size: 14px; color: var(--haze); margin-bottom: 8px; }
 .size-l b { color: var(--chalk); }
@@ -307,6 +308,44 @@ function whyBets(tags, gap, side) {
     rows.map(r => `<tr class="${r.combo ? "combo" : ""}"><td>${r.name}</td>${r.span ? `<td colspan="2" class="r ${r.tone}">${r.span}</td>` : ""}${r.cells ? r.cells.map(c => `<td class="r ${recCellTone(c)}">${recCell(c)}</td>`).join("") : `<td colspan="3"></td>`}</tr>`).join("") +
     `</table><div class="why-note">Past seasons replayed at the opening line. Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ bets.</div>`;
 }
+// ---------- a few plain sentences anyone can read: why this bet, in words (for friends checking the site)
+const TEAM = { ATL: "Hawks", BOS: "Celtics", BKN: "Nets", CHA: "Hornets", CHI: "Bulls", CLE: "Cavaliers", DAL: "Mavericks", DEN: "Nuggets",
+  DET: "Pistons", GS: "Warriors", GSW: "Warriors", HOU: "Rockets", IND: "Pacers", LAC: "Clippers", LAL: "Lakers", MEM: "Grizzlies", MIA: "Heat",
+  MIL: "Bucks", MIN: "Timberwolves", NO: "Pelicans", NOP: "Pelicans", NY: "Knicks", NYK: "Knicks", OKC: "Thunder", ORL: "Magic", PHI: "76ers",
+  PHX: "Suns", POR: "Trail Blazers", SAC: "Kings", SA: "Spurs", SAS: "Spurs", TOR: "Raptors", UTA: "Jazz", UTAH: "Jazz", WAS: "Wizards", WSH: "Wizards" };
+const team = t => TEAM[t] || t;
+const amerOf = p => p > 0 && p < 1 ? (p <= 0.5 ? "+" + Math.round(100 * (1 - p) / p) : "−" + Math.round(100 * p / (1 - p))) : "";
+function plainWhy(o) {
+  // o: {tag, tags, gap, side, bet, line (number we hold or the card's), market (line now), price (cost per $1), ev, toWin, away, home}
+  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
+  const total = o.bet === "total", who = total ? `the ${o.side.toLowerCase()} in ${team(o.away)} at ${team(o.home)}` : `the ${team(o.side)}`;
+  const two = h => { if (!h) return null; const a = h[SEASONS[0]] || {}, b = h[SEASONS[1]] || {}; const w = (a.w || 0) + (b.w || 0), l = (a.l || 0) + (b.l || 0);
+    return w + l ? { w, l, p: Math.round(w / (w + l) * 100) } : null; };
+  const lineTxt = total ? `${o.side === "OVER" ? "over" : "under"} ${o.line}` : `${team(o.side)} ${o.line > 0 ? "+" : o.line < 0 ? "−" : ""}${o.line === 0 ? "pick'em" : Math.abs(o.line)}`;
+  S.push(`We're betting ${lineTxt}.`);
+  if (o.gap != null && o.gap >= 3 && !total) {
+    const b = gapBucket(o.gap), h = two((R.players_gap || {})[b]);
+    S.push(`Our player ratings, built from who is actually playing tonight, make the ${team(o.side)} about ${o.gap.toFixed(1)} points better than the betting market does, even if their day-to-day players sit.`
+      + (h ? ` Over the last two seasons, bets with a gap that size won ${h.p}% of the time (${h.w}-${h.l}).` : ""));
+  }
+  if (sys.length) {
+    const parts = sys.map(t => { const h = two((R.systems || {})[t]); const nm = sysName(t);
+      return `${t}${nm ? ` (${nm.toLowerCase()})` : ""}${h ? `, ${h.w}-${h.l} over the last two seasons` : ""}`; });
+    S.push(`${sys.length > 1 ? "These betting systems" : "A betting system"} also point${sys.length > 1 ? "" : "s"} this way: ${parts.join("; ")}.`);
+  }
+  if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
+    const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
+    S.push(`Two or more systems plus the player ratings on the same side is our strongest setup${h ? `: ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);
+  }
+  if (!total && o.market != null && o.line != null && o.line > o.market) S.push(`We got ${o.line - o.market} extra point${o.line - o.market === 1 ? "" : "s"} compared with the market number (${o.market > 0 ? "+" : ""}${o.market}).`);
+  if (o.price && o.ev != null) {
+    const be = Math.round(o.price * 100), win = Math.round(o.price * (1 + o.ev) * 100);
+    S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
+  }
+  S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet" : ""}.`);
+  return `<p class="plain">${S.map(esc).join(" ")}</p>`;
+}
+
 function whyHead(tag, tags, gap, side) {
   const sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
   if (tag === "MONEYBALL") return `MONEYBALL: ${sys.length} systems on ${esc(side)} and the players model agrees by ${gap != null ? gap.toFixed(1) : "3+"}`;
@@ -392,8 +431,9 @@ function ticket(x) {
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
       ${marketLine(x)}
-      <div class="why-h">Why: ${whyHead(x.system, [x.system, ...(x.with || [])], x.players, x.side)}</div>
-      <div class="size-l">${sizeLine(x)}</div>
+      ${plainWhy({ tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, side: x.side, bet: x.bet, line: x.line,
+        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price, ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
+      ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
       <details class="more"><summary>Order details</summary><dl>
@@ -531,8 +571,9 @@ function cardRow(c, reason) {
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
         <div class="why-h">${esc(status)}</div>
         <div class="sub">${esc(reason || c.why || "")}</div>
-        <div class="why-h">Why the model likes it: ${whyHead(c.tag, [c.tag, ...(c.with || [])], c.players, c.side)}</div>
-        ${c.verdict === "BET" || c.verdict === "LIMIT" ? `<div class="size-l">Size: to win <b>${money(c.to_win || 20)}</b> — ${sizeRule(c.tag)}.</div>` : ""}
+        ${plainWhy({ tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
+          market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, away: c.away, home: c.home })}
+
         ${whyBets([c.tag, ...(c.with || [])], c.players, c.side)}
       </div>
       <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} edge` : "no price yet"}</div>
