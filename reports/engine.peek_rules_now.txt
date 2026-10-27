@@ -5,32 +5,30 @@ TODAY'S RULES: {
  "w": 0,
  "pnl": 0.0,
  "roi": null,
- "open": 3,
+ "open": 1,
  "risked": 0.0,
- "at_risk": 76.7,
- "dropped": [],
- "resized": [
+ "at_risk": 25.09,
+ "dropped": [
   {
-   "had": 11.51,
-   "now": 20.0,
+   "pnl": null,
+   "why": "T13 gap 3.9: today it needs 4+",
    "result": null,
+   "status": "OPEN",
    "system": "T13",
-   "holding": "BOS \u22127.5",
-   "pnl_had": null,
-   "pnl_now": null
+   "holding": "BOS \u22127.5"
   },
   {
-   "had": 10.39,
-   "now": 20.0,
+   "pnl": null,
+   "why": "T13 gap 3.3: today it needs 4+",
    "result": null,
+   "status": "OPEN",
    "system": "T13",
-   "holding": "LAL ML",
-   "pnl_had": null,
-   "pnl_now": null
+   "holding": "LAL ML"
   }
  ],
- "open_to_win": 60.0
+ "resized": [],
+ "open_to_win": 20.0
 }
-  BOS −7.5     T13       None to_win  11.51 risk  13.74 pnl None OPEN counted True t13_gap None target 20 players None
+  BOS −7.5     T13       None to_win  11.51 risk  13.74 pnl None OPEN counted False t13_gap 3.9 target 10 players None
   DET +5.5     T13       None to_win  20.22 risk  25.37 pnl None OPEN counted True t13_gap 4.5 target 20 players 4.5
-  LAL ML       T13       None to_win  10.39 risk  14.41 pnl None OPEN counted True t13_gap None target 20 players None
+  LAL ML       T13       None to_win  10.39 risk  14.41 pnl None OPEN counted False t13_gap 3.3 target 10 players None
