@@ -434,7 +434,7 @@ function renderCard(b, placed) {
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
-        <div class="chips" style="margin:6px 0 4px">${badge(c.group)}<span class="chip sys">${esc(c.tag)}${c.name ? " · " + esc(c.name) : ""}</span>${c.confidence ? `<span class="chip ${c.confidence}">${c.confidence}</span>` : ""}${c.players != null ? `<span class="chip ${c.players >= 3 ? "stack" : ""}">Players ${c.players >= 0 ? "+" : ""}${c.players}</span>` : ""}</div>
+        <div class="chips" style="margin:6px 0 4px">${badge(c.group)}<span class="chip sys">${esc(c.tag)}${c.name ? " · " + esc(c.name) : ""}</span>${c.confidence ? `<span class="chip ${c.confidence}">${c.confidence}${c.confidence === "Low" ? " · $10 size" : ""}</span>` : ""}${c.players != null ? `<span class="chip ${c.players >= 3 ? "stack" : ""}">Players ${c.players >= 0 ? "+" : ""}${c.players}</span>` : ""}</div>
         <div class="sub">${r.w + r.l ? `<b class="n" style="font-size:17px;color:var(--text)">${wl(r)}</b> ${winp(r)} all-time · ${wl(r.season)} this season. ` : ""}${esc(c.why || "")}</div>
         ${p ? `<div class="placed">Placed on ${esc(p.venue_name)}: ${esc(p.holding)} at ${p.venue === "kalshi" ? Math.round(p.price * 100) + "¢" : amer(p.american)}, to win ${money(p.to_win)}</div>`
           : skipWhy[c.key] ? `<div class="sub" style="margin-top:4px">Not placed: ${esc(skipWhy[c.key])}</div>` : ""}
