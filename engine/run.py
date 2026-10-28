@@ -218,7 +218,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 3 + 4. run systems on every game that hasn't tipped
     old = {p["key"]: p for p in store.load_picks()}
-    t13 = [p for p in old.values() if p["system"] == 113 and p.get("active") and p.get("result") and _counts_now(p)]
+    t13 = [p for p in old.values() if p["system"] == 113 and p.get("active") and p.get("result")]
     t13_record = {"w": sum(p["result"] == "W" for p in t13), "l": sum(p["result"] == "L" for p in t13)}
     seen_now = set()
     pick_rows = []
@@ -475,7 +475,6 @@ def _counts_now(p) -> bool:
 
 
 def _records(defs, picks):
-    picks = [p for p in picks if _counts_now(p)]
     out = {}
     for sid, meta in defs.items():
         official = [p for p in picks if p["system"] == sid and p.get("result") and p.get("active")]
@@ -713,8 +712,9 @@ def counts_today(p: dict, bars: dict) -> bool:
 
 
 def since_restart(picks, orders, games=None):
-    bars = s4_bars(games)
-    picks = [p for p in picks if counts_today(p, bars)]
+    """Money restarts Oct 27 (orders). System TRACKING keeps every pick each system actually made this season,
+    under the rules live when it fired (Caden 2026-10-27: re-judging the old picks by today's rules wiped real
+    records like S4's and T13's, which he didn't want). counts_today() stays for the money ledger's checks."""
     orders = [o for o in orders if (o.get("tip_utc") or o.get("created_at") or "") >= RESTART_UTC]   # games from Oct 27 on
     return picks, orders
 

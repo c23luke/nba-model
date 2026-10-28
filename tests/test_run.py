@@ -309,21 +309,17 @@ def test_excluded_game_leaves_records_and_placed_ledger(tmp_path):
     assert board["placed"]["summary"]["excluded_pnl"] == ex[0]["pnl"] > 0
 
 
-def test_restart_drops_old_bets_but_keeps_tracking_judged_by_todays_rules(monkeypatch):
+def test_restart_drops_old_bets_but_keeps_every_tracked_pick(monkeypatch):
+    """Caden 2026-10-27: money restarts Oct 27; system tracking keeps every pick each system really made."""
     import engine.run as R
-    monkeypatch.setattr(R, "RESTART_UTC", "2026-10-27T18:45:00+00:00")
-    games = {str(i): {"game_date": "2026-10-2%d" % (1 + i // 10), "final": True, "total": 228.0} for i in range(40)}
-    games["x"] = {"game_date": "2026-10-26", "final": True, "total": 230.0}
-    picks = [{"system": 4, "result": "W", "line": 224.5, "game_date": "2026-10-26", "tip_utc": "2026-10-26T23:00:00+00:00", "meta": {}},  # under the avg: out
-             {"system": 4, "result": "L", "line": 231.5, "game_date": "2026-10-26", "tip_utc": "2026-10-26T23:00:00+00:00", "meta": {}},  # above: kept
-             {"system": 113, "result": "W", "line": 3.0, "game_date": "2026-10-26", "meta": {"worst_gap": 3.4}},                           # old T13: out
-             {"system": 113, "result": "L", "line": 3.0, "game_date": "2026-10-26", "meta": {"worst_gap": 4.4}},                           # kept
-             {"system": 102, "result": "W", "line": -3.0, "game_date": "2026-10-22", "meta": {}}]                                          # kept
-    orders = [{"created_at": "2026-10-26T15:00:00+00:00", "tip_utc": "2026-10-26T23:00:00+00:00"},   # yesterday's game: out
-              {"created_at": "2026-10-26T22:00:00+00:00", "tip_utc": "2026-10-28T00:00:00+00:00"}]   # bet last night on tonight's game: in
-    p, o = R.since_restart(picks, orders, games)
-    assert [x["result"] for x in p] == ["L", "L", "W"] and o == [orders[1]]
-
+    monkeypatch.setattr(R, "RESTART_UTC", "2026-10-27T04:00:00+00:00")
+    picks = [{"system": 4, "result": "W", "line": 224.5, "game_date": "2026-10-26", "meta": {}},
+             {"system": 113, "result": "W", "line": 3.0, "game_date": "2026-10-26", "meta": {"worst_gap": 3.4}},
+             {"system": 102, "result": "L", "line": -3.0, "game_date": "2026-10-22", "meta": {}}]
+    orders = [{"created_at": "2026-10-26T15:00:00+00:00", "tip_utc": "2026-10-26T23:00:00+00:00"},
+              {"created_at": "2026-10-26T22:00:00+00:00", "tip_utc": "2026-10-28T00:00:00+00:00"}]
+    p, o = R.since_restart(picks, orders, {})
+    assert p == picks and o == [orders[1]]
 
 def test_bet_on_a_pick_that_no_longer_counts_is_still_judged(tmp_path, monkeypatch):
     """A T13 bet placed under the old 3-point rule: its pick is out of the records, but the ledger must still
