@@ -72,6 +72,8 @@ def message(c: dict, pick: dict) -> tuple[str, str, str]:
         title = f"BET: {c['label']} — {c['away']} @ {c['home']} — {b['venue_name']} {b['price_txt']}"
     else:
         title = f"{c['verdict']}: {c['label']} — {c['away']} @ {c['home']}"
+    if c.get("tag") == "MONEYBALL":
+        title = "MONEYBALL 🏀 " + title             # our strongest setup: make it impossible to miss
     lines = [f"{c['tag']} ({c['group']}) · expected win rate {c['win']:.1%}", c["why"]]
     if c.get("max") is not None:
         lines.append(f"Max price on Kalshi {round(c['max'] * 100)}¢ incl. fee"

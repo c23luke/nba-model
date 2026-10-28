@@ -113,6 +113,9 @@ details.more dt { color: var(--haze); } details.more dd { margin: 0; }
 .chip.Low { background: rgba(255,92,122,.16); color: var(--loss); } .chip.High { background: rgba(61,220,151,.16); color: var(--win); }
 .chip.Medium { background: rgba(255,123,41,.16); color: var(--leather); } .chip.stack { background: rgba(61,220,151,.16); color: var(--win); }
 
+.ticket.mb, .row.mb { border: 2px solid var(--leather); box-shadow: 0 0 0 4px rgba(255,123,41,.12), 0 18px 40px -20px rgba(255,123,41,.55); }
+.mb-flag { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: -4px 0 10px; font: 800 24px/1 var(--display); letter-spacing: .04em; color: var(--leather); }
+.mb-flag span { font: 500 13px var(--body); letter-spacing: 0; color: var(--haze); }
 /* card + results rows */
 .row { display: grid; grid-template-columns: 76px 1fr auto; gap: 4px 16px; padding: 16px; margin: 10px 0; background: var(--deck); border: 1px solid var(--line); border-radius: 16px; align-items: start; }
 .verdict { font: 800 16px/1 var(--display); letter-spacing: .04em; text-align: center; padding: 8px 0 7px; border-radius: 10px; background: var(--deck2); color: var(--haze); }
@@ -419,6 +422,8 @@ function renderHead(b, placed) {
   const toBet = notPlaced(b, placed).filter(c => c.verdict === "BET").length;
   const nextTip = openC.filter(x => x.status === "OPEN").map(x => x.tip_utc).sort()[0];
   const parts = [];
+  const mbOpen = openC.filter(x => x.system === "MONEYBALL").length;
+  if (mbOpen) parts.push(`${mbOpen} MONEYBALL bet${mbOpen > 1 ? "s" : ""} open`);
   if (s.open) parts.push(`${s.open} bet${s.open > 1 ? "s" : ""} open, ${money(s.at_risk)} at risk to win ${money(s.open_to_win)}`);
   if (nextTip) parts.push(`First tip ${when(nextTip)}`);
   if (toBet) parts.push(`${toBet} of today's pick${toBet > 1 ? "s" : ""} not placed yet (see why below)`);
@@ -437,7 +442,9 @@ function ticket(x) {
   const score = x.score && x.score.home != null ? `${esc(x.away)} ${x.score.away}, ${esc(x.home)} ${x.score.home}` : "";
   const pl = x.status === "FINAL" ? `<span class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</span>` : "";
   const top = x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}, ${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc));
-  return `<article class="ticket">
+  const mb = x.system === "MONEYBALL";
+  return `<article class="ticket${mb ? " mb" : ""}">
+      ${mb ? `<div class="mb-flag">MONEYBALL<span>our strongest setup: 2+ systems and the players model on the same side, sized to win $30</span></div>` : ""}
       <div class="t-top"><span class="venue">${esc(x.venue_name)}</span><span class="state ${stateCls}">${stateTxt}</span><span>${top}</span>${pl}</div>
       <div class="hold"><b>${esc(x.holding)}</b><span>${esc(x.away)} @ ${esc(x.home)}${card ? ", " + card : ""}</span></div>
       <div class="figs">
@@ -581,7 +588,9 @@ function cardRow(c, reason) {
   const best = c.best;
   const status = c.verdict === "LIMIT" ? "Waiting for a price" : c.verdict === "BET" ? "Not placed yet"
     : c.verdict === "CONFLICT" ? "No bet: our systems are on both sides" : c.verdict === "BENCHED" ? "No bet: system benched" : "No bet: price isn't good enough";
-  return `<div class="row">
+  const mb = c.tag === "MONEYBALL";
+  return `<div class="row${mb ? " mb" : ""}">
+      ${mb ? `<div class="mb-flag" style="grid-column:1/-1">MONEYBALL<span>our strongest setup, sized to win $30</span></div>` : ""}
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>
