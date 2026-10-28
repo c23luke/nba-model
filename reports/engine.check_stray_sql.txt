@@ -1,0 +1,25 @@
+absent  settings: Supabase GET /settings?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find 
+absent  dfs_runs: Supabase GET /dfs_runs?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find 
+absent  dfs_picks: Supabase GET /dfs_picks?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find
+absent  real_bets: Supabase GET /real_bets?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find
+absent  news_status: Supabase GET /news_status?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fi
+absent  news_polls: Supabase GET /news_polls?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fin
+absent  news_events: Supabase GET /news_events?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fi
+absent  news_takes: Supabase GET /news_takes?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fin
+absent  news_lag: Supabase GET /news_lag?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find 
+absent  news_takes_graded: Supabase GET /news_takes_graded?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could 
+absent  news_summary: Supabase GET /news_summary?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not f
+absent  news_lag_summary: Supabase GET /news_lag_summary?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could n
+absent  pub_sources: Supabase GET /pub_sources?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fi
+absent  pub_runs: Supabase GET /pub_runs?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find 
+absent  pub_takes: Supabase GET /pub_takes?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not find
+absent  pub_takes_graded: Supabase GET /pub_takes_graded?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could n
+absent  pub_summary: Supabase GET /pub_summary?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fi
+absent  wx_fast_state: Supabase GET /wx_fast_state?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not 
+absent  wx_fast_takes: Supabase GET /wx_fast_takes?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not 
+absent  wx_fast_graded: Supabase GET /wx_fast_graded?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not
+absent  wx_fast_summary: Supabase GET /wx_fast_summary?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could no
+absent  lip_model_unsettled: Supabase GET /lip_model_unsettled?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Coul
+absent  weather_lab: Supabase GET /weather_lab?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not fi
+absent  dfs_top_picks: Supabase GET /dfs_top_picks?select=*&limit=3 -> 404: {"code":"PGRST205","details":null,"hint":null,"message":"Could not 
+bet_settings still: {'live_betting_on': True, 'venues': ['kalshi', 'betopenly', 'prophetx'], 'max_open_bets': 1000, 'min_ev': 0.04, 'to_win_dollars': 30}
