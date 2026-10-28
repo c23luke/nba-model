@@ -271,6 +271,9 @@ function seasonRecByTag(tag) {
   const all = { ...(BOARD.systems || {}), ...(BOARD.test_systems || {}), ...(BOARD.early_systems || {}) };
   return Object.values(all).find(s => s.tag === tag) || null;
 }
+// "this season" = every time it fired this season, graded at the number it fired at: the bettor bets when a
+// system fires, so that is the record we'd actually have. (Picks today's rules wouldn't make are left out.)
+const liveRec = s => s ? (s.if_first && (s.if_first.w + s.if_first.l + (s.if_first.p || 0)) ? s.if_first : s) : null;
 function sysName(tag) { const s = seasonRecByTag(tag); return s ? s.name || "" : ""; }
 const gapBucket = g => g == null || g < 3 ? null : g >= 6 ? "6+" : g >= 4 ? "4-6" : "3-4";
 function playersSeason(bucket) {
@@ -284,8 +287,8 @@ function whyBets(tags, gap, side) {
   for (const t of sys) {
     const h = (R.systems || {})[t], o = (R.other || {})[t];
     const name = `${esc(t)}${sysName(t) ? ` <span class="muted">· ${esc(sysName(t))}</span>` : ""}`;
-    if (h || !o) rows.push({ name, cells: [(h || {})[SEASONS[0]], (h || {})[SEASONS[1]], seasonRecByTag(t)] });
-    else rows.push({ name, span: `${recCell(o)} <span class="muted">${esc(o.label)}</span>`, tone: recCellTone(o), cells: [seasonRecByTag(t)] });
+    if (h || !o) rows.push({ name, cells: [(h || {})[SEASONS[0]], (h || {})[SEASONS[1]], liveRec(seasonRecByTag(t))] });
+    else rows.push({ name, span: `${recCell(o)} <span class="muted">${esc(o.label)}</span>`, tone: recCellTone(o), cells: [liveRec(seasonRecByTag(t))] });
   }
   const b = gapBucket(gap);
   if (gap != null) {
@@ -296,7 +299,7 @@ function whyBets(tags, gap, side) {
   }
   if (sys.length >= 2 && gap != null && gap >= 3) {
     const h = R.moneyball || {};
-    rows.push({ name: `<b>All together: MONEYBALL</b> <span class="muted">· 2+ systems + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], seasonRecByTag("MONEYBALL")], combo: true });
+    rows.push({ name: `<b>All together: MONEYBALL</b> <span class="muted">· 2+ systems + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], liveRec(seasonRecByTag("MONEYBALL"))], combo: true });
   } else if (sys.some(t => t && t[0] === "E") && gap != null && gap >= 3) {
     const h = R.early_combo || {};
     rows.push({ name: `<b>All together</b> <span class="muted">· early system + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], null], combo: true });
@@ -624,10 +627,10 @@ function renderSystems(b) {
       : cell((P.seasons || {})[SEASONS[0]], SEASONS[0]) + cell((P.seasons || {})[SEASONS[1]], SEASONS[1]);
     const rule = String(s.rule || "").replace(/\s*\d+ seasons?:.*$/, "").replace(/\.\s*$/, "");
     return `<tr><td><div class="nm"><span class="tag">${esc(s.tag)}</span>${esc(s.name || "")}</div>${rule ? `<div class="rule">${esc(rule)}</div>` : ""}${status(s)}</td>
-      ${past}${cell(s, "This season")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
+      ${past}${cell(liveRec(s), "This season")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
   }).join("");
   $("tab-systems").innerHTML = `<h2>Systems</h2>
-    <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. This season counts live picks under today's rules. Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>
+    <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. This season counts every time a system fired, graded at the number it fired at (that's when the bettor bets), leaving out picks today's rules wouldn't make. Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>
     <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
     ${rows ? `<div class="sys"><table><thead><tr><th>System</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">This season</th><th class="r hide-s">Beat close</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="why-note" style="margin-top:8px">Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ picks.</p>`
