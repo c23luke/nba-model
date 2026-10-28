@@ -1,5 +1,21 @@
-bet_settings: {'id': 1, 'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['kalshi', 'betopenly', 'prophetx'], 'stake_dollars': 5, 'daily_loss_cap': 100, 'max_open_bets': 1000, 'max_dollars_per_game': 50, 'min_ev': 0.04, 'max_feed_age_minutes': 20, 'disabled_reason': None, 'last_heartbeat': '2026-10-28T00:53:01.361+00:00', 'updated_at': '2026-10-28T00:53:02.85+00:00', 'to_win_dollars': 30, 'watch_venues': []}
-price_log newest ids: [738, 737, 736]
+bet_settings: {'id': 1, 'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['kalshi', 'betopenly', 'prophetx'], 'stake_dollars': 5, 'daily_loss_cap': 100, 'max_open_bets': 1000, 'max_dollars_per_game': 50, 'min_ev': 0.04, 'max_feed_age_minutes': 20, 'disabled_reason': None, 'last_heartbeat': '2026-10-28T03:00:01.214+00:00', 'updated_at': '2026-10-28T03:00:03.457+00:00', 'to_win_dollars': 30, 'watch_venues': []}
+price_log newest ids: [1150, 1149, 1148]
+2026-10-28T03:00:03 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T03:00:03 info Key check — Kalshi prod: keys work, balance $175.15 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
+2026-10-28T02:44:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T02:44:02 info Key check — Kalshi prod: keys work, balance $175.15 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
+2026-10-28T02:28:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T02:28:02 info Key check — Kalshi prod: keys work, balance $85.15 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not se
+2026-10-28T02:12:03 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T02:12:03 info Key check — Kalshi prod: keys work, balance $115.96 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
+2026-10-28T01:56:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T01:56:02 info Key check — Kalshi prod: keys work, balance $115.96 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
+2026-10-28T01:40:03 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T01:40:03 info Key check — Kalshi prod: keys work, balance $115.96 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
+2026-10-28T01:25:04 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T01:25:04 info Key check — Kalshi prod: keys work, balance $115.96 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
+2026-10-28T01:09:03 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+2026-10-28T01:09:03 info Key check — Kalshi prod: keys work, balance $115.96 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
 2026-10-28T00:53:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
 2026-10-28T00:53:02 info Key check — Kalshi prod: keys work, balance $115.96 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
 2026-10-28T00:38:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
@@ -24,19 +40,3 @@ price_log newest ids: [738, 737, 736]
 2026-10-27T22:39:02 info Key check — Kalshi prod: keys work, balance $146.77 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
 2026-10-27T22:23:02 info run (live, prod): 3 bets on the card, 0 action(s), 3 skipped
 2026-10-27T22:23:02 info Key check — Kalshi prod: keys work, balance $146.77 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
-2026-10-27T22:07:03 info run (live, prod): 2 bets on the card, 0 action(s), 3 skipped
-2026-10-27T22:07:03 info Key check — Kalshi prod: keys work, balance $146.77 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
-2026-10-27T21:54:02 info FILLED (resting): YES · Over 236.5 — 51 of 51 for $30.60 — OVER 238.5
-2026-10-27T21:52:04 info run (live, prod): 2 bets on the card, 1 action(s), 2 skipped
-2026-10-27T21:52:04 info Key check — Kalshi prod: keys work, balance $177.59 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
-2026-10-27T21:52:02 info RESTING: Kalshi RESTING YES ×51 KXNBATOTAL-26OCT28WASCLE-237 at 60¢ until 5 min before tip (stake $30.60, maker fee up to $0.22) — OVER 238.5 via YES · Over 236.5, S4, WAS @ CLE, e
-2026-10-27T21:51:04 info run (live, prod): 3 bets on the card, 1 action(s), 3 skipped
-2026-10-27T21:51:04 info Key check — Kalshi prod: keys work, balance $177.59 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
-2026-10-27T21:51:01 info CANCELLED resting order (no longer a LIMIT on the card): YES · Over 234.5 for OVER 236.5; filled 0 of 51
-2026-10-27T21:45:05 info run (live, prod): 2 bets on the card, 1 action(s), 2 skipped
-2026-10-27T21:45:04 info Key check — Kalshi prod: keys work, balance $177.59 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
-2026-10-27T21:45:02 info RESTING: Kalshi RESTING YES ×51 KXNBATOTAL-26OCT28WASCLE-235 at 60¢ until 5 min before tip (stake $30.60, maker fee up to $0.22) — OVER 236.5 via YES · Over 234.5, S4, WAS @ CLE, e
-2026-10-27T21:43:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
-2026-10-27T21:43:02 info Key check — Kalshi prod: keys work, balance $177.59 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
-2026-10-27T21:27:03 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
-2026-10-27T21:27:02 info Key check — Kalshi prod: keys work, balance $177.59 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $104.28 · POLYMARKET_KEY_ID: not s
