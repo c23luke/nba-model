@@ -1,0 +1,24 @@
+
+=== T12
+  2024-25: 69 bets | open 39-28 (58.2%, +8.2u) | close 36-30 (54.5%, +3.0u) | night-before 24-18 (57.1%, +4.2u) | morning 38-29 (56.7%, +6.1u)
+           line moved our way: open→close +0.55 pts (38 toward, 19 against); night-before→close +0.64
+  2025-26: 73 bets | open 38-34 (52.8%, +0.6u) | close 40-33 (54.8%, +3.7u) | night-before 4-1 (80.0%, +2.9u) | morning 38-34 (52.8%, +0.6u)
+           line moved our way: open→close +0.29 pts (35 toward, 17 against); night-before→close -0.25
+
+=== T2
+  2024-25: 47 bets | open 27-20 (57.4%, +5.0u) | close 26-20 (56.5%, +4.0u) | night-before 12-10 (54.5%, +1.0u) | morning 26-20 (56.5%, +4.0u)
+           line moved our way: open→close +0.19 pts (20 toward, 15 against); night-before→close +0.64
+  2025-26: 52 bets | open 29-23 (55.8%, +3.7u) | close 29-23 (55.8%, +3.7u) | night-before 4-2 (66.7%, +1.8u) | morning 29-23 (55.8%, +3.7u)
+           line moved our way: open→close +0.39 pts (25 toward, 14 against); night-before→close -0.58
+
+=== vs tired team, it has a star
+  2024-25: 213 bets | open 109-102 (51.7%, -3.2u) | close 106-103 (50.7%, -7.3u) | night-before 70-67 (51.1%, -3.7u) | morning 108-104 (50.9%, -6.4u)
+           line moved our way: open→close +0.11 pts (83 toward, 86 against); night-before→close +0.18 | star sat 36 of 213 (17%)
+  2025-26: 91 bets | open 44-47 (48.4%, -7.7u) | close 43-47 (47.8%, -8.7u) | night-before 13-20 (39.4%, -9.0u) | morning 44-47 (48.4%, -7.7u)
+           line moved our way: open→close +0.47 pts (43 toward, 28 against); night-before→close +0.20 | star sat 25 of 91 (27%)
+
+=== vs tired team, no star
+  2024-25: 286 bets | open 145-136 (51.6%, -4.6u) | close 140-138 (50.4%, -11.8u) | night-before 102-99 (50.7%, -6.9u) | morning 140-144 (49.3%, -18.4u)
+           line moved our way: open→close +0.23 pts (121 toward, 106 against); night-before→close +0.28
+  2025-26: 421 bets | open 221-195 (53.1%, +6.5u) | close 218-200 (52.2%, -2.0u) | night-before 91-63 (59.1%, +21.7u) | morning 217-198 (52.3%, -0.8u)
+           line moved our way: open→close +0.03 pts (185 toward, 150 against); night-before→close +0.16
