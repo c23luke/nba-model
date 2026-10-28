@@ -228,21 +228,32 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     done_ids = {str(f.id) for f in finals}
     played_tot = [r["total"] for gid, r in stored.items() if str(gid) in done_ids and r.get("total") is not None]
     tot_avg = round(sum(played_tot) / len(played_tot), 1) if len(played_tot) >= 30 else None     # S4's bar
+    # Rule-based systems are judged on the FIRST line we saw for each game, the way they were tested (at the
+    # open), and lock to it. A system that only qualifies after the line moves into its range doesn't fire —
+    # the move means the market already went that way (Caden 2026-10-27). The players model (T13), its shadow
+    # and MONEYBALL still use the line now: they fire on news, which is the point of them.
+    try:
+        firsts = store.load_first_lines([g.id for g in upcoming]) if hasattr(store, "load_first_lines") else {}
+    except Exception as e:
+        firsts = {}
+        log.append(f"first lines: {e}")
     for g in upcoming:
         row = stored[g.id]
         hs, at = team_state(g.home, finals, g.game_date), team_state(g.away, finals, g.game_date)
+        f = firsts.get(str(g.id)) or {}
+        o_hs = f.get("home_spread") if f.get("home_spread") is not None else row.get("home_spread")
+        o_tot = f.get("total") if f.get("total") is not None else row.get("total")
         ctx = {"last21": g.game_date >= SEASON_END - timedelta(21), "post_asb": g.game_date > ALL_STAR,
                "tot_low_cut": tot_low_cut,
                "home_4in6": games_in(g.home, finals, g.game_date, 5) >= 3,
                "away_4in6": games_in(g.away, finals, g.game_date, 5) >= 3}
-        picks = (evaluate(g, hs, at, row.get("home_spread"), row.get("total"), tot_avg)
-                 + evaluate_tests(g, hs, at, row.get("home_spread"), row.get("total"))
-                 + evaluate_early(g, hs, at, row.get("home_spread"), row.get("total"),
-                                  (g.game_date - season_start).days)
+        picks = (evaluate(g, hs, at, o_hs, o_tot, tot_avg)
+                 + evaluate_tests(g, hs, at, o_hs, o_tot)
+                 + evaluate_early(g, hs, at, o_hs, o_tot, (g.game_date - season_start).days)
                  + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
                                       season_day=(g.game_date - season_start).days)
                  + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
-                 + evaluate_mined(g, hs, at, row.get("home_spread"), row.get("total"), ctx))
+                 + evaluate_mined(g, hs, at, o_hs, o_tot, ctx))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:
@@ -684,7 +695,7 @@ def report_card() -> dict:
 # System TRACKING keeps the whole season, re-judged by today's rules (Caden: "as if we perfected
 # everything from the start"): T13 only at a 4+ gap, S4 only when the total was above that day's
 # season average. Tracking is graded at the pick's own number, so no price is needed.
-RESTART_UTC = "2026-10-27T04:00:00+00:00"     # midnight ET, Oct 27: today's bets count, judged by today's rules
+RESTART_UTC = "2026-10-28T04:00:00+00:00"     # midnight ET, Oct 28: Caden restarted after the Oct 27 games
 
 
 def s4_bars(games: dict | None) -> dict:
@@ -718,7 +729,7 @@ def since_restart(picks, orders, games=None):
     tonight that fired earlier under the old rules, like a 3-point T13 gap, are left out)."""
     bars = s4_bars(games)
     picks = [p for p in picks if (p.get("tip_utc") or "9999") >= RESTART_UTC and counts_today(p, bars)]
-    orders = [o for o in orders if (o.get("tip_utc") or o.get("created_at") or "") >= RESTART_UTC]   # games from Oct 27 on
+    orders = [o for o in orders if (o.get("tip_utc") or o.get("created_at") or "") >= RESTART_UTC]   # games from the restart on
     return picks, orders
 
 

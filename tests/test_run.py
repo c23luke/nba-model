@@ -336,3 +336,33 @@ def test_bet_on_a_pick_that_no_longer_counts_is_still_judged(tmp_path, monkeypat
     b = R.build_board(now, date(2026, 10, 27), [], [pick], {}, [], "t", orders=[order], games={})
     row = b["placed"]["bets"][0]
     assert row["t13_gap"] == 3.3 and row["rules"]["counted"] is False
+
+
+def test_rule_systems_judge_the_first_line_seen_and_lock_to_it(tmp_path):
+    """S4 fired at the first total (228.5, above the 224 average) stays at 228.5 when the total later drops;
+    and a game whose FIRST total was under the average never fires S4 when the line later moves above it."""
+    from engine.state import team_state
+
+    def fits(x):
+        fin = [y for y in ALL if y.game_date < x.game_date]
+        return (team_state(x.home, fin, x.game_date).last_won is True
+                and team_state(x.away, fin, x.game_date).last_won is False)
+    g = next(x for x in ALL if x.game_date >= date(2025, 11, 10) and fits(x))
+    day = g.game_date
+    t = lambda h: datetime(day.year, day.month, day.day, h, 0, tzinfo=timezone.utc)
+    lines = lambda total: (lambda: ({(day, g.away, g.home): {"home_spread": -10.5, "total": total, "source": "t", "books": 5}}, {}))
+
+    class FirstLineStore(LocalStore):
+        first = None
+        def load_first_lines(self, ids):
+            return {str(g.id): {"home_spread": -10.5, "total": self.first}} if self.first is not None else {}
+
+    kw = dict(fetch_kalshi=fake_kalshi, personnel_fetch=None, fetch_box=None, season_start=START)
+    fd = make_fetch_day(day, day - timedelta(1))
+    a = FirstLineStore(tmp_path / "a"); seed_totals(a, day); a.first = 228.5
+    run(now=t(16), fetch_day=fd, fetch_lines=lines(219.5), store=a, **kw)          # total dropped since the open
+    p = [x for x in a.load_picks() if x["system"] == 4 and x["game_id"] == g.id]
+    assert p and p[0]["line"] == 228.5 and p[0]["active"]
+    b = FirstLineStore(tmp_path / "b"); seed_totals(b, day); b.first = 219.5
+    run(now=t(16), fetch_day=fd, fetch_lines=lines(228.5), store=b, **kw)          # moved INTO range later
+    assert not [x for x in b.load_picks() if x["system"] == 4 and x["game_id"] == g.id]

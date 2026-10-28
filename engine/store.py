@@ -141,6 +141,21 @@ class SupabaseStore:
         rows = self._req("GET", "/bet_log?message=like.run%20(*&select=ts,data&order=ts.desc&limit=1") or []
         return {"at": rows[0]["ts"], "skips": (rows[0].get("data") or {}).get("skips", [])} if rows else None
 
+    def load_first_lines(self, game_ids):
+        """The first consensus spread and total we logged for each game (price_log, oldest first)."""
+        if not game_ids:
+            return {}
+        ids = ",".join(str(i) for i in game_ids)
+        rows = self._req("GET", f"/price_log?game_id=in.({ids})&select=game_id,ts,home_spread,total&order=ts.asc&limit=10000") or []
+        out = {}
+        for r in rows:
+            o = out.setdefault(str(r["game_id"]), {})
+            if o.get("home_spread") is None and r.get("home_spread") is not None:
+                o["home_spread"] = float(r["home_spread"])
+            if o.get("total") is None and r.get("total") is not None:
+                o["total"] = float(r["total"])
+        return out
+
     def save_price_log(self, rows):
         """Consensus line + exchange prices per game per run (stale-price research). Insert only."""
         if rows: self._req("POST", "/price_log", rows, {"Prefer": "return=minimal"})
