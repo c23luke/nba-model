@@ -223,14 +223,12 @@ td .n { font-size: 19px; }
 <nav><div class="wrap tabs" role="tablist" id="tabs">
   <button role="tab" data-tab="bets" aria-selected="true">Bets<span class="long"> placed</span><span class="c" id="c-bets" hidden></span></button>
   <button role="tab" data-tab="rankings" aria-selected="false">Rank<span class="long">ings</span></button>
-  <button role="tab" data-tab="results" aria-selected="false">Results</button>
   <button role="tab" data-tab="systems" aria-selected="false">Systems</button>
   <button role="tab" data-tab="lab" aria-selected="false">Lab</button>
 </div></nav>
 <main class="wrap">
   <section id="tab-bets" role="tabpanel"></section>
   <section id="tab-rankings" role="tabpanel" hidden></section>
-  <section id="tab-results" role="tabpanel" hidden></section>
   <section id="tab-systems" role="tabpanel" hidden></section>
   <section id="tab-lab" role="tabpanel" class="lab" hidden></section>
   <p class="foot" id="foot"></p>
@@ -371,9 +369,9 @@ function whyHead(tag, tags, gap, side) {
 const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $30" : "every card bet is sized to win $20 (MONEYBALL $30)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
-const TABS = ["bets", "rankings", "results", "systems", "lab"];
+const TABS = ["bets", "rankings", "systems", "lab"];
 function show(tab, push = true) {
-  if (tab === "card") tab = "bets";                       // the card now lives on the Bets tab
+  if (tab === "card" || tab === "results") tab = "bets";     // both now live on the Bets tab
   if (!TABS.includes(tab)) tab = "bets";
   for (const t of TABS) {
     $("tab-" + t).hidden = t !== tab;
@@ -597,21 +595,6 @@ function cardRow(c, reason) {
     </div>`;
 }
 
-// ---------- results
-function renderResults(b) {
-  const done = b.card_done || [], hist = b.history || [];
-  const row = r => `<div class="row"><div class="verdict ${r.status === "FINAL" ? r.result : ""}">${r.status === "FINAL" ? (r.result === "W" ? "WON" : r.result === "L" ? "LOST" : "PUSH") : "LIVE"}</div>
-      <div><div class="pick">${esc(r.label)}</div><div class="sub">${esc(r.away)} @ ${esc(r.home)}, ${esc(when(r.tip_utc))}${r.final_score ? ". Final " + esc(r.final_score) : ""}</div>
-      <div class="sub">${badge(r.group)}${esc(r.tag)}</div></div>
-      <div class="px">${r.status === "FINAL" ? `<b>${r.result === "W" ? "+1.00u" : r.result === "L" ? "−1.10u" : "0u"}</b>` : ""}${r.clv != null && r.status === "FINAL" ? `beat the close by ${r.clv > 0 ? "+" : ""}${r.clv}` : ""}</div></div>`;
-  $("tab-results").innerHTML = `<h2>Last 30 hours</h2><p class="lede">Card bets that tipped, graded at the card's number in units (risk 1.1 to win 1).</p>` +
-    (done.length ? done.map(row).join("") : `<div class="empty">No card bets have tipped in the last 30 hours.</div>`) +
-    `<h2>Every graded OG bet</h2>` +
-    (hist.length ? `<table><tbody>${hist.map(p => `<tr><td class="n ${p.result}" style="font-size:20px;font-weight:700;width:30px">${p.result}</td>
-      <td><b>${esc(p.label)}</b> <span class="muted">S${p.system}</span><div class="muted" style="font-size:14px">${esc(p.final_score)}, ${esc(p.game_date)}</div></td></tr>`).join("")}</tbody></table>`
-      : `<div class="empty">No graded OG bets yet. Results post the morning after each game.</div>`);
-}
-
 // ---------- systems: every system, last two seasons replayed + this season live
 let sysFilter = "ALL";
 function pastFor(tag) {
@@ -744,7 +727,6 @@ function render(b) {
   renderHead(b, placed);
   renderBets(placed, b);
   renderRankings(b);
-  renderResults(b);
   renderSystems(b);
   renderLab(b);
   const all = document.querySelectorAll("main details");
