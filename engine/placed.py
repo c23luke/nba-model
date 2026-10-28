@@ -148,6 +148,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
             "t13_gap": (p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13" else None,
+            "resting_fill": o.get("ask_at_check") is None and o.get("limit_price") is not None,   # a standing order that got hit
             # S4's bar: this season's average total that day (the pick's own, else from the games played before it)
             "s4_bar": ((p.get("meta") or {}).get("bar") or (s4_bars or {}).get(str(p.get("game_date")))) if o.get("system") == "S4" else None,
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
@@ -206,6 +207,19 @@ def rules_now(rows: list[dict]) -> dict:
         if r["system"] == "S4" and r.get("line") is not None and (r.get("s4_bar") is None or float(r["line"]) <= r["s4_bar"]):
             why = (f"S4 total {float(r['line']):g} isn't above this season's average ({r['s4_bar']:.1f})" if r.get("s4_bar")
                    else "S4 before 30 games were played: today it waits for a season average")
+        # today's price rules (2026-10-27): 4% edge, never worse than -150, at most 2 points (3 on totals) off the
+        # card's number; standing orders need 5% and must sit within 1 point of it
+        card_n = number(r.get("card_pick"))
+        off = abs(float(r["line"]) - card_n) if card_n is not None and r.get("line") is not None and r.get("bet") != "moneyline" else 0.0
+        all_in = r["risk"] / (r["risk"] + r["to_win"]) if r.get("risk") and r.get("to_win") else None
+        if r.get("ev") is not None and r["ev"] < (0.05 if r.get("resting_fill") else 0.04):
+            why = f"edge {r['ev']:.1%} at the price we got: today it needs {'5% on a standing order' if r.get('resting_fill') else '4%'}"
+        elif all_in is not None and all_in > 0.6 + 0.025:          # room for the fee on a 60c fill
+            why = "price worse than -150: today's cap"
+        elif r.get("resting_fill") and off > 1 + 1e-9:
+            why = f"standing order {off:g} points off the card's number: today it only rests within 1"
+        elif off > (3.0 if r.get("bet") == "total" else 2.0) + 1e-9 and "ML" not in str(r.get("holding")):
+            why = f"bought {off:g} points off the card's number: today the limit is {3 if r.get('bet') == 'total' else 2}"
         if len({sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}) > 1:
             why = "we held both sides of this game: today neither is bet"
         if why:

@@ -175,3 +175,17 @@ def test_rules_now_s4_bet_must_be_above_the_season_average():
             {**base, "game_id": "b", "holding": "OVER 233.5", "line": 233.5, "s4_bar": 232.3}]
     rules_now(rows)
     assert rows[0]["rules"]["counted"] is False and rows[1]["rules"]["counted"] is True
+
+
+def test_rules_now_applies_todays_price_rules():
+    from engine.placed import rules_now
+    base = {"status": "OPEN", "bet": "total", "side": "OVER", "system": "S4", "t13_gap": None, "result": None, "pnl": None,
+            "s4_bar": 230.0, "risk": 30.5, "to_win": 20.0}
+    rows = [{**base, "game_id": "a", "holding": "OVER 236.5", "line": 236.5, "card_pick": "OVER 238.5", "ev": 0.038},   # under 4%
+            {**base, "game_id": "b", "holding": "OVER 232.5", "line": 232.5, "card_pick": "OVER 234.5", "ev": 0.06,
+             "resting_fill": True},                                                                               # standing, 2 pts off
+            {**base, "game_id": "c", "holding": "OVER 233.5", "line": 233.5, "card_pick": "OVER 234.5", "ev": 0.06,
+             "risk": 22.0}]                                                                                       # fine
+    rules_now(rows)
+    assert [r["rules"]["counted"] for r in rows] == [False, False, True]
+    assert "4%" in rows[0]["rules"]["why"] and "within 1" in rows[1]["rules"]["why"]
