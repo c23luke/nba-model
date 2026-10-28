@@ -1,0 +1,8 @@
+T2   2024-25: 47 picks | line moved our way +0.19 pts on average (20 toward us, 15 against, 12 no move) | at the open 27-20 (57.4%) vs at the close 26-20 (56.5%)
+T2   2025-26: 52 picks | line moved our way +0.39 pts on average (25 toward us, 14 against, 13 no move) | at the open 29-23 (55.8%) vs at the close 29-23 (55.8%)
+T12  2024-25: 69 picks | line moved our way +0.55 pts on average (38 toward us, 19 against, 12 no move) | at the open 39-28 (58.2%) vs at the close 36-30 (54.5%)
+T12  2025-26: 73 picks | line moved our way +0.29 pts on average (35 toward us, 17 against, 21 no move) | at the open 38-34 (52.8%) vs at the close 40-33 (54.8%)
+T1   2024-25: 2 picks | line moved our way +0.75 pts on average (1 toward us, 1 against, 0 no move) | at the open 1-1 (50.0%) vs at the close 1-1 (50.0%)
+T1   2025-26: 5 picks | line moved our way -1.30 pts on average (0 toward us, 3 against, 2 no move) | at the open 2-3 (40.0%) vs at the close 2-3 (40.0%)
+T3   2024-25: 13 picks | line moved our way -0.27 pts on average (5 toward us, 7 against, 1 no move) | at the open 7-6 (53.8%) vs at the close 7-6 (53.8%)
+T3   2025-26: 14 picks | line moved our way +0.07 pts on average (5 toward us, 4 against, 5 no move) | at the open 6-8 (42.9%) vs at the close 6-8 (42.9%)
