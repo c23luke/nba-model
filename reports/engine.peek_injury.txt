@@ -1,0 +1,14 @@
+LAL {'player': 'Cameron Carr', 'status': 'Out', 'reason': 'Injury/Illness - Right Oblique Strain', 'game_date': '2026-10-27', 'first_seen': '2026-10-27T12:45:42.852211+00:00', 'last_seen': '2026-10-28T02:53:15.120382+00:00'}
+LAL {'player': 'Walker Kessler', 'status': 'Available', 'reason': 'Injury/Illness - Left Finger Splint', 'game_date': '2026-10-27', 'first_seen': '2026-10-27T12:45:42.852211+00:00', 'last_seen': '2026-10-28T02:53:15.120382+00:00'}
+LAL {'player': 'Adou Thiero', 'status': 'Out', 'reason': '', 'game_date': '2026-10-27', 'first_seen': '2026-10-27T12:45:42.852211+00:00', 'last_seen': '2026-10-28T02:53:15.120382+00:00'}
+LAL {'player': 'Cameron Carr', 'status': 'Out', 'reason': 'Injury/Illness - Right Oblique Strain', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T20:00:20.640199+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAL {'player': 'Luka Doncic', 'status': 'Out', 'reason': 'Injury/Illness - Back Tightness', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T20:00:20.640199+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAL {'player': 'Walker Kessler', 'status': 'Available', 'reason': 'Injury/Illness - Left Finger Splint', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T20:00:20.640199+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAL {'player': 'Adou Thiero', 'status': 'Out', 'reason': '', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T20:00:20.640199+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAL {'player': 'Ziaire Williams', 'status': 'Out', 'reason': '', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T20:00:20.640199+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAC {'player': 'Bradley Beal', 'status': 'Out', 'reason': '', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T00:00:21.74029+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAC {'player': 'Rui Hachimura', 'status': 'Out', 'reason': 'Injury/Illness - Left Quad Soreness', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T00:00:21.74029+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAC {'player': 'Brandon Ingram', 'status': 'Out', 'reason': 'Injury/Illness - Right Heel Surgery', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T00:00:21.74029+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAC {'player': 'Jordan Miller', 'status': 'Out', 'reason': '', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T00:00:21.74029+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAC {'player': 'Yanic Konan Niederhauser', 'status': 'Out', 'reason': 'Injury/Illness - Right Lisfranc Surgery', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T00:00:21.74029+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
+LAC {'player': 'Max Strus', 'status': 'Out', 'reason': '', 'game_date': '2026-10-28', 'first_seen': '2026-10-28T00:00:21.74029+00:00', 'last_seen': '2026-10-28T21:00:13.202821+00:00'}
