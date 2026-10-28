@@ -309,17 +309,17 @@ def test_excluded_game_leaves_records_and_placed_ledger(tmp_path):
     assert board["placed"]["summary"]["excluded_pnl"] == ex[0]["pnl"] > 0
 
 
-def test_restart_drops_old_bets_but_keeps_every_tracked_pick(monkeypatch):
-    """Caden 2026-10-27: money restarts Oct 27; system tracking keeps every pick each system really made."""
+def test_restart_starts_money_and_tracking_fresh_under_todays_rules(monkeypatch):
+    """Caden 2026-10-27: start everything fresh tonight; tracking keeps picks from here on, by today's rules."""
     import engine.run as R
     monkeypatch.setattr(R, "RESTART_UTC", "2026-10-27T04:00:00+00:00")
-    picks = [{"system": 4, "result": "W", "line": 224.5, "game_date": "2026-10-26", "meta": {}},
-             {"system": 113, "result": "W", "line": 3.0, "game_date": "2026-10-26", "meta": {"worst_gap": 3.4}},
-             {"system": 102, "result": "L", "line": -3.0, "game_date": "2026-10-22", "meta": {}}]
+    picks = [{"system": 102, "result": "L", "line": -3.0, "game_date": "2026-10-22", "tip_utc": "2026-10-22T23:00:00+00:00", "meta": {}},
+             {"system": 113, "result": None, "line": 3.0, "game_date": "2026-10-27", "tip_utc": "2026-10-27T23:00:00+00:00", "meta": {"worst_gap": 3.4}},
+             {"system": 113, "result": None, "line": 5.5, "game_date": "2026-10-27", "tip_utc": "2026-10-28T00:00:00+00:00", "meta": {"worst_gap": 4.5}}]
     orders = [{"created_at": "2026-10-26T15:00:00+00:00", "tip_utc": "2026-10-26T23:00:00+00:00"},
               {"created_at": "2026-10-26T22:00:00+00:00", "tip_utc": "2026-10-28T00:00:00+00:00"}]
     p, o = R.since_restart(picks, orders, {})
-    assert p == picks and o == [orders[1]]
+    assert p == [picks[2]] and o == [orders[1]]
 
 def test_bet_on_a_pick_that_no_longer_counts_is_still_judged(tmp_path, monkeypatch):
     """A T13 bet placed under the old 3-point rule: its pick is out of the records, but the ledger must still

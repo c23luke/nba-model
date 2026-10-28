@@ -305,7 +305,7 @@ function whyBets(tags, gap, side) {
     rows.push({ name: `<b>All together</b> <span class="muted">· early system + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], null], combo: true });
   }
   if (!rows.length) return "";
-  return `<table class="why-t"><tr><th>What's behind it</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">This season</th></tr>` +
+  return `<table class="why-t"><tr><th>What's behind it</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">Since Oct 27</th></tr>` +
     rows.map(r => `<tr class="${r.combo ? "combo" : ""}"><td>${r.name}</td>${r.span ? `<td colspan="2" class="r ${r.tone}">${r.span}</td>` : ""}${r.cells ? r.cells.map(c => `<td class="r ${recCellTone(c)}">${recCell(c)}</td>`).join("") : `<td colspan="3"></td>`}</tr>`).join("") +
     `</table><div class="why-note">Past seasons replayed at the opening line. Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ bets.</div>`;
 }
@@ -627,12 +627,12 @@ function renderSystems(b) {
       : cell((P.seasons || {})[SEASONS[0]], SEASONS[0]) + cell((P.seasons || {})[SEASONS[1]], SEASONS[1]);
     const rule = String(s.rule || "").replace(/\s*\d+ seasons?:.*$/, "").replace(/\.\s*$/, "");
     return `<tr><td><div class="nm"><span class="tag">${esc(s.tag)}</span>${esc(s.name || "")}</div>${rule ? `<div class="rule">${esc(rule)}</div>` : ""}${status(s)}</td>
-      ${past}${cell(liveRec(s), "This season")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
+      ${past}${cell(liveRec(s), "Since Oct 27").replace("</td>", s.open ? `<span class="pc muted"> ${s.open} open</span></td>` : "</td>")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
   }).join("");
   $("tab-systems").innerHTML = `<h2>Systems</h2>
-    <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. This season counts every pick each system made, graded at the number it fired at (that's when the bettor bets). Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>
+    <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. Since Oct 27 counts every pick each system makes from the fresh start, bet or not, graded at the number it fired at. Tracking the ones we don't bet is how a system earns money or gets benched. Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>
     <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
-    ${rows ? `<div class="sys"><table><thead><tr><th>System</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">This season</th><th class="r hide-s">Beat close</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${rows ? `<div class="sys"><table><thead><tr><th>System</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">Since Oct 27</th><th class="r hide-s">Beat close</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="why-note" style="margin-top:8px">Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ picks.</p>`
       : `<div class="empty">No systems in this group.</div>`}`;
   $("tab-systems").querySelectorAll(".seg button").forEach(btn => btn.onclick = () => { sysFilter = btn.dataset.f; renderSystems(b); });

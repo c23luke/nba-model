@@ -481,6 +481,7 @@ def _records(defs, picks):
         ever = [p for p in picks if p["system"] == sid and p.get("result")]
         clvs = [_meta(p, "clv") for p in ever if _meta(p, "clv") is not None]
         out[sid] = {**meta, "tag": label(sid), "group": group(sid), **_wl(p["result"] for p in official),
+                    "open": sum(1 for p in picks if p["system"] == sid and p.get("active") and not p.get("result")),
                     # every time it fired, even if the line later moved out, graded at the first line
                     "if_first": _wl(_meta(p, "result_first") for p in ever),
                     "dropped": _wl(p["result"] for p in ever if not p.get("active")),
@@ -712,9 +713,11 @@ def counts_today(p: dict, bars: dict) -> bool:
 
 
 def since_restart(picks, orders, games=None):
-    """Money restarts Oct 27 (orders). System TRACKING keeps every pick each system actually made this season,
-    under the rules live when it fired (Caden 2026-10-27: re-judging the old picks by today's rules wiped real
-    records like S4's and T13's, which he didn't want). counts_today() stays for the money ledger's checks."""
+    """Caden 2026-10-27, final: everything starts fresh with tonight's games (money AND system tracking).
+    Tracking keeps every pick a system makes from here on, bet or not, judged by today's rules (picks for
+    tonight that fired earlier under the old rules, like a 3-point T13 gap, are left out)."""
+    bars = s4_bars(games)
+    picks = [p for p in picks if (p.get("tip_utc") or "9999") >= RESTART_UTC and counts_today(p, bars)]
     orders = [o for o in orders if (o.get("tip_utc") or o.get("created_at") or "") >= RESTART_UTC]   # games from Oct 27 on
     return picks, orders
 
