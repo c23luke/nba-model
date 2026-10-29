@@ -707,3 +707,14 @@ Deno.test("a standing order only rests within 1 point of the market number", asy
   eq(k.rested.length, 0);
   ok(JSON.stringify(res.skips).includes("within 1 point"), JSON.stringify(res.skips));
 });
+
+Deno.test("daily loss cap: last night's late games don't count against today", async () => {
+  const g = { id: "gL", home: "LAC", away: "LAL", home_score: 87, away_score: 103, final: true };
+  const lastNight = new Date(etDayStart(NOW).getTime() - 2 * 3600e3).toISOString();   // tipped 10pm ET yesterday
+  const order = (tip: string) => ({ bet: "spread", side: "LAC", line: 5, game_id: "gL", tip_utc: tip,
+    fill_cost: 120, fill_count: 240, fees: 0 } as OrderRow);
+  const db = new FakeDb(settings(), []);
+  (db as any).games = async () => [g];
+  eq(await pnlFromGames(db, [order(lastNight)], etDayStart(NOW).getTime()), 0);
+  eq(await pnlFromGames(db, [order(TIP)], etDayStart(NOW).getTime()), -120);
+});

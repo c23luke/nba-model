@@ -273,7 +273,9 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       const mine = new Set(filled.map((o) => o.market));
       if (!mine.size) continue;
       try {
-        pnl += venues[v].gradeFromGames
+        // graded from final scores for every site, counting only games that tip TODAY (Eastern): last night's
+        // late games belong to yesterday's slate and must not shut off today's betting (Caden 2026-10-29)
+        pnl += db.games
           ? await pnlFromGames(db, filled, dayStart.getTime())
           : await venues[v].pnlToday(mine, dayStart.getTime());
       } catch (e) {
@@ -654,7 +656,7 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
 /** Today's realized P&L on these orders, graded from final scores at the number each was bet. */
 export async function pnlFromGames(db: Db, orders: OrderRow[], dayStartMs: number): Promise<number> {
   if (!db.games) throw new Error("no games table to grade from");
-  const todays = orders.filter((o) => Date.parse(o.tip_utc) >= dayStartMs - 6 * 3600e3);
+  const todays = orders.filter((o) => Date.parse(o.tip_utc) >= dayStartMs);      // today's slate only
   if (!todays.length) return 0;
   const games = new Map((await db.games([...new Set(todays.map((o) => o.game_id))])).map((g) => [g.id, g]));
   let pnl = 0;
