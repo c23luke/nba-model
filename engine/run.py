@@ -695,7 +695,7 @@ def report_card() -> dict:
 # System TRACKING keeps the whole season, re-judged by today's rules (Caden: "as if we perfected
 # everything from the start"): T13 only at a 4+ gap, S4 only when the total was above that day's
 # season average. Tracking is graded at the pick's own number, so no price is needed.
-RESTART_UTC = "2026-10-28T04:00:00+00:00"     # midnight ET, Oct 28: Caden restarted after the Oct 27 games
+RESTART_UTC = "2026-10-29T04:00:00+00:00"     # midnight ET, Oct 29: Caden restarted again after the Oct 28 games
 
 
 def s4_bars(games: dict | None) -> dict:
