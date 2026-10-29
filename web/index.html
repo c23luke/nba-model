@@ -243,9 +243,11 @@ const cfg = window.BOARD_CONFIG || {};
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const d = iso => iso ? new Date(String(iso).replace("Z", "+00:00")) : null;
-const tipTime = iso => iso ? d(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
-const tipDay = iso => iso ? d(iso).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) : "";
-const when = iso => iso ? `${tipDay(iso)}, ${tipTime(iso)}` : "";
+// every time on the site is Eastern (Caden is in Atlanta), wherever the page is opened
+const ET = "America/New_York";
+const tipTime = iso => iso ? d(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: ET }) : "";
+const tipDay = iso => iso ? d(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: ET }) : "";
+const when = iso => iso ? `${tipDay(iso)}, ${tipTime(iso)} ET` : "";
 const ago = iso => { const m = Math.round((Date.now() - d(iso)) / 60000); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`; };
 const money = x => x == null ? "—" : `${x < 0 ? "−" : ""}$${Math.abs(x).toFixed(2)}`;
 const signed$ = x => x == null ? "—" : `${x > 0 ? "+" : x < 0 ? "−" : ""}$${Math.abs(x).toFixed(2)}`;
@@ -407,8 +409,7 @@ async function load() {
 // ---------- header
 function renderHead(b, placed) {
   const mins = (Date.now() - d(b.generated_at)) / 60000;
-  const etHour = Number(new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour: "numeric", hourCycle: "h23" }));
-  const stale = (etHour >= 10 || etHour < 2) && mins > 45;
+  const stale = mins > 60;          // the model runs every 15 min around the clock; GitHub can start runs late
   $("fresh").className = "fresh" + (stale ? " stale" : "");
   $("fresh").querySelector("span").textContent = stale ? `Model last ran ${ago(b.generated_at)}` : `Updated ${ago(b.generated_at)}`;
   const warn = (b.notes || []).filter(n => /fail|error/i.test(n));
