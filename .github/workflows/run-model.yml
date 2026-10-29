@@ -2,9 +2,10 @@ name: Run NBA model
 
 on:
   schedule:
-    # every 15 minutes, ~9am–2am Eastern in both daylight and standard time.
+    # every 15 minutes, ~7am–2am Eastern in both daylight and standard time (from 11:00 UTC so the
+    # morning's first lines are caught early — rule systems bet the first number they see).
     # Off-the-hour minutes: GitHub drops/delays scheduled runs most at :00.
-    - cron: "7,22,37,52 13-23 * * *"
+    - cron: "7,22,37,52 11-23 * * *"
     - cron: "7,22,37,52 0-6 * * *"
   workflow_dispatch:
     inputs:
