@@ -143,7 +143,8 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "system": o.get("system"), "group": p.get("group"), "name": snap.get("name") or (names or {}).get(o.get("system")),
             "evidence": p.get("evidence") or [], "price_note": snap.get("why"), "confidence": snap.get("confidence"), "win": snap.get("win"),
             # the players-model gap WHEN WE BET (T13: the gap it fired on) and now (the live card, if still on it)
-            "players": ((p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13" else None) or snap.get("players"),
+            "players": ((p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13"
+                        else (p.get("meta") or {}).get("gap") if o.get("system") == "MONEYBALL" else None) or snap.get("players"),
             "players_now": snap.get("players"), "players_history": snap.get("players_history"),
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
