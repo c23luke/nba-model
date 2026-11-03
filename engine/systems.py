@@ -230,7 +230,8 @@ def evaluate(game: Game, home: TeamState, away: TeamState,
         # ---- System 4: heavy favorite over
         # The total bar was a fixed 220, set when 220 was a high total; by 2025-26, 90% of games were
         # above it. Now: above THIS season's average so far. MEASURED (engine/measure_walkforward.py):
-        # 2024-26 at the open 106-67 (61.3%) vs 155-117 (57.0%) with 220; found-on 2020-24 59.5% vs 58.0%.
+        # 2024-26 picked and graded at the open: 95-74 (56.2%), 94-72 at the close (engine/measure_leak). The 106-67 once
+        # quoted here chose games by the closing line, which the live model can't know.
         bar = 220.0 if tot_avg == "legacy" else tot_avg
         if (spread is not None and spread < -9.0 and total is not None and bar is not None and total > bar
                 and t.last_won is True and o.last_won is False):

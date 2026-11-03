@@ -306,3 +306,13 @@ def test_a_3_percent_edge_is_not_a_bet_any_more(monkeypatch):
     sl = [agree_away()]   # 54.5% at -105 (cost 0.5122): +6.4% -> BET; at -115 (0.5349): +1.9% -> not a bet
     assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -105)])], sl, now=NOW)[0]["verdict"] == "BET"
     assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -112)])], sl, now=NOW)[0]["verdict"] != "BET"
+
+
+def test_s4_is_priced_at_its_honest_record_and_skips_minus_122():
+    # Caden 2026-11-02: S4 is 95-74 picked and graded at the open (the 106-67 peeked at the closing line)
+    from engine.pricing import PRICE_WIN, S4_REC
+    assert S4_REC == (95, 74) and PRICE_WIN[4] < 0.555
+    over = lambda american: build_card([pk(4, "OVER", [xq("prophetx", "OVER", 231.5, american, "total")], bet="total",
+                                           line=231.5)], [], now=NOW)[0]["verdict"]
+    assert over(-122) != "BET"          # what it paid on Nov 1-2: no longer enough edge
+    assert over(-110) == "BET"

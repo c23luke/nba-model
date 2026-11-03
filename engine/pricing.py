@@ -114,12 +114,12 @@ def players_agree(pick: dict, slate: list[dict]) -> float | None:
 # 29-11 (2+ systems = MONEYBALL); with the players model NOT agreeing by 3+ every bucket lost. So:
 #   spread: bet only when a system fires AND the players model agrees by 3+ (MONEYBALL when 2+ systems)
 #           or the players model alone at 4+ (T13, 217-157)
-#   total:  only S4 (above this season's average total, 106-67). The players model doesn't rate totals.
+#   total:  only S4 (above this season's average total, 95-74). The players model doesn't rate totals.
 #   everything else: not bet. One bet per game side, however many systems fire.
 COMBO_MIN_GAP = 3.0
 COMBO_REC = (79, 51)          # 1 system + players model 3+, one bet per side, 2024-25 + 2025-26 at the open
 MONEYBALL_REC = (29, 11)      # 2+ systems + players model 3+
-S4_REC = (106, 67)            # S4 with the season-average total bar
+S4_REC = (95, 74)             # S4 with the season-average total bar, picked AND graded at the open (measure_leak)
 
 
 def eligible(p: dict, slate: list[dict]) -> tuple[bool, str | None]:
@@ -244,7 +244,9 @@ PRICE_WIN = {
     1: _price_win(14, 6, _og_prior(0.6039)),       # S1  -> 57.7%
     2: _price_win(11, 10, _og_prior(0.6593)),      # S2  -> 57.0%
     3: _price_win(5, 5, _og_prior(0.6006)),        # S3  -> 54.6%
-    4: _price_win(106, 67, _og_prior(0.5742)),     # S4 with the season-average total -> 58.5%
+    # S4: 95-74 picked and graded at the open (engine/measure_leak; 94-72 at the close). The 106-67 used before
+    # (measure_walkforward) chose games by the CLOSING spread/total and graded them at the open: a peek. -> 55.3%
+    4: _price_win(*S4_REC, _og_prior(0.5742)),
     102: _price_win(56, 43),                       # T2  -> 53.3%
     112: _price_win(79, 62),                       # T12 -> 53.5%
     121: _price_win(79, 50),                       # T21 -> 56.3%
