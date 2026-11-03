@@ -114,7 +114,7 @@ def players_agree(pick: dict, slate: list[dict]) -> float | None:
 # 29-11 (2+ systems = MONEYBALL); with the players model NOT agreeing by 3+ every bucket lost. So:
 #   spread: bet only when a system fires AND the players model agrees by 3+ (MONEYBALL when 2+ systems)
 #           or the players model alone at 4+ (T13, 217-157)
-#   total:  only S4 (above this season's average total, 95-74). The players model doesn't rate totals.
+#   total:  none. S4 (95-74, 56%) is tracking only since 2026-11-03: Caden wants bets that hit a lot, not a thin grind.
 #   everything else: not bet. One bet per game side, however many systems fire.
 COMBO_MIN_GAP = 3.0
 COMBO_REC = (79, 51)          # 1 system + players model 3+, one bet per side, 2024-25 + 2025-26 at the open
@@ -130,7 +130,8 @@ def eligible(p: dict, slate: list[dict]) -> tuple[bool, str | None]:
     if sid in (113, 130):
         return True, None
     if p["bet"] == "total":
-        return (True, None) if sid == 4 else (False, "Only S4 overs are bet on totals now")
+        # Caden 2026-11-03: only bets that hit a lot. S4 (56%) is a small-edge grind, so it's tracking only now.
+        return False, "Totals aren't bet now (S4 is tracking only)"
     g = players_agree(p, slate)
     if g is None:
         return False, "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+"

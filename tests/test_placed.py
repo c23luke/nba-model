@@ -167,25 +167,25 @@ def test_rules_now_marks_every_row_and_projects_open_bets_at_20():
     assert rows[1]["rules"]["counted"] is False and r["open"] == 1 and r["open_to_win"] == 30.0
 
 
-def test_rules_now_s4_bet_must_be_above_the_season_average():
+def test_rules_now_no_totals_count_s4_is_tracking_only():
+    # Caden 2026-11-03: only bets that hit a lot; S4 (56%) is tracking only, so no total counts in the record
     from engine.placed import rules_now
-    base = {"status": "OPEN", "bet": "total", "side": "OVER", "system": "S4", "t13_gap": None, "result": None, "pnl": None,
-            "risk": 17.0, "to_win": 20.0}
-    rows = [{**base, "game_id": "a", "holding": "OVER 230.5", "line": 230.5, "s4_bar": 232.3},     # bought below the bar
-            {**base, "game_id": "b", "holding": "OVER 233.5", "line": 233.5, "s4_bar": 232.3}]
-    rules_now(rows)
-    assert rows[0]["rules"]["counted"] is False and rows[1]["rules"]["counted"] is True
+    base = {"status": "FINAL", "bet": "total", "side": "OVER", "system": "S4", "t13_gap": None, "result": "W", "pnl": 20,
+            "risk": 19.0, "to_win": 20.0, "ev": 0.1, "s4_bar": 230.0}
+    rows = [{**base, "game_id": "a", "holding": "OVER 233.5", "line": 233.5, "card_pick": "OVER 233.5"}]
+    out = rules_now(rows)
+    assert rows[0]["rules"]["counted"] is False and "totals" in rows[0]["rules"]["why"] and out["w"] == 0
 
 
 def test_rules_now_applies_todays_price_rules():
     from engine.placed import rules_now
-    base = {"status": "OPEN", "bet": "total", "side": "OVER", "system": "S4", "t13_gap": None, "result": None, "pnl": None,
-            "s4_bar": 230.0, "risk": 20.0, "to_win": 20.0}      # +100: inside S4's -110 cap, so only the rule under test bites
-    rows = [{**base, "game_id": "a", "holding": "OVER 236.5", "line": 236.5, "card_pick": "OVER 238.5", "ev": 0.038},   # under 4%
-            {**base, "game_id": "b", "holding": "OVER 232.5", "line": 232.5, "card_pick": "OVER 234.5", "ev": 0.06,
-             "resting_fill": True},                                                                               # standing, 2 pts off
-            {**base, "game_id": "c", "holding": "OVER 233.5", "line": 233.5, "card_pick": "OVER 234.5", "ev": 0.06,
-             "risk": 22.0}]                                                                                       # fine
+    base = {"status": "OPEN", "bet": "spread", "side": "BOS", "system": "MONEYBALL", "t13_gap": None, "result": None,
+            "pnl": None, "risk": 20.0, "to_win": 20.0}
+    rows = [{**base, "game_id": "a", "holding": "BOS +3.5", "line": 3.5, "card_pick": "BOS +3.5", "ev": 0.038},   # under 4%
+            {**base, "game_id": "b", "holding": "BOS +3.5", "line": 3.5, "card_pick": "BOS +5.5", "ev": 0.06,
+             "resting_fill": True},                                                                         # standing, 2 pts off
+            {**base, "game_id": "c", "holding": "BOS +4.5", "line": 4.5, "card_pick": "BOS +5.5", "ev": 0.06,
+             "risk": 22.0}]                                                                                 # fine
     rules_now(rows)
     assert [r["rules"]["counted"] for r in rows] == [False, False, True]
     assert "4%" in rows[0]["rules"]["why"] and "within 1" in rows[1]["rules"]["why"]
@@ -217,15 +217,3 @@ def test_split_fills_are_one_bet_and_systems_need_the_players_model():
     was = next(r for r in out["bets"] if r["side"] == "WAS")
     assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
     assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 0)
-
-
-
-def test_s4_bets_worse_than_minus_110_leave_the_record():
-    from engine.placed import rules_now
-    row = lambda risk, to_win, res: {"system": "S4", "bet": "total", "side": "OVER", "game_id": "g", "line": 234.5,
-                                     "card_pick": "OVER 234.5", "holding": "OVER 234.5", "risk": risk, "to_win": to_win,
-                                     "ev": 0.06, "status": "FINAL", "result": res, "pnl": 0, "s4_bar": 230.0}
-    pricey, fine = row(24.88, 20.0, "L"), {**row(19.6, 20.0, "W"), "game_id": "h"}
-    out = rules_now([pricey, fine])
-    assert not pricey["rules"]["counted"] and "-110" in pricey["rules"]["why"]
-    assert fine["rules"]["counted"] and (out["w"], out["l"]) == (1, 0)

@@ -31,15 +31,15 @@ def agree_away(game="g1", gap=4.0):
 
 def test_card_ranks_bets_first_and_prices_them():
     slate = [{"game_id": "g2", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}, agree_away("g1")]
-    live = [pk(4, "OVER", [kq("OVER", 231.5, 0.50, "total")], bet="total", line=231.5),   # OG S4 ~57%: value
+    live = [pk(4, "OVER", [kq("OVER", 231.5, 0.50, "total")], bet="total", line=231.5),   # S4: tracking only, off the card
             pk(113, "NOP", [kq("NOP", 3.5, 0.60)], game="g2", line=3.5),                  # T13 56% at 60c → LIMIT
             pk(112, "BOS"),                                                               # T12 + players 4: no market → BET at a book
             pk(106, "BOS", [kq("BOS", -3.0, 0.40)])]                                      # TEST on the same side: rides along
     card = build_card(live, slate, now=NOW)
-    assert [c["tag"] for c in card] == ["S4", "T12", "T13"]                               # one row per side
-    assert card[0]["verdict"] == "BET" and card[1]["verdict"] == "BET" and card[2]["verdict"] == "LIMIT"
-    assert card[1]["with"] == ["T6"]
-    assert card[2]["max"] == max_price(0.56) and card[2]["max"] + kalshi_fee(card[2]["max"]) <= 0.56
+    assert [c["tag"] for c in card] == ["T12", "T13"]                                     # one row per side
+    assert card[0]["verdict"] == "BET" and card[1]["verdict"] == "LIMIT"
+    assert card[0]["with"] == ["T6"]
+    assert card[1]["max"] == max_price(0.56) and card[1]["max"] + kalshi_fee(card[1]["max"]) <= 0.56
 
 
 def test_line_shopping_takes_the_better_number_at_a_venue_he_uses():
@@ -308,16 +308,10 @@ def test_a_3_percent_edge_is_not_a_bet_any_more(monkeypatch):
     assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -112)])], sl, now=NOW)[0]["verdict"] != "BET"
 
 
-def test_s4_is_priced_at_its_honest_record_and_skips_minus_122():
-    # Caden 2026-11-02: S4 is 95-74 picked and graded at the open (the 106-67 peeked at the closing line)
-    from engine.pricing import PRICE_WIN, S4_REC
+def test_no_totals_are_bet_s4_is_tracking_only():
+    # Caden 2026-11-03: bets that hit a lot, at good prices. S4 is 95-74 (56%) at the open: tracked, not bet.
+    from engine.pricing import PRICE_WIN, S4_REC, eligible
     assert S4_REC == (95, 74) and PRICE_WIN[4] < 0.555
-    over = lambda american: build_card([pk(4, "OVER", [xq("prophetx", "OVER", 231.5, american, "total")], bet="total",
-                                           line=231.5)], [], now=NOW)[0]["verdict"]
-    assert over(-122) != "BET"          # what it paid on Nov 1-2: no longer enough edge
-    assert over(-110) == "BET"
-    # Caden 2026-11-03: S4 only at -110 or better, even if the model says -112 still has edge
-    from engine.pricing import cost_cap
-    assert cost_cap(4) == round(110 / 210, 4) and cost_cap(113) == 0.60
-    c = build_card([pk(4, "OVER", [xq("prophetx", "OVER", 231.5, -112, "total")], bet="total", line=231.5)], [], now=NOW)[0]
-    assert c["verdict"] != "BET" and c["model"]["max_cost"] == cost_cap(4)
+    s4 = pk(4, "OVER", [xq("prophetx", "OVER", 231.5, -105, "total")], bet="total", line=231.5)
+    assert eligible(s4, []) == (False, "Totals aren't bet now (S4 is tracking only)")
+    assert build_card([s4], [], now=NOW) == []

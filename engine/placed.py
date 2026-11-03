@@ -227,7 +227,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
     under TODAY's rules, at the price we actually got, and each row gets a "rules" block the site shows
     as the main record:
       - T13 only at a 4+ gap (worst case over day-to-day players): smaller ones don't count
-      - a spread system counts only when the players model agreed by 3+ (2026-11-02); totals only S4
+      - a spread system counts only when the players model agreed by 3+ (2026-11-02); no totals (S4 tracking only, 2026-11-03)
       - one ticket per game side (split fills merged in merge_fills); both sides of one game: neither counts
       - every bet sized to win $20 (MONEYBALL $30), even ones the old Low-confidence rule cut to $10
         or that only part-filled
@@ -241,9 +241,11 @@ def rules_now(rows: list[dict], agree=None) -> dict:
            "dropped": [], "resized": []}
     for r in rows:
         why = None
-        if r["system"] not in ("T13", "MONEYBALL", "S4"):
+        if r.get("bet") == "total":
+            why = "totals aren't bet now (S4 is tracking only)"
+        elif r["system"] not in ("T13", "MONEYBALL"):
             if r.get("bet") == "total":
-                why = "only S4 overs are bet on totals now"
+                why = "totals aren't bet now"
             else:
                 g = r.get("players")
                 if g is None and agree:

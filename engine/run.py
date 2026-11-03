@@ -757,14 +757,14 @@ def agree_lookup(picks: list[dict]):
 
 def counts_today(p: dict, bars: dict, agree=None) -> bool:
     """Today's betting rule (Caden 2026-11-02, pricing.eligible), applied to the record as if it ran all season:
-    T13 at 4+, MONEYBALL, S4 above the season average, and any other spread system ONLY when the players model
-    agreed by 3+. Other totals don't count. Shadow (X) picks are tracking and always kept."""
+    T13 at 4+, MONEYBALL, and any other spread system ONLY when the players model agreed by 3+. S4 is tracked (above
+    the season average) though no longer bet; other totals don't count. Shadow (X) picks are tracking and always kept."""
     if not _counts_now(p):
         return False
     sid = p["system"]
     if sid >= 300 or sid in (113, 130):
         return True
-    if sid == 4:
+    if sid == 4:                         # S4: tracking only since 2026-11-03, still graded so it can earn its way back
         if not p.get("result"):
             return True
         bar = _meta(p, "bar")

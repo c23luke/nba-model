@@ -287,7 +287,7 @@ function playersSeason(bucket) {
 }
 // tags: every system on this side; gap: players model points on this side (null = no read)
 function whyBets(tags, gap, side, bet) {
-  // totals: only S4 is bet, so other total systems that fired don't belong behind the bet
+  // totals: only S4 is even tracked as a candidate, so other total systems don't belong behind a total
   const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && (bet !== "total" || t === "S4"));
   const rows = [];
   for (const t of sys) {
@@ -575,7 +575,7 @@ function renderBets(placed, b) {
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
     </div>` : ""}` +
-    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), the players model alone at 4+, and S4 overs. One bet per game. Bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $30).</p>` +
+    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), and the players model alone at 4+. No totals. One bet per game. Bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $30).</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     (np.length ? `<h2>Looking for a price</h2><p class="lede">The model wants these, but no site has offered a good enough price yet. The bettor checks every minute${placerAt ? ` (last check ${esc(ago(placerAt))})` : ""}, and where it can it leaves an order on Kalshi at the most we'd pay.</p>` +
       np.map(c => cardRow(c, c.reason || "Not checked yet: the bettor looks every minute.")).join("") : "") +
@@ -638,9 +638,10 @@ function renderSystems(b) {
   groups.ALL = [...groups.OG, ...groups.FAV, ...groups.EARLY, ...groups.TEST];
   const names = { ALL: "All", OG: "OG", FAV: "Card", EARLY: "Early season", TEST: "More systems" };
   const status = s => (b.benched || {})[s.tag] ? `<span class="dot bench">Benched: ${esc(b.benched[s.tag].why)}</span>`
-    : s.tag === "S4" || s.tag === "MONEYBALL" ? `<span class="dot on">Bets</span>`
+    : s.tag === "MONEYBALL" ? `<span class="dot on">Bets</span>`
+    : s.tag === "S4" ? `<span class="dot">Tracking only: wins 56%, too thin to bet</span>`
     : s.tag === "T13" ? `<span class="dot on">Bets at a 4+ gap</span>`
-    : s.bet === "total" ? `<span class="dot">Not bet: only S4 overs are bet on totals</span>`
+    : s.bet === "total" ? `<span class="dot">Tracking only: no totals are bet</span>`
     : `<span class="dot on">Bets when the players model agrees by 3+</span>`;
   const cell = (r, lab) => `<td class="r ${recCellTone(r)}" data-label="${lab}">${recCell(r)}</td>`;
   const rows = (groups[sysFilter] || []).map(s => {
@@ -652,7 +653,7 @@ function renderSystems(b) {
       ${past}${cell(liveRec(s), "Since Oct 29").replace("</td>", s.open ? `<span class="pc muted"> ${s.open} open</span></td>` : "</td>")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
   }).join("");
   $("tab-systems").innerHTML = `<h2>Systems</h2>
-    <p class="lede">Every system the model runs. A system on its own has been a coin flip (458-449 over two seasons), so a spread system only bets when the players model agrees by 3+ points, and every record here counts only those games: the two past seasons replayed at the opening line, and since Oct 29 graded at the number it fired at. Totals: only S4 bets. Beat close is how many points the line moved our way after the pick; above zero is good.</p>
+    <p class="lede">Every system the model runs. A system on its own has been a coin flip (458-449 over two seasons), so a spread system only bets when the players model agrees by 3+ points, and every record here counts only those games: the two past seasons replayed at the opening line, and since Oct 29 graded at the number it fired at. Totals are tracked, not bet. Beat close is how many points the line moved our way after the pick; above zero is good.</p>
     <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
     ${rows ? `<div class="sys"><table><thead><tr><th>System</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">Since Oct 29</th><th class="r hide-s">Beat close</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="why-note" style="margin-top:8px">Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ picks.</p>`
