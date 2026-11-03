@@ -774,3 +774,21 @@ Deno.test("Kalshi cancel names the market so the request reaches the right shard
   await k.cancel("K9", "KXNBASPREAD-26NOV02BKNNYK-NYK15");
   eq(calls, ["DELETE https://x/trade-api/v2/portfolio/events/orders/K9?market_ticker=KXNBASPREAD-26NOV02BKNNYK-NYK15"]);
 });
+
+Deno.test("a late fill on a bet that already has a filled order is still recorded (as partial)", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), []);
+  db.orders_.push({ id: "r1", mode: "live", status: "unfilled", venue: "kalshi", market: "M", order_id: "K9",
+    bet_key: "g1-S3-HOU", game_id: "g1", tip_utc: TIP, count: 40, pick: "HOU -5", contract: "c", side: "HOU",
+    bet: "spread", ask_at_check: null, created_at: NOW.toISOString() } as unknown as OrderRow);
+  const real = db.updateOrder.bind(db);
+  (db as any).updateOrder = async (id: string, p: Partial<OrderRow>) => {
+    if (p.status === "filled") throw new Error('{"code":"23505","message":"duplicate key value violates unique constraint"}');
+    return real(id, p);
+  };
+  const k = new FakeVenue();
+  (k as any).getOrder = async () => ({ status: "executed", fill_count: 40, fill_cost: 19.6, fees: 0.2, raw: {} });
+  (k as any).cancel = async () => {};
+  await runOnce(db, { kalshi: k }, NOW);
+  eq([db.orders_[0].status, db.orders_[0].fill_count], ["partial", 40]);
+  ok(!db.logs.some((l) => l.level === "error"), JSON.stringify(db.logs));
+});

@@ -580,8 +580,16 @@ async function manageResting(db: Db, venues: Record<string, Venue>, recent: Orde
       const status = st.status === "resting" ? "resting"
         : st.fill_count >= o.count ? "filled" : st.fill_count > 0 ? "partial" : "unfilled";
       if (status !== o.status || st.fill_count !== (o.fill_count ?? 0)) {
-        await db.updateOrder(o.id!, { status, fill_count: st.fill_count, fill_cost: st.fill_cost, fees: st.fees,
-          reason: status === "unfilled" ? "resting order expired or cancelled with nothing filled" : null });
+        const patch = { status, fill_count: st.fill_count, fill_cost: st.fill_cost, fees: st.fees,
+          reason: status === "unfilled" ? "resting order expired or cancelled with nothing filled" : null };
+        try {
+          await db.updateOrder(o.id!, patch);
+        } catch (e) {
+          // a late fill on a bet that already has another filled order: the database allows one "filled" order per
+          // bet, so keep the fills under "partial" (both orders show as one bet on the site)
+          if (!/23505|duplicate key/.test(msg(e)) || status === "partial") throw e;
+          await db.updateOrder(o.id!, { ...patch, status: "partial", reason: "filled after a second order on the same bet" });
+        }
         if (st.fill_count > (o.fill_count ?? 0)) {
           await db.log(o.status === "unfilled" ? "warn" : "info", `${o.status === "unfilled" ? "LATE FILL FOUND on an order marked unfilled" : "FILLED (resting)"}: ` +
             `${o.contract} — ${st.fill_count} of ${o.count} for ${money(st.fill_cost)} — ${o.pick}`);
