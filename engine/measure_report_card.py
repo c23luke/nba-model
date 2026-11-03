@@ -8,6 +8,8 @@ Replays 2024-25 and 2025-26 at the OPENING line (same replay as engine.measure_s
   players_gap  the players model on the side it likes, by gap bucket (3-4, 4-6, 6+, and 4+), per season
   moneyball    2+ different systems on the same spread side + players model 3+ on that side, per season
   early_combo  an early-season system + players model 3+ on that side, per season
+  systems_p3   every spread system ONLY when the players model agreed by 3+ (the way it's bet since 2026-11-02)
+  combo_one    exactly one system + players model 3+, one bet per side (the "system + players" card bet)
 The JSON at the end is saved as data_static/report_card.json.
 
 Run: python -m engine.measure_report_card
@@ -41,10 +43,12 @@ def gap_buckets(gap):
 
 
 def main():
-    res = {"systems": defaultdict(dict), "players_gap": defaultdict(dict), "moneyball": {}, "early_combo": {}}
+    res = {"systems": defaultdict(dict), "players_gap": defaultdict(dict), "moneyball": {}, "early_combo": {},
+           "systems_p3": defaultdict(dict), "combo_one": {}}
     for season in BO.SEASONS:
         rows = season_rows(season)
         per_sys, per_gap, mb, ec = defaultdict(list), defaultdict(list), [], []
+        p3, one = defaultdict(list), []
         stacks = defaultdict(list)
         for r in rows:
             if r["system"] == 301:
@@ -54,6 +58,8 @@ def main():
             if r["system"] == 113:
                 continue
             per_sys[label(r["system"])].append(r["res"])
+            if r["bet"] == "spread" and r["gap"] is not None and r["gap"] >= 3:
+                p3[label(r["system"])].append(r["res"])
             if r["bet"] == "spread" and r["gap"] is not None:
                 stacks[(r["game"], r["side"])].append(r)
         for ps in stacks.values():
@@ -62,12 +68,17 @@ def main():
                 continue
             if len({p["system"] for p in ps}) >= 2:
                 mb.append(outcome)
+            else:
+                one.append(outcome)
             if any(group(p["system"]) == "EARLY" for p in ps):
                 ec.append(outcome)
         for k, v in per_sys.items():
             res["systems"][k][season] = _wl(v)
         for k, v in per_gap.items():
             res["players_gap"][k][season] = _wl(v)
+        for k, v in p3.items():
+            res["systems_p3"][k][season] = _wl(v)
+        res["combo_one"][season] = _wl(one)
         res["moneyball"][season] = _wl(mb)
         res["early_combo"][season] = _wl(ec)
         print(f"{season}: {len(rows)} graded picks")
@@ -83,6 +94,10 @@ def main():
         print(f"    {k:6} {line(res['players_gap'].get(k, {}))}")
     print(f"\n=== MONEYBALL (2+ systems + players 3+)  {line(res['moneyball'])}")
     print(f"=== early system + players 3+           {line(res['early_combo'])}")
+    print(f"=== exactly 1 system + players 3+        {line(res['combo_one'])}")
+    print("\n=== each system, only when the players model agreed by 3+")
+    for k in sorted(res["systems_p3"]):
+        print(f"    {k:6} {line(res['systems_p3'][k])}")
     out = {"note": "Replayed at the opening line, each season separately (engine/measure_report_card.py)",
            **{k: dict(v) if isinstance(v, defaultdict) else v for k, v in res.items()}}
     print("\nJSON")
