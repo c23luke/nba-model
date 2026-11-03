@@ -53,6 +53,22 @@ def row_from_game(g: Game, prev: dict | None) -> dict:
     return row
 
 
+def unplayed_before(team: str, day: date, games: list[Game]) -> Game | None:
+    """The team's previous game if it hasn't finished yet (within 3 days before `day`). Until it's final, every
+    fact the rule systems read (last result, streak, record) describes the wrong game: on Nov 1 the model
+    judged BKN's Nov 2 game as "lost by 16 last game, 0-5" while BKN was still playing at IND, fired a
+    MONEYBALL, then dropped it when BKN won (Caden 2026-11-02)."""
+    for g in games:
+        if team in (g.home, g.away) and day - timedelta(3) <= g.game_date < day and not g.final:
+            return g
+    return None
+
+
+def back_to_back(team: str, day: date, games: list[Game]) -> bool:
+    """Plays the night before, from the SCHEDULE (finished or not): rest is known before the game is played."""
+    return any(team in (g.home, g.away) and g.game_date == day - timedelta(1) for g in games)
+
+
 def tipped(g: Game, now: datetime) -> bool:
     if g.final:
         return True
@@ -193,8 +209,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             reads = personnel_fetch()
             rest = {}
             for g in upcoming:
-                hs_, as_ = team_state(g.home, finals, g.game_date), team_state(g.away, finals, g.game_date)
-                rest[g.id] = (hs_.days_rest == 0, as_.days_rest == 0)
+                rest[g.id] = (back_to_back(g.home, g.game_date, games), back_to_back(g.away, g.game_date, games))
             raw = {g.id: personnel_mod.fair_home_spread(reads[g.home], reads[g.away], *rest[g.id])
                    for g in upcoming if g.home in reads and g.away in reads}
             cal = personnel_mod.calibrate([(stored[gid].get("home_spread"), f) for gid, f in raw.items()])
@@ -247,13 +262,15 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                "tot_low_cut": tot_low_cut,
                "home_4in6": games_in(g.home, finals, g.game_date, 5) >= 3,
                "away_4in6": games_in(g.away, finals, g.game_date, 5) >= 3}
-        picks = (evaluate(g, hs, at, o_hs, o_tot, tot_avg)
-                 + evaluate_tests(g, hs, at, o_hs, o_tot)
-                 + evaluate_early(g, hs, at, o_hs, o_tot, (g.game_date - season_start).days)
+        pending = unplayed_before(g.home, g.game_date, games) or unplayed_before(g.away, g.game_date, games)
+        rules = [] if pending else (evaluate(g, hs, at, o_hs, o_tot, tot_avg)
+                                    + evaluate_tests(g, hs, at, o_hs, o_tot)
+                                    + evaluate_early(g, hs, at, o_hs, o_tot, (g.game_date - season_start).days)
+                                    + evaluate_mined(g, hs, at, o_hs, o_tot, ctx))
+        picks = (rules
                  + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
                                       season_day=(g.game_date - season_start).days)
-                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
-                 + evaluate_mined(g, hs, at, o_hs, o_tot, ctx))
+                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id)))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:
@@ -320,8 +337,15 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # bets that fired earlier but no longer qualify (line moved) — keep, mark inactive
     upcoming_ids = {g.id for g in upcoming}
+    waiting_ids = {g.id for g in upcoming if unplayed_before(g.home, g.game_date, games)
+                   or unplayed_before(g.away, g.game_date, games)}
     for k, p in old.items():
         if p["game_id"] in upcoming_ids and k not in seen_now and p.get("active"):
+            if p["game_id"] in waiting_ids and p["system"] < 300 and p["system"] not in (113, 130):
+                # judged before a team's previous game finished: not a real pick (see unplayed_before)
+                pick_rows.append({**p, "active": False, "last_checked": now.isoformat(),
+                                  "dropped_reason": "Judged before a team's previous game finished"})
+                continue
             if p["system"] in LOCK_ON_FIRE and p.get("first_line") is not None:
                 # already bet at the first line: keep it; note where the line has gone since.
                 # Still shop it — if the model still likes the side, a better number may be out there.
@@ -712,23 +736,55 @@ def s4_bars(games: dict | None) -> dict:
     return out
 
 
-def counts_today(p: dict, bars: dict) -> bool:
+def agree_lookup(picks: list[dict]):
+    """(game_id, side) -> the players model's points on that side, worst day-to-day version, from the X1 shadow
+    pick the model writes for every game each run (its last check before tip). None = no read or blind."""
+    x1 = {}
+    for p in picks:
+        if p["system"] == 301 and (p.get("last_checked") or "") >= (x1.get(p["game_id"], {}).get("last_checked") or ""):
+            x1[p["game_id"]] = p
+    def agree(game_id, side):
+        sh = x1.get(game_id)
+        if not sh or _meta(sh, "call") == "blind":
+            return None
+        if sh["side"] == side:
+            w = _meta(sh, "worst_gap")
+            return w if w is not None else _meta(sh, "gap")
+        g = _meta(sh, "gap")
+        return None if g is None else -g
+    return agree
+
+
+def counts_today(p: dict, bars: dict, agree=None) -> bool:
+    """Today's betting rule (Caden 2026-11-02, pricing.eligible), applied to the record as if it ran all season:
+    T13 at 4+, MONEYBALL, S4 above the season average, and any other spread system ONLY when the players model
+    agreed by 3+. Other totals don't count. Shadow (X) picks are tracking and always kept."""
     if not _counts_now(p):
         return False
-    if p["system"] == 4 and p.get("result"):
+    sid = p["system"]
+    if sid >= 300 or sid in (113, 130):
+        return True
+    if sid == 4:
+        if not p.get("result"):
+            return True
         bar = _meta(p, "bar")
         if bar is None:
             bar = bars.get(str(p.get("game_date")))
         return bar is not None and p.get("line") is not None and float(p["line"]) > bar
-    return True
+    if p.get("bet") == "total":
+        return False
+    g = agree(p["game_id"], p["side"]) if agree else None
+    return g is not None and g >= 3
 
 
 def since_restart(picks, orders, games=None):
     """Caden 2026-10-27, final: everything starts fresh with tonight's games (money AND system tracking).
-    Tracking keeps every pick a system makes from here on, bet or not, judged by today's rules (picks for
-    tonight that fired earlier under the old rules, like a 3-point T13 gap, are left out)."""
+    Tracking keeps every graded pick a system makes from here on that today's rule would have bet.
+    Open picks all stay (the card explains the ones it won't bet)."""
     bars = s4_bars(games)
-    picks = [p for p in picks if (p.get("tip_utc") or "9999") >= RESTART_UTC and counts_today(p, bars)]
+    agree = agree_lookup(picks)
+    picks = [p for p in picks if (p.get("tip_utc") or "9999") >= RESTART_UTC
+             and (counts_today(p, bars, agree) if p.get("result") else _counts_now(p))]
     orders = [o for o in orders if (o.get("tip_utc") or o.get("created_at") or "") >= RESTART_UTC]   # games from the restart on
     return picks, orders
 
@@ -737,6 +793,8 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
                 bench_cfg=None, exclude_cfg=None):
     # every pick, so old-rule bets can still be judged (e.g. their T13 gap) after the pick stops counting
     raw_picks = {p["key"]: {**p, "tag": label(p["system"]), "group": group(p["system"])} for p in picks}
+    agree = agree_lookup(picks)
+    bars = s4_bars(games)
     picks, orders = since_restart(picks, orders or [], games)
     ex = excluded_keys(exclude_cfg)
     out_picks = [p for p in picks if (str(p["game_id"]), p["side"]) in ex]
@@ -757,19 +815,22 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
     card = build_card(live, slate, now)
     # each card bet's record = its history + this season's graded bets of the same kind
     graded = [p for p in picks if p.get("result") and p.get("active")]
-    x1 = {p["game_id"]: p for p in graded if p["system"] == 301}
+    def combo_wl():
+        """This season's 'system + players model 3+' bets, one per game side (graded picks here already
+        passed today's rule, so every spread system pick left is one)."""
+        seen = {}
+        for p in sorted(graded, key=lambda p: p.get("first_seen") or ""):
+            if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, 130):
+                seen.setdefault((p["game_id"], p["side"]), p["result"])
+        return _wl(seen.values())
     def live_wl(row):
-        if row["group"] == "EARLY":           # early system + players model 3+ on the same side
-            res = []
-            for p in graded:
-                sh = x1.get(p["game_id"])
-                if 200 <= p["system"] < 300 and p["bet"] == "spread" and sh and sh["side"] == p["side"] \
-                        and (_meta(sh, "gap_first") or _meta(sh, "gap") or 0) >= 3:
-                    res.append(p["result"])
-            return _wl(res)
+        if row.get("bet") == "spread" and row["system"] < 300 and row["system"] not in (113, 130):
+            return combo_wl()
         return _wl(p["result"] for p in graded if p["system"] == row["system"])
-    recs = {"systems": _records(SYSTEMS, picks), "test_systems": _records(TEST_SYSTEMS, picks),
-            "early_systems": _records(EARLY_SYSTEMS, picks)}
+    # records: graded picks already follow today's rule; open picks count as "open" only if the card would bet them
+    rec_picks = [p for p in picks if p.get("result") or counts_today(p, bars, agree)]
+    recs = {"systems": _records(SYSTEMS, rec_picks), "test_systems": _records(TEST_SYSTEMS, rec_picks),
+            "early_systems": _records(EARLY_SYSTEMS, rec_picks)}
     benched = benched_systems({**recs["systems"], **recs["test_systems"], **recs["early_systems"]}, bench_cfg)
     for row in card:
         if row["tag"] in benched and row["verdict"] in ("BET", "LIMIT"):
@@ -805,7 +866,7 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
                and p["key"] not in on_card]
     from .placed import placed_bets
     def season_wl(p):
-        r = live_wl({"group": p["group"], "system": p["system"]})
+        r = live_wl({"group": p["group"], "system": p["system"], "bet": p.get("bet")})
         return {"w": r["w"], "l": r["l"], "p": r["p"]}
     lines_now = {g["game_id"]: g for g in slate}
     def market_now(gid, bet, side):
@@ -817,7 +878,7 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
     placed = placed_bets(orders or [], {**raw_picks, **{p["key"]: p for p in picks}}, games or {}, {c["key"]: c for c in card},
                          season_wl, now, market_now,
                          {label(i): x.get("name") for d in (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS) for i, x in d.items()},
-                         s4_bars(games))
+                         bars, agree)
     # who is day-to-day on each open bet's game, and the players-model gap on our side if they play / sit
     views = {g["game_id"]: g for g in slate}
     for r in placed["bets"]:
@@ -844,6 +905,7 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         "gap_tracker": gap_tracker(picks, season_day),
         "tracking": tracking(picks), "stacks": live_stacks(live),
         "report_card": report_card(),
+        "combo_live": combo_wl(),                 # this season's "system + players model 3+" bets, one per side
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
         "odds_api": usage, "notes": log, "slate": slate,

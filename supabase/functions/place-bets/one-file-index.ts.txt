@@ -31,6 +31,24 @@ const TOP_UP_MIN = 2;
 const wonSoFar = (o: OrderRow) => (o.fill_count ?? 0) > 0
   ? Math.max(0, (o.fill_count ?? 0) - (o.fill_cost ?? 0) - (o.fees ?? 0)) : 0;
 const HEARTBEAT_MINUTES = 15;
+/** Live orders on this bet's side of the game (any system's key) and on the other side. An order counts while
+ * it's open or holds anything that filled. */
+export function sideOrders(recent: OrderRow[], counted: OrderRow[], row: { key: string; game_id: string; bet?: string; side?: string }) {
+  const held = (o: OrderRow) => o.mode === "live" && (LIVE_STATUSES.includes(o.status) || (o.fill_count ?? 0) > 0);
+  const seen = new Set<string>();
+  const all = [...recent, ...counted].filter((o) => {
+    const k = o.id ?? `${o.venue}|${o.market}|${o.created_at}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return held(o);
+  });
+  const bet = (o: { bet?: string }) => o.bet ?? "spread";
+  const same = all.filter((o) => o.bet_key === row.key ||
+    (o.game_id === row.game_id && bet(o) === bet(row) && !!o.side && o.side === row.side));
+  const other = all.filter((o) => o.bet_key !== row.key && o.game_id === row.game_id && bet(o) === bet(row)
+    && !!o.side && !!row.side && o.side !== row.side);
+  return { same, other };
+}
 const LIVE_STATUSES = ["pending", "filled", "partial", "error", "resting"];
 
 // ------------------------------------------------------------------ types
@@ -112,7 +130,7 @@ export interface Venue {
   /** Resting limit orders (Kalshi): place a good-till-canceled order, read it back, cancel it. */
   rest?(o: OrderRow, clientId: string, expiresUnix: number): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
   getOrder?(orderId: string): Promise<{ status: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
-  cancel?(orderId: string): Promise<void>;
+  cancel?(orderId: string, market?: string): Promise<void>;
   /** Venues with a peer-to-peer book build their own quotes from live offers, priced with the model. */
   offers?(row: FeedRow): Promise<Quote[]>;
   /** Why a peer-to-peer venue had nothing to offer on this bet (shown in the skip reason). */
@@ -316,8 +334,11 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
   for (const row of feed.sort((a, b) => best(b) - best(a))) {
     const skip = (reason: string) => res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason });
 
-    // Rule 5: never the same bet twice (live). A bet that errored is never retried automatically.
-    const liveForBet = recent.filter((o) => o.mode === "live" && o.bet_key === row.key && LIVE_STATUSES.includes(o.status));
+    // Rule 5: ONE bet per game side, whichever system's key it came under (Caden 2026-11-02: NYK -14.5 for T12
+    // and NYK -15.5 for T2 were two bets on one side), and never the other side of a game we already hold.
+    // A bet that errored is never retried automatically. A partial fill may be topped up; it stays one bet.
+    const { same: liveForBet, other } = sideOrders(recent, counted, row);
+    if (live && other.length) { skip(`we already hold the other side of this game (${other[0].pick}, ${other[0].venue})`); continue; }
     const target = s.to_win_dollars && s.to_win_dollars > 0
       ? (row.to_win && row.to_win > 0 ? Math.min(row.to_win, s.to_win_dollars) : s.to_win_dollars) : 0;
     const already = round2(liveForBet.reduce((t, o) => t + wonSoFar(o), 0));
@@ -530,25 +551,35 @@ const REST_STOP_BEFORE_TIP_MIN = 5;   // resting orders expire this many minutes
 async function manageResting(db: Db, venues: Record<string, Venue>, recent: OrderRow[], feed: FeedRow[], now: Date,
                              res: RunResult) {
   const limitKeys = new Set(feed.filter((r) => r.status === "limit").map((r) => r.key));
-  for (const o of recent.filter((x) => x.mode === "live" && x.status === "resting" && x.order_id)) {
+  // also re-read standing orders we marked "unfilled" in the last day: before 2026-11-02 a failed cancel was
+  // recorded as cancelled, and Kalshi could still fill the order afterwards without the site ever knowing
+  const recheck = (x: OrderRow) => x.status === "unfilled" && x.venue === "kalshi" && x.ask_at_check == null
+    && !!x.order_id && Date.parse(x.tip_utc) > now.getTime() - 24 * 3600e3;
+  for (const o of recent.filter((x) => x.mode === "live" && x.order_id && (x.status === "resting" || recheck(x)))) {
     const v = venues[o.venue];
     if (!v?.getOrder || !v.cancel) continue;
     try {
       let st = await v.getOrder(o.order_id!);
       const late = Date.parse(o.tip_utc) - now.getTime() < REST_STOP_BEFORE_TIP_MIN * 60e3;
       if (st.status === "resting" && (late || !limitKeys.has(o.bet_key))) {
+        const why = late ? "game about to start" : "no longer a LIMIT on the card";
+        let err = "";
         try {
-          await v.cancel(o.order_id!);
+          await v.cancel(o.order_id!, o.market);
         } catch (e) {
-          // Kalshi answers 404 when the order already expired or was cancelled: it's gone, so stop retrying
-          // (this repeated every minute for hours on 10/21-10/26 and left the bet stuck as "resting")
-          if (!/→ 404\b/.test(msg(e))) throw e;
+          err = msg(e);
         }
         st = await v.getOrder(o.order_id!);
-        if (st.status === "resting") st = { ...st, status: "canceled" };
-        const why = late ? "game about to start" : "no longer a LIMIT on the card";
-        await db.log("info", `CANCELLED resting order (${why}): ${o.contract} for ${o.pick}; filled ${st.fill_count} of ${o.count}`);
-        res.actions.push(`cancelled resting ${o.pick}: ${why}`);
+        if (st.status === "resting") {
+          // NEVER record a cancel Kalshi hasn't confirmed: the order is still live and can fill. Keep it as
+          // resting so the next run tries again, and say so loudly.
+          await db.log("error", `CANCEL DID NOT TAKE (${why}): ${o.contract} for ${o.pick} is still open on Kalshi` +
+            `${err ? ` (${err.slice(0, 160)})` : ""}. Trying again next minute.`);
+          res.actions.push(`cancel failed, still resting: ${o.pick}`);
+        } else {
+          await db.log("info", `CANCELLED resting order (${why}): ${o.contract} for ${o.pick}; filled ${st.fill_count} of ${o.count}`);
+          res.actions.push(`cancelled resting ${o.pick}: ${why}`);
+        }
       }
       const status = st.status === "resting" ? "resting"
         : st.fill_count >= o.count ? "filled" : st.fill_count > 0 ? "partial" : "unfilled";
@@ -556,7 +587,8 @@ async function manageResting(db: Db, venues: Record<string, Venue>, recent: Orde
         await db.updateOrder(o.id!, { status, fill_count: st.fill_count, fill_cost: st.fill_cost, fees: st.fees,
           reason: status === "unfilled" ? "resting order expired or cancelled with nothing filled" : null });
         if (st.fill_count > (o.fill_count ?? 0)) {
-          await db.log("info", `FILLED (resting): ${o.contract} — ${st.fill_count} of ${o.count} for ${money(st.fill_cost)} — ${o.pick}`);
+          await db.log(o.status === "unfilled" ? "warn" : "info", `${o.status === "unfilled" ? "LATE FILL FOUND on an order marked unfilled" : "FILLED (resting)"}: ` +
+            `${o.contract} — ${st.fill_count} of ${o.count} for ${money(st.fill_cost)} — ${o.pick}`);
           await db.updateFeed(o.bet_key, { order_status: status, order_venue: o.venue, order_id: o.order_id,
             order_fill_count: st.fill_count, order_fill_cost: st.fill_cost, order_placed_at: now.toISOString() });
         }
@@ -580,9 +612,13 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
   for (const row of limits) {
     const skip = (reason: string) => res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason });
     const mode = live ? "live" : "dry_run";
-    const mine = recent.filter((o) => o.bet_key === row.key && o.mode === mode &&
-      (live ? LIVE_STATUSES.includes(o.status) : o.status === "dry_run"));
+    const mine = live ? sideOrders(recent, counted, row).same
+      : recent.filter((o) => o.bet_key === row.key && o.mode === mode && o.status === "dry_run");
     if (mine.length) { skip(live ? `already ${mine[0].status} (${mine[0].venue})` : "resting order already logged"); continue; }
+    if (live) {
+      const other = sideOrders(recent, counted, row).other;
+      if (other.length) { skip(`we already hold the other side of this game (${other[0].pick}, ${other[0].venue})`); continue; }
+    }
     // standing orders mostly fill when the other side thinks it's worth less, so they need more cushion:
     // RESTING_EXTRA_EV on top of min_ev, and only at the market number or within RESTING_WINDOW points of it
     const anchor = row.model?.market ?? row.model?.base;
@@ -801,7 +837,13 @@ export class Kalshi implements Venue {
              fill_cost: round2(n(o.taker_fill_cost_dollars) + n(o.maker_fill_cost_dollars)),
              fees: round2(n(o.taker_fees_dollars) + n(o.maker_fees_dollars)), raw: o };
   }
-  async cancel(orderId: string) { await this.call("DELETE", `/portfolio/events/orders/${orderId}`); }
+  /** Kalshi routes orders by market: without market_ticker a cancel goes to the default shard and answers 404 for
+   * an order that is still live there (Nov 1: the BKN +14.5 order was "cancelled" this way, stayed in the book and
+   * filled 35 minutes later). docs.kalshi.com, Cancel Order (V2). */
+  async cancel(orderId: string, market?: string) {
+    const q = market ? `?market_ticker=${encodeURIComponent(market)}` : "";
+    await this.call("DELETE", `/portfolio/events/orders/${orderId}${q}`);
+  }
   async balance() {
     const js = await this.call("GET", "/portfolio/balance");
     return js.balance_dollars != null ? Number(js.balance_dollars) : Number(js.balance) / 100;
@@ -1330,7 +1372,6 @@ export async function buildVenues(s: Settings, db?: Db): Promise<Record<string, 
     prophetx: new ProphetX(Deno.env.get("PROPHETX_ACCESS_KEY"), Deno.env.get("PROPHETX_SECRET_KEY"), db),
   };
 }
-
 // place-bets entry point. All logic lives in core.ts (tested in core_test.ts).
 
 Deno.serve(async (req) => {

@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone
 from engine.placed import american, grade, holding, placed_bets
 from engine.run import run
 from engine.store import LocalStore
-from tests.test_run import START, fake_kalshi, fake_lines, make_fetch_day
+from tests.test_run import START, fake_kalshi, fake_lines, lal_reads, make_fetch_day
 
 
 def test_american_odds_and_what_we_hold():
@@ -49,13 +49,13 @@ def test_summary_counts_risk_fees_and_results():
 
 def test_placed_bet_keeps_its_reasoning_after_it_tips_and_grades(tmp_path):
     store = LocalStore(tmp_path)
-    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
     b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines, **kw)
-    c = next(c for c in b["card"] if c["tag"] == "S1")
-    assert b["placed"]["bets"] == []
+    c = next(c for c in b["card"] if c["side"] == "LAL")           # S1 + T24 + players model: MONEYBALL
+    assert c["tag"] == "MONEYBALL" and b["placed"]["bets"] == []
     store._write("bet_orders", [{"id": "o1", "mode": "live", "venue": "kalshi", "bet_key": c["key"], "game_id": c["game_id"],
-                                 "tip_utc": c["tip_utc"], "pick": c["label"], "system": "S1", "bet": "spread", "side": "LAL",
+                                 "tip_utc": c["tip_utc"], "pick": c["label"], "system": "MONEYBALL", "bet": "spread", "side": "LAL",
                                  "line": 6.5, "contract": "NO · MIL wins by over 6.5 (= LAL +6.5)", "status": "filled",
                                  "fill_count": 36, "fill_cost": 19.8, "fees": 0.6, "ev": 0.08,
                                  "created_at": "2025-11-15T15:01:00+00:00"}])
@@ -65,7 +65,7 @@ def test_placed_bet_keeps_its_reasoning_after_it_tips_and_grades(tmp_path):
     assert not any(x["key"] == c["key"] for x in b["card"])
     r = b["placed"]["bets"][0]
     assert (r["status"], r["holding"], r["price_note"], r["name"]) == ("LIVE", "LAL +6.5", c["why"], c["name"])
-    assert r["evidence"] and "overtime" in r["evidence"][0]
+    assert r["evidence"] and "S1, T24" in r["evidence"][0]           # the MONEYBALL pick's own notes
     assert r["record"]["history"] == c["record"]["history"]
     # next morning: graded at +6.5 (LAL won 119-95)
     b = run(now=datetime(2025, 11, 16, 15, 0, tzinfo=timezone.utc),
@@ -189,3 +189,31 @@ def test_rules_now_applies_todays_price_rules():
     rules_now(rows)
     assert [r["rules"]["counted"] for r in rows] == [False, False, True]
     assert "4%" in rows[0]["rules"]["why"] and "within 1" in rows[1]["rules"]["why"]
+
+
+def test_split_fills_are_one_bet_and_systems_need_the_players_model():
+    # Nov 1: LAL -2.5 filled in two pieces on ProphetX (8.99 then 30.99 contracts): ONE bet.
+    # Nov 2: WAS +1.5 (T2) with the players model liking the other side: not counted under today's rule.
+    from engine.placed import placed_bets
+    now = datetime(2026, 11, 3, 15, 0, tzinfo=timezone.utc)
+    games = {"g1": {"final": True, "home": "LAL", "away": "TOR", "home_score": 131, "away_score": 125},
+             "g2": {"final": True, "home": "ORL", "away": "WAS", "home_score": 94, "away_score": 103}}
+    o = lambda **k: {"mode": "live", "venue": "prophetx", "bet": "spread", "status": "filled", "ev": 0.30,
+                     "tip_utc": "2026-11-02T02:00:00+00:00", **k}
+    orders = [o(id="a", bet_key="g1-S204-LAL", game_id="g1", side="LAL", line=-2.5, pick="LAL -4.5", system="E4",
+                fill_count=8.99, fill_cost=4.26, fees=0.09, created_at="2026-11-01T15:01:05Z"),
+              o(id="b", bet_key="g1-S204-LAL", game_id="g1", side="LAL", line=-2.5, pick="LAL -4.5", system="E4",
+                fill_count=30.99, fill_cost=14.83, fees=0.32, created_at="2026-11-01T15:02:05Z"),
+              o(id="c", bet_key="g2-S102-WAS", game_id="g2", side="WAS", line=1.5, pick="WAS +1.5", system="T2",
+                fill_count=41, fill_cost=20.5, fees=0.41, ev=0.0445, created_at="2026-11-02T01:11:06Z",
+                tip_utc="2026-11-03T00:30:00+00:00")]
+    picks = {"g1-S204-LAL": {"key": "g1-S204-LAL", "system": 204, "away": "TOR", "home": "LAL", "meta": {"card_snap": {"players": 3.1}}},
+             "g2-S102-WAS": {"key": "g2-S102-WAS", "system": 102, "away": "WAS", "home": "ORL", "meta": {"card_snap": {"players": -0.7}}}}
+    out = placed_bets(orders, picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)
+    lal = next(r for r in out["bets"] if r["side"] == "LAL")
+    assert len([r for r in out["bets"] if r["side"] == "LAL"]) == 1 and len(lal["fills"]) == 2
+    assert lal["count"] == 39.98 and lal["cost"] == 19.09 and lal["result"] == "W"
+    assert lal["rules"]["counted"] and lal["rules"]["to_win"] == 20.0
+    was = next(r for r in out["bets"] if r["side"] == "WAS")
+    assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
+    assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 0)

@@ -89,6 +89,58 @@ def players_gap(pick: dict, slate: list[dict]) -> float | None:
             mine = [x if home else -x for x in gaps]
             return round(min(mine), 1)
     return None
+
+
+def players_agree(pick: dict, slate: list[dict]) -> float | None:
+    """The players model's points on this side in the WORST day-to-day version of tonight (negative = it
+    likes the other side). None when the model has no read or is blind on the game. Unlike players_gap,
+    bottom-10 teams are NOT dropped: the combo records below were measured without that filter, and
+    MONEYBALL never had it."""
+    if pick.get("bet") != "spread":
+        return None
+    for g in slate:
+        if g.get("game_id") == pick["game_id"]:
+            view = g.get("personnel") or {}
+            if view.get("gap") is None or view.get("blind"):
+                return None
+            gaps = [s["gap"] for s in view.get("scenarios") or [] if s.get("gap") is not None] or [view["gap"]]
+            sign = 1 if pick["side"] == g.get("home") else -1
+            return round(min(sign * x for x in gaps), 1)
+    return None
+
+
+# THE BETTING RULE (Caden 2026-11-02, from engine/measure_agree.py: 2 seasons at the opening line, one bet per
+# side). A system on its own went 458-449; with the players model agreeing by 3+ it went 79-51 (1 system) and
+# 29-11 (2+ systems = MONEYBALL); with the players model NOT agreeing by 3+ every bucket lost. So:
+#   spread: bet only when a system fires AND the players model agrees by 3+ (MONEYBALL when 2+ systems)
+#           or the players model alone at 4+ (T13, 217-157)
+#   total:  only S4 (above this season's average total, 106-67). The players model doesn't rate totals.
+#   everything else: not bet. One bet per game side, however many systems fire.
+COMBO_MIN_GAP = 3.0
+COMBO_REC = (79, 51)          # 1 system + players model 3+, one bet per side, 2024-25 + 2025-26 at the open
+MONEYBALL_REC = (29, 11)      # 2+ systems + players model 3+
+S4_REC = (106, 67)            # S4 with the season-average total bar
+
+
+def eligible(p: dict, slate: list[dict]) -> tuple[bool, str | None]:
+    """(bets?, why not). Today's rule for whether a fired pick may be bet at all, before price."""
+    sid = p["system"]
+    if sid >= 300:
+        return False, "tracking only"
+    if sid in (113, 130):
+        return True, None
+    if p["bet"] == "total":
+        return (True, None) if sid == 4 else (False, "Only S4 overs are bet on totals now")
+    g = players_agree(p, slate)
+    if g is None:
+        return False, "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+"
+    if g >= COMBO_MIN_GAP:
+        return True, None
+    side = p["side"]
+    return False, (f"No bet: the players model likes the other side by {abs(g):.1f}" if g < 0 else
+                   f"No bet: the players model only likes {side} by {g:.1f}") + "; a system needs it to agree by 3+"
+
+
 SPREAD_SD = 14.14        # measured: home margin minus spread, 979 games 2025-26
 TOTAL_SD = 18.18         # measured: actual total minus closing total, 1,194 games 2025-26
 MIN_SIZE = 10            # skip a quote with less than this much available
@@ -140,6 +192,12 @@ HISTORY = {**{sid: (*_card_wl(m["card"]), f"{m['card'].split('·')[-1].strip()} 
 
 def history(pick: dict, slate: list[dict]) -> dict | None:
     sid = pick["system"]
+    if sid == 130:
+        return {"w": MONEYBALL_REC[0], "l": MONEYBALL_REC[1], "label": "2 seasons at the open: 2+ systems + players model 3+"}
+    if sid == 4:
+        return {"w": S4_REC[0], "l": S4_REC[1], "label": "2 seasons at the open, total above the season average"}
+    if pick.get("bet") == "spread" and sid not in (113, 130) and sid < 300:
+        return {"w": COMBO_REC[0], "l": COMBO_REC[1], "label": "2 seasons at the open: a system + players model 3+"}
     if group(sid) == "EARLY":
         h = players_history("EARLY", EARLY_STACK_MIN_GAP)
         part = players_history(label(sid), EARLY_STACK_MIN_GAP)       # this one system's share of the combo
@@ -194,8 +252,9 @@ PRICE_WIN = {
     123: _price_win(72, 40),                       # T23 -> 57.5%
     124: _price_win(25, 10),                       # T24 -> 55.6%
     125: _price_win(86, 58),                       # T25 -> 55.7%
-    130: _price_win(29, 11),                       # MONEYBALL -> 56.4%
+    130: _price_win(*MONEYBALL_REC),               # MONEYBALL -> 56.4%
 }
+COMBO_WIN = _price_win(*COMBO_REC)                 # any one system + players model 3+ -> 56.1%
 
 
 def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | None]:
@@ -203,6 +262,10 @@ def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | N
     the personnel case is rebuilt every run at the CURRENT market line, so a T13 bet that locked at an
     earlier number is shopped from where the market is now, not from the old number."""
     sid = pick["system"]
+    if pick.get("bet") == "spread" and sid not in (113, 130) and sid < 300:
+        # a spread system is only ever bet as "system + players model 3+": priced at that combo's record
+        ok, _ = eligible(pick, slate)
+        return (COMBO_WIN, pick.get("line")) if ok else (None, None)
     if sid in PRICE_WIN:
         return PRICE_WIN[sid], pick.get("line")
     if sid in SYSTEMS:
@@ -383,21 +446,38 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
     for p in live:
         if p["system"] < 300 and p.get("line") is not None:
             stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(label(p["system"]))
-    main_sides = {(p["game_id"], p["bet"], p["side"]) for p in live
-                  if group(p["system"]) in ("OG", "FAV") and p.get("line") is not None}
-    # a MONEYBALL stack replaces every other card bet on that same side (one bigger bet, not several)
-    mb_sides = {(p["game_id"], p["bet"], p["side"]) for p in live if p["system"] == 130 and p.get("line") is not None}
-    for p in live:
-        if p.get("line") is None:
+    # ONE card bet per game side (Caden 2026-11-02): MONEYBALL first, then a system + players-model combo, then
+    # the players model alone. The other systems on that side ride along in "with".
+    rank = lambda p: 0 if p["system"] == 130 else 2 if p["system"] == 113 else 1
+    gorder = {"OG": 0, "FAV": 1, "EARLY": 2, "TEST": 3}
+    chosen, skipped = {}, {}
+    for p in sorted(live, key=lambda p: (rank(p), gorder.get(group(p["system"]), 4), p["system"])):
+        if p.get("line") is None or p["system"] >= 300:
             continue
-        if p["system"] != 130 and (p["game_id"], p["bet"], p["side"]) in mb_sides:
-            continue
-        if group(p["system"]) not in ("OG", "FAV"):
-            # EARLY + players model 3+ makes the card, unless an OG/FAV bet already covers that side
-            if not early_stack(p, slate) or (p["game_id"], p["bet"], p["side"]) in main_sides:
-                continue
         if p.get("tip_utc") and p["tip_utc"] < now_iso:
             continue  # already tipped: nothing left to bet
+        k = (p["game_id"], p["bet"], p["side"])
+        ok, why_not = eligible(p, slate)
+        if ok:
+            chosen.setdefault(k, p)
+        elif p["bet"] == "spread":
+            skipped.setdefault(k, (p, why_not))
+    for k, (p, why_not) in skipped.items():
+        if k in chosen:
+            continue
+        pg = players_agree(p, slate)
+        from .systems import EARLY_SYSTEMS
+        name = (SYSTEMS.get(p["system"]) or TEST_SYSTEMS.get(p["system"]) or EARLY_SYSTEMS.get(p["system"]) or {}).get("name", "")
+        rows.append({"key": p["key"], "label": p["label"], "away": p["away"], "home": p["home"],
+                     "game_id": p["game_id"], "game_date": p.get("game_date"), "bet": p["bet"], "side": p["side"],
+                     "line": p["line"], "tip_utc": p.get("tip_utc"), "tag": label(p["system"]),
+                     "group": group(p["system"]), "name": name, "win": None, "price": None, "cost": None,
+                     "max": None, "verdict": "PASS", "why": why_not, "edge": -1.0, "to_win": TO_WIN,
+                     "model": None, "players": pg, "players_bucket": agree_bucket(pg) if pg is not None else None,
+                     "system": p["system"], "history": None, "players_history": None, "contract": None,
+                     "url": None, "best": None, "shop": [], "rule_pass": True,
+                     "with": [x for x in stacks.get(k, []) if x != label(p["system"])]})
+    for p in chosen.values():
         win, base = win_and_line(p, slate)
         if win is None:
             continue
@@ -409,7 +489,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
         at_line = min(kalshi, key=lambda q: (abs(q["line"] - p["line"]), -q["ev"])) if kalshi else None
         cap = max_price(min(at_line["max_cost"], MAX_COST)) if at_line else None
-        pg = players_gap(p, slate)          # for T13 this is its own gap (worst day-to-day case)
+        pg = players_agree(p, slate)        # worst day-to-day version, on this side
         pb = agree_bucket(pg) if pg is not None else None
         if best and best["ev"] >= MIN_EV and not best["too_pricey"]:
             verdict = "BET"
@@ -432,8 +512,8 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         edge = best["ev"] if best else win - BREAK_EVEN_110
         from .systems import EARLY_SYSTEMS
         name = (SYSTEMS.get(p["system"]) or TEST_SYSTEMS.get(p["system"]) or EARLY_SYSTEMS.get(p["system"]) or {}).get("name", "")
-        if group(p["system"]) == "EARLY":
-            name += f" + players model agrees by {pg:g} (2 seasons: 26-10 at the open)"
+        if p["bet"] == "spread" and p["system"] not in (113, 130) and pg is not None:
+            name += f" + players model agrees by {pg:g}"
         k = p.get("kalshi") or {}
         rows.append({"key": p["key"], "label": p["label"], "away": p["away"], "home": p["home"],
                      "game_id": p["game_id"], "game_date": p.get("game_date"), "bet": p["bet"], "side": p["side"],
@@ -456,16 +536,6 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "url": (best or {}).get("url") or k.get("url"),
                      "best": best, "shop": quotes[:8],
                      "with": [x for x in stacks.get((p["game_id"], p["bet"], p["side"]), []) if x != label(p["system"])]})
-    # a main bet that an early stack also lands on: show the early combo's record on it too
-    for r in rows:
-        if r["group"] == "EARLY":
-            continue
-        for p in live:
-            if (p["game_id"], p["bet"], p["side"]) == (r["game_id"], r["bet"], r["side"]) and early_stack(p, slate):
-                h = history(p, slate)
-                if h:
-                    r["also_combo"] = {**h, "tag": label(p["system"])}
-                break
     # never bet both sides of the same game: when card bets disagree, none of them is bet.
     # MEASURED (engine/measure_combined.py, 2025-26 out of sample): 12 such games; betting both sides
     # only pays the vig twice. One bet per game with conflicts skipped: 135-97, +12.2% per unit.

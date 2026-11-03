@@ -290,8 +290,9 @@ function whyBets(tags, gap, side) {
   const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
   const rows = [];
   for (const t of sys) {
-    const h = (R.systems || {})[t], o = (R.other || {})[t];
-    const name = `${esc(t)}${sysName(t) ? ` <span class="muted">· ${esc(sysName(t))}</span>` : ""}`;
+    const p3 = t !== "S4" && (R.systems_p3 || {})[t];
+    const h = p3 || (R.systems || {})[t], o = (R.other || {})[t];
+    const name = `${esc(t)}${sysName(t) ? ` <span class="muted">· ${esc(sysName(t))}${p3 ? ", when the players model agreed 3+" : ""}</span>` : ""}`;
     if (h || !o) rows.push({ name, cells: [(h || {})[SEASONS[0]], (h || {})[SEASONS[1]], liveRec(seasonRecByTag(t))] });
     else rows.push({ name, span: `${recCell(o)} <span class="muted">${esc(o.label)}</span>`, tone: recCellTone(o), cells: [liveRec(seasonRecByTag(t))] });
   }
@@ -305,9 +306,9 @@ function whyBets(tags, gap, side) {
   if (sys.length >= 2 && gap != null && gap >= 3) {
     const h = R.moneyball || {};
     rows.push({ name: `<b>All together: MONEYBALL</b> <span class="muted">· 2+ systems + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], liveRec(seasonRecByTag("MONEYBALL"))], combo: true });
-  } else if (sys.some(t => t && t[0] === "E") && gap != null && gap >= 3) {
-    const h = R.early_combo || {};
-    rows.push({ name: `<b>All together</b> <span class="muted">· early system + players 3+</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], null], combo: true });
+  } else if (sys.some(t => t !== "S4") && gap != null && gap >= 3) {
+    const h = R.combo_one || {};
+    rows.push({ name: `<b>All together</b> <span class="muted">· a system + players 3+ (the bet)</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], (BOARD.combo_live || null)], combo: true });
   }
   if (!rows.length) return "";
   return `<table class="why-t"><tr><th>What's behind it</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">Since Oct 29</th></tr>` +
@@ -335,8 +336,8 @@ function plainWhy(o) {
       + (h ? ` Over the last two seasons, bets with a gap that size won ${h.p}% of the time (${h.w}-${h.l}).` : ""));
   }
   if (sys.length) {
-    const parts = sys.map(t => { const h = two((R.systems || {})[t]); const nm = sysName(t);
-      return `${t}${nm ? ` (${nm.toLowerCase()})` : ""}${h ? `, ${h.w}-${h.l} over the last two seasons` : ""}`; });
+    const parts = sys.map(t => { const p3 = !total && t !== "S4" && (R.systems_p3 || {})[t]; const h = two(p3 || (R.systems || {})[t]); const nm = sysName(t);
+      return `${t}${nm ? ` (${nm.toLowerCase()})` : ""}${h ? `, ${h.w}-${h.l} over the last two seasons${p3 ? " when the player ratings agreed" : ""}` : ""}`; });
     const main = sys.includes(o.tag);
     S.push(main ? `${sys.length > 1 ? "The betting systems behind it" : "The betting system behind it"}: ${parts.join("; ")}.`
       : `${sys.length > 1 ? "These betting systems" : "A betting system"} also point${sys.length > 1 ? "" : "s"} this way: ${parts.join("; ")}.`);
@@ -344,6 +345,11 @@ function plainWhy(o) {
   if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
     const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
     S.push(`Two or more systems plus the player ratings on the same side is our strongest setup${h ? `: ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);
+  } else if (!total && sys.length && o.gap != null && o.gap >= 3) {
+    const h = two(R.combo_one);
+    S.push(`We only bet a system when the player ratings agree by 3+ points${h ? `; together that's gone ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);
+  } else if (!total && sys.length && o.verdict === "PASS") {
+    S.push(`We only bet a system when the player ratings agree by 3+ points, ${o.gap == null ? "and they have no clean read on this game" : o.gap < 0 ? `and they like the other side by ${Math.abs(o.gap).toFixed(1)}` : `and they only agree by ${o.gap.toFixed(1)}`}, so it's not a bet. A system on its own has been a coin flip.`);
   }
   if (!total && o.market != null && o.line != null && o.line > o.market) S.push(`We got ${o.line - o.market} extra point${o.line - o.market === 1 ? "" : "s"} compared with the market number (${o.market > 0 ? "+" : ""}${o.market}).`);
   if (o.price && o.ev != null) {
@@ -464,6 +470,7 @@ function ticket(x) {
         <dt>Bought</dt><dd>${esc(x.contract)}</dd>
         ${x.price_note ? `<dt>Price check</dt><dd>${esc(x.price_note)}</dd>` : ""}
         <dt>Size</dt><dd>${x.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} · cost ${money(x.cost)} · fee ${money(x.fees)}</dd>
+        ${(x.fills || []).length > 1 ? `<dt>Filled in ${x.fills.length} pieces</dt><dd>${x.fills.map(f => `${esc(f.venue_name)} ${esc(f.holding)} at ${amer(f.american)}: ${money(f.risk)} to win ${money(f.to_win)}`).join("<br>")}<br><span class="muted">One bet: the first order didn't fill all the way, so the bettor bought the rest.</span></dd>` : ""}
         ${x.win != null ? `<dt>Model win rate</dt><dd>${(x.win * 100).toFixed(1)}% at the card's number</dd>` : ""}
         ${x.model_price != null ? `<dt>Most we'd pay</dt><dd>${x.venue === "kalshi" ? Math.round(x.model_price * 100) + "¢" : (x.model_price * 100).toFixed(1) + "%"} (the price the model saw)</dd>` : ""}
         <dt>Placed</dt><dd>${esc(when(x.placed_at))}</dd>
@@ -518,10 +525,12 @@ function profitChart(bets) {
 // card bets the order placer hasn't placed, with its latest reason
 function notPlaced(b, placed) {
   const held = new Set((placed.bets || []).map(x => `${x.game_id}|${x.side}`));
-  const resting = new Set((placed.resting || []).map(x => x.key));
+  const resting = Object.fromEntries((placed.resting || []).map(x => [x.key, x]));
   const why = Object.fromEntries(((b.placer || {}).skips || []).map(k => [k.pick, k.reason]));
-  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !resting.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
-    .map(c => ({ ...c, reason: why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }))
+  return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
+    .map(c => { const r = resting[c.key];
+      return { ...c, reason: r ? `An order is waiting on Kalshi: ${r.count} contracts of ${r.contract} at ${Math.round(r.price * 100)}¢ (${amer(r.american)}), ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. It fills only if someone sells at our price, and it's cancelled 5 minutes before tip.`
+        : why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }; })
     .filter(c => !/^already (filled|partial)/.test(c.reason || ""));          // held from before the restart
 }
 
@@ -564,15 +573,11 @@ function renderBets(placed, b) {
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
     </div>` : ""}` +
-    `<h2>Open bets</h2><p class="lede">Everything the model bets lives on this tab. Open bets are bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $30).</p>` +
+    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), the players model alone at 4+, and S4 overs. One bet per game. Bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $30).</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
-    ((placed.resting || []).length ? `<h2>Waiting for a price</h2><p class="lede">LIMIT bets: an order is sitting on Kalshi at the most we'd pay. It fills if the price comes to us, and is cancelled 5 minutes before tip or if the model stops wanting it.</p>` +
-      placed.resting.map(r => `<div class="np"><div class="pick">${esc(r.holding)} <span class="muted" style="font:400 14px var(--body)">${esc(r.system)}, card pick ${esc(r.pick)}, tips ${esc(until(r.tip_utc))}</span></div>
-        <div class="n" style="font-size:18px">${Math.round(r.price * 100)}¢ <span class="muted">${amer(r.american)}</span></div>
-        <div class="reason">${esc(r.venue_name)}: ${r.count} contracts, ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. ${esc(r.contract)}</div></div>`).join("") : "") +
-    (np.length ? `<h2>Today, not placed yet</h2><p class="lede">On today's card but not bought yet. The bettor checks every minute${placerAt ? `; its last note was ${esc(ago(placerAt))}` : ""}.</p>` +
+    (np.length ? `<h2>Looking for a price</h2><p class="lede">The model wants these, but no site has offered a good enough price yet. The bettor checks every minute${placerAt ? ` (last check ${esc(ago(placerAt))})` : ""}, and where it can it leaves an order on Kalshi at the most we'd pay.</p>` +
       np.map(c => cardRow(c, c.reason || "Not checked yet: the bettor looks every minute.")).join("") : "") +
-    (passed.length ? `<details class="more" style="margin:22px 0 4px"><summary>${passed.length} more fired today but won't be bet (price, conflict or benched)</summary>${passed.map(c => cardRow(c)).join("")}</details>` : "") +
+    (passed.length ? `<details class="more" style="margin:22px 0 4px"><summary>${passed.length} more fired today but won't be bet (players model doesn't agree, price, or conflict)</summary>${passed.map(c => cardRow(c)).join("")}</details>` : "") +
     (done.length ? `<h2>Settled</h2>` + done.slice().reverse().map(ticket).join("") : "") +
     ((placed.excluded || []).length ? `<p class="foot"><b>Left out of all records (model bug):</b> ` +
       placed.excluded.map(x => `${esc(x.holding)} on ${esc(x.venue_name)}${x.result ? ` (${x.result}, ${x.pnl >= 0 ? "+" : "−"}${money(Math.abs(x.pnl))})` : " (open)"}`).join(", ") +
@@ -587,8 +592,9 @@ function renderBets(placed, b) {
 // a card bet that isn't placed (yet): why not, and what's behind it
 function cardRow(c, reason) {
   const best = c.best;
-  const status = c.verdict === "LIMIT" ? "Waiting for a price" : c.verdict === "BET" ? "Not placed yet"
-    : c.verdict === "CONFLICT" ? "No bet: our systems are on both sides" : c.verdict === "BENCHED" ? "No bet: system benched" : "No bet: price isn't good enough";
+  const status = c.verdict === "LIMIT" || c.verdict === "BET" ? "Looking for a price"
+    : c.verdict === "CONFLICT" ? "No bet: our systems are on both sides" : c.verdict === "BENCHED" ? "No bet: system benched"
+    : c.rule_pass ? "No bet: the players model doesn't back it" : "No bet: price isn't good enough";
   const mb = c.tag === "MONEYBALL";
   return `<div class="row${mb ? " mb" : ""}">
       ${mb ? `<div class="mb-flag" style="grid-column:1/-1">MONEYBALL<span>our strongest setup, sized to win $30</span></div>` : ""}
@@ -614,6 +620,8 @@ function pastFor(tag) {
   const R = rc();
   if (tag === "T13") return { seasons: (R.players_gap || {})["4+"] || {}, note: "players model, gap 4+" };
   if (tag === "MONEYBALL") return { seasons: R.moneyball || {} };
+  if (tag !== "S4" && (R.systems_p3 || {})[tag]) return { seasons: R.systems_p3[tag] };
+  if (tag !== "S4" && (R.systems || {})[tag]) return { seasons: {} };       // never fired with the players model 3+
   if ((R.systems || {})[tag]) return { seasons: R.systems[tag] };
   if ((R.other || {})[tag]) return { span: R.other[tag] };
   return { seasons: {} };
@@ -626,10 +634,12 @@ function renderSystems(b) {
     TEST: Object.values(b.test_systems || {}).filter(s => s.group !== "FAV"),
   };
   groups.ALL = [...groups.OG, ...groups.FAV, ...groups.EARLY, ...groups.TEST];
-  const names = { ALL: "All", OG: "OG", FAV: "Card", EARLY: "Early season", TEST: "Tracking only" };
+  const names = { ALL: "All", OG: "OG", FAV: "Card", EARLY: "Early season", TEST: "More systems" };
   const status = s => (b.benched || {})[s.tag] ? `<span class="dot bench">Benched: ${esc(b.benched[s.tag].why)}</span>`
-    : s.group === "OG" || s.group === "FAV" ? `<span class="dot on">Bets</span>`
-    : s.group === "EARLY" ? `<span class="dot on">Bets when the players model agrees by 3+</span>` : `<span class="dot">Tracking only, no money</span>`;
+    : s.tag === "S4" || s.tag === "MONEYBALL" ? `<span class="dot on">Bets</span>`
+    : s.tag === "T13" ? `<span class="dot on">Bets at a 4+ gap</span>`
+    : s.bet === "total" ? `<span class="dot">Not bet: only S4 overs are bet on totals</span>`
+    : `<span class="dot on">Bets when the players model agrees by 3+</span>`;
   const cell = (r, lab) => `<td class="r ${recCellTone(r)}" data-label="${lab}">${recCell(r)}</td>`;
   const rows = (groups[sysFilter] || []).map(s => {
     const P = pastFor(s.tag);
@@ -640,7 +650,7 @@ function renderSystems(b) {
       ${past}${cell(liveRec(s), "Since Oct 29").replace("</td>", s.open ? `<span class="pc muted"> ${s.open} open</span></td>` : "</td>")}<td class="r hide-s">${s.avg_clv == null ? `<span class="muted">—</span>` : `<b class="n ${s.avg_clv > 0 ? "pos" : s.avg_clv < 0 ? "neg" : ""}">${s.avg_clv > 0 ? "+" : ""}${s.avg_clv}</b>`}</td></tr>`;
   }).join("");
   $("tab-systems").innerHTML = `<h2>Systems</h2>
-    <p class="lede">Every system the model runs. The two past seasons are replayed at the opening line. Since Oct 29 counts every pick each system makes from the fresh start, bet or not, graded at the number it fired at. Tracking the ones we don't bet is how a system earns money or gets benched. Beat close is how many points the line moved our way after the pick; above zero is good, and a system that stays below zero over 30+ picks gets benched.</p>
+    <p class="lede">Every system the model runs. A system on its own has been a coin flip (458-449 over two seasons), so a spread system only bets when the players model agrees by 3+ points, and every record here counts only those games: the two past seasons replayed at the opening line, and since Oct 29 graded at the number it fired at. Totals: only S4 bets. Beat close is how many points the line moved our way after the pick; above zero is good.</p>
     <div class="seg" role="group">${Object.keys(names).map(k => `<button data-f="${k}" aria-pressed="${k === sysFilter}">${names[k]} <span class="muted">${groups[k].length}</span></button>`).join("")}</div>
     ${rows ? `<div class="sys"><table><thead><tr><th>System</th><th class="r">${SEASONS[0]}</th><th class="r">${SEASONS[1]}</th><th class="r">Since Oct 29</th><th class="r hide-s">Beat close</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="why-note" style="margin-top:8px">Green = 55%+, red = under 52.4% (losing after the vig); colored only with 20+ picks.</p>`

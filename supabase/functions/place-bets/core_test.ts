@@ -671,20 +671,65 @@ Deno.test("Kalshi: a rate-limited read waits and retries; an order is never re-s
 });
 
 
-Deno.test("a resting order Kalshi says is already gone (404 on cancel) is closed out, not retried every minute", async () => {
+Deno.test("a cancel Kalshi hasn't confirmed is NOT recorded: the order stays resting and is retried", async () => {
+  // Nov 1 2026: the cancel answered 404, the code called the order cancelled, and it filled 35 minutes later
   const db = new FakeDb(settings({ live_betting_on: true }), []);           // no LIMIT on the card any more
   db.orders_.push({ id: "r1", mode: "live", status: "resting", venue: "kalshi", market: "M", order_id: "K9",
     bet_key: "g1-S113-NOP", game_id: "g1", tip_utc: TIP, count: 20, pick: "NOP +3.5", contract: "c",
     created_at: NOW.toISOString() } as OrderRow);
   const k = new FakeVenue();
-  let cancels = 0;
+  const sent: unknown[][] = [];
   (k as any).getOrder = async () => ({ status: "resting", fill_count: 0, fill_cost: 0, fees: 0, raw: {} });
-  (k as any).cancel = async () => { cancels++; throw new Error("Kalshi DELETE /x → 404: {\"error\":{\"code\":\"not_found\"}}"); };
+  (k as any).cancel = async (...a: unknown[]) => { sent.push(a); throw new Error("Kalshi DELETE /x → 404: {\"error\":{\"code\":\"not_found\"}}"); };
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(db.orders_[0].status, "resting", "still live on Kalshi");
+  ok(db.logs.some((l) => l.level === "error" && l.message.startsWith("CANCEL DID NOT TAKE")), JSON.stringify(db.logs));
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(sent, [["K9", "M"], ["K9", "M"]], "retried, with the market so Kalshi can route it");
+  // once Kalshi confirms, it's closed out
+  (k as any).cancel = async () => {};
+  (k as any).getOrder = async () => ({ status: "canceled", fill_count: 0, fill_cost: 0, fees: 0, raw: {} });
   await runOnce(db, { kalshi: k }, NOW);
   eq(db.orders_[0].status, "unfilled");
-  ok(!db.logs.some((l) => l.level === "error"), JSON.stringify(db.logs));
+});
+
+Deno.test("a standing order marked unfilled is re-read, and a late fill is recorded", async () => {
+  const db = new FakeDb(settings({ live_betting_on: true }), []);
+  db.orders_.push({ id: "r1", mode: "live", status: "unfilled", venue: "kalshi", market: "M", order_id: "K9",
+    bet_key: "g1-S130-BKN", game_id: "g1", tip_utc: TIP, count: 62, pick: "BKN +15", contract: "c", side: "BKN",
+    bet: "spread", ask_at_check: null, created_at: NOW.toISOString() } as unknown as OrderRow);
+  const k = new FakeVenue();
+  (k as any).getOrder = async () => ({ status: "canceled", fill_count: 60.07, fill_cost: 30.64, fees: 0.27, raw: {} });
+  (k as any).cancel = async () => {};
   await runOnce(db, { kalshi: k }, NOW);
-  eq(cancels, 1, "not retried");
+  eq([db.orders_[0].status, db.orders_[0].fill_count, db.orders_[0].fill_cost], ["partial", 60.07, 30.64]);
+  ok(db.logs.some((l) => l.message.startsWith("LATE FILL FOUND")), JSON.stringify(db.logs));
+});
+
+Deno.test("one bet per game side, whatever system's key; never the other side of a game we hold", async () => {
+  const k = new FakeVenue();
+  const held = (p: Partial<OrderRow>) => ({ id: "h1", mode: "live", status: "filled", venue: "prophetx", market: "px",
+    game_id: "g1", tip_utc: TIP, count: 40, fill_count: 40, fill_cost: 20, fees: 0.4, pick: "x", contract: "c",
+    bet: "spread", created_at: NOW.toISOString(), ...p } as unknown as OrderRow);
+  // same side (NOP), placed under another system's key: no second bet
+  let db = new FakeDb(settings({ live_betting_on: true, to_win_dollars: 20, max_dollars_per_game: 50 }), [feedRow()]);
+  db.orders_.push(held({ bet_key: "g1-S102-NOP", side: "NOP", pick: "NOP +3.5" }));
+  let r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.startsWith("already filled"), r.skips[0].reason);
+  // the other side (IND) is held, even one that only filled after we called it unfilled
+  db = new FakeDb(settings({ live_betting_on: true, to_win_dollars: 20, max_dollars_per_game: 50 }), [feedRow()]);
+  db.orders_.push(held({ bet_key: "g1-S130-IND", side: "IND", pick: "IND -3.5", status: "unfilled", fill_count: 60 }));
+  r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.startsWith("we already hold the other side"), r.skips[0].reason);
+  // a partial fill on this side under another key is topped up, not bet again in full
+  db = new FakeDb(settings({ live_betting_on: true, to_win_dollars: 20, max_dollars_per_game: 50 }), [feedRow()]);
+  db.orders_.push(held({ bet_key: "g1-S102-NOP", side: "NOP", status: "partial", venue: "kalshi", market: "other",
+    count: 40, fill_count: 10, fill_cost: 4.9, fees: 0.1 }));
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 1);
+  ok(k.sent[0].o.count < 40, `top-up only buys what's missing (${k.sent[0].o.count})`);
 });
 
 
@@ -717,4 +762,15 @@ Deno.test("daily loss cap: last night's late games don't count against today", a
   (db as any).games = async () => [g];
   eq(await pnlFromGames(db, [order(lastNight)], etDayStart(NOW).getTime()), 0);
   eq(await pnlFromGames(db, [order(TIP)], etDayStart(NOW).getTime()), -120);
+});
+
+Deno.test("Kalshi cancel names the market so the request reaches the right shard", async () => {
+  const calls: string[] = [];
+  const http = (async (url: string, init: RequestInit) => {
+    calls.push(`${init.method} ${url}`);
+    return new Response(JSON.stringify({ order_id: "K9", reduced_by: "62.00", ts_ms: 1 }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const k = new Kalshi("https://x/trade-api/v2", "kid", async () => "sig", "https://x/trade-api/v2", http, 1);
+  await k.cancel("K9", "KXNBASPREAD-26NOV02BKNNYK-NYK15");
+  eq(calls, ["DELETE https://x/trade-api/v2/portfolio/events/orders/K9?market_ticker=KXNBASPREAD-26NOV02BKNNYK-NYK15"]);
 });

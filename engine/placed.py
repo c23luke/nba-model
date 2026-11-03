@@ -80,8 +80,40 @@ def beat_close(o: dict, per: float, close: float) -> float | None:
     return round((win / (1 - push) - per) * 100, 1)
 
 
+def merge_fills(rows: list[dict]) -> list[dict]:
+    """One ticket per game side (Caden 2026-11-02: "it's okay to bet it twice if we didn't get our whole fill,
+    but it should only count as one bet"). Orders on the same side of the same game become one row: the first
+    order is the bet (its number grades the record), the money adds up, and each order is kept in "fills"."""
+    groups: dict = {}
+    for r in sorted(rows, key=lambda r: r.get("placed_at") or ""):
+        groups.setdefault((r.get("game_id"), r.get("bet"), r.get("side")), []).append(r)
+    out = []
+    for rs in groups.values():
+        if len(rs) == 1:
+            out.append({**rs[0], "fills": [rs[0]["id"]]})
+            continue
+        b = dict(rs[0])
+        fills = [{k: r.get(k) for k in ("id", "venue_name", "holding", "price", "american", "count", "cost", "fees",
+                                         "risk", "to_win", "placed_at", "result", "pnl", "system", "contract")} for r in rs]
+        cnt, cost = sum(r["count"] for r in rs), sum(r["cost"] for r in rs)
+        b.update(count=round(cnt, 2), cost=round(cost, 2), fees=round(sum(r["fees"] for r in rs), 2),
+                 risk=round(sum(r["risk"] for r in rs), 2), to_win=round(sum(r["to_win"] for r in rs), 2),
+                 price=round(cost / cnt, 4) if cnt else b["price"], fills=fills,
+                 venue_name=" + ".join(dict.fromkeys(r["venue_name"] for r in rs)),
+                 holding=" / ".join(dict.fromkeys(r["holding"] for r in rs)))
+        b["american"] = american(b["price"]) if 0 < b["price"] < 1 else b["american"]
+        b["with"] = sorted({*(b.get("with") or []), *(r["system"] for r in rs[1:] if r["system"] != b["system"])})
+        if all(r["status"] == "FINAL" for r in rs):
+            b["status"] = "FINAL"
+            b["pnl"] = round(sum(r["pnl"] or 0 for r in rs), 2)
+        elif any(r["status"] == "LIVE" for r in rs):
+            b["status"], b["pnl"] = "LIVE", None
+        out.append(b)
+    return out
+
+
 def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season_wl, now: datetime,
-                line_now=None, names: dict | None = None, s4_bars: dict | None = None) -> dict:
+                line_now=None, names: dict | None = None, s4_bars: dict | None = None, agree=None) -> dict:
     """orders: filled live bet_orders rows. picks: key -> pick (meta.card_snap holds the snapshot).
     games: id -> game row. card: key -> current card row. season_wl(pick) -> {w, l, p} this season.
     line_now(game_id, bet, side) -> the market line on our side right now (before tip), or None."""
@@ -144,7 +176,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "evidence": p.get("evidence") or [], "price_note": snap.get("why"), "confidence": snap.get("confidence"), "win": snap.get("win"),
             # the players-model gap WHEN WE BET (T13: the gap it fired on) and now (the live card, if still on it)
             "players": ((p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13"
-                        else (p.get("meta") or {}).get("gap") if o.get("system") == "MONEYBALL" else None) or snap.get("players"),
+                        else (p.get("meta") or {}).get("gap") if o.get("system") == "MONEYBALL" else snap.get("players")),
             "players_now": snap.get("players"), "players_history": snap.get("players_history"),
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
@@ -159,6 +191,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "final_score": p.get("final_score") if res else None,
             "score": {"home": g.get("home_score"), "away": g.get("away_score")} if status != "OPEN" and g else None,
         })
+    rows = merge_fills(rows)
     rows.sort(key=lambda r: (r["status"] == "FINAL", r["tip_utc"] or "", r["placed_at"] or ""))
     settled = [r for r in rows if r["status"] == "FINAL"]
     open_ = [r for r in rows if r["status"] != "FINAL"]
@@ -171,7 +204,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         v["bets"] += 1
         v["open"] += r["status"] != "FINAL"
         v["pnl"] = round(v["pnl"] + (r["pnl"] or 0), 2)
-    return {"bets": rows, "resting": waiting, "rules_now": rules_now(rows), "summary": {
+    return {"bets": rows, "resting": waiting, "rules_now": rules_now(rows, agree), "summary": {
         "open": len(open_), "at_risk": round(sum(r["risk"] for r in open_), 2),
         "open_to_win": round(sum(r["to_win"] for r in open_), 2),
         "w": w, "l": l, "p": pu, "pnl": pnl, "risked": risked,
@@ -185,12 +218,16 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
 T13_GAP_NOW = 4.0      # engine/systems.T13_GAP
 
 
-def rules_now(rows: list[dict]) -> dict:
+COMBO_GAP_NOW = 3.0    # engine/pricing.COMBO_MIN_GAP
+
+
+def rules_now(rows: list[dict], agree=None) -> dict:
     """Caden 2026-10-27: "pretend we had this correct system the whole time". Every bet is re-judged
     under TODAY's rules, at the price we actually got, and each row gets a "rules" block the site shows
     as the main record:
       - T13 only at a 4+ gap (worst case over day-to-day players): smaller ones don't count
-      - both sides of one game: neither counts
+      - a spread system counts only when the players model agreed by 3+ (2026-11-02); totals only S4
+      - one ticket per game side (split fills merged in merge_fills); both sides of one game: neither counts
       - every bet sized to win $20 (MONEYBALL $30), even ones the old Low-confidence rule cut to $10
         or that only part-filled
     The real account money is kept on each row (pnl, risk, to_win) and in the summary, shown smaller.
@@ -203,6 +240,17 @@ def rules_now(rows: list[dict]) -> dict:
            "dropped": [], "resized": []}
     for r in rows:
         why = None
+        if r["system"] not in ("T13", "MONEYBALL", "S4"):
+            if r.get("bet") == "total":
+                why = "only S4 overs are bet on totals now"
+            else:
+                g = r.get("players")
+                if g is None and agree:
+                    g = agree(r.get("game_id"), r.get("side"))
+                if g is None or g < COMBO_GAP_NOW:
+                    why = ("players model had no clean read: a system now needs it to agree by 3+" if g is None else
+                           f"players model {'liked the other side by ' + format(abs(g), 'g') if g < 0 else 'agreed by only ' + format(g, 'g')}: "
+                           "a system now needs it to agree by 3+")
         if r["system"] == "T13" and r.get("t13_gap") is not None and r["t13_gap"] < T13_GAP_NOW:
             why = f"T13 gap {r['t13_gap']:g}: today it needs 4+"
         if r["system"] == "S4" and r.get("line") is not None and (r.get("s4_bar") is None or float(r["line"]) <= r["s4_bar"]):

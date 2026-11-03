@@ -38,11 +38,26 @@ def fake_kalshi(series, g):
              "yes_bid_dollars": "0.45", "yes_ask_dollars": "0.47"} for k in range(3, 10)]
 
 
+def lal_reads(day: date = date(2025, 11, 15)):
+    """Players model where LAL is stacked and everyone else average: it agrees with System 1 (and T24, both on
+    LAL +6) by a lot, so the card's one bet on that side is a MONEYBALL (Caden 2026-11-02: a system is only
+    bet when the players model agrees by 3+; 2+ systems + players 3+ = MONEYBALL)."""
+    from engine import personnel as P
+    from tests.test_personnel import ath, LAST
+    def reads():
+        out = {}
+        for g in [g for g in ALL if g.game_date == day]:
+            for t in (g.home, g.away):
+                out[t] = P.rate_team(t, [ath("Star Guard")] * 7 if t == "LAL" else [ath("Role Wing")] * 10, LAST)
+        return out
+    return reads
+
+
 def test_full_pass_fires_prices_and_grades(tmp_path):
     store = LocalStore(tmp_path)
     morning = datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc)      # 10am ET Nov 15
     board = run(now=morning, fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)),
-                fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+                fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
 
     bets = board["bets"]
     assert [(b["system"], b["side"], b["line"]) for b in bets] == [(1, "LAL", 6.0)]
@@ -55,7 +70,7 @@ def test_full_pass_fires_prices_and_grades(tmp_path):
     # next morning: game is final (LAL won 119-95) → graded W
     nxt = datetime(2025, 11, 16, 15, 0, tzinfo=timezone.utc)
     board = run(now=nxt, fetch_day=make_fetch_day(date(2025, 11, 16), date(2025, 11, 15)),
-                fetch_lines=lambda: ({}, {}), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+                fetch_lines=lambda: ({}, {}), fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
     h = [p for p in board["history"] if p["key"] == bets[0]["key"]]
     assert h and h[0]["result"] == "W" and "LAL 119 @ MIL 95" in h[0]["final_score"]
     assert board["systems"][1]["w"] == 1 and board["systems"][1]["l"] == 0
@@ -197,9 +212,9 @@ def test_card_line_shops_kalshi_and_exchanges(tmp_path):
           "contract": "LAL +7", "url": None, "ticker": None}
     board = run(now=morning, fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)),
                 fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START,
-                personnel_fetch=None, fetch_box=None,
+                personnel_fetch=lal_reads(), fetch_box=None,
                 fetch_exchanges=lambda: ({(date(2025, 11, 15), "LAL", "MIL"): [px]}, {}))
-    c = next(c for c in board["card"] if c["tag"] == "S1")
+    c = next(c for c in board["card"] if c["side"] == "LAL")
     venues = {q["venue"] for q in c["shop"]}
     assert venues == {"kalshi", "prophetx"}
     assert c["best"]["venue"] == "prophetx" and c["best"]["line"] == 7.0      # a point better at -105
@@ -210,14 +225,14 @@ def test_card_line_shops_kalshi_and_exchanges(tmp_path):
 
 def test_tipped_card_bets_stay_up_with_their_result(tmp_path):
     store = LocalStore(tmp_path)
-    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
     b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines, **kw)
-    assert any(c["tag"] == "S1" for c in b["card"]) and not b["card_done"]
+    assert any(c["side"] == "LAL" for c in b["card"]) and not b["card_done"]
     # during the game: off the card, shown as in progress
     b = run(now=datetime(2025, 11, 16, 1, 0, tzinfo=timezone.utc),
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=lambda: ({}, {}), **kw)
-    assert not any(c["tag"] == "S1" for c in b["card"])
+    assert not any(c["side"] == "LAL" for c in b["card"])
     assert [(r["tag"], r["status"]) for r in b["card_done"] if r["tag"] == "S1"] == [("S1", "IN PROGRESS")]
     assert all(r["status"] == "IN PROGRESS" for r in b["card_done"])
     # next morning: graded, still shown
@@ -249,12 +264,16 @@ def test_gap_tracker_splits_every_game_by_gap_and_confidence():
 
 def test_card_bet_shows_its_real_record_and_it_grows():
     store = LocalStore(tmp := __import__("tempfile").mkdtemp())
-    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
+    kw = dict(fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
     b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines, **kw)
-    c = next(c for c in b["card"] if c["tag"] == "S1")
-    assert c["record"]["history"]["w"] == 218 and c["record"]["history"]["l"] == 143      # the 23-year card, as-is
-    assert (c["record"]["w"], c["record"]["l"]) == (218 + c["record"]["season"]["w"], 143 + c["record"]["season"]["l"])
+    c = next(c for c in b["card"] if c["side"] == "LAL")
+    # S1 + T24 + players model on LAL: the bet is a MONEYBALL and its record is MONEYBALL's (2 seasons at the open)
+    assert c["tag"] == "MONEYBALL" and c["record"]["history"]["w"] == 29 and c["record"]["history"]["l"] == 11
+    assert (c["record"]["w"], c["record"]["l"]) == (29 + c["record"]["season"]["w"], 11 + c["record"]["season"]["l"])
+    # one system alone + players 3+ shows that combo's record instead
+    from engine.pricing import history
+    assert history({"system": 1, "bet": "spread"}, []) ["w"] == 79
 
 
 def test_systems_behind_the_close_get_benched_until_switched_back_on():
@@ -271,12 +290,12 @@ def test_a_benched_system_stays_on_the_card_but_is_not_a_bet(tmp_path, monkeypat
     import engine.run as R
     monkeypatch.setattr(R, "BENCH_MIN_PICKS", 0)
     store = LocalStore(tmp_path)
-    store._write("config", {"bench": {"bench": ["S1"]}})
+    store._write("config", {"bench": {"bench": ["MONEYBALL"]}})
     b = run(now=datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc),
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines,
-            fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=None, fetch_box=None)
-    c = next(c for c in b["card"] if c["tag"] == "S1")
-    assert c["verdict"] == "BENCHED" and "benched by hand" in c["why"] and "S1" in b["benched"]
+            fetch_kalshi=fake_kalshi, store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
+    c = next(c for c in b["card"] if c["side"] == "LAL")
+    assert c["verdict"] == "BENCHED" and "benched by hand" in c["why"] and "MONEYBALL" in b["benched"]
     feed = {r["key"]: r for r in store._read("bet_feed", [])}
     assert feed[c["key"]]["status"] == "benched"                      # the order placer only bets status 'bet'
 
@@ -366,3 +385,47 @@ def test_rule_systems_judge_the_first_line_seen_and_lock_to_it(tmp_path):
     b = FirstLineStore(tmp_path / "b"); seed_totals(b, day); b.first = 219.5
     run(now=t(16), fetch_day=fd, fetch_lines=lines(228.5), store=b, **kw)          # moved INTO range later
     assert not [x for x in b.load_picks() if x["system"] == 4 and x["game_id"] == g.id]
+
+
+def test_rule_systems_wait_until_each_teams_previous_game_is_final(tmp_path):
+    # Nov 2 2026: BKN's Nov 2 game was judged while BKN was still playing on Nov 1 ("lost by 16 last game, 0-5"),
+    # fired a MONEYBALL, then flipped when BKN won. The rule systems now wait for the previous game to finish.
+    from engine.run import unplayed_before, back_to_back
+    games = [Game("a", date(2025, 11, 14), "LAL", "MIL", tip_utc="x"),
+             Game("b", date(2025, 11, 15), "LAL", "MIL", tip_utc="y")]
+    assert unplayed_before("MIL", date(2025, 11, 15), games).id == "a"
+    assert back_to_back("LAL", date(2025, 11, 15), games)              # rest comes from the schedule, played or not
+    games[0] = Game("a", date(2025, 11, 14), "LAL", "MIL", 100, 101, 4, True, "x")
+    assert unplayed_before("MIL", date(2025, 11, 15), games) is None
+    # LAL @ MIL on Nov 15 while the Nov 14 games aren't final yet: S1 can't fire
+    b = run(now=datetime(2025, 11, 15, 2, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 13)), fetch_lines=fake_lines,
+            fetch_kalshi=fake_kalshi, store=LocalStore(tmp_path), season_start=START, personnel_fetch=None, fetch_box=None)
+    assert not any(p["system"] == 1 and p["side"] == "LAL" for p in b["bets"])
+    played14 = {t for g in ALL if g.game_date == date(2025, 11, 14) for t in (g.home, g.away)}
+    early = [p for p in b["bets"] + b["tests"] + b["early"] if p["game_date"] == "2025-11-15" and p["system"] < 300]
+    assert not any(p["home"] in played14 or p["away"] in played14 for p in early)
+    # once the Nov 14 games are final, the same run fires S1 on LAL +6
+    b = run(now=datetime(2025, 11, 15, 5, 0, tzinfo=timezone.utc),
+            fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines,
+            fetch_kalshi=fake_kalshi, store=LocalStore(tmp_path / "2"), season_start=START, personnel_fetch=None, fetch_box=None)
+    assert any(p["system"] == 1 and p["side"] == "LAL" for p in b["bets"])
+
+
+def test_graded_system_picks_count_only_when_the_players_model_agreed_3_plus():
+    from engine.run import agree_lookup, counts_today, since_restart
+    x1 = lambda gid, side, gap, worst, call="none", ts="2026-11-01T23:00": {
+        "key": f"{gid}-S301-{side}", "system": 301, "game_id": gid, "side": side, "bet": "spread", "last_checked": ts,
+        "meta": {"gap": gap, "worst_gap": worst, "call": call}}
+    sp = lambda gid, side, sid=102, res="W": {"key": f"{gid}-S{sid}-{side}", "system": sid, "game_id": gid, "side": side,
+                                              "bet": "spread", "result": res, "active": True, "tip_utc": "2026-11-03T00:30Z"}
+    picks = [x1("g1", "WAS", 3.4, 3.1), x1("g2", "BKN", 5.3, 5.3), x1("g3", "HOU", 6.0, 6.0, "blind"),
+             sp("g1", "WAS"), sp("g2", "NYK"), sp("g3", "HOU"), sp("g4", "LAL"),
+             {**sp("g1", "OVER", 208), "bet": "total"}, {**sp("g1", "WAS", 130), "result": "L"}]
+    agree = agree_lookup(picks)
+    assert agree("g1", "WAS") == 3.1 and agree("g2", "NYK") == -5.3 and agree("g3", "HOU") is None
+    kept = {p["key"] for p in picks if counts_today(p, {}, agree)}
+    assert "g1-S102-WAS" in kept and "g1-S130-WAS" in kept            # agreed by 3.1; MONEYBALL always counts
+    assert not {"g2-S102-NYK", "g3-S102-HOU", "g4-S102-LAL", "g1-S208-OVER"} & kept
+    left, _ = since_restart(picks, [], {})
+    assert {p["key"] for p in left if p["system"] < 300} == {"g1-S102-WAS", "g1-S130-WAS"}
