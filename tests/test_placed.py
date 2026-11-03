@@ -180,7 +180,7 @@ def test_rules_now_s4_bet_must_be_above_the_season_average():
 def test_rules_now_applies_todays_price_rules():
     from engine.placed import rules_now
     base = {"status": "OPEN", "bet": "total", "side": "OVER", "system": "S4", "t13_gap": None, "result": None, "pnl": None,
-            "s4_bar": 230.0, "risk": 30.5, "to_win": 20.0}
+            "s4_bar": 230.0, "risk": 20.0, "to_win": 20.0}      # +100: inside S4's -110 cap, so only the rule under test bites
     rows = [{**base, "game_id": "a", "holding": "OVER 236.5", "line": 236.5, "card_pick": "OVER 238.5", "ev": 0.038},   # under 4%
             {**base, "game_id": "b", "holding": "OVER 232.5", "line": 232.5, "card_pick": "OVER 234.5", "ev": 0.06,
              "resting_fill": True},                                                                               # standing, 2 pts off
