@@ -792,3 +792,18 @@ Deno.test("a late fill on a bet that already has a filled order is still recorde
   eq([db.orders_[0].status, db.orders_[0].fill_count], ["partial", 40]);
   ok(!db.logs.some((l) => l.level === "error"), JSON.stringify(db.logs));
 });
+
+Deno.test("a bet's own price cap (S4: -110) is respected, the -150 cap for everything else", async () => {
+  const mk = (cap: number | null) => new FakeDb(settings({ live_betting_on: true, to_win_dollars: 20, max_dollars_per_game: 50 }),
+    [feedRow({ model: { win0: 0.62, base: 3.5, bet: "spread", side: "NOP", sd: 14, lo: -99, hi: 99, max_cost: cap } as any },
+      [kq({ price: 0.53, cost: 0.55, ev: 0.12 })])]);
+  let k = new FakeVenue(0.53);
+  let db = mk(110 / 210);
+  const r = await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 0);
+  ok(r.skips[0].reason.includes("worse than -110"), r.skips[0].reason);
+  k = new FakeVenue(0.53);
+  db = mk(null);
+  await runOnce(db, { kalshi: k }, NOW);
+  eq(k.sent.length, 1, "no own cap: -150 still rules");
+});

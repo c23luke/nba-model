@@ -78,7 +78,10 @@ export type Quote = {
 
 /** The model's numbers for one bet — enough to price ANY number on it (e.g. a peer-to-peer offer). */
 export type Model = { win0: number; base: number; bet: string; side: string; sd: number; lo: number; hi: number;
-  market?: number | null };
+  market?: number | null;
+  max_cost?: number | null };      // a tighter price cap for this bet (S4: -110), from engine/pricing.py
+/** The most we pay per $1 payout on this bet: -150, or the bet's own tighter cap. */
+const capOf = (row: { model?: Model | null }) => Math.min(MAX_COST, row.model?.max_cost ?? MAX_COST);
 
 export type FeedRow = {
   key: string; status: string; updated_at: string; game_id: string; tip_utc: string; away: string; home: string;
@@ -352,9 +355,10 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
         res.skips.push({ pick: `${row.pick} (${row.system}) ${row.away}@${row.home}`, reason: `${venues[vn].name} offers failed: ${msg(e)}` });
       }
     }
-    const pricey = quotes.filter((q) => q.ev >= s.min_ev && q.cost > MAX_COST);
-    quotes = preferPoints(quotes.filter((q) => q.ev >= s.min_ev && q.cost <= MAX_COST));
-    if (!quotes.length && pricey.length) { skip(`only prices worse than -150 (best ${pricey[0].contract} at ${pricey[0].american ?? pricey[0].cost})`); continue; }
+    const cap = capOf(row);
+    const pricey = quotes.filter((q) => q.ev >= s.min_ev && q.cost > cap + 1e-9);
+    quotes = preferPoints(quotes.filter((q) => q.ev >= s.min_ev && q.cost <= cap + 1e-9));
+    if (!quotes.length && pricey.length) { skip(`only prices worse than ${cap < MAX_COST ? "-110" : "-150"} (best ${pricey[0].contract} at ${pricey[0].american ?? pricey[0].cost})`); continue; }
     if (!quotes.length) {
       const notes = on.map((vn) => venues[vn].explain?.(row) ?? "").filter(Boolean).join(" · ");
       skip(`no quote on ${on.join("/") || "any switched-on venue"} with expected return ≥ ${pct(s.min_ev)}${notes ? ` — ${notes}` : ""}`);
@@ -406,6 +410,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       const fee = v.fee(limit, count);
       const evNow = evAt(q, (stake + fee) / count);
       if (evNow < s.min_ev) { why.push(`${v.name} ${q.contract}: only ${pct(evNow)} after fees`); continue; }
+      if ((stake + fee) / count > cap + 0.005) { why.push(`${v.name} ${q.contract}: worse than this bet's price cap after fees`); continue; }
 
       // Rule 4: open bets and dollars per game
       if (openNow().length >= s.max_open_bets) { why.push(`max open bets (${s.max_open_bets}) reached`); break; }
@@ -632,7 +637,7 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
     // the strike where resting at our price is worth the most
     const pick = qs.map((q) => {
       const push = Math.max(0, 1 - q.win / q.max_cost);
-      const limit = Math.min(restingPrice(q.win, push, s.min_ev + RESTING_EXTRA_EV), MAX_COST);
+      const limit = Math.min(restingPrice(q.win, push, s.min_ev + RESTING_EXTRA_EV), capOf(row));
       return { q, limit, ev: evAt(q, limit + kalshiMakerFee(limit, 100) / 100) };
     }).sort((a, b) => b.ev - a.ev)[0];
     const { q, limit } = pick;

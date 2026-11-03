@@ -150,6 +150,12 @@ MIN_SIZE = 10            # skip a quote with less than this much available
 # pick's number, and never a price worse than -150. Re-check with price_log once ~100 bets have settled.
 WINDOW = {"spread": 2.0, "total": 3.0}     # only compare numbers this close to the pick's line
 MAX_COST = 0.60                            # -150: the most we pay per $1 payout, at any venue
+# tighter caps for thinner systems (Caden 2026-11-03): S4 wins ~55%, so only -110 or better (fees included)
+SYSTEM_MAX_COST = {4: round(110 / 210, 4)}
+
+
+def cost_cap(system: int) -> float:
+    return min(MAX_COST, SYSTEM_MAX_COST.get(system, 1.0))
 _N = NormalDist()
 
 
@@ -394,6 +400,7 @@ def allowed_lines(p: dict, slate: list[dict]) -> tuple[float, float]:
 
 def shop(p: dict, win0: float, base: float | None = None, market: float | None = None,
          bounds: tuple[float, float] = (-999.0, 999.0)) -> list[dict]:
+    cap = cost_cap(p["system"])
     base = p["line"] if base is None else base
     out = []
     for q in p.get("shop") or []:
@@ -414,7 +421,7 @@ def shop(p: dict, win0: float, base: float | None = None, market: float | None =
         out.append({**q, "win": round(win, 4), "push": round(push, 4),
                     "ev": round(expected_return(win, push, q["cost"]), 4),
                     "max_cost": round(breakeven, 4), "price_txt": price_text(q),
-                    "mine": q["venue"] in MY_VENUES, "too_pricey": q["cost"] > MAX_COST + 1e-9})
+                    "mine": q["venue"] in MY_VENUES, "too_pricey": q["cost"] > cap + 1e-9})
     return prefer_points(out)
 
 
@@ -490,7 +497,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         kalshi = [q for q in mine if q["venue"] == "kalshi"]
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
         at_line = min(kalshi, key=lambda q: (abs(q["line"] - p["line"]), -q["ev"])) if kalshi else None
-        cap = max_price(min(at_line["max_cost"], MAX_COST)) if at_line else None
+        cap = max_price(min(at_line["max_cost"], cost_cap(p["system"]))) if at_line else None
         pg = players_agree(p, slate)        # worst day-to-day version, on this side
         pb = agree_bucket(pg) if pg is not None else None
         if best and best["ev"] >= MIN_EV and not best["too_pricey"]:
@@ -502,7 +509,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         elif best:
             if cap is not None and (win > BREAK_EVEN_110 or cap >= 0.45):
                 verdict = "LIMIT"
-                why = (("Only prices worse than -150 right now" if best["too_pricey"] else
+                why = ((f"Only prices worse than {'-110' if p['system'] in SYSTEM_MAX_COST else '-150'} right now" if best["too_pricey"] else
                         f"No venue clears the {MIN_EV:.0%} bar right now") + f" (best: {_desc(best)}, {best['ev']:+.1%}). "
                        f"Set a limit on Kalshi {at_line['contract']} at {round(cap * 100)}¢")
             else:
@@ -531,7 +538,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
                                "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,
                                "lo": allowed_lines(p, slate)[0], "hi": allowed_lines(p, slate)[1],
-                               "market": market_line(p, slate)},
+                               "market": market_line(p, slate), "max_cost": cost_cap(p["system"])},
                      "players": pg, "players_bucket": pb, "system": p["system"], "history": history(p, slate),
                      "players_history": players_history(group(p["system"]), pg),
                      "contract": at_line["contract"] if at_line else k.get("contract"),

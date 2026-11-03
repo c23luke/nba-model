@@ -316,3 +316,8 @@ def test_s4_is_priced_at_its_honest_record_and_skips_minus_122():
                                            line=231.5)], [], now=NOW)[0]["verdict"]
     assert over(-122) != "BET"          # what it paid on Nov 1-2: no longer enough edge
     assert over(-110) == "BET"
+    # Caden 2026-11-03: S4 only at -110 or better, even if the model says -112 still has edge
+    from engine.pricing import cost_cap
+    assert cost_cap(4) == round(110 / 210, 4) and cost_cap(113) == 0.60
+    c = build_card([pk(4, "OVER", [xq("prophetx", "OVER", 231.5, -112, "total")], bet="total", line=231.5)], [], now=NOW)[0]
+    assert c["verdict"] != "BET" and c["model"]["max_cost"] == cost_cap(4)
