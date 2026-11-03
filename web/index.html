@@ -286,8 +286,9 @@ function playersSeason(bucket) {
   return t[k] || null;
 }
 // tags: every system on this side; gap: players model points on this side (null = no read)
-function whyBets(tags, gap, side) {
-  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
+function whyBets(tags, gap, side, bet) {
+  // totals: only S4 is bet, so other total systems that fired don't belong behind the bet
+  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && (bet !== "total" || t === "S4"));
   const rows = [];
   for (const t of sys) {
     const p3 = t !== "S4" && (R.systems_p3 || {})[t];
@@ -324,8 +325,9 @@ const team = t => TEAM[t] || t;
 const amerOf = p => p > 0 && p < 1 ? (p <= 0.5 ? "+" + Math.round(100 * (1 - p) / p) : "−" + Math.round(100 * p / (1 - p))) : "";
 function plainWhy(o) {
   // o: {tag, tags, gap, side, bet, line (number we hold or the card's), market (line now), price (cost per $1), ev, toWin, away, home}
-  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL");
-  const total = o.bet === "total", who = total ? `the ${o.side.toLowerCase()} in ${team(o.away)} at ${team(o.home)}` : `the ${team(o.side)}`;
+  const total = o.bet === "total";
+  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && (!total || t === "S4"));
+  const who = total ? `the ${o.side.toLowerCase()} in ${team(o.away)} at ${team(o.home)}` : `the ${team(o.side)}`;
   const two = h => { if (!h) return null; const a = h[SEASONS[0]] || {}, b = h[SEASONS[1]] || {}; const w = (a.w || 0) + (b.w || 0), l = (a.l || 0) + (b.l || 0);
     return w + l ? { w, l, p: Math.round(w / (w + l) * 100) } : null; };
   const lineTxt = total ? `${o.side === "OVER" ? "over" : "under"} ${o.line}` : `${team(o.side)} ${o.line > 0 ? "+" : o.line < 0 ? "−" : ""}${o.line === 0 ? "pick'em" : Math.abs(o.line)}`;
@@ -464,7 +466,7 @@ function ticket(x) {
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" && x.count ? (x.fees || 0) / x.count : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
-      ${whyBets([x.system, ...(x.with || [])], x.players, x.side)}
+      ${whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
       <details class="more"><summary>Order details</summary><dl>
         <dt>Bought</dt><dd>${esc(x.contract)}</dd>
@@ -606,7 +608,7 @@ function cardRow(c, reason) {
         ${plainWhy({ verdict: c.verdict, tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
           market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, away: c.away, home: c.home })}
 
-        ${whyBets([c.tag, ...(c.with || [])], c.players, c.side)}
+        ${whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet)}
       </div>
       <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} edge` : "no price yet"}</div>
       ${(c.shop || []).length > 1 ? `<details class="shop"><summary>Every price (${c.shop.length})</summary><table>${c.shop.map(q =>
