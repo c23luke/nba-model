@@ -9,7 +9,7 @@ from .store import get_store
 
 def main():
     st = get_store()
-    since = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    since = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     ts = set()
     off = 0
     while True:
