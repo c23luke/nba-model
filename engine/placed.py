@@ -216,6 +216,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
 
 
 T13_GAP_NOW = 4.0      # engine/systems.T13_GAP
+S4_CAP = round(110 / 210, 4)   # engine/pricing.SYSTEM_MAX_COST[4] (Caden 2026-11-03)
 
 
 COMBO_GAP_NOW = 3.0    # engine/pricing.COMBO_MIN_GAP
@@ -265,6 +266,8 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = f"edge {r['ev']:.1%} at the price we got: today it needs {'5% on a standing order' if r.get('resting_fill') else '4%'}"
         elif all_in is not None and all_in > 0.6 + 0.025:          # room for the fee on a 60c fill
             why = "price worse than -150: today's cap"
+        elif r["system"] == "S4" and all_in is not None and all_in > S4_CAP + 0.005:
+            why = f"paid {'+' if all_in < 0.5 else '−'}{round(100 * (1 - all_in) / all_in) if all_in < 0.5 else round(100 * all_in / (1 - all_in))}: S4 now bets only at -110 or better"
         elif r.get("resting_fill") and off > 1 + 1e-9:
             why = f"standing order {off:g} points off the card's number: today it only rests within 1"
         elif off > (3.0 if r.get("bet") == "total" else 2.0) + 1e-9 and "ML" not in str(r.get("holding")):

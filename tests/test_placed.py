@@ -217,3 +217,15 @@ def test_split_fills_are_one_bet_and_systems_need_the_players_model():
     was = next(r for r in out["bets"] if r["side"] == "WAS")
     assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
     assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 0)
+
+
+
+def test_s4_bets_worse_than_minus_110_leave_the_record():
+    from engine.placed import rules_now
+    row = lambda risk, to_win, res: {"system": "S4", "bet": "total", "side": "OVER", "game_id": "g", "line": 234.5,
+                                     "card_pick": "OVER 234.5", "holding": "OVER 234.5", "risk": risk, "to_win": to_win,
+                                     "ev": 0.06, "status": "FINAL", "result": res, "pnl": 0, "s4_bar": 230.0}
+    pricey, fine = row(24.88, 20.0, "L"), {**row(19.6, 20.0, "W"), "game_id": "h"}
+    out = rules_now([pricey, fine])
+    assert not pricey["rules"]["counted"] and "-110" in pricey["rules"]["why"]
+    assert fine["rules"]["counted"] and (out["w"], out["l"]) == (1, 0)
