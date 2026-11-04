@@ -217,3 +217,19 @@ def test_split_fills_are_one_bet_and_systems_need_the_players_model():
     was = next(r for r in out["bets"] if r["side"] == "WAS")
     assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
     assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 0)
+
+
+
+def test_a_bet_bought_at_two_numbers_is_graded_where_most_of_the_money_is():
+    # Nov 3: CHI +12 card pick; 6 contracts at +12.5 (53c), then 32 at +10.5 (43-44c)
+    from engine.placed import merge_fills
+    r = lambda i, hold, line, cnt, cost, res: {"id": i, "game_id": "g", "bet": "spread", "side": "CHI", "holding": hold,
+        "line": line, "count": cnt, "cost": cost, "fees": 0.1, "risk": cost + 0.1, "to_win": cnt - cost - 0.1,
+        "price": cost / cnt, "american": None, "venue_name": "Kalshi", "placed_at": i, "status": "FINAL",
+        "result": res, "pnl": 1.0, "system": "E4", "with": []}
+    out = merge_fills([r("a", "CHI +12.5", 12.5, 6, 3.18, "W"), r("b", "CHI +10.5", 10.5, 25, 11.0, "L"),
+                       r("c", "CHI +10.5", 10.5, 7, 3.01, "L")])
+    assert len(out) == 1
+    b = out[0]
+    assert b["holding"] == "CHI +10.5 / CHI +12.5" and b["line"] == 10.5 and b["result"] == "L"
+    assert [p["count"] for p in b["pieces"]] == [32, 6] and b["placed_at"] == "a" and b["pnl"] == 3.0

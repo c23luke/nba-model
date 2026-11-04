@@ -82,27 +82,42 @@ def beat_close(o: dict, per: float, close: float) -> float | None:
 
 def merge_fills(rows: list[dict]) -> list[dict]:
     """One ticket per game side (Caden 2026-11-02: "it's okay to bet it twice if we didn't get our whole fill,
-    but it should only count as one bet"). Orders on the same side of the same game become one row: the first
-    order is the bet (its number grades the record), the money adds up, and each order is kept in "fills"."""
+    but it should only count as one bet"). Orders on the same side of the same game become one row: the money
+    adds up, each order is kept in "fills", and "pieces" groups them by the number we hold. The number holding
+    the MOST contracts is the bet's number: it heads the ticket and grades the record (Nov 3: CHI got 6
+    contracts at +12.5 and 32 at +10.5, so the bet is CHI +10.5)."""
     groups: dict = {}
     for r in sorted(rows, key=lambda r: r.get("placed_at") or ""):
         groups.setdefault((r.get("game_id"), r.get("bet"), r.get("side")), []).append(r)
     out = []
     for rs in groups.values():
         if len(rs) == 1:
-            out.append({**rs[0], "fills": [rs[0]["id"]]})
+            out.append({**rs[0], "fills": [rs[0]["id"]], "pieces": []})
             continue
-        b = dict(rs[0])
+        by_hold: dict = {}
+        for r in rs:
+            by_hold.setdefault(r["holding"], []).append(r)
+        pieces = []
+        for hold, hs in by_hold.items():
+            c, cost = sum(r["count"] for r in hs), sum(r["cost"] for r in hs)
+            per = cost / c if c else 0
+            pieces.append({"holding": hold, "count": round(c, 2), "cost": round(cost, 2), "price": round(per, 4),
+                           "american": american(per) if 0 < per < 1 else None, "orders": len(hs),
+                           "risk": round(sum(r["risk"] for r in hs), 2), "to_win": round(sum(r["to_win"] for r in hs), 2)})
+        pieces.sort(key=lambda x: -x["count"])
+        main = by_hold[pieces[0]["holding"]][0]
+        b = dict(main)
+        b["placed_at"] = rs[0].get("placed_at")
         fills = [{k: r.get(k) for k in ("id", "venue_name", "holding", "price", "american", "count", "cost", "fees",
                                          "risk", "to_win", "placed_at", "result", "pnl", "system", "contract")} for r in rs]
         cnt, cost = sum(r["count"] for r in rs), sum(r["cost"] for r in rs)
         b.update(count=round(cnt, 2), cost=round(cost, 2), fees=round(sum(r["fees"] for r in rs), 2),
                  risk=round(sum(r["risk"] for r in rs), 2), to_win=round(sum(r["to_win"] for r in rs), 2),
-                 price=round(cost / cnt, 4) if cnt else b["price"], fills=fills,
+                 price=round(cost / cnt, 4) if cnt else b["price"], fills=fills, pieces=pieces,
                  venue_name=" + ".join(dict.fromkeys(r["venue_name"] for r in rs)),
-                 holding=" / ".join(dict.fromkeys(r["holding"] for r in rs)))
+                 holding=" / ".join(x["holding"] for x in pieces))
         b["american"] = american(b["price"]) if 0 < b["price"] < 1 else b["american"]
-        b["with"] = sorted({*(b.get("with") or []), *(r["system"] for r in rs[1:] if r["system"] != b["system"])})
+        b["with"] = sorted({*(b.get("with") or []), *(r["system"] for r in rs if r["system"] != b["system"])})
         if all(r["status"] == "FINAL" for r in rs):
             b["status"] = "FINAL"
             b["pnl"] = round(sum(r["pnl"] or 0 for r in rs), 2)
