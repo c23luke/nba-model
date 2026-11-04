@@ -85,7 +85,8 @@ def merge_fills(rows: list[dict]) -> list[dict]:
     but it should only count as one bet"). Orders on the same side of the same game become one row: the money
     adds up, each order is kept in "fills", and "pieces" groups them by the number we hold. The number holding
     the MOST contracts is the bet's number: it heads the ticket and grades the record (Nov 3: CHI got 6
-    contracts at +12.5 and 32 at +10.5, so the bet is CHI +10.5)."""
+    contracts at +12.5 and 32 at +10.5, so the bet is CHI +10.5). If the game lands between the numbers, the ticket
+    is a win or a loss by whether it made money, and the record counts that money scaled to the $20 size."""
     groups: dict = {}
     for r in sorted(rows, key=lambda r: r.get("placed_at") or ""):
         groups.setdefault((r.get("game_id"), r.get("bet"), r.get("side")), []).append(r)
@@ -121,6 +122,9 @@ def merge_fills(rows: list[dict]) -> list[dict]:
         if all(r["status"] == "FINAL" for r in rs):
             b["status"] = "FINAL"
             b["pnl"] = round(sum(r["pnl"] or 0 for r in rs), 2)
+            if len(pieces) > 1:
+                # numbers that split (Bulls lose by 11: +12.5 wins, +10.5 loses): won or lost = did the ticket make money
+                b["result"] = "W" if b["pnl"] > 0 else "L" if b["pnl"] < 0 else "P"
         elif any(r["status"] == "LIVE" for r in rs):
             b["status"], b["pnl"] = "LIVE", None
         out.append(b)
@@ -302,6 +306,9 @@ def rules_now(rows: list[dict], agree=None) -> dict:
         pnl = None
         if r["status"] == "FINAL":
             pnl = round(target if r["result"] == "W" else -risk if r["result"] == "L" else 0.0, 2)
+            if len(r.get("pieces") or []) > 1 and r.get("pnl") is not None and r.get("to_win"):
+                # bought at two numbers and the game landed between them: the real money decides, scaled to $20
+                pnl = round(r["pnl"] * target / r["to_win"], 2)
             out[{"W": "w", "L": "l"}.get(r["result"], "p")] += 1
             out["pnl"] += pnl
             out["risked"] += risk

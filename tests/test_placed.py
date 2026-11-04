@@ -233,3 +233,18 @@ def test_a_bet_bought_at_two_numbers_is_graded_where_most_of_the_money_is():
     b = out[0]
     assert b["holding"] == "CHI +10.5 / CHI +12.5" and b["line"] == 10.5 and b["result"] == "L"
     assert [p["count"] for p in b["pieces"]] == [32, 6] and b["placed_at"] == "a" and b["pnl"] == 3.0
+
+
+
+def test_a_game_that_lands_between_our_two_numbers_is_graded_by_the_money():
+    # Bulls lose by 11: the 6 at +12.5 win (+$2.80), the 32 at +10.5 lose (-$14.47): one ticket, a loss of $11.67
+    from engine.placed import merge_fills, rules_now
+    r = lambda i, hold, line, cnt, cost, res, pnl: {"id": i, "game_id": "g", "bet": "spread", "side": "CHI",
+        "holding": hold, "line": line, "count": cnt, "cost": cost, "fees": 0.0, "risk": cost, "to_win": cnt - cost,
+        "price": cost / cnt, "american": None, "venue_name": "Kalshi", "placed_at": i, "status": "FINAL",
+        "result": res, "pnl": pnl, "system": "E4", "with": [], "ev": 0.08, "card_pick": "CHI +12",
+        "players": 4.0}
+    b = merge_fills([r("a", "CHI +12.5", 12.5, 6, 3.2, "W", 2.80), r("b", "CHI +10.5", 10.5, 32, 14.47, "L", -14.47)])[0]
+    assert b["result"] == "L" and b["pnl"] == -11.67
+    out = rules_now([b])
+    assert (out["w"], out["l"]) == (0, 1) and out["pnl"] == round(-11.67 * 20 / b["to_win"], 2)
