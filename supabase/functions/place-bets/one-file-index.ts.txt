@@ -31,6 +31,16 @@ const TOP_UP_MIN = 2;
 const wonSoFar = (o: OrderRow) => (o.fill_count ?? 0) > 0
   ? Math.max(0, (o.fill_count ?? 0) - (o.fill_cost ?? 0) - (o.fees ?? 0)) : 0;
 const HEARTBEAT_MINUTES = 15;
+/** Buying DOWN (engine/pricing.py buydown_ok): a spread quote with fewer points than the pick's number must beat the
+ * best quote at or above it by BUYDOWN_PER_POINT of expected return per point given up. */
+export const BUYDOWN_PER_POINT = 0.02;
+export function buydownOk(quotes: Quote[], row: { bet?: string; model?: { base?: number | null } | null }, floor: number): Quote[] {
+  const base = row.model?.base;
+  if (row.bet !== "spread" || base == null) return quotes;
+  const at = quotes.filter((q) => q.line >= base - 1e-9).map((q) => q.ev);
+  const ref = Math.max(floor, ...at);
+  return quotes.filter((q) => q.line >= base - 1e-9 || q.ev >= ref + BUYDOWN_PER_POINT * (base - q.line) - 1e-9);
+}
 /** Live orders on this bet's side of the game (any system's key) and on the other side. An order counts while
  * it's open or holds anything that filled. */
 export function sideOrders(recent: OrderRow[], counted: OrderRow[], row: { key: string; game_id: string; bet?: string; side?: string }) {
@@ -361,7 +371,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
     }
     const cap = capOf(row);
     const pricey = quotes.filter((q) => q.ev >= s.min_ev && q.cost > cap + 1e-9);
-    quotes = preferPoints(quotes.filter((q) => q.ev >= s.min_ev && q.cost <= cap + 1e-9));
+    quotes = preferPoints(buydownOk(quotes.filter((q) => q.ev >= s.min_ev && q.cost <= cap + 1e-9), row, s.min_ev));
     if (!quotes.length && pricey.length) { skip(`only prices worse than ${cap < MAX_COST ? "-110" : "-150"} (best ${pricey[0].contract} at ${pricey[0].american ?? pricey[0].cost})`); continue; }
     if (!quotes.length) {
       const notes = on.map((vn) => venues[vn].explain?.(row) ?? "").filter(Boolean).join(" · ");

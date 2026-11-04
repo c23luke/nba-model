@@ -807,3 +807,12 @@ Deno.test("a bet's own price cap (S4: -110) is respected, the -150 cap for every
   await runOnce(db, { kalshi: k }, NOW);
   eq(k.sent.length, 1, "no own cap: -150 still rules");
 });
+
+Deno.test("buying points down needs a clear gain over the pick's number", async () => {
+  const { buydownOk } = await import("./core.ts");
+  const q = (line: number, ev: number) => ({ line, ev } as unknown as Quote);
+  const row = { bet: "spread", model: { base: 12 } };
+  eq(buydownOk([q(12.5, 0.063), q(10.5, 0.104)], row, 0.04).map((x) => x.line), [12.5, 10.5]);
+  eq(buydownOk([q(12.5, 0.06), q(10.5, 0.07)], row, 0.04).map((x) => x.line), [12.5]);
+  eq(buydownOk([q(10.5, 0.06)], row, 0.04).length, 0);
+});

@@ -315,3 +315,16 @@ def test_no_totals_are_bet_s4_is_tracking_only():
     s4 = pk(4, "OVER", [xq("prophetx", "OVER", 231.5, -105, "total")], bet="total", line=231.5)
     assert eligible(s4, []) == (False, "Totals aren't bet now (S4 is tracking only)")
     assert build_card([s4], [], now=NOW) == []
+
+
+
+def test_buying_points_down_needs_a_clear_gain():
+    # Nov 3: Bulls +12 pick. +12.5 at 6.3% vs +10.5 at 10.4% -> 1.5 points down needs +3%: it has +4.1%, still bets
+    from engine.pricing import buydown_ok
+    q = lambda line, ev: {"line": line, "ev": ev}
+    tonight = buydown_ok([q(12.5, 0.063), q(10.5, 0.104), q(11.5, 0.03)], 12.0, "spread", 0.04)
+    assert {x["line"] for x in tonight} == {12.5, 10.5}
+    thin = buydown_ok([q(12.5, 0.06), q(10.5, 0.07)], 12.0, "spread", 0.04)          # +1% for 1.5 points: keep the points
+    assert [x["line"] for x in thin] == [12.5]
+    alone = buydown_ok([q(10.5, 0.06)], 12.0, "spread", 0.04)                      # nothing at the number: vs the 4% floor
+    assert alone == [] and buydown_ok([q(10.5, 0.08)], 12.0, "spread", 0.04) == [q(10.5, 0.08)]

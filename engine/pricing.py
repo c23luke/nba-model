@@ -429,6 +429,20 @@ def shop(p: dict, win0: float, base: float | None = None, market: float | None =
 # Caden (2026-10-22): when two prices make about the same money, take the one that wins more often.
 # A cheaper number has to beat the best price with more points by this much expected return to be chosen.
 POINTS_TIEBREAK = 0.02
+# Buying DOWN (Caden 2026-11-03, Bulls +12 bought at +10.5 for +129): fewer points than the pick is fine when the
+# cheaper price clearly wins, but the value of a point is a measured average, so a thin gain isn't enough. A quote
+# below the pick's number must beat the best quote at or above it by BUYDOWN_PER_POINT of expected return for
+# every point given up (tonight: 1.5 points needed +3%, it had +4%, so it still bets).
+BUYDOWN_PER_POINT = 0.02
+
+
+def buydown_ok(quotes: list[dict], base: float | None, bet: str, floor: float = 0.0) -> list[dict]:
+    """Drop spread quotes below the pick's number whose extra expected return doesn't cover the points given up."""
+    if bet != "spread" or base is None:
+        return quotes
+    ref = max([q["ev"] for q in quotes if q["line"] >= base - 1e-9], default=floor)
+    ref = max(ref, floor)
+    return [q for q in quotes if q["line"] >= base - 1e-9 or q["ev"] >= ref + BUYDOWN_PER_POINT * (base - q["line"]) - 1e-9]
 
 
 def prefer_points(quotes: list[dict]) -> list[dict]:
@@ -493,7 +507,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
             continue
         quotes = shop(p, win, base, market_line(p, slate), allowed_lines(p, slate))
         mine = [q for q in quotes if q["mine"]]
-        ok = [q for q in mine if not q["too_pricey"]]             # never worse than -150
+        ok = buydown_ok([q for q in mine if not q["too_pricey"]], base, p["bet"], MIN_EV)   # never worse than -150
         best = ok[0] if ok else (mine[0] if mine else None)
         kalshi = [q for q in mine if q["venue"] == "kalshi"]
         # the Kalshi contract at (or nearest) the pick's own number — where a limit order goes
