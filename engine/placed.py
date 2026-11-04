@@ -114,10 +114,11 @@ def merge_fills(rows: list[dict]) -> list[dict]:
         cnt, cost = sum(r["count"] for r in rs), sum(r["cost"] for r in rs)
         b.update(count=round(cnt, 2), cost=round(cost, 2), fees=round(sum(r["fees"] for r in rs), 2),
                  risk=round(sum(r["risk"] for r in rs), 2), to_win=round(sum(r["to_win"] for r in rs), 2),
-                 price=round(cost / cnt, 4) if cnt else b["price"], fills=fills, pieces=pieces,
+                 # the ticket shows the number and price we actually bought most of (Caden 2026-11-03: an average
+                 # price like +121 was never a real bet); the other piece is listed under it
+                 price=pieces[0]["price"], american=pieces[0]["american"], fills=fills, pieces=pieces,
                  venue_name=" + ".join(dict.fromkeys(r["venue_name"] for r in rs)),
-                 holding=" / ".join(x["holding"] for x in pieces))
-        b["american"] = american(b["price"]) if 0 < b["price"] < 1 else b["american"]
+                 holding=pieces[0]["holding"])
         b["with"] = sorted({*(b.get("with") or []), *(r["system"] for r in rs if r["system"] != b["system"])})
         if all(r["status"] == "FINAL" for r in rs):
             b["status"] = "FINAL"

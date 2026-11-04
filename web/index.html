@@ -462,7 +462,7 @@ function ticket(x) {
         <div>To win<strong>${money(x.to_win)}</strong></div>
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
-      ${(x.pieces || []).length > 1 ? `<div class="mkt">Bought in pieces: ${x.pieces.map(p => `<b>${p.count} at ${esc(p.holding)}</b> for ${x.venue === "kalshi" ? Math.round(p.price * 100) + "¢ " : ""}(${amer(p.american)})`).join(", ")}. The price above is the average. The record grades it at <b>${esc(x.pieces[0].holding)}</b>, where most of the money is.</div>` : ""}
+      ${(x.pieces || []).length > 1 ? `<div class="mkt">${x.pieces.slice(1).map(p => `Also bought <b>${esc(p.holding)}</b>: ${p.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} at ${x.venue === "kalshi" ? Math.round(p.price * 100) + "¢ " : ""}(${amer(p.american)}), ${money(p.risk)} to win ${money(p.to_win)}`).join(". ")}. Risked and To win include it. The record grades the bet at ${esc(x.holding)}, where most of the money is.</div>` : ""}
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" && x.count ? (x.fees || 0) / x.count : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
