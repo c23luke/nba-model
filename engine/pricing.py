@@ -361,9 +361,16 @@ def expected_return(win: float, push: float, cost: float) -> float:
     return win * (1 / cost - 1) - (1 - win - push)
 
 
+def amer_txt(cost: float) -> str:
+    """A price per $1 payout as American odds: 0.4 -> +150, 0.55 -> -122 (Caden: odds only, never cents)."""
+    if not 0 < cost < 1:
+        return "?"
+    return f"+{round(100 * (1 - cost) / cost)}" if cost <= 0.5 else f"-{round(100 * cost / (1 - cost))}"
+
+
 def price_text(q: dict) -> str:
     if q["venue"] == "kalshi":
-        return f"{round(q['price'] * 100)}¢"
+        return amer_txt(q["cost"])          # Kalshi's price with its fee, as American odds
     a = q["american"]
     return f"{a:+d}"
 
@@ -526,7 +533,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                 verdict = "LIMIT"
                 why = ((f"Only prices worse than {'-110' if p['system'] in SYSTEM_MAX_COST else '-150'} right now" if best["too_pricey"] else
                         f"No venue clears the {MIN_EV:.0%} bar right now") + f" (best: {_desc(best)}, {best['ev']:+.1%}). "
-                       f"Set a limit on Kalshi {at_line['contract']} at {round(cap * 100)}¢")
+                       f"Set a limit on Kalshi {at_line['contract']} at {amer_txt(cap + kalshi_fee(cap))}")
             else:
                 verdict, why = "PASS", f"Not enough edge at today's prices (best: {_desc(best)}, {best['ev']:+.1%})"
         elif win > BREAK_EVEN_110:

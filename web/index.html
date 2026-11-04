@@ -447,7 +447,7 @@ let placedKeys = new Set();
 function ticket(x) {
   const stateTxt = x.status === "FINAL" ? (x.result === "W" ? "Won" : x.result === "L" ? "Lost" : "Push") : x.status === "LIVE" ? "Live" : "Open";
   const stateCls = x.status === "FINAL" ? x.result : x.status;
-  const price = x.venue === "kalshi" ? `${Math.round(x.price * 100)}¢ <span class="muted">${amer(x.american)}</span>` : amer(x.american);
+  const price = amer(x.american);       // American odds only (Caden 2026-11-03: no cents)
   const card = x.card_pick && x.card_pick !== x.holding ? `card pick ${esc(x.card_pick)}` : "";
   const score = x.score && x.score.home != null ? `${esc(x.away)} ${x.score.away}, ${esc(x.home)} ${x.score.home}` : "";
   const pl = x.status === "FINAL" ? `<span class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</span>` : "";
@@ -463,7 +463,7 @@ function ticket(x) {
         <div>To win<strong>${money(x.to_win)}</strong></div>
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
       </div>
-      ${(x.pieces || []).length > 1 ? `<div class="mkt">${x.pieces.slice(1).map(p => `Also bought <b>${esc(p.holding)}</b>: ${p.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} at ${x.venue === "kalshi" ? Math.round(p.price * 100) + "¢ " : ""}(${amer(p.american)}), ${money(p.risk)} to win ${money(p.to_win)}`).join(". ")}. Risked and To win include it. The record grades the bet at ${esc(x.holding)}, where most of the money is.</div>` : ""}
+      ${(x.pieces || []).length > 1 ? `<div class="mkt">${x.pieces.slice(1).map(p => `Also bought <b>${esc(p.holding)}</b>: ${p.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} at ${amer(p.american)}, ${money(p.risk)} to win ${money(p.to_win)}`).join(". ")}. Risked and To win include it. The record grades the bet at ${esc(x.holding)}, where most of the money is.</div>` : ""}
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
@@ -476,7 +476,7 @@ function ticket(x) {
         <dt>Size</dt><dd>${x.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} · cost ${money(x.cost)} · fee ${money(x.fees)}</dd>
         ${(x.fills || []).length > 1 ? `<dt>Filled in ${x.fills.length} pieces</dt><dd>${x.fills.map(f => `${esc(f.venue_name)} ${esc(f.holding)} at ${amer(f.american)}: ${money(f.risk)} to win ${money(f.to_win)}`).join("<br>")}<br><span class="muted">One bet: the first order didn't fill all the way, so the bettor bought the rest.</span></dd>` : ""}
         ${x.win != null ? `<dt>Model win rate</dt><dd>${(x.win * 100).toFixed(1)}% at the card's number</dd>` : ""}
-        ${x.model_price != null ? `<dt>Most we'd pay</dt><dd>${x.venue === "kalshi" ? Math.round(x.model_price * 100) + "¢" : (x.model_price * 100).toFixed(1) + "%"} (the price the model saw)</dd>` : ""}
+        ${x.model_price != null ? `<dt>Worst price we'd take</dt><dd>${amerOf(x.model_price)}</dd>` : ""}
         <dt>Placed</dt><dd>${esc(when(x.placed_at))}</dd>
       </dl></details>
   </article>`;
@@ -497,8 +497,8 @@ function marketLine(x) {
   }
   if (!m) return "";
   const moved = m.moved == null ? "" : m.moved === 0 ? ", no move since we bet" : `, ${m.moved > 0 ? "moved " + m.moved + " our way" : "moved " + Math.abs(m.moved) + " against us"} since we bet`;
-  if (!m.closed) return `<div class="mkt">Line now <b>${esc(lineTxt(x.bet, x.side, m.line))}</b>${moved}${m.beat_close != null ? `. Worth <b class="${m.beat_close > 0 ? "pos" : m.beat_close < 0 ? "neg" : ""}">${m.beat_close > 0 ? "+" : ""}${m.beat_close}¢</b> vs what we paid` : ""}</div>`;
-  return `<div class="mkt">Closed <b>${esc(lineTxt(x.bet, x.side, m.line))}</b>${moved}${m.beat_close != null ? `. ${m.beat_close >= 0 ? "Beat the close by" : "Lost to the close by"} <b class="${m.beat_close > 0 ? "pos" : m.beat_close < 0 ? "neg" : ""}">${Math.abs(m.beat_close)}¢</b>` : ""}</div>`;
+  if (!m.closed) return `<div class="mkt">Line now <b>${esc(lineTxt(x.bet, x.side, m.line))}</b>${moved}${m.beat_close != null ? `. Our bet is worth <b class="${m.beat_close > 0 ? "pos" : m.beat_close < 0 ? "neg" : ""}">${m.beat_close >= 0 ? "$" + (m.beat_close / 100 * x.count).toFixed(2) + " more" : "$" + (-m.beat_close / 100 * x.count).toFixed(2) + " less"}</b> than we paid, at today's line` : ""}</div>`;
+  return `<div class="mkt">Closed <b>${esc(lineTxt(x.bet, x.side, m.line))}</b>${moved}${m.beat_close != null ? `. ${m.beat_close >= 0 ? "Beat the closing line by" : "Lost to the closing line by"} <b class="${m.beat_close > 0 ? "pos" : m.beat_close < 0 ? "neg" : ""}">$${(Math.abs(m.beat_close) / 100 * x.count).toFixed(2)}</b>` : ""}</div>`;
 }
 
 // profit by day, settled bets only: total plus one line per site
@@ -513,10 +513,10 @@ function profitChart(bets) {
   const W = 600, H = 170, n = days.length;
   const X = i => n ? (i / n) * W : 0, Y = v => H - 8 - ((v - lo) / span) * (H - 16);
   const path = v => v.map((y, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(y).toFixed(1)}`).join("");
-  const tot = series[0].v[n], avgClv = (() => { const xs = done.filter(x => x.market && x.market.beat_close != null).map(x => x.market.beat_close); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; })();
+  const tot = series[0].v[n], avgClv = (() => { const xs = done.filter(x => x.market && x.market.beat_close != null).map(x => x.market.beat_close / 100 * x.count); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; })();
   return `<div class="chart">
     <div class="top"><span>Profit by day <b class="${tot > 0 ? "pos" : tot < 0 ? "neg" : ""}">${signed$(tot)}</b></span>
-      <span>${avgClv == null ? "" : `${avgClv >= 0 ? "Beat the close by" : "Behind the close by"} <b class="${avgClv > 0 ? "pos" : avgClv < 0 ? "neg" : ""}">${Math.abs(avgClv).toFixed(1)}¢</b> a bet on average`}</span></div>
+      <span>${avgClv == null ? "" : `${avgClv >= 0 ? "Beat the close by" : "Behind the close by"} <b class="${avgClv > 0 ? "pos" : avgClv < 0 ? "neg" : ""}">$${Math.abs(avgClv).toFixed(2)}</b> a bet on average`}</span></div>
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by day">
       <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
       ${series.slice().reverse().map(x => `<path d="${path(x.v)}" fill="none" stroke="${x.cls}" stroke-width="${x.w}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join("")}
@@ -533,7 +533,7 @@ function notPlaced(b, placed) {
   const why = Object.fromEntries(((b.placer || {}).skips || []).map(k => [k.pick, k.reason]));
   return (b.card || []).filter(c => (c.verdict === "BET" || c.verdict === "LIMIT") && !placedKeys.has(c.key) && !held.has(`${c.game_id}|${c.side}`))
     .map(c => { const r = resting[c.key];
-      return { ...c, reason: r ? `An order is waiting on Kalshi: ${r.count} contracts of ${r.contract} at ${Math.round(r.price * 100)}¢ (${amer(r.american)}), ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. It fills only if someone sells at our price, and it's cancelled 5 minutes before tip.`
+      return { ...c, reason: r ? `An order is waiting on Kalshi: ${r.count} contracts of ${r.contract} at ${amer(r.american)}, ${money(r.stake)} if it all fills${r.filled ? `, ${r.filled} filled so far` : ""}. It fills only if someone sells at our price, and it's cancelled 5 minutes before tip.`
         : why[`${c.label} (${c.tag}) ${c.away}@${c.home}`] }; })
     .filter(c => !/^already (filled|partial)/.test(c.reason || ""));          // held from before the restart
 }
