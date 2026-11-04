@@ -1,0 +1,9 @@
+updated 2026-11-04T00:47:09.734559+00:00 status bet pick CHI +12 why Best price: BetOpenly CHI +12.5 at -104 (fees not counted), +14.1% expected return. Next best: Polymarket CHI +12.5 at -108 (fees not counted), +12.1%
+   betopenly CHI +12.5 line 12.5 price -104 cost 0.5098 size None win 0.5819 ev 0.1414
+   kalshi NO · NYK wins by over 10.5  (= CHI +10.5) line 10.5 price 46¢ cost 0.48 size None win 0.5049 ev 0.0519
+   kalshi NO · NYK wins by over 11.5  (= CHI +11.5) line 11.5 price 50¢ cost 0.52 size None win 0.5399 ev 0.0383
+   kalshi NO · NYK wins by over 12.5  (= CHI +12.5) line 12.5 price 53¢ cost 0.55 size None win 0.5819 ev 0.058
+   kalshi NO · NYK wins by over 13.5  (= CHI +13.5) line 13.5 price 57¢ cost 0.59 size None win 0.6169 ev 0.0456
+   novig CHI +12.5 line 12.5 price -108 cost 0.5192 size 718 win 0.5819 ev 0.1208
+   polymarket CHI +12.5 line 12.5 price -108 cost 0.5192 size 1644 win 0.5819 ev 0.1208
+   prophetx CHI +12.5 line 12.5 price -109 cost 0.5215 size 214 win 0.5819 ev 0.1158
