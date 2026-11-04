@@ -368,8 +368,9 @@ function plainWhy(o) {
     t += who.length ? `${who.join(" and ")} ${who.length > 1 ? "are" : "is"} now listed day-to-day. ` : "the numbers have moved. ";
     t += N.low === N.high ? `The model now has the ${team(o.side)} ${N.low.toFixed(1)} points better than the market. `
       : `If they play, the model has the ${team(o.side)} ${N.high.toFixed(1)} points better than the market; if they sit, ${N.low.toFixed(1)}. `;
-    t += N.low >= 4 ? "Either way it still clears our 4-point bar." : N.high >= 4 ? "If they sit it would be under our 4-point bar, so we wouldn't place it fresh, but we're still on the side the model likes."
-      : N.low > 0 ? "It's under our 4-point bar now, so we wouldn't place it fresh, but we're still on the side the model likes." : "The model no longer likes this side; we keep the bet, it can't be undone.";
+    const bar = o.tag === "T13" ? 4 : 3;      // the players model alone needs 4+; with a system it needs 3+
+    t += N.low >= bar ? `Either way it still clears our ${bar}-point bar.` : N.high >= bar ? `If they sit it would be under our ${bar}-point bar, so we wouldn't place it fresh, but we're still on the side the model likes.`
+      : N.low > 0 ? `It's under our ${bar}-point bar now, so we wouldn't place it fresh, but we're still on the side the model likes.` : "The model no longer likes this side; we keep the bet, it can't be undone.";
     S.push(t);
   }
   return `<p class="plain">${S.map(esc).join(" ")}</p>`;
@@ -465,7 +466,7 @@ function ticket(x) {
       ${(x.pieces || []).length > 1 ? `<div class="mkt">${x.pieces.slice(1).map(p => `Also bought <b>${esc(p.holding)}</b>: ${p.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} at ${x.venue === "kalshi" ? Math.round(p.price * 100) + "¢ " : ""}(${amer(p.american)}), ${money(p.risk)} to win ${money(p.to_win)}`).join(". ")}. Risked and To win include it. The record grades the bet at ${esc(x.holding)}, where most of the money is.</div>` : ""}
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
-        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" && x.count ? (x.fees || 0) / x.count : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
+        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}

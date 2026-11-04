@@ -103,6 +103,7 @@ def merge_fills(rows: list[dict]) -> list[dict]:
             c, cost = sum(r["count"] for r in hs), sum(r["cost"] for r in hs)
             per = cost / c if c else 0
             pieces.append({"holding": hold, "count": round(c, 2), "cost": round(cost, 2), "price": round(per, 4),
+                           "fees": round(sum(r["fees"] for r in hs), 2),
                            "american": american(per) if 0 < per < 1 else None, "orders": len(hs),
                            "risk": round(sum(r["risk"] for r in hs), 2), "to_win": round(sum(r["to_win"] for r in hs), 2)})
         pieces.sort(key=lambda x: -x["count"])
