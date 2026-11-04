@@ -236,8 +236,8 @@ def test_a_bet_bought_at_two_numbers_is_graded_where_most_of_the_money_is():
 
 
 
-def test_a_game_that_lands_between_our_two_numbers_is_graded_by_the_money():
-    # Bulls lose by 11: the 6 at +12.5 win (+$2.80), the 32 at +10.5 lose (-$14.47): one ticket, a loss of $11.67
+def test_a_game_that_lands_between_our_two_numbers_counts_once_at_the_main_number():
+    # Bulls lose by 11: the 6 at +12.5 win, the 32 at +10.5 lose. ONE bet in the record, graded at +10.5: a loss.
     from engine.placed import merge_fills, rules_now
     r = lambda i, hold, line, cnt, cost, res, pnl: {"id": i, "game_id": "g", "bet": "spread", "side": "CHI",
         "holding": hold, "line": line, "count": cnt, "cost": cost, "fees": 0.0, "risk": cost, "to_win": cnt - cost,
@@ -245,6 +245,6 @@ def test_a_game_that_lands_between_our_two_numbers_is_graded_by_the_money():
         "result": res, "pnl": pnl, "system": "E4", "with": [], "ev": 0.08, "card_pick": "CHI +12",
         "players": 4.0}
     b = merge_fills([r("a", "CHI +12.5", 12.5, 6, 3.2, "W", 2.80), r("b", "CHI +10.5", 10.5, 32, 14.47, "L", -14.47)])[0]
-    assert b["result"] == "L" and b["pnl"] == -11.67
+    assert b["result"] == "L" and b["pnl"] == -11.67                 # real money: both pieces
     out = rules_now([b])
-    assert (out["w"], out["l"]) == (0, 1) and out["pnl"] == round(-11.67 * 20 / b["to_win"], 2)
+    assert (out["w"], out["l"]) == (0, 1) and out["pnl"] == -b["rules"]["risk"]   # record: one full $20-size loss
