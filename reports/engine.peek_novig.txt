@@ -1,12 +1,13 @@
 === settings
-  {'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['prophetx', 'betopenly', 'novig', 'kalshi'], 'watch_venues': [], 'min_ev': 0.04, 'to_win_dollars': 30, 'last_heartbeat': '2026-11-05T12:55:02.361+00:00'}
+  {'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['prophetx', 'betopenly', 'novig', 'kalshi'], 'watch_venues': [], 'min_ev': 0.04, 'to_win_dollars': 30, 'last_heartbeat': '2026-11-05T13:11:01.921+00:00'}
 
 === newest key checks
+  2026-11-05T13:11:03 Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-08T05:56:28.679Z; balance $169.90
   2026-11-05T12:55:04 Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig (read-only test): signature OK; this key: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}; location check: OK, expires 2026-11-08T05:56:28.679Z; sub-accounts: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}
   2026-11-05T12:39:04 Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig (read-only test): signature OK; this key: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}; location check: OK, expires 2026-11-08T05:56:28.679Z; sub-accounts: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}
-  2026-11-05T12:23:04 Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig (read-only test): signature OK; this key: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}; location check: OK, expires 2026-11-08T05:56:28.679Z; sub-accounts: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}
 
 === log lines mentioning Novig, newest 30
+  2026-11-05T13:11:03 info Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-08T05:56:28.679Z; balance $169.90
   2026-11-05T12:55:04 info Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig (read-only test): signature OK; this key: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}; location check: OK, expires 2026-11-08T05:56:28.679Z; sub-accounts: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}
   2026-11-05T12:39:04 info Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig (read-only test): signature OK; this key: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}; location check: OK, expires 2026-11-08T05:56:28.679Z; sub-accounts: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}
   2026-11-05T12:23:04 info Key check — Kalshi prod: keys work, balance $73.18 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $5.67 · POLYMARKET_KEY_ID: not set · Novig (read-only test): signature OK; this key: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}; location check: OK, expires 2026-11-08T05:56:28.679Z; sub-accounts: 403 {"code":"SIGNATURE_REJECTED","message":"api key scope is insufficient for this route"}
@@ -38,6 +39,6 @@
   2026-11-05T05:31:03 info Key check — Kalshi prod: keys work, balance $99.52 · Kalshi demo: no keys · BetOpenly: key works, balance $160.66 · ProphetX: keys work, balance $50.56 · POLYMARKET_KEY_ID: not set · Novig: no keys
 
 === last run summary skips mentioning Novig
-  2026-11-05T12:55:04 run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T13:11:03 run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
 
 === Novig orders
