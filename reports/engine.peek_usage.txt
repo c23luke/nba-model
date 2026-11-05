@@ -1,0 +1,12 @@
+games          rows     132      0.04 MB
+picks          rows     625      0.53 MB
+player_games   rows    3226      1.10 MB
+bet_orders     rows      94      0.11 MB
+bet_feed       rows      84      0.19 MB
+board          rows       1      0.18 MB
+bet_log        rows    7052      2.59 MB
+price_log      rows   16647     41.85 MB
+injury_log     rows     847      0.25 MB
+
+Each model run downloads games+picks+player_games in full: 1.68 MB
+At ~12 runs an hour that's about 0.5 GB a day
