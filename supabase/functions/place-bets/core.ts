@@ -1526,7 +1526,12 @@ export class Novig implements Venue {
     const notes: string[] = [];
     this.notes.set(row.key, notes);
     const ms = await this.game(row);
-    if (!ms) { notes.push("game not listed"); return []; }
+    if (!ms) {
+      const all = await this.markets();
+      const games = new Set(all.map((x) => x.eventId)).size;
+      notes.push(`game not listed (Novig has ${games} NBA game${games === 1 ? "" : "s"} open in the next 2 days, ${all.length} markets)`);
+      return [];
+    }
     const out: Quote[] = [];
     for (const mk of ms) {
       const kind = mk.marketType === "MONEY" ? "moneyline" : mk.marketType === "SPREAD" ? "spread" : mk.marketType === "TOTAL" ? "total" : "";

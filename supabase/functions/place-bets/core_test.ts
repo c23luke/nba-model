@@ -961,3 +961,10 @@ Deno.test("novigGrid rounds down onto the exchange's price steps", async () => {
   eq([novigGrid(0.4951), novigGrid(0.4999), novigGrid(0.0423), novigGrid(0.0537), novigGrid(0.9612)], [0.495, 0.495, 0.042, 0.05, 0.961]);
   eq([amer(0.49), amer(0.55), amer(0.5)], ["+104", "-122", "-100"]);
 });
+
+Deno.test("Novig: a game it doesn't list says how many games Novig does have (so an empty listing shows up)", async () => {
+  const nv = await novigVenue(fakeNovig());
+  const row = { ...pxRow(), home: "MIL", away: "TOR", key: "k-tor" };
+  eq(await nv.offers(row), []);
+  eq(nv.explain(row), "Novig on this game: game not listed (Novig has 2 NBA games open in the next 2 days, 3 markets)");
+});
