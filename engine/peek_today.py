@@ -7,7 +7,7 @@ from .store import get_store
 
 def main():
     st = get_store()
-    since = os.environ.get("SINCE", "2026-11-05T04:00:00Z")
+    since = os.environ.get("SINCE", "2026-11-05T19:00:00Z")
     print("=== orders since", since)
     for o in st._req("GET", f"/bet_orders?created_at=gte.{since}&select=created_at,updated_at,venue,mode,status,pick,"
                             "contract,count,limit_price,stake,fill_count,fill_cost,reason&order=created_at.asc") or []:
@@ -19,6 +19,7 @@ def main():
         for r in rows:
             m = r["message"]
             if m.startswith("Key check"):
+                print(" ", r["ts"][:19], "balances:", " · ".join(x.strip() for x in m.split("·") if "balance" in x))
                 continue
             if m.startswith("run (") and m.endswith("0 skipped") and "0 action" in m:
                 continue
