@@ -102,7 +102,7 @@ EXCHANGE_ODDS = ("https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
                  "?apiKey={key}&regions=us_ex&markets=spreads,totals,h2h&oddsFormat=american&includeBetLimits=true")
 VENUES = {"kalshi": "Kalshi", "polymarket_us": "Polymarket US", "polymarket": "Polymarket",
           "prophetx": "ProphetX", "betopenly": "BetOpenly", "novig": "Novig"}
-MY_VENUES = {"kalshi", "polymarket_us", "polymarket", "prophetx", "betopenly"}   # where Caden has accounts
+MY_VENUES = {"kalshi", "polymarket_us", "polymarket", "prophetx", "betopenly", "novig"}   # where Caden has accounts
 EXCHANGE_CACHE_SECONDS = 180
 _exchange_cache: dict = {}
 

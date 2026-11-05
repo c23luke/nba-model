@@ -46,16 +46,24 @@ def test_line_shopping_takes_the_better_number_at_a_venue_he_uses():
     slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
     shop = [kq("NOP", 3.5, 0.52),                    # his line, 54c with fee
             xq("prophetx", "NOP", 4.5, -105),        # a point better at about the same price
-            xq("novig", "NOP", 5.5, -102),           # better still, but no account there
+            xq("sporttrade", "NOP", 5.5, -102),      # better still, but no account there
             xq("polymarket_us", "NOP", 4.5, -105, size=3),     # too little available
             xq("betopenly", "IND", -3.5, +100)]      # the other side: ignored
     c = build_card([pk(113, "NOP", shop, line=3.5)], slate, now=NOW)[0]
     assert c["verdict"] == "BET"
     assert c["best"]["venue"] == "prophetx" and c["best"]["line"] == 4.5
     venues = [q["venue"] for q in c["shop"]]
-    assert "novig" in venues and "polymarket_us" not in venues and "betopenly" not in venues
-    assert c["shop"][0]["venue"] == "novig" and not c["shop"][0]["mine"]
+    assert "sporttrade" in venues and "polymarket_us" not in venues and "betopenly" not in venues
+    assert c["shop"][0]["venue"] == "sporttrade" and not c["shop"][0]["mine"]
     assert c["contract"] == "k NOP 3.5"          # where the limit order would go
+
+
+def test_novig_counts_as_his_venue():
+    # Caden opened a Novig account (2026-11-04): its better number is now one he can take
+    slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
+    shop = [kq("NOP", 3.5, 0.52), xq("prophetx", "NOP", 4.5, -105), xq("novig", "NOP", 5.5, -102)]
+    c = build_card([pk(113, "NOP", shop, line=3.5)], slate, now=NOW)[0]
+    assert c["best"]["venue"] == "novig" and c["best"]["line"] == 5.5 and c["shop"][0]["mine"]
 
 
 def test_outcome_moves_the_right_way_and_counts_pushes():

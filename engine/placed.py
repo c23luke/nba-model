@@ -13,7 +13,7 @@ from datetime import datetime
 from .pricing import outcome
 
 VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "Polymarket US",
-               "polymarket": "Polymarket", "prophetx": "ProphetX", "manual": "Other book"}
+               "polymarket": "Polymarket", "prophetx": "ProphetX", "novig": "Novig", "manual": "Other book"}
 
 # what the website needs from a card row to explain a bet later, after the row has left the card
 SNAP_KEYS = ("name", "why", "confidence", "to_win", "win", "players", "players_bucket", "players_history",

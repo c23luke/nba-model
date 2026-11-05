@@ -77,7 +77,7 @@ Deno.test("dry run: logs WOULD HAVE PLACED once, sends nothing, refreshes on lat
   const o = db.orders_[0];
   eq([o.status, o.order_side, o.limit_price, o.count, o.stake], ["dry_run", "no", 0.49, 10, 4.9]);
   eq(o.est_fee, 0.18);
-  ok(db.logs.some((l) => l.message.startsWith("WOULD HAVE PLACED: Kalshi BUY NO ×10 KXNBASPREAD-26OCT21INDNOP-IND4 at 49¢")),
+  ok(db.logs.some((l) => l.message.startsWith("WOULD HAVE PLACED: Kalshi BUY NO ×10 KXNBASPREAD-26OCT21INDNOP-IND4 at +104")),
      JSON.stringify(db.logs));
   await runOnce(db, { kalshi: k }, NOW);
   eq(db.orders_.length, 1, "no duplicate dry row");
@@ -101,7 +101,7 @@ Deno.test("price moved above the model's price → skip", async () => {
   const k = new FakeVenue(0.50);
   const r = await runOnce(db, { kalshi: k }, NOW);
   eq(k.sent.length, 0);
-  ok(r.skips[0].reason.includes("moved above the model's 49¢"), r.skips[0].reason);
+  ok(r.skips[0].reason.includes("moved above the model's +104"), r.skips[0].reason);
 });
 
 Deno.test("same market can't be bet twice, even from a different system", async () => {
@@ -839,4 +839,125 @@ Deno.test("Novig: Ed25519 and P-256 keys both sign, and the request carries the 
     ok(seen["Novig-Key-Id"] === "kid" && /^\d+$/.test(seen["Novig-Timestamp"]) && seen["Novig-Signature"].length > 40, JSON.stringify(seen));
     eq(seen["Content-Type"], "application/json");
   }
+});
+
+// ------------------------------------------------------------------ Novig (exchange: ask = 1 − the other side's best bid)
+function fakeNovig(opts: { order?: Record<string, unknown>; fills?: unknown[]; charged?: string; strike?: string } = {}) {
+  const calls: { method: string; path: string; body?: any; headers: Record<string, string> }[] = [];
+  const mk = (id: string, type: string, strike: string | undefined, outs: [string, string][]) => ({
+    marketId: id, eventId: "ev1", marketType: type, strike, status: "OPEN", startsTs: Date.parse(TIP),
+    fee: { coefficient: "0.03", makerCredit: "0.5", charged: opts.charged ?? "WHEN_LIVE" },
+    outcomes: outs.map(([outcomeId, name]) => ({ outcomeId, name, status: "TBD" })) });
+  // home NOP is the dog: home handicap +4 → NOP +4 / IND -4; and +8.5 (past the system's max)
+  const markets = [
+    mk("m4", "SPREAD", opts.strike ?? "4", [["o-ind4", "Indiana Pacers"], ["o-nop4", "New Orleans Pelicans"]]),
+    mk("m85", "SPREAD", "8.5", [["o-nop85", "New Orleans Pelicans"], ["o-ind85", "Indiana Pacers"]]),
+    { ...mk("x", "SPREAD", "-2", [["a", "Boston Celtics"], ["b", "New York Knicks"]]), eventId: "ev2" },
+  ];
+  const http = (async (url: string, init: RequestInit) => {
+    const path = url.replace("https://nv", "");
+    calls.push({ method: init.method!, path, body: init.body ? JSON.parse(init.body as string) : undefined, headers: init.headers as Record<string, string> });
+    const j = (d: unknown, status = 200) => new Response(JSON.stringify(d), { status });
+    if (path.startsWith("/v3/catalog/markets?")) return j({ items: markets });
+    // bids resting on IND at 0.505 and 0.50 → NOP +4 can be bought at 0.495 (+102), 150 Novig contracts = $1.50
+    if (path === "/v3/catalog/markets/m4/book") return j({ marketId: "m4", seq: 1, orders: {
+      "o-ind4": [{ orderId: "r1", price: "0.505", qty: 100 }, { orderId: "r2", price: "0.505", qty: 5000 }, { orderId: "r3", price: "0.500", qty: 900 }],
+      "o-nop4": [{ orderId: "r4", price: "0.480", qty: 300 }] } });
+    if (path === "/v3/catalog/markets/m85/book") return j({ marketId: "m85", seq: 1, orders: {} });
+    if (path === "/v3/orders" && init.method === "POST") return j({ orderId: "ord-1" }, 201);
+    if (path === "/v3/orders/ord-1") return j({ orderId: "ord-1", qty: 4000, remaining: 0, status: "FILLED", price: "0.495", ...(opts.order || {}) });
+    if (path.startsWith("/v3/portfolio/fills")) return j({ items: opts.fills ?? [{ qty: 4000, cost: "19.60000" }] });
+    if (path === "/v3/account/subaccounts/kid/balance") return j({ keyId: "kid", balance: "312.50000" });
+    return new Response("{}", { status: 404 });
+  }) as unknown as typeof fetch;
+  return { http, calls };
+}
+async function novigVenue(f: ReturnType<typeof fakeNovig>) {
+  const { Novig } = await import("./core.ts");
+  return new Novig("kid", async () => "sig", "https://nv", f.http, () => NOW.getTime(), async () => {});
+}
+
+Deno.test("Novig: buys our side at 1 − the other side's best bid, at our own number, no fee before tip", async () => {
+  const f = fakeNovig();
+  const nv = await novigVenue(f);
+  const qs = await nv.offers(pxRow());
+  eq(qs.map((q) => [q.contract, q.cost, q.american, q.size, q.offer_id, q.ticker]),
+     [["NOP +4", 0.495, 102, 51, "o-nop4", "m4:o-ind4"]]);                  // +8.5 is past the system's max
+  ok(qs[0].ev > 0.1, String(qs[0].ev));
+  eq(nv.fee(0.495, 40), 0);
+  const listing = f.calls.find((c) => c.path.startsWith("/v3/catalog/markets?"))!;
+  ok(listing.path.includes("league=NBA") && listing.path.includes("eventStatus=OPEN_PREGAME"), listing.path);
+  eq(f.calls.filter((c) => c.path.startsWith("/v3/catalog/markets?")).length, 1);
+  await nv.offers(pxRow());
+  eq(f.calls.filter((c) => c.path.startsWith("/v3/catalog/markets?")).length, 1, "one listing per run");
+  eq((await nv.ask(qs[0], pxRow())).ask, 0.495);
+  eq(await nv.balance(), 312.5);
+});
+
+Deno.test("Novig: a home handicap is flipped for the away team; a number signed backwards vs the market is skipped", async () => {
+  const f = fakeNovig({ strike: "-4" });        // home NOP -4 while the market has NOP getting 3.5 → wrong way round
+  const nv = await novigVenue(f);
+  const row = pxRow();
+  eq((await nv.offers(row)).length, 0);
+  ok(nv.explain(row).includes("looks flipped"), nv.explain(row));
+  const g = fakeNovig();                         // IND side of "+4 home" is IND -4
+  const nv2 = await novigVenue(g);
+  const ind = feedRow({ model: { win0: 0.56, base: -3.5, bet: "spread", side: "IND", sd: 14.14, lo: -7.5, hi: 3.5, market: -3.5 }, to_win: 20 }, []);
+  const qs = await nv2.offers(ind);
+  eq(qs.map((q) => [q.contract, q.cost]), [["IND -4", 0.52]]);           // 1 − NOP's best bid 0.48
+});
+
+Deno.test("Novig: a market that charges a fee before tip is skipped", async () => {
+  const nv = await novigVenue(fakeNovig({ charged: "ALWAYS" }));
+  const row = pxRow();
+  eq((await nv.offers(row)).length, 0);
+  ok(nv.explain(row).includes("fee before tip"), nv.explain(row));
+});
+
+Deno.test("Novig order: immediate-or-cancel on the price grid, 100 Novig contracts per $1, fill read from the fills", async () => {
+  const f = fakeNovig();
+  const nv = await novigVenue(f);
+  const q = (await nv.offers(pxRow()))[0];
+  const uuid = "123e4567-e89b-12d3-a456-426614174000";
+  const r = await nv.order({ count: 40, limit_price: 0.4951, stake: 19.8 } as OrderRow, uuid, q);
+  const sub = f.calls.find((c) => c.path === "/v3/orders" && c.method === "POST")!;
+  eq(sub.body, { outcomeId: "o-nop4", price: "0.495", qty: 4000, tif: "IOC", clientId: uuid });
+  ok(sub.headers["Novig-Signature"] === "sig" && sub.headers["Novig-Key-Id"] === "kid");
+  eq([r.order_id, r.fill_count, r.fill_cost, r.fees], ["ord-1", 40, 19.6, 0]);
+  ok(f.calls.some((c) => c.path === "/v3/portfolio/fills?order=ord-1&limit=100"));
+});
+
+Deno.test("Novig order: an IOC that fills nothing comes back REJECTED = unfilled; a part fill counts what filled", async () => {
+  const nv = await novigVenue(fakeNovig({ order: { status: "REJECTED", remaining: 4000 } }));
+  const q = (await nv.offers(pxRow()))[0];
+  const r = await nv.order({ count: 40, limit_price: 0.495 } as OrderRow, "id1", q);
+  eq([r.fill_count, r.fill_cost], [0, 0]);
+  const nv2 = await novigVenue(fakeNovig({ order: { status: "CANCELED", remaining: 1500 }, fills: [{ qty: 2500, cost: "12.37500", fee: "0.01" }] }));
+  const r2 = await nv2.order({ count: 40, limit_price: 0.495 } as OrderRow, "id1", (await nv2.offers(pxRow()))[0]);
+  eq([r2.fill_count, r2.fill_cost, r2.fees], [25, 12.38, 0.01]);
+});
+
+Deno.test("Novig order: an order still open after the wait is an error (never assumed unfilled)", async () => {
+  const nv = await novigVenue(fakeNovig({ order: { status: "PENDING", remaining: 4000 } }));
+  const q = (await nv.offers(pxRow()))[0];
+  let err = "";
+  try { await nv.order({ count: 40, limit_price: 0.495 } as OrderRow, "id1", q); } catch (e) { err = String(e); }
+  ok(err.includes("still PENDING"), err);
+});
+
+Deno.test("Novig as a test-only site: logs WOULD HAVE PLACED at American odds and sends nothing", async () => {
+  const f = fakeNovig();
+  const nv = await novigVenue(f);
+  const db = new FakeDb(settings({ live_betting_on: true, kalshi_env: "prod", venues: ["kalshi"], watch_venues: ["novig"],
+    to_win_dollars: 20, max_dollars_per_game: 50 }), [pxRow()]);
+  await runOnce(db, { kalshi: new FakeVenue(null), novig: nv }, NOW);
+  ok(db.logs.some((l) => l.message.startsWith("WOULD HAVE PLACED: Novig (test site) NOP +4 at +102")), JSON.stringify(db.logs));
+  eq(f.calls.filter((c) => c.path === "/v3/orders").length, 0);
+  eq(db.orders_.filter((o) => o.mode === "live").length, 0);
+});
+
+Deno.test("novigGrid rounds down onto the exchange's price steps", async () => {
+  const { novigGrid, amer } = await import("./core.ts");
+  eq([novigGrid(0.4951), novigGrid(0.4999), novigGrid(0.0423), novigGrid(0.0537), novigGrid(0.9612)], [0.495, 0.495, 0.042, 0.05, 0.961]);
+  eq([amer(0.49), amer(0.55), amer(0.5)], ["+104", "-122", "-100"]);
 });

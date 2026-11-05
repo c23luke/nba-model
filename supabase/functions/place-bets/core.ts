@@ -409,7 +409,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       // Rule 6: re-check the ask; never pay more than the model saw
       const ask = chk.ask;
       if (ask == null || ask <= 0 || ask >= 0.99) { why.push(`${v.name} ${q.contract}: nothing to buy right now`); continue; }
-      if (ask > seen + 1e-9) { why.push(`${v.name} ${q.contract}: ask ${cents(ask)} moved above the model's ${cents(seen)}`); continue; }
+      if (ask > seen + 1e-9) { why.push(`${v.name} ${q.contract}: ask ${amer(ask)} moved above the model's ${amer(seen)}`); continue; }
 
       // Rule 2: same size every bet — to win a fixed amount (default), or a fixed stake
       const limit = round4(seen);
@@ -417,7 +417,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
       const count = toWin > 0
         ? contractsToWin(limit, toWin, (p, c) => v.fee(p, c))
         : Math.floor(s.stake_dollars / limit + 1e-9);
-      if (count < 1) { why.push(`stake ${money(s.stake_dollars)} buys less than one contract at ${cents(limit)}`); continue; }
+      if (count < 1) { why.push(`stake ${money(s.stake_dollars)} buys less than one contract at ${amer(limit)}`); continue; }
       const stake = round2(count * limit);
       const fee = v.fee(limit, count);
       const evNow = evAt(q, (stake + fee) / count);
@@ -441,7 +441,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
           `to win ${money(round2(count - stake))} (fee ~${money(fee)}) — ${row.pick}, ${row.system}, ${row.away} @ ${row.home}, ` +
           `expected return ${pct(evNow)}` +
           (q.size != null && q.size < stake ? ` (offer only has ${money(q.size)} left — would take that)` : "")
-        : `${q.venue_name ?? v.name} BUY ${order.order_side.toUpperCase()} ×${count} ${market} at ${cents(limit)} ` +
+        : `${q.venue_name ?? v.name} BUY ${order.order_side.toUpperCase()} ×${count} ${market} at ${amer(limit)} ` +
         `(stake ${money(stake)} + fee ${money(fee)}) — ${row.pick} via ${q.contract}, ${row.system}, ` +
         `${row.away} @ ${row.home}, expected return ${pct(evNow)}`;
 
@@ -531,7 +531,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
           model_price: limit, ask_at_check: chk.ask, limit_price: limit, count, stake, est_fee: fee, ev: round4(evNow),
           status: "dry_run", bet: row.bet, side: q.side,
         };
-        const text = `${v.name} (test site) ${q.contract} at ${q.american != null ? (q.american > 0 ? "+" : "") + q.american : cents(limit)} ` +
+        const text = `${v.name} (test site) ${q.contract} at ${q.american != null ? (q.american > 0 ? "+" : "") + q.american : amer(limit)} ` +
           `for ${money(stake)} to win ${money(round2(count - stake - fee))} — ${row.pick}, ${row.system}, ${row.away} @ ${row.home}, ` +
           `expected return ${pct(evNow)}`;
         const ins = await db.insertOrder({ ...order, reason: "test site: nothing sent" });
@@ -671,7 +671,7 @@ async function placeResting(db: Db, venues: Record<string, Venue>, s: Settings, 
       count, stake, est_fee: fee, ev: round4(evAt(q, (stake + fee) / count)), status: live ? "pending" : "dry_run",
       bet: row.bet, side: q.side,
     };
-    const text = `Kalshi RESTING ${order.order_side.toUpperCase()} ×${count} ${q.ticker} at ${cents(limit)} until ` +
+    const text = `Kalshi RESTING ${order.order_side.toUpperCase()} ×${count} ${q.ticker} at ${amer(limit)} until ` +
       `${REST_STOP_BEFORE_TIP_MIN} min before tip (stake ${money(stake)}, maker fee up to ${money(fee)}) — ${row.pick} via ` +
       `${q.contract}, ${row.system}, ${row.away} @ ${row.home}, expected return ${pct(order.ev)} if it fills`;
     if (!live) {
@@ -744,7 +744,11 @@ function orderSide(q: Quote) {
 }
 const round2 = (x: number) => Math.round(x * 100) / 100;
 const round4 = (x: number) => Math.round(x * 10000) / 10000;
-const cents = (x: number) => `${Math.round(x * 100)}¢`;
+/** A price per $1 payout as American odds (0.49 → +104, 0.55 → -122): Caden reads only American odds (2026-11-04). */
+export const amer = (p: number) => {
+  const a = Math.round(p >= 0.5 ? -100 * p / (1 - p) : 100 * (1 - p) / p);
+  return `${a > 0 ? "+" : ""}${a}`;
+};
 const money = (x: number) => `${x < 0 ? "-" : ""}$${Math.abs(x).toFixed(2)}`;
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 400);
@@ -1405,17 +1409,37 @@ export async function novigSigner(pem: string): Promise<(data: string) => Promis
   };
 }
 
-export class Novig {
+// Novig is an exchange: every outcome has its own ladder of resting BUY orders. A bid resting at 0.665 on one
+// outcome is what a taker on the other outcome buys at 0.335 (docs: api/streaming/book). One contract pays 1¢,
+// so 100 Novig contracts = one of our $1 contracts. Game lines charge the taker only once the game is live
+// (fee.charged WHEN_LIVE), so the pregame bets we make pay no fee; a market that says otherwise is skipped.
+const NOVIG_PER_DOLLAR = 100;
+/** Round a probability DOWN onto Novig's price grid (0.001 steps at the ends, 0.005 between 0.055 and 0.945). */
+export function novigGrid(p: number): number {
+  const mid = p > 0.05 && p < 0.95;
+  const step = mid ? 0.005 : 0.001;
+  let g = Math.floor((p + 1e-9) / step) * step;
+  if (g > 0.05 && g < 0.055) g = 0.05;
+  return Math.max(0.001, Math.min(0.999, Math.round(g * 1000) / 1000));
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export class Novig implements Venue {
   name = "Novig";
+  gradeFromGames = true;
+  notes = new Map<string, string[]>();
+  private mkts: any[] | null = null;
   constructor(private keyId: string | undefined, private sign: ((d: string) => Promise<string>) | undefined,
-              private host = NOVIG_HOST, private http: typeof fetch = fetch) {}
+              private host = NOVIG_HOST, private http: typeof fetch = fetch, private nowMs = () => Date.now(),
+              private sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))) {}
   get hasKeys() { return !!(this.keyId && this.sign); }
+
   async call(method: string, pathAndQuery: string, body?: unknown): Promise<{ status: number; json: any; text: string }> {
-    if (!this.keyId || !this.sign) throw new Error("no Novig keys in Supabase secrets");
+    if (!this.keyId || !this.sign) throw new Error("no NOVIG_KEY_ID / NOVIG_PRIVATE_KEY in Supabase secrets");
     const [path, query = ""] = pathAndQuery.split("?");
     const raw = body === undefined ? "" : JSON.stringify(body);
     const hash = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)));
-    const ts = String(Date.now());
+    const ts = String(Date.now());                    // the exchange checks this against its own clock (±30 s)
     const headers: Record<string, string> = {
       "Novig-Key-Id": this.keyId, "Novig-Timestamp": ts,
       "Novig-Signature": await this.sign(novigStringToSign(ts, method, path, query, hash)),
@@ -1427,20 +1451,174 @@ export class Novig {
     try { json = JSON.parse(text); } catch { /* not json */ }
     return { status: r.status, json, text };
   }
-  /** Read-only: does the signature work, what kind of key is it, is the location check fresh, which sub-accounts exist. */
+  /** A call that must succeed. Reads that hit the rate limit wait and try again, twice. */
+  private async must(method: string, pathAndQuery: string, body?: unknown) {
+    let r = await this.call(method, pathAndQuery, body);
+    for (let i = 0; r.status === 429 && method === "GET" && i < 2; i++) {
+      await this.sleep(1500 * (i + 1));
+      r = await this.call(method, pathAndQuery, body);
+    }
+    if (r.status < 200 || r.status >= 300) {
+      const hint = r.json?.code === "GEOLOCATION_EXPIRED" ? " (open the Novig app on your phone to renew the location check)" : "";
+      throw new Error(`Novig ${method} ${pathAndQuery.split("?")[0]} → ${r.status}: ${r.text.slice(0, 250)}${hint}`);
+    }
+    return r.json;
+  }
+
+  /** Read-only: does the signature work, is the location check fresh. */
   async probe(): Promise<string> {
     const out: string[] = [];
     const short = (x: { status: number; text: string }) => `${x.status} ${x.text.slice(0, 220)}`;
     const echo = await this.call("POST", "/v3/echo", { ping: "courtside" });
     out.push(`signature ${echo.status === 200 ? "OK" : "FAILED " + short(echo)}`);
     if (echo.status !== 200) return out.join("; ");
-    const k = await this.call("GET", `/v3/keys/${this.keyId}`);
-    out.push(`this key: ${k.status === 200 ? `scope ${k.json?.scope ?? "?"}, name ${k.json?.name ?? "?"}` : short(k)}`);
     const g = await this.call("GET", "/v3/account/geolocation");
     out.push(`location check: ${g.status === 200 ? (g.json?.code ? `${g.json.code}` : "OK") + `, expires ${g.json?.expiresAt ?? "never set"}` : short(g)}`);
-    const sub = await this.call("GET", "/v3/account/subaccounts");
-    out.push(`sub-accounts: ${sub.status === 200 ? sub.text.slice(0, 300) : short(sub)}`);
+    try { out.push(`balance ${money(await this.balance())}`); } catch (e) { out.push(`balance: ${msg(e)}`); }
     return out.join("; ");
+  }
+
+  /** Every open pregame NBA game line in the next two days (one listing per run, all pages). */
+  private async markets() {
+    if (this.mkts) return this.mkts;
+    const now = this.nowMs(), out: any[] = [];
+    let after = "";
+    for (let page = 0; page < 10; page++) {
+      const q = `league=NBA&marketType=${encodeURIComponent("MONEY,SPREAD,TOTAL")}&eventStatus=OPEN_PREGAME` +
+        `&startsAfter=${now - 6 * 3600e3}&startsBefore=${now + 48 * 3600e3}&limit=1000` + (after ? `&after=${encodeURIComponent(after)}` : "");
+      const js = await this.must("GET", `/v3/catalog/markets?${q}`);
+      out.push(...(js?.items ?? []));
+      if (!js?.next) break;
+      after = String(js.next);
+    }
+    return (this.mkts = out);
+  }
+  /** This game's markets: the event whose two teams are ours, starting within 6 hours of our tip. */
+  private async game(row: FeedRow) {
+    const byEvent = new Map<string, any[]>();
+    for (const m of await this.markets()) byEvent.set(m.eventId, [...(byEvent.get(m.eventId) ?? []), m]);
+    for (const ms of byEvent.values()) {
+      const two = ms.find((m) => m.marketType === "MONEY" || m.marketType === "SPREAD");
+      if (!two) continue;
+      const teams = (two.outcomes ?? []).map((o: any) => teamCode(o.name));
+      if (teams.includes(row.home) && teams.includes(row.away) && Math.abs(Number(two.startsTs) - Date.parse(row.tip_utc)) < 6 * 3600e3) return ms;
+    }
+    return null;
+  }
+  /** Best price to BUY `outcomeId` right now = 1 − the best bid resting on the other outcome; size in $1 contracts. */
+  private async bestAsk(marketId: string, otherId: string) {
+    const b = await this.must("GET", `/v3/catalog/markets/${marketId}/book`);
+    const ladder: any[] = b?.orders?.[otherId] ?? [];
+    if (!ladder.length) return null;
+    const top = Number(ladder[0].price);
+    const qty = ladder.filter((x) => Number(x.price) === top).reduce((t, x) => t + Number(x.qty ?? 0), 0);
+    return { ask: Math.round((1 - top) * 1000) / 1000, size: round2(qty / NOVIG_PER_DOLLAR) };
+  }
+
+  explain(row: FeedRow): string {
+    const n = this.notes.get(row.key);
+    return !n ? "" : n.length ? `Novig on this game: ${n.join("; ")}` : "Novig: nothing on this game";
+  }
+
+  async offers(row: FeedRow): Promise<Quote[]> {
+    const m = row.model;
+    if (!m) return [];
+    const notes: string[] = [];
+    this.notes.set(row.key, notes);
+    const ms = await this.game(row);
+    if (!ms) { notes.push("game not listed"); return []; }
+    const out: Quote[] = [];
+    for (const mk of ms) {
+      const kind = mk.marketType === "MONEY" ? "moneyline" : mk.marketType === "SPREAD" ? "spread" : mk.marketType === "TOTAL" ? "total" : "";
+      if (!kind || (m.bet === "total") !== (kind === "total") || mk.status !== "OPEN") continue;
+      const outs: any[] = mk.outcomes ?? [];
+      const who = (o: any) => kind === "total" ? (/\bover\b/i.test(o.name) ? "OVER" : /\bunder\b/i.test(o.name) ? "UNDER" : null) : teamCode(o.name);
+      const mine = outs.find((o) => who(o) === m.side), other = outs.find((o) => o !== mine);
+      if (!mine || !other || outs.length !== 2) continue;
+      const strike = Number(mk.strike);
+      let line: number;
+      if (kind === "moneyline") line = -0.5;
+      else if (!Number.isFinite(strike)) continue;
+      else line = kind === "total" ? strike : m.side === row.home ? strike : -strike;   // strike = the home side's handicap
+      const desc = `${m.side} ${kind} ${kind === "moneyline" ? "" : line}`;
+      const pass = (why: string) => { if (notes.length < 12) notes.push(`${desc}: ${why}`); };
+      if (mk.fee?.charged && mk.fee.charged !== "WHEN_LIVE") { pass(`charges a fee before tip (${mk.fee.charged})`); continue; }
+      if (kind === "spread" && m.market != null && Math.abs(m.market) >= 1 && Math.sign(line) !== Math.sign(m.market)) {
+        pass(`number looks flipped vs the market (${m.market > 0 ? "+" : ""}${m.market})`); continue;
+      }
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
+      if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
+      const best = await this.bestAsk(mk.marketId, other.outcomeId);
+      if (!best || best.size < 1) { pass("nothing to take"); continue; }
+      const cost = best.ask;
+      if (cost <= 0.01 || cost >= 0.99) { pass("no real price"); continue; }
+      const { win, push } = outcomeAt(m, line);
+      if (m.market != null) {
+        const mkt = outcomeAt({ ...m, win0: 0.5, base: m.market }, line);
+        if (cost < mkt.win / (1 - mkt.push) - 0.10) { pass("price too good to be real (bad data)"); continue; }
+      }
+      const ev_ = win * (1 / (cost + this.fee(cost, 1)) - 1) - (1 - win - push);
+      const american = Math.round(cost >= 0.5 ? -100 * cost / (1 - cost) : 100 * (1 - cost) / cost);
+      pass(`${american > 0 ? "+" : ""}${american} ($${best.size}): expected return ${pct(ev_)}`);
+      const contract = kind === "total" ? `${m.side === "OVER" ? "Over" : "Under"} ${line}`
+        : kind === "moneyline" ? `${m.side} to win` : `${m.side} ${line > 0 ? "+" : ""}${line}`;
+      out.push({ venue: "novig", venue_name: "Novig", contract, side: m.side, line, american, cost: round4(cost), win,
+                 ev: round4(ev_), max_cost: win / (1 - push), size: best.size, offer_id: mine.outcomeId,
+                 ticker: `${mk.marketId}:${other.outcomeId}`, order_side: "buy", ml: kind === "moneyline" });
+    }
+    return out.sort((a, b) => b.ev - a.ev);
+  }
+
+  async ask(q: Quote, row: FeedRow) {
+    const market = `nv:${row.away}@${row.home}:${row.bet}:${q.side}:${q.line}`;
+    const [marketId, otherId] = String(q.ticker ?? "").split(":");
+    if (!marketId || !otherId) return { ask: null, market };
+    const best = await this.bestAsk(marketId, otherId);
+    if (!best || best.size < 1) return { ask: null, market, detail: { gone: true } };
+    return { ask: best.ask, market, detail: best };
+  }
+  /** No taker fee on a game line before tip (we only bet pregame). The real fee, if any, comes back on the fills. */
+  fee(_p: number, _c: number) { return 0; }
+  async balance() {
+    const js = await this.must("GET", `/v3/account/subaccounts/${this.keyId}/balance`);
+    const b = Number(js?.balance);
+    if (!Number.isFinite(b)) throw new Error(`Novig balance unreadable: ${JSON.stringify(js).slice(0, 120)}`);
+    return b;
+  }
+  async pnlToday(): Promise<number> { throw new Error("Novig P&L is graded from final scores"); }
+
+  /** Immediate-or-cancel at our price: takes what's on the book at that price or better, cancels the rest. */
+  async order(o: OrderRow, clientId: string, q?: Quote) {
+    if (!q?.offer_id) throw new Error("no Novig outcome");
+    const price = novigGrid(o.limit_price);
+    const body: Record<string, unknown> = { outcomeId: q.offer_id, price: price.toFixed(3),
+      qty: Math.round(o.count * NOVIG_PER_DOLLAR), tif: "IOC" };
+    if (UUID.test(clientId)) body.clientId = clientId;
+    const sub = await this.must("POST", "/v3/orders", body);
+    const id = sub?.orderId;
+    if (!id) throw new Error(`Novig returned no order id: ${JSON.stringify(sub).slice(0, 300)}`);
+    // 201 means accepted, not matched: read it back until it's finished (an IOC that fills nothing is REJECTED)
+    let ord: any = null;
+    for (let i = 0; i < 10; i++) {
+      await this.sleep(i < 3 ? 700 : 1500);
+      const r = await this.call("GET", `/v3/orders/${id}`);
+      if (r.status === 404) continue;
+      if (r.status !== 200) throw new Error(`Novig GET /v3/orders → ${r.status}: ${r.text.slice(0, 200)}`);
+      ord = r.json;
+      if (["FILLED", "CANCELED", "REJECTED"].includes(String(ord?.status))) break;
+    }
+    if (!["FILLED", "CANCELED", "REJECTED"].includes(String(ord?.status))) {
+      throw new Error(`Novig order ${id}: still ${ord?.status ?? "not visible"} after 15 s (check it on Novig)`);
+    }
+    const filledQty = ord.status === "REJECTED" ? 0 : Math.max(0, Number(ord.qty) - Number(ord.remaining ?? 0));
+    let cost = 0, fees = 0, qty = 0;
+    if (filledQty > 0) {
+      const f = await this.must("GET", `/v3/portfolio/fills?order=${id}&limit=100`);
+      for (const x of f?.items ?? []) { qty += Number(x.qty ?? 0); cost += Number(x.cost ?? 0); fees += Number(x.fee ?? 0); }
+      if (!qty) { qty = filledQty; cost = filledQty * price / NOVIG_PER_DOLLAR; }     // fills not listed yet: our limit
+    }
+    return { order_id: String(id), fill_count: round2(qty / NOVIG_PER_DOLLAR), fill_cost: round2(cost),
+             fees: round2(fees), raw: { order: ord, fills_qty: qty } };
   }
 }
 
@@ -1470,7 +1648,7 @@ export function keyCheck(db?: Db): () => Promise<string> {
     if (Deno.env.get("NOVIG_KEY_ID") && Deno.env.get("NOVIG_PRIVATE_KEY")) {
       try {
         const nv = new Novig(Deno.env.get("NOVIG_KEY_ID"), await novigSigner(Deno.env.get("NOVIG_PRIVATE_KEY")!));
-        out.push(`Novig (read-only test): ${await nv.probe()}`);
+        out.push(`Novig: ${await nv.probe()}`);
       } catch (e) { out.push(`Novig: ${msg(e)}`); }
     } else out.push("Novig: no keys");
     return "Key check — " + out.join(" · ");
@@ -1483,10 +1661,12 @@ export async function buildVenues(s: Settings, db?: Db): Promise<Record<string, 
   const pem = Deno.env.get(env === "prod" ? "KALSHI_PRIVATE_KEY" : "KALSHI_DEMO_PRIVATE_KEY");
   const signer = keyId && pem ? await kalshiSigner(pem) : undefined;
   const dataBase = s.live_betting_on ? KALSHI_BASE[env] : KALSHI_BASE.prod;
+  const novigPem = Deno.env.get("NOVIG_PRIVATE_KEY");
   return {
     kalshi: new Kalshi(KALSHI_BASE[env], keyId, signer, dataBase),
     polymarket_us: new PolymarketUS(Deno.env.get("POLYMARKET_KEY_ID"), Deno.env.get("POLYMARKET_SECRET_KEY")),
     betopenly: new BetOpenly(Deno.env.get("BETOPENLY_KEY")),
     prophetx: new ProphetX(Deno.env.get("PROPHETX_ACCESS_KEY"), Deno.env.get("PROPHETX_SECRET_KEY"), db),
+    novig: new Novig(Deno.env.get("NOVIG_KEY_ID"), novigPem ? await novigSigner(novigPem).catch(() => undefined) : undefined),
   };
 }
