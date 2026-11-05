@@ -1351,6 +1351,95 @@ export function supabaseDb(sb: any): Db {
 }
 
 /** Read-only check of every key in the secrets (balances only). Never places anything. */
+// ------------------------------------------------------------------ Novig (v3 API, read-only probe for now)
+export const NOVIG_HOST = "https://api.novig.com";
+
+/** Canonical query per docs.novig.com/api/signing: split, decode, re-encode (RFC 3986 unreserved kept), sort. */
+export function novigCanonicalQuery(raw: string): string {
+  if (!raw) return "";
+  const enc = (x: string) => encodeURIComponent(x).replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+  const dec = (x: string) => decodeURIComponent(x);
+  return raw.split("&").map((pair) => {
+    const i = pair.indexOf("=");
+    const [k, v] = i < 0 ? [pair, ""] : [pair.slice(0, i), pair.slice(i + 1)];
+    return [enc(dec(k)), enc(dec(v))];
+  }).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))
+    .map(([k, v]) => `${k}=${v}`).join("&");
+}
+
+export function novigStringToSign(ts: string, method: string, path: string, query: string, bodyHashHex: string): string {
+  return ["NOVIG-V3", ts, method.toUpperCase(), path, novigCanonicalQuery(query), bodyHashHex].join("\n");
+}
+
+const hex = (b: ArrayBuffer) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+const b64 = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b instanceof Uint8Array ? b : new Uint8Array(b))));
+
+/** ECDSA P-256 from WebCrypto is raw r||s; Novig wants DER SEQUENCE { r, s }. */
+export function ecdsaRawToDer(raw: Uint8Array): Uint8Array {
+  const int = (x: Uint8Array) => {
+    let i = 0;
+    while (i < x.length - 1 && x[i] === 0) i++;
+    let v = x.slice(i);
+    if (v[0] & 0x80) v = new Uint8Array([0, ...v]);
+    return new Uint8Array([0x02, v.length, ...v]);
+  };
+  const r = int(raw.slice(0, 32)), s = int(raw.slice(32));
+  return new Uint8Array([0x30, r.length + s.length, ...r, ...s]);
+}
+
+export async function novigSigner(pem: string): Promise<(data: string) => Promise<string>> {
+  const body = pem.replace(/\\n/g, "\n").replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");   // secrets may hold literal \n
+  const der = Uint8Array.from(atob(body), (c) => c.charCodeAt(0));
+  const isEd = hex(der.buffer).includes("06032b6570");               // OID 1.3.101.112 = Ed25519
+  const key = await crypto.subtle.importKey("pkcs8", der, isEd ? { name: "Ed25519" } : { name: "ECDSA", namedCurve: "P-256" },
+    false, ["sign"]);
+  return async (data: string) => {
+    const bytes = new TextEncoder().encode(data);
+    const sig = isEd ? await crypto.subtle.sign({ name: "Ed25519" }, key, bytes)
+      : ecdsaRawToDer(new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, bytes)));
+    return b64(sig);
+  };
+}
+
+export class Novig {
+  name = "Novig";
+  constructor(private keyId: string | undefined, private sign: ((d: string) => Promise<string>) | undefined,
+              private host = NOVIG_HOST, private http: typeof fetch = fetch) {}
+  get hasKeys() { return !!(this.keyId && this.sign); }
+  async call(method: string, pathAndQuery: string, body?: unknown): Promise<{ status: number; json: any; text: string }> {
+    if (!this.keyId || !this.sign) throw new Error("no Novig keys in Supabase secrets");
+    const [path, query = ""] = pathAndQuery.split("?");
+    const raw = body === undefined ? "" : JSON.stringify(body);
+    const hash = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)));
+    const ts = String(Date.now());
+    const headers: Record<string, string> = {
+      "Novig-Key-Id": this.keyId, "Novig-Timestamp": ts,
+      "Novig-Signature": await this.sign(novigStringToSign(ts, method, path, query, hash)),
+    };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const r = await this.http(this.host + pathAndQuery, { method, headers, body: body === undefined ? undefined : raw });
+    const text = await r.text();
+    let json: any = null;
+    try { json = JSON.parse(text); } catch { /* not json */ }
+    return { status: r.status, json, text };
+  }
+  /** Read-only: does the signature work, what kind of key is it, is the location check fresh, which sub-accounts exist. */
+  async probe(): Promise<string> {
+    const out: string[] = [];
+    const short = (x: { status: number; text: string }) => `${x.status} ${x.text.slice(0, 220)}`;
+    const echo = await this.call("POST", "/v3/echo", { ping: "courtside" });
+    out.push(`signature ${echo.status === 200 ? "OK" : "FAILED " + short(echo)}`);
+    if (echo.status !== 200) return out.join("; ");
+    const k = await this.call("GET", `/v3/keys/${this.keyId}`);
+    out.push(`this key: ${k.status === 200 ? `scope ${k.json?.scope ?? "?"}, name ${k.json?.name ?? "?"}` : short(k)}`);
+    const g = await this.call("GET", "/v3/account/geolocation");
+    out.push(`location check: ${g.status === 200 ? (g.json?.code ? `${g.json.code}` : "OK") + `, expires ${g.json?.expiresAt ?? "never set"}` : short(g)}`);
+    const sub = await this.call("GET", "/v3/account/subaccounts");
+    out.push(`sub-accounts: ${sub.status === 200 ? sub.text.slice(0, 300) : short(sub)}`);
+    return out.join("; ");
+  }
+}
+
 export function keyCheck(db?: Db): () => Promise<string> {
   return async () => {
     const out: string[] = [];
@@ -1374,6 +1463,12 @@ export function keyCheck(db?: Db): () => Promise<string> {
       } catch (e) { out.push(`ProphetX: ${msg(e)}`); }
     } else out.push("ProphetX: no keys");
     out.push(`POLYMARKET_KEY_ID: ${Deno.env.get("POLYMARKET_KEY_ID") ? "saved (dry run only)" : "not set"}`);
+    if (Deno.env.get("NOVIG_KEY_ID") && Deno.env.get("NOVIG_PRIVATE_KEY")) {
+      try {
+        const nv = new Novig(Deno.env.get("NOVIG_KEY_ID"), await novigSigner(Deno.env.get("NOVIG_PRIVATE_KEY")!));
+        out.push(`Novig (read-only test): ${await nv.probe()}`);
+      } catch (e) { out.push(`Novig: ${msg(e)}`); }
+    } else out.push("Novig: no keys");
     return "Key check — " + out.join(" · ");
   };
 }

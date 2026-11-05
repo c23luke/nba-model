@@ -816,3 +816,27 @@ Deno.test("buying points down needs a clear gain over the pick's number", async 
   eq(buydownOk([q(12.5, 0.06), q(10.5, 0.07)], row, 0.04).map((x) => x.line), [12.5]);
   eq(buydownOk([q(10.5, 0.06)], row, 0.04).length, 0);
 });
+
+Deno.test("Novig: canonical string matches the docs' example, query sorted and encoded", async () => {
+  const { novigStringToSign, novigCanonicalQuery } = await import("./core.ts");
+  eq(novigStringToSign("1755000000000", "get", "/v3/keys", "",
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+    "NOVIG-V3\n1755000000000\nGET\n/v3/keys\n\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+  eq(novigCanonicalQuery("limit=5&league=NBA&a=x%20y&b"), "a=x%20y&b=&league=NBA&limit=5");
+});
+
+Deno.test("Novig: Ed25519 and P-256 keys both sign, and the request carries the three headers", async () => {
+  const { novigSigner, Novig } = await import("./core.ts");
+  for (const alg of [{ name: "Ed25519" }, { name: "ECDSA", namedCurve: "P-256" }]) {
+    const kp = await crypto.subtle.generateKey(alg as any, true, ["sign", "verify"]) as CryptoKeyPair;
+    const der = new Uint8Array(await crypto.subtle.exportKey("pkcs8", kp.privateKey));
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...der))}\n-----END PRIVATE KEY-----`;
+    const sign = await novigSigner(pem);
+    let seen: Record<string, string> = {};
+    const http = (async (_u: string, init: RequestInit) => { seen = init.headers as Record<string, string>;
+      return new Response("{}", { status: 200 }); }) as unknown as typeof fetch;
+    await new Novig("kid", sign, "https://x", http).call("POST", "/v3/echo", { a: 1 });
+    ok(seen["Novig-Key-Id"] === "kid" && /^\d+$/.test(seen["Novig-Timestamp"]) && seen["Novig-Signature"].length > 40, JSON.stringify(seen));
+    eq(seen["Content-Type"], "application/json");
+  }
+});
