@@ -81,10 +81,11 @@ h2:first-child { margin-top: 8px; }
 .hold { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin: 8px 0 2px; }
 .hold b { font: 800 46px/1 var(--display); letter-spacing: .01em; }
 .hold span { color: var(--haze); font-size: 15px; }
-.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.figs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.figs .clv span { display: block; font-size: 12px; margin-top: 2px; }
 .figs div { font-size: 13px; color: var(--haze); background: var(--floor); border-radius: 12px; padding: 8px 10px; }
 .figs strong { display: block; font: 700 24px/1.1 var(--display); color: var(--chalk); }
-@media (max-width: 560px) { .figs { grid-template-columns: 1fr 1fr; } .hold b { font-size: 40px; } .ticket { padding: 14px 14px 10px; } }
+@media (max-width: 560px) { .figs { grid-template-columns: 1fr 1fr; } .figs .clv { grid-column: 1 / -1; } .hold b { font-size: 40px; } .ticket { padding: 14px 14px 10px; } }
 .mkt { font-size: 14px; color: var(--haze); margin: 0 0 8px; }
 .mkt b { color: var(--chalk); font-weight: 600; }
 .plain { font-size: 16px; line-height: 1.6; margin: 12px 0 4px; padding: 12px 14px; background: rgba(255,123,41,.07); border-left: 3px solid var(--leather); border-radius: 0 12px 12px 0; }
@@ -462,6 +463,7 @@ function ticket(x) {
         <div>Risked<strong>${money(x.risk)}</strong></div>
         <div>To win<strong>${money(x.to_win)}</strong></div>
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
+        ${clvBox(x)}
       </div>
       ${(x.pieces || []).length > 1 ? `<div class="mkt">${x.pieces.slice(1).map(p => `Also bought <b>${esc(p.holding)}</b>: ${p.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} at ${amer(p.american)}, ${money(p.risk)} to win ${money(p.to_win)}`).join(". ")}. Risked and To win include it. The record grades the bet at ${esc(x.holding)}, where most of the money is.</div>` : ""}
       ${marketLine(x)}
@@ -480,6 +482,15 @@ function ticket(x) {
         <dt>Placed</dt><dd>${esc(when(x.placed_at))}</dd>
       </dl></details>
   </article>`;
+}
+
+// CLV: how many points better (green) or worse (red) our number is than the closing line; before tip, than the line now
+function clvBox(x) {
+  if (x.clv_pts == null) return "";
+  const m = x.market || {}, c = x.clv_pts, d = m.beat_close != null ? m.beat_close / 100 * x.count : null;
+  const pts = `${c > 0 ? "+" : c < 0 ? "−" : ""}${Math.abs(c)} pt${Math.abs(c) === 1 ? "" : "s"}`;
+  const cls = c > 0 ? "pos" : c < 0 ? "neg" : "";
+  return `<div class="clv">${m.closed ? "CLV" : "CLV so far"}<strong class="${cls}">${pts}</strong>${d != null ? `<span class="${d > 0 ? "pos" : d < 0 ? "neg" : ""}">${d >= 0 ? "+" : "−"}$${Math.abs(d).toFixed(2)} vs ${m.closed ? "the close" : "now"}</span>` : ""}</div>`;
 }
 
 function sizeLine(x) {

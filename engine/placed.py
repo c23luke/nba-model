@@ -179,6 +179,13 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             market = {"at_bet": at_bet, "line": now_line, "closed": status != "OPEN",
                       "moved": None if at_bet is None else moved_our_way(o.get("bet"), o.get("side"), at_bet, now_line),
                       "beat_close": beat_close(o, per, now_line)}
+        # CLV in points: the number we hold vs the closing line (before tip: vs the line now). + = we beat it.
+        clv_pts = None
+        if market and market.get("line") is not None and o.get("line") is not None and o.get("bet") != "total" \
+                and "ML" not in holding(o):
+            clv_pts = round(float(o["line"]) - float(market["line"]), 1)
+        elif market and market.get("line") is not None and o.get("line") is not None and o.get("bet") == "total":
+            clv_pts = round((float(market["line"]) - float(o["line"])) * (1 if o.get("side") == "OVER" else -1), 1)
         mg = margin(o, g) if status == "LIVE" and g else None
         hist = snap.get("history") or None
         season = season_wl(p) if p else {"w": 0, "l": 0, "p": 0}
@@ -205,6 +212,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
+            "clv_pts": clv_pts,
             "manual": venue == "manual", "status": status, "result": res, "pnl": pnl, "market": market, "covering": mg,
             "final_score": p.get("final_score") if res else None,
             "score": {"home": g.get("home_score"), "away": g.get("away_score")} if status != "OPEN" and g else None,

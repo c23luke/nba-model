@@ -249,3 +249,17 @@ def test_a_game_that_lands_between_our_two_numbers_counts_once_at_the_main_numbe
     assert b["result"] == "L" and b["pnl"] == -11.67                 # real money: both pieces
     out = rules_now([b])
     assert (out["w"], out["l"]) == (0, 1) and out["pnl"] == -b["rules"]["risk"]   # record: one full $20-size loss
+
+
+
+def test_clv_in_points_against_the_close():
+    # Nov 4: MEM -4.5 held, closed MEM -6 -> +1.5 points; MIN +8.5 held, closed MIN +7.5 -> +1
+    from engine.placed import placed_bets
+    now = datetime(2026, 11, 5, 15, 0, tzinfo=timezone.utc)
+    games = {"g": {"final": True, "home": "MEM", "away": "IND", "home_score": 103, "away_score": 107, "home_spread": -6.0}}
+    o = {"id": "o", "mode": "live", "venue": "prophetx", "bet_key": "k", "game_id": "g", "tip_utc": "2026-11-05T00:00:00+00:00",
+         "bet": "spread", "side": "MEM", "line": -4.5, "pick": "MEM -6", "fill_count": 37.14, "fill_cost": 17.14, "fees": 0,
+         "created_at": "2026-11-04T15:00:00+00:00", "ev": 0.25, "system": "T13"}
+    picks = {"k": {"key": "k", "system": 113, "home": "MEM", "away": "IND", "meta": {"close_line": -6.0, "worst_gap": 4.3}}}
+    r = placed_bets([o], picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
+    assert r["clv_pts"] == 1.5 and r["market"]["closed"]
