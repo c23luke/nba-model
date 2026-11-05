@@ -1,0 +1,51 @@
+game 401909292 TOR @ MIL tip 2026-11-07T01:00Z | board generated 2026-11-05T23:48:44.887607+00:00
+market now: home spread 7.5 from Odds API consensus 6 updated 2026-11-05T23:48:44.887607+00:00
+
+=== line history (consensus home spread, each logged run)
+  2026-11-05T21:20:29 home spread 7.0 total 232.5
+  2026-11-05T22:50:31 home spread 7.5 total 231.5
+  2026-11-05T23:43:24 home spread 7.0 total 231.5
+  2026-11-05T23:48:44 home spread 7.5 total 231.5
+
+=== players model view now
+{
+ "gap": -1.9,
+ "raw": 10.4,
+ "call": {
+  "call": "none"
+ },
+ "fair": 9.5,
+ "blind": [],
+ "evidence": [
+  "TOR: 91% of projected minutes from players who finished last season here",
+  "New in the rotation: Kyle Anderson (MIN, 1855 min, BPM +0.4)",
+  "OUT: Nate Bittle (no NBA log), Kawhi Leonard (32 mpg, BPM +8.0), Kevin McCullar Jr. (7 mpg, BPM -2.8), Malachi Smith (24 mpg, BPM -0.8)",
+  "Rookie (rated on draft slot) \u2014 Allen Graves, -2.9, 12 mpg: rookie prior: #19 pick 2026 \u2192 picks 15-30 averaged BPM -3.6 and 11 min per team game as rookies (94% of 32 played); last games minutes: 10, 7, 13 (latest 3 count double for the role); this season: 102 min in 8 g, box impact -0.1 \u2192 blended -2.87 (prior worth 400 min)",
+  "Rookie (rated on draft slot) \u2014 Jaden Bradley, -1.9, 2 mpg: rookie prior: #50 pick 2026 \u2192 picks 31-60 averaged BPM -2.6 and 6 min per team game as rookies (68% of 57 played); last games minutes: 4, 0, 3 (latest 3 count double for the role); this season: 23 min in 8 g, box impact +9.5 \u2192 blended -1.90 (prior worth 400 min)",
+  "TOR this season: 5.8 pts/game better than its players predicted, over 8 game(s) \u2192 rating +3.6 (results count more with every game)",
+  "This season so far: Scottie Barnes 267 min, box -0.4 \u2192 now +2.3, RJ Barrett 260 min, box -0.9 \u2192 now -0.2, Immanuel Quickley 254 min, box +2.4 \u2192 now +1.9, Ja'Kobe Walter 233 min, box +0.1 \u2192 now +0.1, Jamal Shead 172 min, box -2.8 \u2192 now -2.4",
+  "MIL: 46% of projected minutes from players who finished last season here",
+  "New in the rotation: Tyler Herro (MIA, 3758 min, BPM +2.0), Jaime Jaquez Jr. (MIA, 3489 min, BPM +0.1), Kasparas Jakucionis (MIA, 945 min, BPM -0.4), Kel'el Ware (MIA, 3126 min, BPM +2.1)",
+  "OUT: Kam Jones (17 mpg, BPM -6.2), Bogoljub Markovic (#47 pick 2025, rookie), Pete Nance (15 mpg, BPM -2.3), Cormac Ryan (25 mpg, BPM -0.8)",
+  "Rookie (rated on draft slot) \u2014 Brayden Burries, -2.4, 18 mpg: rookie prior: #10 pick 2026 \u2192 picks 8-14 averaged BPM -2.2 and 13 min per team game as rookies (86% of 14 played); last games minutes: 21, 26, 22 (latest 3 count double for the role); this season: 143 min in 8 g, box impact -2.7 \u2192 blended -2.38 (prior worth 400 min)",
+  "Rookie (rated on draft slot) \u2014 Nate Ament, -2.9, 12 mpg: rookie prior: #13 pick 2026 \u2192 picks 8-14 averaged BPM -2.2 and 13 min per team game as rookies (86% of 14 played); last games minutes: 19, 8, 18 (latest 3 count double for the role); this season: 90 min in 8 g, box impact -6.1 \u2192 blended -2.95 (prior worth 400 min)",
+  "MIL this season: 5.5 pts/game worse than its players predicted, over 8 game(s) \u2192 rating -3.4 (results count more with every game)",
+  "This season so far: Tyler Herro 245 min, box +3.0 \u2192 now +2.2, Jaime Jaquez Jr. 227 min, box -1.3 \u2192 now -0.6, Myles Turner 223 min, box -2.4 \u2192 now -0.7, Kyle Kuzma 211 min, box -2.9 \u2192 now -2.9, Ryan Rollins 199 min, box -5.5 \u2192 now -0.8"
+ ],
+ "scenarios": [
+  {
+   "gap": -1.9,
+   "away": "play",
+   "fair": 9.5,
+   "home": "play"
+  }
+ ],
+ "calibrated": true,
+ "waiting_on": [],
+ "away_rating": 4.22,
+ "home_rating": -7.86
+}
+
+=== pick rows for this game
+{"key": "401909292-S204-TOR", "game_id": "401909292", "game_date": "2026-11-06", "tip_utc": "2026-11-07T01:00Z", "away": "TOR", "home": "MIL", "system": 204, "bet": "spread", "side": "TOR", "label": "TOR -7", "line": -7.0, "first_line": -7.0, "first_seen": "2026-11-05T05:00:27.212665+00:00", "last_checked": "2026-11-05T23:48:44.887607+00:00", "active": true, "dropped_reason": null, "evidence": ["TOR lost by 19 last game: TOR 109 @ DEN 128", "Only 8 game(s) into the season"], "kalshi": {"fee": 0.02, "url": "https://kalshi.com/markets/kxnbagame/nba-game/kxnbagame-26nov06tormil", "cost": 0.57, "exact": false, "price": 0.55, "ticker": "KXNBASPREAD-26NOV06TORMIL-TOR7", "contract": "YES \u00b7 TOR wins by over 6.5"}, "result": null, "final_score": null, "graded_at": null, "meta": {"alerted": "2026-11-05T21:20:53.538101+00:00", "card_snap": {"why": "No bet: the players model only likes TOR by 1.9; a system needs it to agree by 3+", "win": null, "line": -7.0, "name": "Early blowout bounce-back", "with": [], "label": "TOR -7", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": 1.9, "also_combo": null, "confidence": null, "players_bucket": "agrees by 0-3", "players_history": null}, "alerted_verdict": "BET"}}
+{"key": "401909292-S301-TOR", "game_id": "401909292", "game_date": "2026-11-06", "tip_utc": "2026-11-07T01:00Z", "away": "TOR", "home": "MIL", "system": 301, "bet": "spread", "side": "TOR", "label": "TOR -7.5", "line": -7.5, "first_line": -7.0, "first_seen": "2026-11-05T21:20:29.341105+00:00", "last_checked": "2026-11-05T23:48:44.887607+00:00", "active": true, "dropped_reason": null, "evidence": ["Personnel likes TOR by 1.9 vs the market"], "kalshi": null, "result": null, "final_score": null, "graded_at": null, "meta": {"dtd": 0, "gap": 1.9, "call": "none", "level": null, "gap_first": 3.3, "worst_gap": 1.9, "level_first": "Medium"}}
