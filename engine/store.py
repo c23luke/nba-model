@@ -163,9 +163,22 @@ class SupabaseStore:
         """Every official-report status we see, kept so Questionable/Doubtful play rates can be measured
         later (first_seen is kept on updates; last_seen moves)."""
         if rows: self._upsert("injury_log", rows, "id")
-    def load_player_games(self):  return self._all("player_games")
+    # Box scores only change when games finish, but every run read all of them (1.1 MB, ~12 runs an hour): most of
+    # the Supabase egress (2026-11-05 usage warning). The watcher keeps one store for its whole hour, so keep a copy
+    # here: re-read the table at most every 30 minutes, and add what this process saves.
+    PLAYER_GAMES_TTL = 1800
+    def load_player_games(self):
+        import time
+        c = getattr(self, "_pg_cache", None)
+        if c is None or time.time() - c[0] > self.PLAYER_GAMES_TTL:
+            self._pg_cache = c = (time.time(), {r["id"]: r for r in self._all("player_games")})
+        return list(c[1].values())
     def save_player_games(self, rows):
-        if rows: self._upsert("player_games", shape("player_games", rows), "id")
+        if rows:
+            shaped = shape("player_games", rows)
+            self._upsert("player_games", shaped, "id")
+            if getattr(self, "_pg_cache", None) is not None:
+                self._pg_cache[1].update({r["id"]: r for r in shaped})
 
     def save_board(self, board):
         self._upsert("board", [{"id": 1, "data": board}], "id")

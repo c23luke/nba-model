@@ -421,11 +421,15 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     if hasattr(store, "save_price_log") and upcoming:
         try:
             plog = []
+            with_quotes = now.timestamp() - getattr(store, "_quotes_logged", 0) >= 1800
+            if with_quotes:
+                store._quotes_logged = now.timestamp()
             for g in upcoming:
                 row = stored.get(g.id) or {}
                 if row.get("home_spread") is None and row.get("total") is None:
                     continue
-                q = (exch.get("data") or {}).get((g.game_date, g.away, g.home), [])
+                # exchange prices every 30 minutes, not every run: the quotes were ~40 MB of the database in 3 days
+                q = (exch.get("data") or {}).get((g.game_date, g.away, g.home), []) if with_quotes else []
                 plog.append({"ts": now.isoformat(), "game_id": str(g.id), "game_date": g.game_date.isoformat(),
                              "away": g.away, "home": g.home, "home_spread": row.get("home_spread"),
                              "total": row.get("total"), "books": row.get("line_books"),
