@@ -1,0 +1,12 @@
+2026-11-05T05:15:04
+   Key check — Kalshi prod: keys work, balance $99.52
+   Kalshi demo: no keys
+   BetOpenly: key works, balance $160.66
+   ProphetX: keys work, balance $50.56
+   POLYMARKET_KEY_ID: not set
+2026-11-05T04:59:04
+   Key check — Kalshi prod: keys work, balance $99.52
+   Kalshi demo: no keys
+   BetOpenly: key works, balance $160.66
+   ProphetX: keys work, balance $50.56
+   POLYMARKET_KEY_ID: not set
