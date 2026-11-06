@@ -12,52 +12,72 @@
   {'created_at': '2026-11-03T05:18:01.437591+00:00', 'updated_at': '2026-11-03T06:39:02.829+00:00', 'status': 'unfilled', 'pick': 'MIN +9.5', 'contract': 'NO · HOU wins by over 9.5  (= MIN +9.5)', 'count': 43, 'fill_count': 0, 'fill_cost': 0, 'reason': 'resting order expired or cancelled with nothing filled'}
   {'created_at': '2026-11-03T06:44:02.570096+00:00', 'updated_at': '2026-11-03T07:15:08.803+00:00', 'status': 'unfilled', 'pick': 'MIN +9.5', 'contract': 'NO · HOU wins by over 9.5  (= MIN +9.5)', 'count': 43, 'fill_count': 0, 'fill_cost': 0, 'reason': 'resting order expired or cancelled with nothing filled'}
   {'created_at': '2026-11-03T08:03:03.422258+00:00', 'updated_at': '2026-11-03T08:24:03.577+00:00', 'status': 'unfilled', 'pick': 'MIN +9.5', 'contract': 'NO · HOU wins by over 9.5  (= MIN +9.5)', 'count': 43, 'fill_count': 0, 'fill_cost': 0, 'reason': 'resting order expired or cancelled with nothing filled'}
+  {'created_at': '2026-11-03T12:28:02.034138+00:00', 'updated_at': '2026-11-03T12:34:01.798+00:00', 'status': 'unfilled', 'pick': 'MIN +9.5', 'contract': 'NO · HOU wins by over 9.5  (= MIN +9.5)', 'count': 43, 'fill_count': 0, 'fill_cost': 0, 'reason': 'resting order expired or cancelled with nothing filled'}
+  {'created_at': '2026-11-03T12:34:02.972019+00:00', 'updated_at': '2026-11-03T12:34:03.062+00:00', 'status': 'partial', 'pick': 'MIN +9.5', 'contract': 'NO · HOU wins by over 8.5  (= MIN +8.5)', 'count': 40, 'fill_count': 4, 'fill_cost': 1.92, 'reason': None}
+  {'created_at': '2026-11-03T21:38:06.773207+00:00', 'updated_at': '2026-11-03T21:38:06.877+00:00', 'status': 'partial', 'pick': 'CHI +12', 'contract': 'NO · NYK wins by over 12.5  (= CHI +12.5)', 'count': 45, 'fill_count': 3, 'fill_cost': 1.59, 'reason': None}
+  {'created_at': '2026-11-03T21:40:03.753281+00:00', 'updated_at': '2026-11-03T21:40:03.855+00:00', 'status': 'partial', 'pick': 'CHI +12', 'contract': 'NO · NYK wins by over 12.5  (= CHI +12.5)', 'count': 42, 'fill_count': 1, 'fill_cost': 0.53, 'reason': None}
+  {'created_at': '2026-11-03T21:43:04.872367+00:00', 'updated_at': '2026-11-03T21:43:04.968+00:00', 'status': 'partial', 'pick': 'CHI +12', 'contract': 'NO · NYK wins by over 12.5  (= CHI +12.5)', 'count': 41, 'fill_count': 1, 'fill_cost': 0.53, 'reason': None}
+  {'created_at': '2026-11-03T21:44:03.207194+00:00', 'updated_at': '2026-11-03T21:44:03.303+00:00', 'status': 'partial', 'pick': 'CHI +12', 'contract': 'NO · NYK wins by over 12.5  (= CHI +12.5)', 'count': 40, 'fill_count': 1, 'fill_cost': 0.53, 'reason': None}
+  {'created_at': '2026-11-03T22:18:03.834451+00:00', 'updated_at': '2026-11-03T22:18:04.038+00:00', 'status': 'partial', 'pick': 'CHI +12', 'contract': 'NO · NYK wins by over 10.5  (= CHI +10.5)', 'count': 32, 'fill_count': 25, 'fill_cost': 11, 'reason': None}
+  {'created_at': '2026-11-03T22:30:02.641092+00:00', 'updated_at': '2026-11-03T22:30:02.75+00:00', 'status': 'filled', 'pick': 'CHI +12', 'contract': 'NO · NYK wins by over 10.5  (= CHI +10.5)', 'count': 7, 'fill_count': 7, 'fill_cost': 3.01, 'reason': None}
+  {'created_at': '2026-11-05T21:31:02.792864+00:00', 'updated_at': '2026-11-05T21:31:02.878+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:32:02.643635+00:00', 'updated_at': '2026-11-05T21:32:02.846+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:33:02.927783+00:00', 'updated_at': '2026-11-05T21:33:03.109+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:34:01.168424+00:00', 'updated_at': '2026-11-05T21:34:01.257+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:35:03.597937+00:00', 'updated_at': '2026-11-05T21:35:03.776+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:36:02.215711+00:00', 'updated_at': '2026-11-05T21:36:02.444+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:37:02.793556+00:00', 'updated_at': '2026-11-05T21:37:02.887+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:38:01.647605+00:00', 'updated_at': '2026-11-05T21:38:01.96+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:39:03.17204+00:00', 'updated_at': '2026-11-05T21:39:03.37+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:40:01.861994+00:00', 'updated_at': '2026-11-05T21:40:01.967+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-05T21:41:02.40413+00:00', 'updated_at': '2026-11-05T21:41:02.52+00:00', 'status': 'unfilled', 'pick': 'TOR -7', 'contract': 'YES · TOR wins by over 7.5', 'count': 41, 'fill_count': None, 'fill_cost': None, 'reason': 'rejected by Kalshi: Kalshi POST /trade-api/v2/portfolio/events/orders → 400: {"error":{"code":"insufficient_balance","message":"insufficient balance"}}'}
+  {'created_at': '2026-11-06T00:12:01.572293+00:00', 'updated_at': '2026-11-06T00:12:01.674+00:00', 'status': 'resting', 'pick': 'MEM +4', 'contract': 'NO · OKC wins by over 3.5  (= MEM +3.5)', 'count': 40, 'fill_count': 0, 'fill_cost': 0, 'reason': None}
 
 === bettor log, newest 40
-  2026-11-03T12:19:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T12:19:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T12:04:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T12:04:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T11:48:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T11:48:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T11:32:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T11:32:03 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T11:16:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T11:16:03 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T11:01:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T11:01:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T10:45:07 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T10:45:07 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T10:30:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T10:30:03 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T10:14:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T10:14:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T09:58:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T09:58:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T09:42:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T09:42:03 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T09:26:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T09:26:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T09:10:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T09:10:03 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T08:54:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T08:54:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T08:38:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T08:38:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T08:23:03 info run (live, prod): 0 bets on the card, 1 action(s), 0 skipped
-  2026-11-03T08:23:03 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T08:23:02 error CANCEL DID NOT TAKE (no longer a LIMIT on the card): NO · HOU wins by over 9.5  (= MIN +9.5) for MIN +9.5 is still open on Kalshi. Trying again next minute.
-  2026-11-03T08:19:02 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-  2026-11-03T08:19:02 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T08:03:07 info run (live, prod): 0 bets on the card, 1 action(s), 0 skipped
-  2026-11-03T08:03:07 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
-  2026-11-03T08:03:03 info RESTING: Kalshi RESTING NO ×43 KXNBASPREAD-26NOV04MINHOU-HOU10 at 52¢ until 5 min before tip (stake $22.36, maker fee up to $0.19) — MIN +9.5 via NO · HOU wins by over 9.5  (= MIN +9.5), E5, MIN @ HOU, expected return 7.
-  2026-11-03T08:00:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-03T08:00:04 info Key check — Kalshi prod: keys work, balance $290.43 · Kalshi demo: no keys · BetOpenly: key works, balance $171.38 · ProphetX: keys work, balance $113.78 · POLYMARKET_KEY_ID: not set
+  2026-11-06T00:12:04 info run (live, prod): 0 bets on the card, 1 action(s), 0 skipped
+  2026-11-06T00:12:04 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
+  2026-11-06T00:12:01 info RESTING: Kalshi RESTING NO ×40 KXNBASPREAD-26NOV06OKCMEM-OKC4 at +104 until 5 min before tip (stake $19.60, maker fee up to $0.18) — MEM +4 via NO · OKC wins by over 3.5  (= MEM +3.5), T13, OKC @ MEM, expected return 7.0
+  2026-11-06T00:01:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-06T00:01:03 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
+  2026-11-05T23:45:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T23:45:04 info Key check — Kalshi prod: keys work, balance $128.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
+  2026-11-05T23:29:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T23:29:03 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T23:13:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T23:13:02 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T22:58:02 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T22:58:02 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T22:42:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T22:42:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T22:27:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T22:27:03 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T22:11:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T22:11:03 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T21:55:06 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T21:55:06 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T21:41:02 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:40:02 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:39:06 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+  2026-11-05T21:39:06 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T21:39:03 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:38:02 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:37:03 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:36:02 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:35:04 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:34:01 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:33:03 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:32:02 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:31:03 warn RESTING ORDER REJECTED by Kalshi (nothing placed): Kalshi RESTING YES ×41 KXNBASPREAD-26NOV06TORMIL-TOR8 at -100 until 5 min before tip (stake $20.50, maker fee up to $0.18) — TOR -7 via YES · TOR wins by over 7.5, E4, T
+  2026-11-05T21:23:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+  2026-11-05T21:23:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T21:07:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T21:07:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
+  2026-11-05T20:51:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-05T20:51:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
 
-=== live site board generated 2026-11-03T08:02:23.807802+00:00
-  record under today's rules: 4 - 0 - 0 pnl 90.0 | open 0 at risk 0.0
-  real account: 9 - 5 pnl 91.92
+=== live site board generated 2026-11-06T00:10:39.079875+00:00
+  record under today's rules: 6 - 2 - 0 pnl 105.14 | open 0 at risk 0.0
+  real account: 11 - 7 pnl 107.22
   has combo_live (new code): True | report card has systems_p3: True
    FINAL  W E7        MEM +6.5               ProphetX           real 20.16  counted 20.0
    FINAL  W MONEYBALL DAL +6.5               ProphetX           real 30.29  counted 30.0
@@ -66,10 +86,14 @@
    FINAL  W MONEYBALL BKN +14.5              Kalshi             real 30.11  hidden: we held both sides of this game: today neither is bet
    FINAL  L S4        OVER 239.5             Kalshi             real -25.96  hidden: paid −130: S4 now bets only at -110 or better
    FINAL  W T2        WAS +1.5               ProphetX           real 20.09  hidden: players model had no clean read: a system now needs it to agree by 3+
-   FINAL  L T12       NYK −14.5 / NYK −15.5  ProphetX           real -40.63  hidden: we held both sides of this game: today neither is bet
+   FINAL  L T12       NYK −14.5              ProphetX           real -40.63  hidden: we held both sides of this game: today neither is bet
    FINAL  W E2        IND +6.5               ProphetX           real 20.12  counted 20.0
    FINAL  L S4        OVER 234.5             Kalshi             real -23.72  hidden: paid −124: S4 now bets only at -110 or better
-   FINAL  W S3        HOU −5.5 / HOU −6.5    Kalshi             real 40.46  hidden: players model agreed by only 0.2: a system now needs it to agree by 3+
+   FINAL  W S3        HOU −5.5               Kalshi             real 40.46  hidden: players model agreed by only 0.2: a system now needs it to agree by 3+
    FINAL  L S4        OVER 231.5             ProphetX           real -20.29  hidden: totals aren't bet now (S4 is tracking only)
    FINAL  W E4        LAL ML                 Kalshi             real 20.26  hidden: we held both sides of this game: today neither is bet
    FINAL  L T2        MIA +1.5               ProphetX           real -19.5  hidden: we held both sides of this game: today neither is bet
+   FINAL  L E4        CHI +10.5              Kalshi             real -17.85  counted -17.72
+   FINAL  L T13       MEM −4.5               ProphetX           real -17.35  counted -17.14
+   FINAL  W E5        MIN +8.5               Kalshi + ProphetX  real 20.08  counted 20.0
+   FINAL  W MONEYBALL DAL +12.5              ProphetX           real 30.42  counted 30.0
