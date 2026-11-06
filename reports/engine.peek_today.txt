@@ -1,50 +1,8 @@
-=== orders since 2026-11-06T00:30:00Z
+=== orders since 2026-11-06T04:00:00Z
+  {'created_at': '2026-11-06T12:23:04.874199+00:00', 'updated_at': '2026-11-06T12:23:05.043+00:00', 'venue': 'kalshi', 'mode': 'live', 'status': 'partial', 'pick': 'MEM +4', 'contract': 'NO · OKC wins by over 2.5  (= MEM +2.5)', 'count': 33, 'limit_price': 0.46, 'stake': 15.18, 'fill_count': 30, 'fill_cost': 13.8, 'reason': None}
+  {'created_at': '2026-11-06T22:01:08.209778+00:00', 'updated_at': '2026-11-06T22:01:08.308+00:00', 'venue': 'kalshi', 'mode': 'live', 'status': 'filled', 'pick': 'WAS +6.5', 'contract': 'NO · ATL wins by over 6.5  (= WAS +6.5)', 'count': 74, 'limit_price': 0.44, 'stake': 32.56, 'fill_count': 74, 'fill_cost': 32.56, 'reason': None}
 
-=== log since 2026-11-06T00:30:00Z (key checks left out)
-  2026-11-06T00:43:03 balances: Key check — Kalshi prod: keys work, balance $178.75 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T00:43:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already resting (kalshi)
-  2026-11-06T00:55:03 info FILLED (resting): NO · OKC wins by over 3.5  (= MEM +3.5) — 5.7 of 39 for $2.74 — MEM +4
-  2026-11-06T00:59:03 balances: Key check — Kalshi prod: keys work, balance $175.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T00:59:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already resting (kalshi)
-  2026-11-06T01:01:02 error CANCEL DID NOT TAKE (no longer a LIMIT on the card): NO · OKC wins by over 3.5  (= MEM +3.5) for MEM +4 is still open on Kalshi. Trying again next minute.
-  2026-11-06T01:01:04 balances: Key check — Kalshi prod: keys work, balance $175.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T01:01:04 info run (live, prod): 1 bets on the card, 1 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already resting (kalshi)
-  2026-11-06T01:17:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T01:17:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T01:32:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T01:32:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T01:48:02 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T01:48:02 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T02:04:04 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T02:04:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T02:20:07 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T02:20:07 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  +150 ($74.67): number outside the system (2.7 to 999); MEM moneyline  +146 ($24.39): number outside the system (2.7 to 999); MEM moneyline  +134 ($10.68): number outside the system (2.7 to 999); MEM moneyline  +128 ($774.22): number outside the system (2.7 to 999); MEM moneyline  +127 ($11.01): number outside the system (2.7 to 999); MEM moneyline  +106 ($14.15): number outside the system (2.7 to 999); MEM spread -7.5 0 ($0): nothing to take; MEM spread -6.5 0 ($0): nothing to take; MEM spread -5.5 0 ($0): nothing to take; MEM spread -4.5 +270 ($37.04): number looks flipped vs the market (+4); MEM spread -3.5 +230 ($43.48): number looks flipped vs the market (+4); MEM spread -2.5 +200 ($50): number looks flipped vs the market (+4) · BetOpenly: no offers on this game (197 open o
-  2026-11-06T02:36:05 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $193.91
-  2026-11-06T02:36:05 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T02:52:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
-  2026-11-06T02:52:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T03:08:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
-  2026-11-06T03:08:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T03:24:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
-  2026-11-06T03:24:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T03:40:06 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
-  2026-11-06T03:40:06 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
-  2026-11-06T03:56:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
-  2026-11-06T03:56:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
-      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+=== log since 2026-11-06T04:00:00Z (key checks left out)
   2026-11-06T04:12:03 balances: Key check — Kalshi prod: keys work, balance $250.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T04:12:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
       skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
@@ -84,3 +42,176 @@
   2026-11-06T07:22:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T07:22:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
       skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($3.27): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +146 ($2.05): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -1.5 +132 ($78.88): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($3): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($3.12): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -116 ($3.48): number outside the system (1.9000000000000004 to 999); MEM spread 2.5 0 ($0): nothing to take; MEM spread 3.5 -168 ($8.4): expected return -16.8%; MEM spread 3.5 -170 ($163.06): expected return -17.2%; MEM spread 3.5 -188 ($394.8): expected r
+  2026-11-06T07:38:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T07:38:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($3.27): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +146 ($2.05): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -1.5 +132 ($78.88): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($3): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($3.12): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -116 ($3.48): number outside the system (1.9000000000000004 to 999); MEM spread 2.5 0 ($0): nothing to take; MEM spread 3.5 -168 ($8.4): expected return -16.8%; MEM spread 3.5 -170 ($163.06): expected return -17.2%; MEM spread 3.5 -188 ($394.8): expected r
+  2026-11-06T07:54:03 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T07:54:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  0 ($0): nothing to take; MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +132 ($78.88): number looks flipped vs the market (+3.5); MEM spread -0.5 0 ($0): nothing to take; MEM spread 0.5 0 ($0): nothing to take; MEM spread 1.5 0 ($0): nothing to take; MEM spread 2.5 0 ($0): nothing to take; MEM spread 3.5 -170 ($163.06): expected return -17.2%; MEM spread 3.5 -188 ($394.8): expected return -20.0%; MEM spread 4.5 0 ($0): nothing to take; MEM spread 5.5 -260 ($436.8): expected return -17.5%; MEM moneyline  +142 ($336.79): number outside the system (1.9000000000000004 to 999) · BetOpenly: no offers on this game (237 open offers in all) · Novig on this game: game not listed
+  2026-11-06T08:10:07 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T08:10:07 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  0 ($0): nothing to take; MEM spread -2.5 +126 ($154.86): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +132 ($78.88): number looks flipped vs the market (+3.5); MEM spread -0.5 0 ($0): nothing to take; MEM spread 0.5 0 ($0): nothing to take; MEM spread 1.5 0 ($0): nothing to take; MEM spread 2.5 0 ($0): nothing to take; MEM spread 3.5 -170 ($163.06): expected return -17.2%; MEM spread 3.5 -188 ($394.8): expected return -20.0%; MEM spread 4.5 0 ($0): nothing to take; MEM spread 5.5 0 ($0): nothing to take · BetOpenly: no offers on this game (250 open offers in all) · Novig on this game: game not listed
+  2026-11-06T08:26:05 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T08:26:05 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($5.45): number outside the system (1.9000000000000004 to 999); MEM moneyline  -110 ($316.8): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -1.5 +132 ($78.88): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($5): number looks flipped vs the market (+3.5); MEM spread -0.5 -106 ($311.64): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($5.2): number outside the system (1.9000000000000004 to 999); MEM spread 0.5 -119 ($328.44): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -115 ($5.75
+  2026-11-06T08:42:05 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T08:42:05 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($5.45): number outside the system (1.9000000000000004 to 999); MEM moneyline  -110 ($316.8): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($5): number looks flipped vs the market (+3.5); MEM spread -0.5 -106 ($311.64): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($5.2): number outside the system (1.9000000000000004 to 999); MEM spread 0.5 -119 ($328.44): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -115 ($5.75): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -
+  2026-11-06T08:58:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T08:58:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($5.45): number outside the system (1.9000000000000004 to 999); MEM moneyline  -110 ($316.8): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($5): number looks flipped vs the market (+3.5); MEM spread -0.5 -106 ($311.64): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($5.2): number outside the system (1.9000000000000004 to 999); MEM spread 0.5 -119 ($328.44): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -127 ($123.08): number outside the system (1.9000000000000004 to 999); MEM spread 1.5
+  2026-11-06T09:14:05 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T09:14:05 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($5.45): number outside the system (1.9000000000000004 to 999); MEM moneyline  -110 ($316.8): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($5): number looks flipped vs the market (+3.5); MEM spread -0.5 -106 ($311.64): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($5.2): number outside the system (1.9000000000000004 to 999); MEM spread 0.5 -119 ($328.44): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -126 ($6.3): number outside the system (1.9000000000000004 to 999); MEM spread 1.5 -1
+  2026-11-06T09:30:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T09:30:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T09:46:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T09:46:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T10:02:03 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T10:02:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T10:18:03 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T10:18:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T10:34:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T10:34:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T10:50:05 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T10:50:06 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T11:06:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T11:06:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T11:22:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T11:22:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T11:38:04 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T11:38:04 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T11:54:02 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T11:54:02 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T12:09:03 balances: Key check — Kalshi prod: keys work, balance $336.99 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T12:09:03 info run (live, prod): 0 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T12:23:05 info PARTIAL: Kalshi BUY NO ×33 KXNBASPREAD-26NOV06OKCMEM-OKC3 at +117 (stake $15.18 + fee $0.58) — MEM +4 via NO · OKC wins by over 2.5  (= MEM +2.5), T13, OKC @ MEM, expected return 8.0%
+  2026-11-06T12:23:07 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T12:23:07 info run (live, prod): 1 bets on the card, 1 action(s), 0 skipped
+  2026-11-06T12:39:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T12:39:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T12:55:05 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T12:55:05 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T13:11:04 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T13:11:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T13:27:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T13:27:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T13:42:04 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T13:42:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T13:57:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T13:57:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T14:13:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T14:13:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T14:28:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T14:28:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T14:44:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T14:44:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T15:00:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T15:00:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T15:15:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T15:15:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T15:31:04 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T15:31:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T15:47:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T15:47:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T16:02:05 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T16:02:05 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T16:18:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T16:18:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T16:33:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T16:33:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T16:49:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T16:49:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T17:05:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T17:05:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T17:21:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T17:21:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T17:37:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T17:37:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T17:53:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T17:53:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T18:09:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T18:09:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T18:24:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T18:24:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T18:40:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T18:40:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T18:56:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T18:56:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T19:11:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T19:11:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T19:27:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T19:27:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T19:43:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T19:43:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T19:59:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T19:59:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T20:14:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T20:14:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T20:30:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T20:30:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T20:45:04 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T20:45:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T21:01:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T21:01:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T21:17:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T21:17:02 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T21:33:02 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T21:33:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T21:49:03 balances: Key check — Kalshi prod: keys work, balance $322.66 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T21:49:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T22:01:08 info FILLED: Kalshi BUY NO ×74 KXNBASPREAD-26NOV06WASATL-ATL7 at +127 (stake $32.56 + fee $1.28) — WAS +6.5 via NO · ATL wins by over 6.5  (= WAS +6.5), MONEYBALL, WAS @ ATL, expected return 23.4%
+  2026-11-06T22:01:10 balances: Key check — Kalshi prod: keys work, balance $288.83 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T22:01:10 info run (live, prod): 2 bets on the card, 1 action(s), 1 skipped
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
+  2026-11-06T22:17:02 balances: Key check — Kalshi prod: keys work, balance $288.83 · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
+  2026-11-06T22:17:02 info run (live, prod): 2 bets on the card, 0 action(s), 2 skipped
+      skip: WAS +6.5 (MONEYBALL) WAS@ATL | already filled (kalshi)
+      skip: MEM +4 (T13) OKC@MEM | already partial (kalshi)
