@@ -34,6 +34,9 @@
   {'created_at': '2026-11-06T00:12:01.572293+00:00', 'updated_at': '2026-11-06T00:12:01.674+00:00', 'status': 'resting', 'pick': 'MEM +4', 'contract': 'NO · OKC wins by over 3.5  (= MEM +3.5)', 'count': 40, 'fill_count': 0, 'fill_cost': 0, 'reason': None}
 
 === bettor log, newest 40
+  2026-11-06T00:22:03 info run (live, prod): 1 bets on the card, 1 action(s), 1 skipped
+  2026-11-06T00:22:03 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
+  2026-11-06T00:22:01 error CANCEL DID NOT TAKE (no longer a LIMIT on the card): NO · OKC wins by over 3.5  (= MEM +3.5) for MEM +4 is still open on Kalshi. Trying again next minute.
   2026-11-06T00:12:04 info run (live, prod): 0 bets on the card, 1 action(s), 0 skipped
   2026-11-06T00:12:04 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
   2026-11-06T00:12:01 info RESTING: Kalshi RESTING NO ×40 KXNBASPREAD-26NOV06OKCMEM-OKC4 at +104 until 5 min before tip (stake $19.60, maker fee up to $0.18) — MEM +4 via NO · OKC wins by over 3.5  (= MEM +3.5), T13, OKC @ MEM, expected return 7.0
@@ -71,16 +74,13 @@
   2026-11-05T21:23:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
   2026-11-05T21:23:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
   2026-11-05T21:07:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-05T21:07:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
-  2026-11-05T20:51:04 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
-  2026-11-05T20:51:04 info Key check — Kalshi prod: keys work, balance $30.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: O
 
-=== live site board generated 2026-11-06T00:10:39.079875+00:00
-  record under today's rules: 6 - 2 - 0 pnl 105.14 | open 0 at risk 0.0
+=== live site board generated 2026-11-06T00:20:38.216116+00:00
+  record under today's rules: 6 - 2 - 0 pnl 125.14 | open 0 at risk 0.0
   real account: 11 - 7 pnl 107.22
   has combo_live (new code): True | report card has systems_p3: True
    FINAL  W E7        MEM +6.5               ProphetX           real 20.16  counted 20.0
-   FINAL  W MONEYBALL DAL +6.5               ProphetX           real 30.29  counted 30.0
+   FINAL  W MONEYBALL DAL +6.5               ProphetX           real 30.29  counted 40.0
    FINAL  W S4        OVER 234.5             Kalshi             real 20.05  hidden: paid −124: S4 now bets only at -110 or better
    FINAL  W E4        LAL −2.5               ProphetX           real 20.48  counted 20.0
    FINAL  W MONEYBALL BKN +14.5              Kalshi             real 30.11  hidden: we held both sides of this game: today neither is bet
@@ -96,4 +96,4 @@
    FINAL  L E4        CHI +10.5              Kalshi             real -17.85  counted -17.72
    FINAL  L T13       MEM −4.5               ProphetX           real -17.35  counted -17.14
    FINAL  W E5        MIN +8.5               Kalshi + ProphetX  real 20.08  counted 20.0
-   FINAL  W MONEYBALL DAL +12.5              ProphetX           real 30.42  counted 30.0
+   FINAL  W MONEYBALL DAL +12.5              ProphetX           real 30.42  counted 40.0
