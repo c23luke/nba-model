@@ -26,6 +26,12 @@ def snapshot(card_row: dict) -> dict:
     return s
 
 
+def all_in(risk: float, to_win: float):
+    """The odds really paid, fee included, so Price agrees with Risked and To win (Caden 2026-11-06: Kalshi showed
+    $14.32 for a $30 payout = +110, the ticket said +117 because it left the fee out)."""
+    return american(risk / (risk + to_win)) if risk > 0 and to_win > 0 else None
+
+
 def american(p: float) -> int:
     """American odds for a price per $1 payout (0.43 -> +133, 0.5 -> +100, 0.55 -> -122)."""
     return round(100 * (1 - p) / p) if p <= 0.5 else -round(100 * p / (1 - p))     # even money is +100
@@ -104,7 +110,7 @@ def merge_fills(rows: list[dict]) -> list[dict]:
             per = cost / c if c else 0
             pieces.append({"holding": hold, "count": round(c, 2), "cost": round(cost, 2), "price": round(per, 4),
                            "fees": round(sum(r["fees"] for r in hs), 2),
-                           "american": american(per) if 0 < per < 1 else None, "orders": len(hs),
+                           "american": all_in(sum(r["risk"] for r in hs), sum(r["to_win"] for r in hs)), "orders": len(hs),
                            "risk": round(sum(r["risk"] for r in hs), 2), "to_win": round(sum(r["to_win"] for r in hs), 2)})
         pieces.sort(key=lambda x: -x["count"])
         main = by_hold[pieces[0]["holding"]][0]
@@ -194,7 +200,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "game_id": o.get("game_id"), "tip_utc": tip, "away": p.get("away"), "home": p.get("home"),
             "venue": venue, "venue_name": VENUE_NAMES.get(venue, venue), "contract": o.get("contract"),
             "holding": holding(o), "card_pick": o.get("pick"), "bet": o.get("bet"), "side": o.get("side"),
-            "line": o.get("line"), "price": round(per, 4), "american": american(per) if 0 < per < 1 else None,
+            "line": o.get("line"), "price": round(per, 4), "american": all_in(risk, to_win),
             "count": cnt, "cost": round(cost, 2), "fees": round(fees, 2), "risk": round(risk, 2),
             "to_win": round(to_win, 2), "ev": o.get("ev"), "model_price": o.get("model_price"),
             "system": o.get("system"), "group": p.get("group"), "name": snap.get("name") or (names or {}).get(o.get("system")),

@@ -1063,7 +1063,7 @@ export class BetOpenly implements Venue {
         else if (o.kind === "spread" && o.line != null) { line = o.line; contract = `${m.side} ${line > 0 ? "+" : ""}${line}`; }
         else { pass("not our bet"); continue; }
       }
-      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${+m.lo.toFixed(1)} to ${+m.hi.toFixed(1)})`); continue; }
       if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
       const cost = americanCost(o.odds);
       const { win, push } = outcomeAt(m, line);
@@ -1260,7 +1260,7 @@ export class ProphetX implements Venue {
       if (x.kind === "spread" && m.market != null && Math.abs(m.market) >= 1 && Math.sign(line) !== Math.sign(m.market)) {
         pass(`number looks flipped vs the market (${m.market > 0 ? "+" : ""}${m.market})`); continue;
       }
-      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${+m.lo.toFixed(1)} to ${+m.hi.toFixed(1)})`); continue; }
       if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
       const cost = americanCost(x.price);
       const { win, push } = outcomeAt(m, line);
@@ -1554,7 +1554,7 @@ export class Novig implements Venue {
       if (kind === "spread" && m.market != null && Math.abs(m.market) >= 1 && Math.sign(line) !== Math.sign(m.market)) {
         pass(`number looks flipped vs the market (${m.market > 0 ? "+" : ""}${m.market})`); continue;
       }
-      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${m.lo} to ${m.hi})`); continue; }
+      if (line < m.lo - 1e-9 || line > m.hi + 1e-9) { pass(`number outside the system (${+m.lo.toFixed(1)} to ${+m.hi.toFixed(1)})`); continue; }
       if (Math.abs(line - m.base) > (m.bet === "total" ? TOTAL_WINDOW : SPREAD_WINDOW)) { pass("too far from the model's number"); continue; }
       const best = await this.bestAsk(mk.marketId, other.outcomeId);
       if (!best || best.size < 1) { pass("nothing to take"); continue; }

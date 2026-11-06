@@ -39,7 +39,7 @@ def test_summary_counts_risk_fees_and_results():
                       picks, games, {}, lambda p: {"w": 1, "l": 0, "p": 0}, now)
     won, open_ = out["bets"][1], out["bets"][0]
     assert (won["status"], won["result"], won["holding"], won["venue_name"]) == ("FINAL", "W", "NOP +1.5", "Kalshi")
-    assert won["risk"] == 16.54 and won["to_win"] == 20.46 and won["pnl"] == 20.46 and won["american"] == 133
+    assert won["risk"] == 16.54 and won["to_win"] == 20.46 and won["pnl"] == 20.46 and won["american"] == 124   # fee included: 20.46 / 16.54 (was +133 before the fee)
     assert won["price_note"] == "edge 4.2" and won["record"]["w"] == 158 and won["record"]["l"] == 141
     assert open_["status"] == "OPEN" and open_["risk"] == 20.0 and open_["to_win"] == 19.8      # BetOpenly: fee from winnings
     s = out["summary"]
@@ -263,3 +263,10 @@ def test_clv_in_points_against_the_close():
     picks = {"k": {"key": "k", "system": 113, "home": "MEM", "away": "IND", "meta": {"close_line": -6.0, "worst_gap": 4.3}}}
     r = placed_bets([o], picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
     assert r["clv_pts"] == 1.5 and r["market"]["closed"]
+
+
+def test_ticket_price_includes_the_fee_like_kalshi_shows_it():
+    # MEM +2.5, Nov 6: 30 contracts at 46c + 52c fee = $14.32 for a $30 payout. that is +109 (15.68 / 14.32), not the pre-fee +117.
+    from engine.placed import all_in
+    assert all_in(14.32, 30 - 14.32) == 109
+    assert all_in(0, 5) is None and all_in(5, 0) is None
