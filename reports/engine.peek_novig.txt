@@ -1,5 +1,5 @@
 === settings
-  {'id': 1, 'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['prophetx', 'betopenly', 'novig', 'kalshi'], 'stake_dollars': 5, 'daily_loss_cap': 200, 'max_open_bets': 1000, 'max_dollars_per_game': 50, 'min_ev': 0.04, 'max_feed_age_minutes': 20, 'run_token': 'c62247bb-d29b-4fb7-b86d-26a7595c60f1', 'disabled_reason': None, 'last_heartbeat': '2026-11-06T00:12:00.68+00:00', 'updated_at': '2026-11-06T00:12:04.513+00:00', 'to_win_dollars': 30, 'watch_venues': []}
+  {'id': 1, 'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['prophetx', 'betopenly', 'novig', 'kalshi'], 'stake_dollars': 5, 'daily_loss_cap': 200, 'max_open_bets': 1000, 'max_dollars_per_game': 50, 'min_ev': 0.04, 'max_feed_age_minutes': 20, 'disabled_reason': None, 'last_heartbeat': '2026-11-06T00:12:00.68+00:00', 'updated_at': '2026-11-06T00:12:04.513+00:00', 'to_win_dollars': 30, 'watch_venues': []}
 
 === newest key checks
   2026-11-06T00:12:04 Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
