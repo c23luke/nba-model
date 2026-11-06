@@ -452,7 +452,12 @@ function ticket(x) {
   const price = amer(x.american);       // American odds only (Caden 2026-11-03: no cents)
   const card = x.card_pick && x.card_pick !== x.holding ? `card pick ${esc(x.card_pick)}` : "";
   const score = x.score && x.score.home != null ? `${esc(x.away)} ${x.score.away}, ${esc(x.home)} ${x.score.home}` : "";
-  const pl = x.status === "FINAL" ? `<span class="pl ${x.pnl > 0 ? "pos" : x.pnl < 0 ? "neg" : ""}">${signed$(x.pnl)}</span>` : "";
+  // the ticket shows the money really bet (Caden 2026-11-06: a $2.74 fill shown as "$18.78 to win $20" is a lie);
+  // the record above still counts every bet at its unit size, and the ticket says so when the two differ
+  const real = x.actual || x, unitT = x.rules && x.rules.counted ? x.rules.to_win : null;
+  const pl = x.status === "FINAL" ? `<span class="pl ${real.pnl > 0 ? "pos" : real.pnl < 0 ? "neg" : ""}">${signed$(real.pnl)}</span>` : "";
+  const unitNote = unitT && Math.abs(real.to_win - unitT) >= 1
+    ? `<div class="mkt">The record counts this as one full bet: ${unitT >= 39 ? "2 units, $40" : "1 unit, $20"} to win${x.status === "FINAL" && x.pnl != null ? ` (${signed$(x.pnl)} in the record)` : ""}. ${real.to_win < unitT ? "Only part of the order filled at our price." : ""}</div>` : "";
   const top = x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}, ${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc));
   const mb = x.system === "MONEYBALL";
   return `<article class="ticket${mb ? " mb" : ""}">
@@ -461,12 +466,13 @@ function ticket(x) {
       <div class="hold"><b>${esc(x.holding)}</b><span>${esc(x.away)} @ ${esc(x.home)}${card ? ", " + card : ""}</span></div>
       <div class="figs">
         <div>Price<strong>${price}</strong></div>
-        <div>Risked<strong>${money(x.risk)}</strong></div>
-        <div>To win<strong>${money(x.to_win)}</strong></div>
+        <div>Risked<strong>${money(real.risk)}</strong></div>
+        <div>To win<strong>${money(real.to_win)}</strong></div>
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
         ${clvBox(x)}
       </div>
       ${(x.pieces || []).length > 1 ? `<div class="mkt">${x.pieces.slice(1).map(p => `Also bought <b>${esc(p.holding)}</b>: ${p.count} ${x.venue === "kalshi" ? "contracts" : "payout dollars"} at ${amer(p.american)}, ${money(p.risk)} to win ${money(p.to_win)}`).join(". ")}. Risked and To win include it. The record grades the bet at ${esc(x.holding)}, where most of the money is.</div>` : ""}
+      ${unitNote}
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
