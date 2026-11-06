@@ -1,12 +1,13 @@
 === settings
-  {'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['prophetx', 'betopenly', 'novig', 'kalshi'], 'watch_venues': [], 'min_ev': 0.04, 'to_win_dollars': 40, 'max_dollars_per_game': 65, 'daily_loss_cap': 200, 'last_heartbeat': '2026-11-06T07:22:01.571+00:00'}
+  {'live_betting_on': True, 'kalshi_env': 'prod', 'venues': ['prophetx', 'betopenly', 'novig', 'kalshi'], 'watch_venues': [], 'min_ev': 0.04, 'to_win_dollars': 40, 'max_dollars_per_game': 65, 'daily_loss_cap': 200, 'last_heartbeat': '2026-11-06T07:38:01.605+00:00'}
 
 === newest key checks
+  2026-11-06T07:38:04 Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T07:22:04 Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T07:06:04 Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
-  2026-11-06T06:51:03 Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
 
 === log lines mentioning Novig, newest 30
+  2026-11-06T07:38:04 info Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T07:22:04 info Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T07:06:04 info Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
   2026-11-06T06:51:03 info Key check — Kalshi prod: keys work, balance $336.99 · Kalshi demo: no keys · BetOpenly: key works, balance $170.47 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $150.59
@@ -36,10 +37,9 @@
   2026-11-06T00:43:03 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
   2026-11-06T00:27:04 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
   2026-11-06T00:22:03 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
-  2026-11-06T00:12:04 info Key check — Kalshi prod: keys work, balance $178.75 · Kalshi demo: no keys · BetOpenly: key works, balance $151.52 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK, expires 2026-11-09T00:25:51.276Z; balance $133.71
 
 === last run summary skips mentioning Novig
-  2026-11-06T07:22:04 run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+  2026-11-06T07:38:04 run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
     - MEM +4 (T13) OKC@MEM | no quote on prophetx/betopenly/novig/kalshi with expected return ≥ 4.0% — ProphetX on this game: MEM moneyline  -109 ($3.27): number outside the system (1.9000000000000004 to 999); MEM spread -2.5 +146 ($2.05): number looks flipped vs the market (+3.5); MEM spread -2.5 +125 ($268.8): number looks flipped vs the market (+3.5); MEM spread -1.5 +134 ($3.73): number looks flipped vs the market (+3.5); MEM spread -1.5 +132 ($78.88): number looks flipped vs the market (+3.5); MEM spread -0.5 +100 ($3): number looks flipped vs the market (+3.5); MEM spread 0.5 -104 ($3.12): number outside the system 
 
 === Novig orders
