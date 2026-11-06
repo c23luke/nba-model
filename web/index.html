@@ -457,7 +457,7 @@ function ticket(x) {
   const real = x.actual || x, unitT = x.rules && x.rules.counted ? x.rules.to_win : null;
   const pl = x.status === "FINAL" ? `<span class="pl ${real.pnl > 0 ? "pos" : real.pnl < 0 ? "neg" : ""}">${signed$(real.pnl)}</span>` : "";
   const unitNote = unitT && Math.abs(real.to_win - unitT) >= 1
-    ? `<div class="mkt">The record counts this as one full bet: ${unitT >= 39 ? "2 units, $40" : "1 unit, $20"} to win${x.status === "FINAL" && x.pnl != null ? ` (${signed$(x.pnl)} in the record)` : ""}. ${real.to_win < unitT ? "Only part of the order filled at our price." : ""}</div>` : "";
+    ? `<div class="mkt">The record counts this as one full bet: ${unitT >= 39 ? "2 units, $40" : "1 unit, $20"} to win${x.status === "FINAL" && x.pnl != null ? ` (${signed$(x.pnl)} in the record)` : ""}. ${real.to_win < (x.target || unitT) - 1 ? "Only part of the order filled at our price." : `It was placed when this kind of bet was sized to win ${money(x.target)}.`}</div>` : "";
   const top = x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}, ${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc));
   const mb = x.system === "MONEYBALL";
   return `<article class="ticket${mb ? " mb" : ""}">
