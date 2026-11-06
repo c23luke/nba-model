@@ -163,8 +163,8 @@ def test_rules_now_marks_every_row_and_projects_open_bets_at_20():
             {"status": "OPEN", "bet": "spread", "game_id": "g8", "side": "DET", "system": "T13", "t13_gap": 3.2,
              "holding": "DET +4", "result": None, "pnl": None, "risk": 24.6, "to_win": 20.0}]
     r = rules_now(rows)
-    assert rows[0]["rules"] == {"counted": True, "to_win": 30.0, "risk": round(30 * 12.0 / 11.51, 2), "pnl": None}
-    assert rows[1]["rules"]["counted"] is False and r["open"] == 1 and r["open_to_win"] == 30.0
+    assert rows[0]["rules"] == {"counted": True, "to_win": 40.0, "risk": round(40 * 12.0 / 11.51, 2), "pnl": None}
+    assert rows[1]["rules"]["counted"] is False and r["open"] == 1 and r["open_to_win"] == 40.0
 
 
 def test_rules_now_no_totals_count_s4_is_tracking_only():

@@ -6,8 +6,8 @@ from .store import get_store
 def main():
     st = get_store()
     print("=== settings")
-    print(" ", (st._req("GET", "/bet_settings?id=eq.1&select=live_betting_on,kalshi_env,venues,watch_venues,min_ev,"
-                        "to_win_dollars,last_heartbeat") or [{}])[0])
+    print(" ", (st._req("GET", "/bet_settings?id=eq.1&select=*"
+                        ) or [{}])[0])
     print("\n=== newest key checks")
     for r in st._req("GET", "/bet_log?select=ts,message&message=like.Key%20check*&order=ts.desc&limit=3") or []:
         print(" ", r["ts"][:19], r["message"])

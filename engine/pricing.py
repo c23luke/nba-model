@@ -31,7 +31,7 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
-MONEYBALL_TO_WIN = 30  # MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
+MONEYBALL_TO_WIN = 40  # 2 units (Caden 2026-11-05). MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
 # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet.
 # 4% (Caden 2026-10-27, was 2%): bets at a normal price clear it easily; the 2-4% ones were nearly all heavy
 # juice or bought points, where a small error in our win rate turns the edge negative.
@@ -553,7 +553,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "price": at_line["price"] if at_line else k.get("price"),
                      "cost": at_line["cost"] if at_line else None, "max": cap,
                      "verdict": verdict, "why": why, "edge": round(edge, 4),
-                     # bet size: every card bet wins $20; MONEYBALL wins $30. (Confidence sizing removed
+                     # bet size: every card bet wins $20; MONEYBALL wins $40 (2 units). (Confidence sizing removed
                      # 2026-10-27: T13 now needs a 4+ gap, so the small, weak edges it shrank are gone.)
                      "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else TO_WIN,
                      # what an order placer needs to price ANY number on this bet (e.g. P2P offers)

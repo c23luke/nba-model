@@ -255,7 +255,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
       - T13 only at a 4+ gap (worst case over day-to-day players): smaller ones don't count
       - a spread system counts only when the players model agreed by 3+ (2026-11-02); no totals (S4 tracking only, 2026-11-03)
       - one ticket per game side (split fills merged in merge_fills); both sides of one game: neither counts
-      - every bet sized to win $20 (MONEYBALL $30), even ones the old Low-confidence rule cut to $10
+      - every bet sized to win $20, one unit (MONEYBALL 2 units, $40: Caden 2026-11-05), even ones the old Low-confidence rule cut to $10
         or that only part-filled
     The real account money is kept on each row (pnl, risk, to_win) and in the summary, shown smaller.
     Bets today's rules would have ADDED (e.g. S4 with the new total bar) can't be added: there is no
@@ -307,7 +307,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
                                    "status": r["status"], "pnl": r["pnl"], "why": why})
             continue
-        target = 30.0 if r["system"] == "MONEYBALL" else 20.0
+        target = 40.0 if r["system"] == "MONEYBALL" else 20.0
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)
         pnl = None

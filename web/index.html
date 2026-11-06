@@ -385,7 +385,7 @@ function whyHead(tag, tags, gap, side) {
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $30" : "every card bet is sized to win $20 (MONEYBALL $30)";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL $40)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];
@@ -456,7 +456,7 @@ function ticket(x) {
   const top = x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}, ${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc));
   const mb = x.system === "MONEYBALL";
   return `<article class="ticket${mb ? " mb" : ""}">
-      ${mb ? `<div class="mb-flag">MONEYBALL<span>our strongest setup: 2+ systems and the players model on the same side, sized to win $30</span></div>` : ""}
+      ${mb ? `<div class="mb-flag">MONEYBALL<span>our strongest setup: 2+ systems and the players model on the same side, sized to win $40 (2 units)</span></div>` : ""}
       <div class="t-top"><span class="venue">${esc(x.venue_name)}</span><span class="state ${stateCls}">${stateTxt}</span><span>${top}</span>${pl}</div>
       <div class="hold"><b>${esc(x.holding)}</b><span>${esc(x.away)} @ ${esc(x.home)}${card ? ", " + card : ""}</span></div>
       <div class="figs">
@@ -495,7 +495,7 @@ function clvBox(x) {
 }
 
 function sizeLine(x) {
-  const T = x.system === "MONEYBALL" ? 30 : 20, got = x.actual ? x.actual.to_win : x.to_win;
+  const T = x.system === "MONEYBALL" ? 40 : 20, got = x.actual ? x.actual.to_win : x.to_win;
   let t = `Size: to win <b>${money(T)}</b> — ${sizeRule(x.system)}.`;
   if (got != null && got < T - 1 && x.status === "OPEN") t += ` Got ${money(got)} so far: only part filled at our price, and it tops up when more is offered.`;
   return t;
@@ -589,7 +589,7 @@ function renderBets(placed, b) {
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
     </div>` : ""}` +
-    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), and the players model alone at 4+. No totals. One bet per game. Bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $30).</p>` +
+    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), and the players model alone at 4+. No totals. One bet per game. Bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $40).</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     (np.length ? `<h2>Looking for a price</h2><p class="lede">The model wants these, but no site has offered a good enough price yet. The bettor checks every minute${placerAt ? ` (last check ${esc(ago(placerAt))})` : ""}, and where it can it leaves an order on Kalshi at the most we'd pay.</p>` +
       np.map(c => cardRow(c, c.reason || "Not checked yet: the bettor looks every minute.")).join("") : "") +
@@ -613,7 +613,7 @@ function cardRow(c, reason) {
     : c.rule_pass ? "No bet: the players model doesn't back it" : "No bet: price isn't good enough";
   const mb = c.tag === "MONEYBALL";
   return `<div class="row${mb ? " mb" : ""}">
-      ${mb ? `<div class="mb-flag" style="grid-column:1/-1">MONEYBALL<span>our strongest setup, sized to win $30</span></div>` : ""}
+      ${mb ? `<div class="mb-flag" style="grid-column:1/-1">MONEYBALL<span>our strongest setup, sized to win $40 (2 units)</span></div>` : ""}
       <div class="verdict ${c.verdict}">${c.verdict}</div>
       <div><div class="pick">${esc(c.label)}</div>
         <div class="sub">${esc(c.away)} @ ${esc(c.home)}, ${esc(when(c.tip_utc))}</div>

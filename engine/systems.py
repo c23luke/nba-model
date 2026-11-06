@@ -88,7 +88,7 @@ TEST_SYSTEMS.update({
     130: {"win_est": 0.564, "name": "MONEYBALL: 2+ systems + players model agrees 3+", "bet": "spread", "idea": "stack",
           "rule": "Two or more of our systems on the same side AND the players model likes that side by 3+ points "
                   "(either way day-to-day players go). 2 seasons at the open: 29-11 (72.5%), both seasons 72-73%. "
-                  "Sized to win $30."},
+                  "Sized to win $40 (2 units)."},
     125: {"win_est": 0.532, "name": "Fade the tanker, last 3 weeks", "bet": "spread", "idea": "late season",
           "rule": "Last 3 weeks of the season, opponent is .350 or worse after 40+ games (and we aren't) → bet us. "
                   "6 seasons: 212-164 (56.4%) vs the close"},

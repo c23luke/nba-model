@@ -291,7 +291,7 @@ def test_moneyball_replaces_the_other_bets_on_its_side_and_wins_30():
     slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
     live = [pk(130, "BOS", game="g1"), pk(112, "BOS", game="g1"), pk(102, "BOS", game="g1")]
     card = build_card(live, slate, now=NOW)
-    assert [c["tag"] for c in card] == ["MONEYBALL"] and card[0]["to_win"] == 30
+    assert [c["tag"] for c in card] == ["MONEYBALL"] and card[0]["to_win"] == 40
     assert set(card[0]["with"]) == {"T12", "T2"}
 
 
