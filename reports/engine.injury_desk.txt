@@ -1,0 +1,1 @@
+events 0  paper {'bets': 0, 'w': 0, 'l': 0, 'avg_clv': None, 'beat_close': 0, 'n_clv': 0}  market followed None  median seconds to read None
