@@ -138,9 +138,24 @@ class SupabaseStore:
     def save_games(self, rows):
         if rows: self._upsert("games", shape("games", rows), "id")
 
-    def load_picks(self):  return self._all("picks")
+    # Picks were read in full twice per run (0.64 MB each, ~12 runs an hour): about 12 GB a month, most of the
+    # Supabase egress (2026-11-10: "Egress Exceeded", 8.3 of 5 GB). Same fix as box scores: the watcher keeps one
+    # store for its hour, so re-read at most every 30 minutes and keep what this process saves.
+    PICKS_TTL = 1800
+    def load_picks(self):
+        import time
+        c = getattr(self, "_pk_cache", None)
+        if c is None or time.time() - c[0] > self.PICKS_TTL:
+            self._pk_cache = c = (time.time(), {r["key"]: r for r in self._all("picks")})
+        import copy
+        return copy.deepcopy(list(c[1].values()))      # callers edit picks and their meta; the cache stays as saved
     def save_picks(self, rows):
-        if rows: self._upsert("picks", shape("picks", rows), "key")
+        if rows:
+            shaped = shape("picks", rows)
+            self._upsert("picks", shaped, "key")
+            if getattr(self, "_pk_cache", None) is not None:
+                import copy
+                self._pk_cache[1].update({r["key"]: copy.deepcopy(r) for r in shaped})
 
     def load_orders(self):
         """Live orders that filled (what the order placer actually bet). Private table; service key only."""

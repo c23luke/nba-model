@@ -807,7 +807,10 @@ async function tick() {
   catch (e) { $("fresh").querySelector("span").textContent = "Can't load the board"; $("status").textContent = e.message; }
 }
 tick();
-setInterval(tick, 60000);
+// refresh every 2 minutes, only while the page is on screen (each refresh downloads the whole board, ~0.25 MB:
+// a phone left open on the site all day was a real share of the Supabase egress, 2026-11-10)
+setInterval(() => { if (document.visibilityState === "visible") tick(); }, 120000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") tick(); });
 </script>
 </body>
 </html>
