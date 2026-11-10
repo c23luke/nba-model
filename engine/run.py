@@ -433,6 +433,13 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             board["injury_desk"] = store.load_state(["injury_desk"]).get("injury_desk")
         except Exception as e:
             log.append(f"injury desk: {str(e)[:160]}")
+        # the props desk (tracking only): players who gain minutes when a teammate is freshly ruled out
+        try:
+            from . import props_desk
+            board["props_desk"] = props_desk.run(store, now, upcoming, reads, rotations, box_rows, key,
+                                                 sources.get_json, {g.id: {"final": g.final} for g in games})
+        except Exception as e:
+            log.append(f"props desk: {str(e)[:160]}")
     # stale-price research: what the books' consensus said and what the exchanges offered, this run
     if hasattr(store, "save_price_log") and upcoming:
         try:
