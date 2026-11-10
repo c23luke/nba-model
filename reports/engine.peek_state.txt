@@ -1,9 +1,16 @@
 6 games with a read history
-  read:401909960 2026-11-10T14:33:19 1 entries; last: {'hi': -13.0, 'lo': -17.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['MIL: Pete Nance', 'MIL: Tyler Herro', 'NYK: Josh Hart'], 'mkt': -15.5, 'fair': -15.0, 'blind': False}
-  read:401909961 2026-11-10T14:33:19 1 entries; last: {'hi': 4.5, 'lo': 4.5, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': [], 'mkt': 1.5, 'fair': 4.5, 'blind': False}
+  read:401909960 2026-11-10T17:16:11 9 entries; last: {'hi': -12.5, 'lo': -19.0, 'ts': '2026-11-10T17:15:49.057312+00:00', 'dtd': ["MIL: Kel'el Ware", 'MIL: Tyler Herro', 'NYK: Josh Hart'], 'mkt': -15.5, 'fair': -15.0, 'blind': False}
+  read:401909964 2026-11-10T16:45:25 9 entries; last: {'hi': 5.0, 'lo': 2.0, 'ts': '2026-11-10T16:45:11.014033+00:00', 'dtd': ['ORL: Tristan da Silva', 'SAC: Domantas Sabonis', 'SAC: Keegan Murray'], 'mkt': 6.0, 'fair': 2.0, 'blind': True}
   read:401909962 2026-11-10T14:33:19 1 entries; last: {'hi': 0.5, 'lo': 0.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['PHX: Drew Timme'], 'mkt': -3.5, 'fair': 0.5, 'blind': False}
-  read:401909963 2026-11-10T14:33:19 1 entries; last: {'hi': 10.0, 'lo': 8.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['UTA: Lauri Markkanen'], 'mkt': 8.5, 'fair': 8.0, 'blind': False}
-  read:401909964 2026-11-10T14:33:19 1 entries; last: {'hi': 5.0, 'lo': 0.5, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['ORL: Desmond Bane', 'SAC: Domantas Sabonis', 'SAC: Keegan Murray'], 'mkt': 6.0, 'fair': 2.0, 'blind': True}
-  read:401909965 2026-11-10T14:33:19 1 entries; last: {'hi': 1.0, 'lo': -1.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['OKC: Nique Clifford', 'POR: Robert Williams III'], 'mkt': 2.0, 'fair': -1.0, 'blind': False}
-board 2026-11-10T14:32:56.414911+00:00 injury_desk on board: True
+  read:401909961 2026-11-10T15:33:30 7 entries; last: {'hi': 4.5, 'lo': 4.5, 'ts': '2026-11-10T15:33:06.903261+00:00', 'dtd': [], 'mkt': 1.5, 'fair': 4.5, 'blind': False}
+  read:401909965 2026-11-10T16:09:02 2 entries; last: {'hi': -1.0, 'lo': -1.0, 'ts': '2026-11-10T16:08:35.674162+00:00', 'dtd': [], 'mkt': 2.0, 'fair': -1.0, 'blind': False}
+  read:401909963 2026-11-10T15:33:30 7 entries; last: {'hi': 10.0, 'lo': 8.0, 'ts': '2026-11-10T15:33:06.903261+00:00', 'dtd': ['UTA: Lauri Markkanen'], 'mkt': 8.5, 'fair': 8.0, 'blind': False}
+board 2026-11-10T17:27:06.558003+00:00 injury_desk on board: True
+testing: X2: fade the team missing 2+ rotation players 0-0 bets 0 open 0 clv None ready False
+testing: Injury desk: beat the market to the news 0-0 bets 0 open 0 clv None ready False
+testing: Props: players who gain minutes 0-0 bets 0 open 0 clv None ready False
+testing: Our bet + an injury edge on the same side (bigger-bet candidate) 0-0 bets 0 open 0 clv None ready False
+props desk: {'bets': 0, 'w': 0, 'l': 0, 'avg_clv': None} []
+X2 picks today: []
+notes: []
 notes mentioning the desk: []
