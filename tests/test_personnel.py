@@ -373,3 +373,22 @@ def test_espn_out_is_not_trusted_until_this_games_report_says_so():
     long_out = {"7": {**lv["7"], "last_date": "2026-10-01"}}
     t3 = P.rate_team("LAL", roster, LAST, live=long_out, team_dates=["2026-10-21", "2026-10-23", "2026-11-06", "2026-11-08"])
     assert next(p for p in t3.players if p.name == "Star Guard").status == "out"
+
+
+
+def test_espn_day_to_day_gives_way_to_a_filed_official_report():
+    dates = ["2026-11-08"]
+    dtd = dict(ath("Star Guard"), id="7", injuries=[{"status": "Day-To-Day"}])
+    lv = {"7": {"min": 300, "games": 8, "mpg": 30, "bpm_live": 3.0, "last_date": "2026-11-08"}}
+    roster = [dtd] + [ath("Role Wing")] * 8
+    # report not in yet: still priced both ways
+    t = P.rate_team("POR", roster, LAST, live=lv, team_dates=dates)
+    assert next(p for p in t.players if p.name == "Star Guard").status == "day-to-day"
+    # report in, he isn't on it: plays
+    t1 = P.rate_team("POR", roster, LAST, live=lv, team_dates=dates, report_in=True)
+    s1 = next(p for p in t1.players if p.name == "Star Guard")
+    assert s1.status == "active" and any("doesn't list him" in x for x in s1.steps)
+    # report in and lists him questionable: both ways
+    q = [dict(dtd, official_status="Questionable")] + [ath("Role Wing")] * 8
+    t2 = P.rate_team("POR", q, LAST, live=lv, team_dates=dates, report_in=True)
+    assert next(p for p in t2.players if p.name == "Star Guard").status == "day-to-day"

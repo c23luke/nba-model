@@ -335,6 +335,13 @@ def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None, report_in: b
                 p.steps.append(f"ESPN lists him out after missing {len(missed)} game(s); today's official report isn't "
                                "out yet → priced both ways (plays / sits) until it is")
             continue
+        if p.status == "day-to-day" and p.official is None and report_in:
+            # ESPN tags him day-to-day, but the NBA's report for this game is in and doesn't list him: the league
+            # requires every questionable/doubtful player to be listed, so he's available (Nov 10, POR-OKC: ESPN had
+            # Robert Williams III and Nique Clifford day-to-day; the official report didn't list either)
+            p.status = "active"
+            p.steps.append("ESPN lists him day-to-day, but today's official report is in and doesn't list him → available, plays")
+            continue
         if p.status != "active":
             continue
         seen = (p.live or {}).get("last_date")
