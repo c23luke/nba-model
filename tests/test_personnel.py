@@ -347,3 +347,29 @@ def test_power_rankings_best_to_worst_with_what_moved_them():
     assert [r["team"] for r in pr] == ["BOS", "NYK"] and [r["rank"] for r in pr] == [1, 2]
     assert pr[1]["results_adj"] == -3.0 and pr[1]["players"] == round(bad.rating + 3.0, 1)
     assert pr[0]["market_rank"] == 4 and pr[0]["record"] == "2-1" and pr[0]["best"][0]["name"] == "Star Guard"
+
+
+
+def test_espn_out_is_not_trusted_until_this_games_report_says_so():
+    # Nov 9, LAL at ATL: Luka sat Nov 8 (back tightness). ESPN still had him Out the next night; the Lakers hadn't
+    # filed for Nov 9. The model counted him out and backed ATL by 3.4; he played 39 minutes.
+    dates = ["2026-11-06", "2026-11-08"]
+    star = dict(ath("Star Guard"), id="7", injuries=[{"status": "Out"}])
+    lv = {"7": {"min": 300, "games": 8, "mpg": 37, "bpm_live": 8.0, "last_date": "2026-11-06"}}
+    roster = [star] + [ath("Role Wing")] * 8
+    t = P.rate_team("LAL", roster, LAST, live=lv, team_dates=dates)
+    s = next(p for p in t.players if p.name == "Star Guard")
+    assert s.status == "day-to-day" and any("isn't out yet" in x for x in s.steps)     # both ways, not out
+    sit = P.rate_team("LAL", roster, LAST, live=lv, team_dates=dates, dtd_sit=True)
+    assert sit.rating < t.rating
+    # the team's report is in and doesn't list him -> he plays
+    t1 = P.rate_team("LAL", roster, LAST, live=lv, team_dates=dates, report_in=True)
+    assert next(p for p in t1.players if p.name == "Star Guard").status == "active"
+    # the report lists him Out -> out
+    listed = [dict(star, official_status="Out")] + [ath("Role Wing")] * 8
+    t2 = P.rate_team("LAL", listed, LAST, live=lv, team_dates=dates)
+    assert next(p for p in t2.players if p.name == "Star Guard").status == "out"
+    # out a long time (missed every game) and no report yet -> still out
+    long_out = {"7": {**lv["7"], "last_date": "2026-10-01"}}
+    t3 = P.rate_team("LAL", roster, LAST, live=long_out, team_dates=["2026-10-21", "2026-10-23", "2026-11-06", "2026-11-08"])
+    assert next(p for p in t3.players if p.name == "Star Guard").status == "out"

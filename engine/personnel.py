@@ -319,7 +319,23 @@ def flag_missed_games(tr: "TeamRead", team_dates: list[str] | None, report_in: b
     if not team_dates:
         return
     for p in tr.players:
-        if p.status != "active" or p.official in CLEARED:
+        if p.official in CLEARED:
+            continue
+        if p.status == "out" and p.official is None and (p.known or p.draft):
+            # ESPN says Out but the NBA report for THIS game doesn't (Caden 2026-11-10, ATL +2.5: Luka sat Nov 8
+            # with back tightness, ESPN still had him Out the next night, the Lakers hadn't filed yet, and the
+            # model counted him out. He played 39 minutes. ESPN's Out is often left over from the last game.)
+            seen = (p.live or {}).get("last_date")
+            missed = sorted(d for d in team_dates if seen is None or d > seen)
+            if report_in:
+                p.status = "active"
+                p.steps.append("ESPN lists him out, but today's official report is in and doesn't list him → available, plays")
+            elif len(missed) <= 2:
+                p.status = "day-to-day"
+                p.steps.append(f"ESPN lists him out after missing {len(missed)} game(s); today's official report isn't "
+                               "out yet → priced both ways (plays / sits) until it is")
+            continue
+        if p.status != "active":
             continue
         seen = (p.live or {}).get("last_date")
         missed = sorted(d for d in team_dates if seen is None or d > seen)
