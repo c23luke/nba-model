@@ -1,0 +1,378 @@
+RECORD (today's rules): 7-7-0  pnl 3.26   | real account 12-13-0 pnl -36.87
+27 tickets
+
+==============================================================================================================
+#1 FINAL W  E7        card MEM +6  BOUGHT MEM +6.5 at 116 on ProphetX  risk $17.43 to win $20.16  real pnl 20.16
+   game 401909895 MEM @ POR 2026-10-29  final 124-103  placed 2026-10-30 01:01Z  tip 2026-10-30 02:00Z
+   MEM margin +21; with our +6.5 → covered by +27.5
+   record: COUNTED pnl 20.0   | ev at bet 0.2354  | players at bet 3.4 now None  | frozen snapshot: no
+   why (card): Best price: Kalshi NO · POR wins by over 5.5  (= MEM +5.5) at 41¢, +25.1% expected return. Next best: Polymarket MEM +7.5 at +100 (fees not counted), +23.0%
+   line on our side: first seen +6 (2026-10-28 21:20Z) · when we bet 7.5 · last before tip +7.5 (2026-10-30 01:50Z)  → CLV vs close -1.0 pts
+   big moves (1+ pt): 2026-10-28 22:07Z +6.5→+7.5; 2026-10-30 01:21Z +7.5→+8.5
+   injury report: 14 entries known when we bet, 2 new/changed after
+      after bet: 2026-10-30 01:16Z MEM Ty Jerome → Questionable | Injury/Illness - Back Tightness
+      after bet: 2026-10-30 01:45Z MEM Ty Jerome → Available | Injury/Illness - Back Tightness
+   listed out/doubtful/questionable at some point but PLAYED: MEM Ty Jerome 24min; POR John Tonje 5min
+==============================================================================================================
+#2 FINAL W  MONEYBALL card DAL +5.5  BOUGHT DAL +6.5 at -122 on ProphetX  risk $37.09 to win $30.29  real pnl 30.29
+   game 401909283 HOU @ DAL 2026-10-30  final 111-116  placed 2026-10-30 22:46Z  tip 2026-10-31 00:00Z
+   DAL margin +5; with our +6.5 → covered by +11.5
+   record: COUNTED pnl 40.0   | ev at bet 0.0879  | players at bet 4.6 now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +5.5 (2026-10-29 15:30Z) · when we bet 6.5 · last before tip +5.5 (2026-10-30 23:49Z)  → CLV vs close 1.0 pts
+   big moves (1+ pt): 2026-10-30 22:46Z +6.5→+5.5
+   injury report: 17 entries known when we bet, 1 new/changed after
+      after bet: 2026-10-30 23:15Z HOU Marcus Smart → Available | Injury/Illness - Left Forearm Strain
+   listed out/doubtful/questionable at some point but PLAYED: HOU Marcus Smart 17min
+==============================================================================================================
+#3 FINAL W  S4        card OVER 234.5  BOUGHT OVER 234.5 at -124 on Kalshi  risk $24.95 to win $20.05  real pnl 20.05
+   game 401909899 SAC @ MEM 2026-10-31  final 105-136  placed 2026-10-31 00:42Z  tip 2026-11-01 00:00Z
+   record: NOT COUNTED: paid −124: S4 now bets only at -110 or better   | ev at bet 0.0551  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +10.5 (2026-10-31 00:32Z) · when we bet 10.5 · last before tip +7.5 (2026-10-31 23:51Z)  → CLV vs close -7.0 pts
+   big moves (1+ pt): 2026-10-31 13:35Z +10.5→+9.5; 2026-10-31 14:00Z +9.5→+8.5; 2026-10-31 16:50Z +8.5→+9.5; 2026-10-31 17:05Z +9.5→+8.5; 2026-10-31 22:50Z +8.5→+9.5; 2026-10-31 23:20Z +9.5→+8.5; 2026-10-31 23:35Z +8.5→+7.5
+   injury report: 8 entries known when we bet, 3 new/changed after
+      after bet: 2026-10-31 23:30Z MEM Ty Jerome → Out | Injury/Illness - Upper Back Soreness
+      after bet: 2026-10-31 23:30Z MEM Scotty Pippen Jr. → Out | Injury/Illness - Low Back Soreness
+      after bet: 2026-10-31 23:30Z MEM Quinten Post → Out | Injury/Illness - Right Ankle Sprain
+==============================================================================================================
+#4 FINAL W  E4        card LAL -4.5  BOUGHT LAL −2.5 at 107 on ProphetX  risk $19.09 to win $20.48  real pnl 20.48
+   game 401909906 TOR @ LAL 2026-11-01  final 125-131  placed 2026-11-01 15:01Z  tip 2026-11-02 02:00Z
+   LAL margin +6; with our -2.5 → covered by +3.5
+   record: COUNTED pnl 20.0   | ev at bet 0.3069  | players at bet 3.1 now None  | frozen snapshot: no
+   why (card): Best price: BetOpenly LAL -2.5 at -104 (fees not counted), +24.2% expected return. Next best: Polymarket LAL -3.5 at +108 (fees not counted), +24.4%
+   pieces: [('LAL −2.5', 39.98, 19.09, 107)]
+   line on our side: first seen -4.5 (2026-11-01 01:53Z) · when we bet -2.5 · last before tip -3.5 (2026-11-02 01:52Z)  → CLV vs close 1.0 pts
+   big moves (1+ pt): 2026-11-01 13:51Z -4.5→-3.5; 2026-11-01 15:00Z -3.5→-2.5
+   injury report: 6 entries known when we bet, 2 new/changed after
+      after bet: 2026-11-01 21:00Z LAL Ziaire Williams → Out | 
+      after bet: 2026-11-02 01:45Z TOR Jakob Poeltl → Out | Injury/Illness - Left Shoulder Bursitis
+==============================================================================================================
+#5 FINAL W  MONEYBALL card BKN +15  BOUGHT BKN +14.5 at -106 on Kalshi  risk $31.89 to win $30.11  real pnl 30.11
+   game 401909910 BKN @ NYK 2026-11-02  final 90-103  placed 2026-11-01 23:39Z  tip 2026-11-03 00:30Z
+   BKN margin -13; with our +14.5 → covered by +1.5
+   record: NOT COUNTED: we held both sides of this game: today neither is bet   | ev at bet 0.0559  | players at bet 5.3 now None  | frozen snapshot: no
+   why (card): Best price: BetOpenly BKN +14.5 at +100 (fees not counted), +8.7% expected return. Next best: Kalshi NO · NYK wins by over 15.5  (= BKN +15.5) at 56¢, +0.9%
+   line on our side: first seen +15 (2026-11-01 23:22Z) · when we bet 15.0 · last before tip +14.5 (2026-11-03 00:25Z)  → CLV vs close 0.0 pts
+   injury report: 1 entries known when we bet, 6 new/changed after
+      after bet: 2026-11-02 17:45Z BKN Grant Nelson → Out | G League - Two-Way
+      after bet: 2026-11-02 17:45Z BKN Ben Saraf → Out | G League - On Assignment
+      after bet: 2026-11-02 17:45Z BKN Tyler Bilodeau → Out | G League - Two-Way
+      after bet: 2026-11-02 17:45Z BKN Egor Demin → Out | Injury/Illness - Right Bone Bruise
+      after bet: 2026-11-02 17:45Z BKN Joshua Jefferson → Out | G League - On Assignment
+      after bet: 2026-11-02 23:15Z NYK Jose Alvarado → Available | Injury/Illness - Left Ankle Sprain
+   listed out/doubtful/questionable at some point but PLAYED: NYK Jose Alvarado 9min
+==============================================================================================================
+#6 FINAL L  S4        card OVER 240  BOUGHT OVER 239.5 at -130 on Kalshi  risk $25.96 to win $20.04  real pnl -25.96
+   game 401909912 CHI @ PHI 2026-11-02  final 107-126  placed 2026-11-01 23:43Z  tip 2026-11-03 00:30Z
+   record: NOT COUNTED: paid −130: S4 now bets only at -110 or better   | ev at bet 0.0556  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +11.5 (2026-11-01 23:38Z) · when we bet 11.5 · last before tip +10.5 (2026-11-03 00:25Z)  → CLV vs close 1.0 pts
+   injury report: 6 entries known when we bet, 3 new/changed after
+      after bet: 2026-11-02 22:45Z CHI Tobe Awaka → Available | -
+      after bet: 2026-11-02 22:45Z CHI Nic Claxton → Out | Injury/Illness - Left Hamstring Strain
+      after bet: 2026-11-02 22:45Z CHI Jalen Smith → Available | -
+   listed out/doubtful/questionable at some point but PLAYED: PHI Joel Embiid 25min
+==============================================================================================================
+#7 FINAL W  S3        card HOU -5  BOUGHT HOU −5.5 at 102 on Kalshi  risk $37.54 to win $40.46  real pnl 40.46
+   game 401909916 BOS @ HOU 2026-11-02  final 93-109  placed 2026-11-02 00:01Z  tip 2026-11-03 01:30Z
+   HOU margin +16; with our -5.5 → covered by +10.5
+   record: NOT COUNTED: players model agreed by only 0.2: a system now needs it to agree by 3+   | ev at bet 0.0611  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   pieces: [('HOU −5.5', 40.0, 19.6, 102), ('HOU −6.5', 38.0, 17.1, 114)]
+   line on our side: first seen -5 (2026-11-01 23:53Z) · when we bet -5.0 · last before tip -4.5 (2026-11-03 01:27Z)  → CLV vs close -1.0 pts
+   injury report: 5 entries known when we bet, 4 new/changed after
+      after bet: 2026-11-02 19:00Z BOS Paul George → Out | Rest
+      after bet: 2026-11-02 19:00Z BOS Devin Carter → Out | Injury/Illness - Illness
+      after bet: 2026-11-02 19:00Z HOU Clint Capela → Out | Injury/Illness - Right Ankle Sprain
+      after bet: 2026-11-03 00:30Z HOU Reed Sheppard → Available | Injury/Illness - Low Back Strain
+   listed out/doubtful/questionable at some point but PLAYED: HOU Reed Sheppard 17min
+==============================================================================================================
+#8 FINAL W  T2        card WAS +1.5  BOUGHT WAS +1.5 at -102 on ProphetX  risk $20.5 to win $20.09  real pnl 20.09
+   game 401909911 WAS @ ORL 2026-11-02  final 103-94  placed 2026-11-02 01:11Z  tip 2026-11-03 00:30Z
+   WAS margin +9; with our +1.5 → covered by +10.5
+   record: NOT COUNTED: players model had no clean read: a system now needs it to agree by 3+   | ev at bet 0.0445  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +1.5 (2026-11-01 23:25Z) · when we bet 1.5 · last before tip +3 (2026-11-03 00:25Z)  → CLV vs close -1.5 pts
+   injury report: 5 entries known when we bet, 9 new/changed after
+      after bet: 2026-11-02 17:00Z ORL Paolo Banchero → Out | 
+      after bet: 2026-11-02 17:00Z ORL Anthony Black → Out | 
+      after bet: 2026-11-02 17:00Z ORL Jonathan Isaac → Out | 
+      after bet: 2026-11-02 17:00Z ORL Izaiyah Nelson → Out | 
+      after bet: 2026-11-02 17:00Z ORL Noah Penda → Out | 
+      after bet: 2026-11-02 17:00Z ORL Jalen Suggs → Out | 
+      after bet: 2026-11-02 18:00Z WAS Reece Beekman → Out | Injury/Illness - Right AC Joint Injury
+      after bet: 2026-11-02 18:00Z WAS Anthony Gill → Out | Injury/Illness - Low Back Spasms
+      after bet: 2026-11-02 18:00Z WAS Alex Sarr → Out | Injury/Illness - Left Knee Soreness
+==============================================================================================================
+#9 FINAL L  S4        card OVER 234.5  BOUGHT OVER 234.5 at -124 on Kalshi  risk $23.72 to win $19.07  real pnl -23.72
+   game 401909913 SAC @ DAL 2026-11-02  final 115-100  placed 2026-11-02 01:27Z  tip 2026-11-03 01:00Z
+   record: NOT COUNTED: paid −124: S4 now bets only at -110 or better   | ev at bet 0.0551  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +9.5 (2026-11-02 01:20Z) · when we bet 9.5 · last before tip +7.5 (2026-11-03 00:53Z)  → CLV vs close -2.0 pts
+   big moves (1+ pt): 2026-11-02 19:00Z +10.5→+9; 2026-11-03 00:00Z +8.5→+7.5
+   injury report: 12 entries known when we bet, 7 new/changed after
+      after bet: 2026-11-02 18:46Z DAL Kyrie Irving → Doubtful | 
+      after bet: 2026-11-02 19:00Z SAC Dylan Cardwell → Probable | Injury/Illness - Left Calf Strain
+      after bet: 2026-11-02 22:45Z SAC Dylan Cardwell → Doubtful | Injury/Illness - Left Calf Strain
+      after bet: 2026-11-02 23:30Z SAC Dylan Cardwell → Out | Injury/Illness - Left Calf Strain
+      after bet: 2026-11-02 23:46Z DAL Santi Aldama → Out | Injury/Illness - Right Knee Surgery
+      after bet: 2026-11-02 23:46Z DAL Kyrie Irving → Out | 
+      after bet: 2026-11-03 00:00Z SAC Zach LaVine → Available | -
+   listed out/doubtful/questionable at some point but PLAYED: SAC Zach LaVine 28min
+==============================================================================================================
+#10 FINAL L  T12       card NYK -15  BOUGHT NYK −14.5 at -109 on ProphetX  risk $40.63 to win $40.56  real pnl -40.63
+   game 401909910 BKN @ NYK 2026-11-02  final 90-103  placed 2026-11-02 01:32Z  tip 2026-11-03 00:30Z
+   NYK margin +13; with our -14.5 → covered by -1.5
+   record: NOT COUNTED: we held both sides of this game: today neither is bet   | ev at bet 0.0561  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   pieces: [('NYK −14.5', 43.01, 22.23, -109), ('NYK −15.5', 39.01, 18.4, 110)]
+   line on our side: first seen -15 (2026-11-01 23:22Z) · when we bet -15.0 · last before tip -14.5 (2026-11-03 00:25Z)  → CLV vs close 0.0 pts
+   injury report: 1 entries known when we bet, 6 new/changed after
+      after bet: 2026-11-02 17:45Z BKN Grant Nelson → Out | G League - Two-Way
+      after bet: 2026-11-02 17:45Z BKN Ben Saraf → Out | G League - On Assignment
+      after bet: 2026-11-02 17:45Z BKN Tyler Bilodeau → Out | G League - Two-Way
+      after bet: 2026-11-02 17:45Z BKN Egor Demin → Out | Injury/Illness - Right Bone Bruise
+      after bet: 2026-11-02 17:45Z BKN Joshua Jefferson → Out | G League - On Assignment
+      after bet: 2026-11-02 23:15Z NYK Jose Alvarado → Available | Injury/Illness - Left Ankle Sprain
+   listed out/doubtful/questionable at some point but PLAYED: NYK Jose Alvarado 9min
+==============================================================================================================
+#11 FINAL L  S4        card OVER 231  BOUGHT OVER 231.5 at 100 on ProphetX  risk $20.29 to win $20.29  real pnl -20.29
+   game 401909917 UTA @ SAS 2026-11-02  final 97-119  placed 2026-11-02 04:01Z  tip 2026-11-03 01:30Z
+   record: NOT COUNTED: totals aren't bet now (S4 is tracking only)   | ev at bet 0.1374  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +15 (2026-11-01 23:38Z) · when we bet 16.5 · last before tip +16 (2026-11-03 01:27Z)  → CLV vs close -4.0 pts
+   injury report: 7 entries known when we bet, 2 new/changed after
+      after bet: 2026-11-02 18:30Z UTA Kobe Bufkin → Questionable | G League - Two-Way
+      after bet: 2026-11-02 23:30Z UTA Kobe Bufkin → Available | G League - Two-Way
+==============================================================================================================
+#12 FINAL W  E4        card LAL -1.5  BOUGHT LAL ML at -107 on Kalshi  risk $21.74 to win $20.26  real pnl 20.26
+   game 401909921 MIA @ LAL 2026-11-02  final 117-138  placed 2026-11-02 04:35Z  tip 2026-11-03 03:00Z
+   LAL margin +21; with our -0.5 → covered by +20.5
+   record: NOT COUNTED: we held both sides of this game: today neither is bet   | ev at bet 0.134  | players at bet None now None  | frozen snapshot: no
+   why (card): None
+   line on our side: first seen -1.5 (2026-11-02 04:34Z) · when we bet -1.5 · last before tip -2 (2026-11-03 02:54Z)  → CLV vs close None pts
+   big moves (1+ pt): 2026-11-02 15:00Z -2.5→-1.5
+   injury report: 3 entries known when we bet, 5 new/changed after
+      after bet: 2026-11-02 20:00Z MIA Tre Donaldson → Available | G League - Two-Way
+      after bet: 2026-11-02 20:00Z MIA Vladislav Goldin → Available | G League - Two-Way
+      after bet: 2026-11-02 20:00Z MIA Tim Hardaway Jr. → Available | Personal Reasons
+      after bet: 2026-11-02 21:00Z LAL Walker Kessler → Available | Injury/Illness - Left Finger Splint
+      after bet: 2026-11-02 21:00Z LAL Adou Thiero → Out | 
+   listed out/doubtful/questionable at some point but PLAYED: MIA Tim Hardaway Jr. 19min
+==============================================================================================================
+#13 FINAL L  T2        card MIA +1.5  BOUGHT MIA +1.5 at 103 on ProphetX  risk $19.5 to win $20.08  real pnl -19.5
+   game 401909921 MIA @ LAL 2026-11-02  final 117-138  placed 2026-11-02 05:06Z  tip 2026-11-03 03:00Z
+   MIA margin -21; with our +1.5 → covered by -19.5
+   record: NOT COUNTED: we held both sides of this game: today neither is bet   | ev at bet 0.0697  | players at bet None now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   pieces: [('MIA +1.5', 39.98, 19.5, 103)]
+   line on our side: first seen +1.5 (2026-11-02 04:34Z) · when we bet 2.0 · last before tip +2 (2026-11-03 02:54Z)  → CLV vs close -0.5 pts
+   big moves (1+ pt): 2026-11-02 15:00Z +2.5→+1.5
+   injury report: 3 entries known when we bet, 5 new/changed after
+      after bet: 2026-11-02 20:00Z MIA Tre Donaldson → Available | G League - Two-Way
+      after bet: 2026-11-02 20:00Z MIA Vladislav Goldin → Available | G League - Two-Way
+      after bet: 2026-11-02 20:00Z MIA Tim Hardaway Jr. → Available | Personal Reasons
+      after bet: 2026-11-02 21:00Z LAL Walker Kessler → Available | Injury/Illness - Left Finger Splint
+      after bet: 2026-11-02 21:00Z LAL Adou Thiero → Out | 
+   listed out/doubtful/questionable at some point but PLAYED: MIA Tim Hardaway Jr. 19min
+==============================================================================================================
+#14 FINAL W  E2        card IND +6.5  BOUGHT IND +6.5 at 139 on ProphetX  risk $14.46 to win $20.12  real pnl 20.12
+   game 401909909 ATL @ IND 2026-11-02  final 108-104  placed 2026-11-02 18:13Z  tip 2026-11-03 00:30Z
+   IND margin -4; with our +6.5 → covered by +2.5
+   record: COUNTED pnl 20.0   | ev at bet 0.3157  | players at bet 5.4 now None  | frozen snapshot: no
+   why (card): Best price: Kalshi NO · ATL wins by over 4.5  (= IND +4.5) at 32¢, +42.6% expected return
+   line on our side: first seen +6.5 (2026-11-02 03:17Z) · when we bet 9.0 · last before tip +10 (2026-11-03 00:25Z)  → CLV vs close -3.5 pts
+   big moves (1+ pt): 2026-11-02 03:49Z +5.5→+4.5; 2026-11-02 18:06Z +5→+6; 2026-11-02 18:12Z +6→+9; 2026-11-02 23:00Z +10→+9
+   injury report: 17 entries known when we bet, 5 new/changed after
+      after bet: 2026-11-02 21:31Z ATL Keshon Gilbert → Out | G League - Two-Way
+      after bet: 2026-11-02 21:31Z ATL Jalen Wilson → Out | G League - Two-Way
+      after bet: 2026-11-02 23:00Z ATL Jalen Johnson → Out | Injury/Illness - Left Ankle Sprain
+      after bet: 2026-11-02 23:00Z IND Larry Nance Jr. → Out | Injury/Illness - Illness
+      after bet: 2026-11-02 23:00Z IND Obi Toppin → Out | Injury/Illness - Lumbar Sprain
+==============================================================================================================
+#15 FINAL W  E5        card MIN +9.5  BOUGHT MIN +8.5 at 103 on Kalshi + ProphetX  risk $19.55 to win $20.08  real pnl 20.08
+   game 401909930 MIN @ HOU 2026-11-04  final 117-107  placed 2026-11-03 12:34Z  tip 2026-11-05 01:30Z
+   MIN margin +10; with our +8.5 → covered by +18.5
+   record: COUNTED pnl 20.0   | ev at bet 0.049  | players at bet 3.4 now None  | frozen snapshot: no
+   why (card): No venue clears the 4% bar right now (best: Kalshi NO · HOU wins by over 9.5  (= MIN +9.5) at -138, -3.3%). Set a limit on Kalshi NO · HOU wins by over 9.5  (= MIN +9.5) at -127
+   pieces: [('MIN +8.5', 40.0, 19.48, 103)]
+   line on our side: first seen +9.5 (2026-11-03 05:00Z) · when we bet 9.5 · last before tip +7.5 (2026-11-05 01:26Z)  → CLV vs close 1.0 pts
+   big moves (1+ pt): 2026-11-03 20:00Z +9.5→+8.5; 2026-11-03 22:44Z +8.5→+7.5; 2026-11-03 23:20Z +7.5→+8.5; 2026-11-04 14:00Z +8.5→+7.5
+   injury report: 0 entries known when we bet, 9 new/changed after
+      after bet: 2026-11-03 22:00Z HOU Steven Adams → Out | Injury/Illness - Right Soleus Strain
+      after bet: 2026-11-03 22:00Z HOU Quadir Copeland → Out | G League - Two-Way
+      after bet: 2026-11-03 22:00Z HOU Julian Phillips → Out | G League - Two-Way
+      after bet: 2026-11-03 22:00Z HOU Clint Capela → Questionable | Injury/Illness - Right Ankle Sprain
+      after bet: 2026-11-03 23:00Z MIN Donte DiVincenzo → Out | 
+      after bet: 2026-11-03 23:00Z MIN Anthony Edwards → Out | 
+      after bet: 2026-11-03 23:00Z MIN Terrence Shannon Jr → Questionable | Injury/Illness - Left Hip Contusion
+      after bet: 2026-11-04 18:15Z MIN Terrence Shannon Jr → Out | Injury/Illness - Left Hip Contusion
+      after bet: 2026-11-04 18:30Z HOU Clint Capela → Out | Injury/Illness - Right Ankle Sprain
+==============================================================================================================
+#16 FINAL L  E4        card CHI +12  BOUGHT CHI +10.5 at 120 on Kalshi  risk $17.85 to win $20.15  real pnl -17.85
+   game 401909926 CHI @ NYK 2026-11-04  final 105-135  placed 2026-11-03 21:38Z  tip 2026-11-05 00:30Z
+   CHI margin -30; with our +10.5 → covered by -19.5
+   record: COUNTED pnl -17.72   | ev at bet 0.1036  | players at bet None now None  | frozen snapshot: no
+   why (card): No bet: the players model has no clean read on this game, and a system needs it to agree by 3+
+   pieces: [('CHI +10.5', 32.0, 14.01, 120), ('CHI +12.5', 6.0, 3.18, -121)]
+   line on our side: first seen +12 (2026-11-03 20:33Z) · when we bet 12.5 · last before tip +12 (2026-11-05 00:26Z)  → CLV vs close -1.5 pts
+   injury report: 2 entries known when we bet, 4 new/changed after
+      after bet: 2026-11-03 21:45Z NYK Josh Hart → Questionable | Injury/Illness - Right Ankle Soreness
+      after bet: 2026-11-04 18:00Z NYK Josh Hart → Out | Injury/Illness - Right Ankle Soreness
+      after bet: 2026-11-04 22:30Z CHI Nic Claxton → Out | Injury/Illness - Left Hamstring Strain
+      after bet: 2026-11-04 22:30Z CHI Jalen Smith → Available | -
+==============================================================================================================
+#17 FINAL W  MONEYBALL card DAL +12.5  BOUGHT DAL +12.5 at -105 on ProphetX  risk $31.97 to win $30.42  real pnl 30.42
+   game 401909933 DAL @ SAS 2026-11-04  final 111-112  placed 2026-11-04 16:12Z  tip 2026-11-05 02:30Z
+   DAL margin -1; with our +12.5 → covered by +11.5
+   record: COUNTED pnl 40.0   | ev at bet 0.0909  | players at bet 3.0 now None  | frozen snapshot: no
+   why (card): Best price: BetOpenly DAL +12.5 at -103 (fees not counted), +11.2% expected return. Next best: Polymarket DAL +12.5 at -104 (fees not counted), +10.7%
+   line on our side: first seen +12.5 (2026-11-03 05:00Z) · when we bet 12.5 · last before tip +12.5 (2026-11-05 02:26Z)  → CLV vs close 0.0 pts
+   big moves (1+ pt): 2026-11-03 21:00Z +12.5→+11.5
+   injury report: 8 entries known when we bet, 2 new/changed after
+      after bet: 2026-11-04 19:00Z DAL Santi Aldama → Doubtful | Injury/Illness - Right Knee Surgery
+      after bet: 2026-11-05 01:00Z DAL Santi Aldama → Out | Injury/Illness - Right Knee Surgery
+==============================================================================================================
+#18 FINAL L  T13       card MEM -6  BOUGHT MEM −4.5 at 117 on ProphetX  risk $17.35 to win $20.24  real pnl -17.35
+   game 401909927 IND @ MEM 2026-11-04  final 107-103  placed 2026-11-04 17:46Z  tip 2026-11-05 01:00Z
+   MEM margin -4; with our -4.5 → covered by -8.5
+   record: COUNTED pnl -17.14   | ev at bet 0.2536  | players at bet 4.3 now None  | frozen snapshot: no
+   why (card): Best price: ProphetX MEM -5.5 at -107 (fees not counted), +6.4% expected return. Next best: Polymarket MEM -5.5 at -108 (fees not counted), +5.9%
+   line on our side: first seen -5.5 (2026-11-04 00:06Z) · when we bet -6.0 · last before tip -6 (2026-11-05 00:52Z)  → CLV vs close 1.5 pts
+   injury report: 12 entries known when we bet, 9 new/changed after
+      after bet: 2026-11-05 00:15Z MEM Quinten Post → Available | Injury/Illness - Right Ankle Sprain
+      after bet: 2026-11-05 00:15Z MEM Javon Small → Out | G League - Two-Way
+      after bet: 2026-11-05 00:15Z MEM Carson Cooper → Out | G League - Two-Way
+      after bet: 2026-11-05 00:30Z IND Obi Toppin → Available | Injury/Illness - Lumbar Strain
+      after bet: 2026-11-05 00:30Z IND Ivica Zubac → Available | Injury/Illness - Left Ankle Sprain
+      after bet: 2026-11-05 00:30Z IND Kobe Brown → Available | G League - Two-Way
+      after bet: 2026-11-05 00:30Z IND Kelly Oubre Jr. → Out | Injury/Illness - Left Calf Contusion
+      after bet: 2026-11-05 00:30Z IND Jalen Slawson → Available | G League - Two-Way
+      after bet: 2026-11-05 00:30Z IND Braden Smith → Available | G League - Two-Way
+   listed out/doubtful/questionable at some point but PLAYED: IND Braden Smith 24min; IND Ivica Zubac 19min; IND Jalen Slawson 6min; IND Kobe Brown 7min; IND Obi Toppin 19min; MEM Quinten Post 11min
+==============================================================================================================
+#19 FINAL L  T13       card MEM +4  BOUGHT MEM +2.5 at 109 on Kalshi  risk $17.08 to win $18.62  real pnl -17.08
+   game 401909291 OKC @ MEM 2026-11-06  final 128-97  placed 2026-11-06 00:27Z  tip 2026-11-07 01:00Z
+   MEM margin -31; with our +2.5 → covered by -28.5
+   record: COUNTED pnl -18.35   | ev at bet 0.0802  | players at bet 4.0 now None  | frozen snapshot: no
+   why (card): Best price: ProphetX MEM +4.5 at -110 (fees not counted), +5.2% expected return. Next best: BetOpenly MEM +4 at -103 (fees not counted), +4.5%
+   pieces: [('MEM +2.5', 30.0, 13.8, 109), ('MEM +3.5', 5.7, 2.74, 107)]
+   line on our side: first seen +4 (2026-11-06 00:00Z) · when we bet 4.0 · last before tip +4 (2026-11-07 00:53Z)  → CLV vs close -1.5 pts
+   injury report: 8 entries known when we bet, 1 new/changed after
+      after bet: 2026-11-07 00:15Z MEM Carson Cooper → Out | G League - Two-Way
+==============================================================================================================
+#20 FINAL L  MONEYBALL card WAS +6.5  BOUGHT WAS +6.5 at 119 on Kalshi  risk $33.83 to win $40.17  real pnl -33.83
+   game 401909287 WAS @ ATL 2026-11-06  final 132-139  placed 2026-11-06 22:01Z  tip 2026-11-07 00:00Z
+   WAS margin -7; with our +6.5 → covered by -0.5
+   record: COUNTED pnl -33.69   | ev at bet 0.234  | players at bet 4.5 now None  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +6.5 (2026-11-06 05:29Z) · when we bet 8.5 · last before tip +8 (2026-11-06 23:52Z)  → CLV vs close -1.5 pts
+   big moves (1+ pt): 2026-11-06 22:07Z +8.5→+7.5; 2026-11-06 22:35Z +7.5→+8.5
+   injury report: 17 entries known when we bet, 2 new/changed after
+      after bet: 2026-11-06 22:30Z WAS Anthony Davis → Out | Injury/Illness - Right Ankle Sprain
+      after bet: 2026-11-06 22:30Z WAS Felix Okpara → Out | G League - Two-Way
+==============================================================================================================
+#21 FINAL L  MONEYBALL card CLE +4.5  BOUGHT CLE +4.5 at 105 on Kalshi  risk $38.5 to win $40.5  real pnl -38.5
+   game 401909940 NYK @ CLE 2026-11-07  final 109-97  placed 2026-11-07 15:12Z  tip 2026-11-08 01:00Z
+   CLE margin -12; with our +4.5 → covered by -7.5
+   record: COUNTED pnl -38.02   | ev at bet 0.1576  | players at bet 4.1 now None  | frozen snapshot: no
+   why (card): Best price: BetOpenly CLE +5.5 at -107 (fees not counted), +16.7% expected return. Next best: Polymarket CLE +5.5 at -108 (fees not counted), +16.2%
+   line on our side: first seen +4.5 (2026-11-07 02:44Z) · when we bet 5.0 · last before tip +5 (2026-11-08 00:52Z)  → CLV vs close -0.5 pts
+   big moves (1+ pt): 2026-11-07 02:53Z +4→+3
+   injury report: 1 entries known when we bet, 7 new/changed after
+      after bet: 2026-11-07 18:00Z CLE Khalifa Diop → Out | G League - On Assignment
+      after bet: 2026-11-07 18:00Z CLE Sam Merrill → Out | 
+      after bet: 2026-11-07 18:00Z CLE Jarrett Allen → Out | Injury/Illness - Right Knee Contusion
+      after bet: 2026-11-07 18:00Z CLE Tristan Enaruna → Out | G League - Two-Way
+      after bet: 2026-11-07 18:00Z CLE Nae'Qwan Tomlin → Out | 
+      after bet: 2026-11-07 18:00Z CLE Jaylon Tyson → Out | Injury/Illness - Right Ankle Sprain
+      after bet: 2026-11-07 18:00Z CLE Jr., Ernest Udeh → Out | G League - Two-Way
+==============================================================================================================
+#22 FINAL W  T13       card LAL +2  BOUGHT LAL +1.5 at 106 on Kalshi  risk $18.89 to win $20.11  real pnl 20.11
+   game 401909946 LAL @ DET 2026-11-08  final 121-116  placed 2026-11-07 21:01Z  tip 2026-11-08 23:00Z
+   LAL margin +5; with our +1.5 → covered by +6.5
+   record: COUNTED pnl 20.0   | ev at bet 0.0646  | players at bet 4.2 now None  | frozen snapshot: no
+   why (card): Best price: Kalshi NO · DET wins by over 5.5  (= LAL +5.5) at +113, +23.7% expected return. Next best: Polymarket LAL +6.5 at -104 (fees not counted), +20.9%
+   line on our side: first seen +2 (2026-11-07 20:50Z) · when we bet 2.0 · last before tip +7.5 (2026-11-08 22:54Z)  → CLV vs close -6.0 pts
+   big moves (1+ pt): 2026-11-07 22:04Z +2→+3; 2026-11-07 22:23Z +3.5→+4.5; 2026-11-08 18:15Z +5→+7
+   injury report: 0 entries known when we bet, 10 new/changed after
+      after bet: 2026-11-07 21:45Z DET Jalen Duren → Out | Injury/Illness - Right Hamstring Strain
+      after bet: 2026-11-07 21:45Z DET Isaiah Joe → Out | Injury/Illness - Right Hip Contusion
+      after bet: 2026-11-07 21:45Z DET Ugonna Onyenso → Out | G League - Two-Way
+      after bet: 2026-11-07 21:45Z DET Elijah Harkless → Questionable | G League - Two-Way
+      after bet: 2026-11-07 21:45Z DET Isaac Jones → Questionable | G League - Two-Way
+      after bet: 2026-11-07 22:00Z LAL Luka Doncic → Questionable | Injury/Illness - Low Back Tightness
+      after bet: 2026-11-07 22:00Z LAL Walker Kessler → Available | Injury/Illness - Left Finger Splint
+      after bet: 2026-11-08 17:45Z DET Elijah Harkless → Out | G League - Two-Way
+      after bet: 2026-11-08 17:45Z DET Isaac Jones → Available | G League - Two-Way
+      after bet: 2026-11-08 18:15Z LAL Luka Doncic → Out | Injury/Illness - Low Back Tightness
+==============================================================================================================
+#23 FINAL L  T9        card ATL +2.5  BOUGHT ATL +2.5 at -111 on ProphetX  risk $22.42 to win $20.16  real pnl -22.42
+   game 401909952 LAL @ ATL 2026-11-09  final 124-114  placed 2026-11-09 03:44Z  tip 2026-11-10 00:00Z
+   ATL margin -10; with our +2.5 → covered by -7.5
+   record: COUNTED pnl -22.24   | ev at bet 0.0564  | players at bet None now None  | frozen snapshot: no
+   why (card): No bet: the players model has no clean read on this game, and a system needs it to agree by 3+
+   line on our side: first seen +2.5 (2026-11-09 03:30Z) · when we bet 2.5 · last before tip -2.5 (2026-11-09 23:50Z)  → CLV vs close 5.0 pts
+   big moves (1+ pt): 2026-11-09 13:37Z +1.5→-1; 2026-11-09 22:36Z -1.5→-2.5
+   injury report: 7 entries known when we bet, 7 new/changed after
+      after bet: 2026-11-09 18:00Z LAL Quentin Grimes → Out | Injury/Illness - Right Finger Sprain
+      after bet: 2026-11-09 18:00Z LAL Walker Kessler → Available | Injury/Illness - Left Finger Splint
+      after bet: 2026-11-09 18:00Z LAL Austin Reaves → Questionable | Injury/Illness - Illness
+      after bet: 2026-11-09 22:00Z ATL Jock Landale → Available | Injury/Illness - Face mask
+      after bet: 2026-11-09 22:00Z ATL Jalen Wilson → Out | G League - Two-Way
+      after bet: 2026-11-09 22:00Z ATL RayJ Dennis → Out | G League - Two-Way
+      after bet: 2026-11-09 22:45Z LAL Austin Reaves → Out | Injury/Illness - Illness
+   listed out/doubtful/questionable at some point but PLAYED: ATL Jock Landale 14min
+==============================================================================================================
+#24 OPEN -  T13       card BOS +1  BOUGHT BOS +1 at -105 on BetOpenly  risk $21.41 to win $20.38  real pnl None
+   game 401909961 BOS @ PHI 2026-11-10  final None-None  placed 2026-11-09 11:49Z  tip 2026-11-11 01:00Z
+   record: COUNTED pnl None   | ev at bet 0.0555  | players at bet 4.4 now 3.4  | frozen snapshot: no
+   why (card): No exchange market yet: take it at -110 or better
+   line on our side: first seen +1 (2026-11-09 05:00Z) · when we bet 0.5 · last before tip -1 (2026-11-10 14:21Z)  → CLV vs close 2.0 pts
+   big moves (1+ pt): 2026-11-09 12:38Z +0.5→-0.5; 2026-11-09 13:48Z -0.5→+1.5; 2026-11-09 16:27Z +1→-0.5; 2026-11-09 19:03Z -0.5→-1.5
+   injury report: 0 entries known when we bet, 7 new/changed after
+      after bet: 2026-11-09 21:00Z BOS Amari Williams → Out | G League - Two-Way
+      after bet: 2026-11-09 21:00Z BOS Devin Carter → Out | G League - Two-Way
+      after bet: 2026-11-09 21:00Z BOS Christopher Cenac Jr. → Questionable | G League - On Assignment
+      after bet: 2026-11-09 21:00Z BOS Dillon Mitchell → Questionable | G League - Two-Way
+      after bet: 2026-11-09 22:00Z PHI Dominick Barlow → Out | 
+      after bet: 2026-11-09 22:00Z PHI Adem Bona → Out | Injury/Illness - Cervical Spine Sprain
+      after bet: 2026-11-09 22:00Z PHI Ariel Hukporti → Out | 
+==============================================================================================================
+#25 FINAL L  MONEYBALL card PHX +7.5  BOUGHT PHX +6.5 at 135 on ProphetX  risk $29.83 to win $40.34  real pnl -29.83
+   game 401909958 SAS @ PHX 2026-11-09  final 122-96  placed 2026-11-09 15:28Z  tip 2026-11-10 02:00Z
+   PHX margin -26; with our +6.5 → covered by -19.5
+   record: COUNTED pnl -29.58   | ev at bet 0.2168  | players at bet 3.2 now None  | frozen snapshot: no
+   why (card): Best price: ProphetX PHX +8.5 at +103 (fees not counted), +22.5% expected return. Next best: Novig PHX +8.5 at +102 (fees not counted), +21.9%
+   line on our side: first seen +7.5 (2026-11-08 19:39Z) · when we bet 8.5 · last before tip +9 (2026-11-10 01:54Z)  → CLV vs close -2.5 pts
+   injury report: 7 entries known when we bet, 3 new/changed after
+      after bet: 2026-11-09 19:15Z SAS Devin Vassell → Out | 
+      after bet: 2026-11-10 00:45Z PHX Jordan Goodwin → Out | 
+      after bet: 2026-11-10 00:45Z PHX Drew Timme → Out | G League - Two-Way
+==============================================================================================================
+#26 FINAL L  T13       card DEN +9  BOUGHT DEN +4.5 at -101 on BetOpenly + ProphetX  risk $22.54 to win $20.2  real pnl -22.54
+   game 401909957 DEN @ HOU 2026-11-09  final 100-110  placed 2026-11-10 00:38Z  tip 2026-11-10 01:30Z
+   DEN margin -10; with our +4.5 → covered by -5.5
+   record: NOT COUNTED: bought 4.5 points off the card's number: today the limit is 2   | ev at bet 0.0578  | players at bet 4.9 now None  | frozen snapshot: no
+   why (card): No venue clears the 4% bar right now (best: Kalshi NO · HOU wins by over 6.5  (= DEN +6.5) at -144, -0.9%). Set a limit on Kalshi NO · HOU wins by over 6.5  (= DEN +6.5) at -138
+   pieces: [('DEN +4.5', 28.0, 14.0, -101), ('DEN +6.5', 15.01, 8.54, -135)]
+   line on our side: first seen +4.5 (2026-11-08 19:30Z) · when we bet 4.5 · last before tip +5 (2026-11-10 01:27Z)  → CLV vs close -0.5 pts
+   big moves (1+ pt): 2026-11-08 23:00Z +4→+8.5; 2026-11-09 19:26Z +8.5→+4.5
+   injury report: 18 entries known when we bet, 6 new/changed after
+      after bet: 2026-11-10 01:00Z DEN Christian Braun → Available | 
+      after bet: 2026-11-10 01:00Z DEN DeMar DeRozan → Available | Injury/Illness - Low Back Spasms
+      after bet: 2026-11-10 01:00Z DEN Aaron Gordon → Available | 
+      after bet: 2026-11-10 01:00Z DEN Cameron Johnson → Available | Injury/Illness - Right Ankle Sprain
+      after bet: 2026-11-10 01:00Z DEN Nikola Jokic → Available | Injury/Illness - Right Elbow Sprain
+      after bet: 2026-11-10 01:00Z DEN Jamal Murray → Available | 
+   listed out/doubtful/questionable at some point but PLAYED: DEN Aaron Gordon 30min; DEN Cameron Johnson 31min; DEN Christian Braun 32min; DEN DeMar DeRozan 19min; DEN Jamal Murray 39min; DEN Nikola Jokic 39min
+==============================================================================================================
+#27 OPEN -  T7        card POR +1.5  BOUGHT POR +1.5 at -100 on BetOpenly  risk $20.4 to win $20.39  real pnl None
+   game 401909965 OKC @ POR 2026-11-10  final None-None  placed 2026-11-10 03:01Z  tip 2026-11-11 04:00Z
+   record: COUNTED pnl None   | ev at bet 0.1158  | players at bet 1.2 now 1.2  | frozen snapshot: no
+   why (card): No bet: the players model only likes POR by 1.2; a system needs it to agree by 3+
+   line on our side: first seen +1.5 (2026-11-09 23:31Z) · when we bet 1.5 · last before tip +2 (2026-11-10 14:21Z)  → CLV vs close -0.5 pts
+   injury report: 10 entries known when we bet, 0 new/changed after
+
+OPEN STANDING ORDERS: []
