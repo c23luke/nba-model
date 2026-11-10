@@ -417,6 +417,14 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                         source="Odds API" if odds_lines else ("ESPN / DraftKings" if espn_lines else "none yet"), season_day=max(0, (today - season_start).days),
                         orders=orders, games=stored, bench_cfg=bench_cfg, exclude_cfg=exclude_cfg)
     board["scoring"] = scoring
+    # the injury desk (tracking only): what the players model and the market said each run, per game
+    if hasattr(store, "load_state"):
+        try:
+            from .injury_desk import record_reads
+            record_reads(store, slate, now)
+            board["injury_desk"] = store.load_state(["injury_desk"]).get("injury_desk")
+        except Exception as e:
+            log.append(f"injury desk: {str(e)[:160]}")
     # stale-price research: what the books' consensus said and what the exchanges offered, this run
     if hasattr(store, "save_price_log") and upcoming:
         try:

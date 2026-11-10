@@ -8,7 +8,9 @@ from __future__ import annotations
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -70,6 +72,15 @@ class LocalStore:
 
     def get_config(self, key):
         return self._read("config", {}).get(key)
+
+    def load_state(self, keys):
+        cur = self._read("bet_state", {})
+        return {k: cur[k] for k in keys if k in cur}
+
+    def save_state(self, values: dict):
+        cur = self._read("bet_state", {})
+        cur.update(values)
+        self._write("bet_state", cur)
 
 
 # Columns in supabase/schema.sql. Every row sent in one batch must have the same keys,
@@ -192,6 +203,19 @@ class SupabaseStore:
                  if o["key"] not in keep]
         if stale:
             self._upsert("bet_feed", [{"key": k, "status": "off", "updated_at": now.isoformat()} for k in stale], "key")
+
+    def load_state(self, keys):
+        """Private key/value rows (bet_state): the players read history per game, the injury desk."""
+        if not keys:
+            return {}
+        q = ",".join('"' + k.replace('"', '') + '"' for k in keys)
+        rows = self._req("GET", f"/bet_state?key=in.({urllib.parse.quote(q, safe=',')})&select=key,value") or []
+        return {r["key"]: r["value"] for r in rows}
+
+    def save_state(self, values: dict):
+        if values:
+            now = datetime.now(timezone.utc).isoformat()
+            self._upsert("bet_state", [{"key": k, "value": v, "updated_at": now} for k, v in values.items()], "key")
 
     def get_config(self, key):
         """Private settings (e.g. the phone-alert channel). Table has no public read policy."""

@@ -155,6 +155,14 @@ def main():
     log = lambda m: print(f"{datetime.now(timezone.utc):%H:%M:%S} {m}", flush=True)
     end = float(os.environ.get("WATCH_END") or time.time() + RUN_FOR)
     last_fp, last_run = None, 0.0
+    # the injury desk's summary (tracking only), refreshed once per launch = once an hour
+    try:
+        from . import injury_desk
+        d = injury_desk.build(store)
+        store.save_state({"injury_desk": d})
+        log(f"injury desk: {d['events']} news events, paper {d['paper']}")
+    except Exception as e:
+        log(f"injury desk failed: {e}")
     from . import injury_report
     official = {"url": None, "fp": ""}
 

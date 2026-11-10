@@ -734,8 +734,26 @@ function renderLab(b) {
   const variations = `<p class="muted" style="font-size:14px">This season is live results; "last 2 seasons" is the same thing replayed on 2024-25 and 2025-26 at the opening line. Small samples are noise until they aren't.</p><div class="grid2">${tbl("How many systems agreed", "by_count")}${tbl("Stacks + the players model", "stack_vs_personnel")}${tbl("Each group vs the players model", "system_vs_personnel")}${tbl("Each system vs the players model", "each_system_vs_personnel")}${tbl("Every pair of systems", "by_pair")}${tbl("Stacks by group", "by_groups")}${tbl("Stacks by exact systems", "by_combo")}${tbl("Players model by gap", "personnel_by_gap")}${tbl("Players model by status", "personnel_by_call")}</div>${firstTbl}<p class="muted" style="font-size:14px">Games where systems landed on opposite sides: ${T.conflicts ?? 0}</p>`;
   const testsToday = (b.tests || []).length ? b.tests.map(p => `<div class="game"><div><div class="t">${badge(p.group)}${esc(p.tag)} ${esc(p.label)}</div><div class="muted" style="font-size:14px">${esc(p.away)} @ ${esc(p.home)}, ${esc(when(p.tip_utc))}. ${(p.evidence || []).map(esc).join(". ")}</div></div><div></div></div>`).join("") : `<div class="muted">No test systems fired on today's games.</div>`;
   const early = (b.early || []).length ? b.early.map(p => `<div class="game"><div><div class="t">${badge(p.group)}${esc(p.tag)} ${esc(p.label)}</div><div class="muted" style="font-size:14px">${esc(p.away)} @ ${esc(p.home)}, ${esc(when(p.tip_utc))}. ${(p.evidence || []).map(esc).join(". ")}</div></div><div></div></div>`).join("") : `<div class="muted">No early-season systems fired on today's games.</div>`;
+  // the injury desk (tracking only): what our number and the market did each time the injury report changed
+  const D = b.injury_desk;
+  const spr = (x, home) => x == null ? "—" : `${esc(home)} ${x > 0 ? "+" : x < 0 ? "−" : ""}${x === 0 ? "PK" : Math.abs(x)}`;
+  const desk = !D ? `<div class="muted">Starts filling in as news lands. It records what our number and the market did every time the official injury report changes. Tracking only: nothing is bet from it.</div>` :
+    `<p class="muted" style="font-size:14px">Last ${D.days} days. Every official injury-report change that moved our number by a point or more, what the market did after, and a paper bet whenever the news left our worst-case read 3+ points off the market. Tracking only: nothing is bet from it. Updated ${esc(ago(D.at))}.</p>
+     <div class="grid2"><div><table>
+       <tr><td>News that moved our number</td><td class="r">${D.events}</td></tr>
+       <tr><td>Paper bets</td><td class="r">${D.paper.bets}${D.paper.w + D.paper.l ? ` · ${D.paper.w}-${D.paper.l}` : ""}</td></tr>
+       <tr><td>Paper bets' CLV</td><td class="r">${D.paper.avg_clv == null ? "—" : `${D.paper.avg_clv > 0 ? "+" : ""}${D.paper.avg_clv} pts, beat the close ${D.paper.beat_close} of ${D.paper.n_clv}`}</td></tr>
+       <tr><td>How far the market followed our move by tip</td><td class="r">${D.market_followed_avg == null ? "—" : `${D.market_followed_avg > 0 ? "+" : ""}${D.market_followed_avg} pts`}</td></tr>
+       <tr><td>Our reaction time (median)</td><td class="r">${D.median_seconds_to_read == null ? "—" : Math.round(D.median_seconds_to_read / 60) + " min"}</td></tr>
+     </table></div></div>` +
+    (D.recent || []).map(x => `<div class="game"><div><div class="t">${esc(x.away)} @ ${esc(x.home)} · ${esc(x.team)} news, ${esc(when(x.at))}</div>
+       <div class="muted" style="font-size:14px">${x.changes.map(esc).join("; ")}</div>
+       <div style="font-size:14px">Our line ${spr(x.fair_before, x.home)} → ${spr(x.fair_after, x.home)} (${x.our_move > 0 ? "+" : ""}${x.our_move}).
+         Market when we'd read it ${spr(x.mkt_at, x.home)}, 15 min ${spr(x.mkt_15, x.home)}, 1 hr ${spr(x.mkt_60, x.home)}, last before tip ${spr(x.mkt_close, x.home)}.
+         ${x.paper ? `<b>Paper bet ${esc(x.paper.side)} ${x.paper.line > 0 ? "+" : ""}${x.paper.line}</b> (worst case ${x.paper.gap} off)${x.paper.clv != null ? `, CLV ${x.paper.clv > 0 ? "+" : ""}${x.paper.clv}` : ""}${x.paper.result ? `, ${x.paper.result === "W" ? "won" : x.paper.result === "L" ? "lost" : "push"}` : ""}.` : ""}</div></div><div></div></div>`).join("");
   const sc = b.scoring;
   $("tab-lab").innerHTML = `<h2>Model lab</h2><p class="lede">Everything the model tracks behind the card. Open a section to dig in.</p>` +
+    box("Injury desk", D ? `${D.events} news events, ${D.paper.bets} paper bets, tracking only` : "tracking only", desk) +
     box("Today and tomorrow", `${(b.slate || []).length} games, lines from ${esc(b.line_source)}`, slate) +
     box("Why the players model likes it", `${(b.slate || []).filter(g => g.personnel && g.personnel.case).length} cases`, cases) +
     box("Every game tracker", G ? `${G.pending} waiting on results` : "", gaps || `<div class="muted">Fills in after the first games are graded.</div>`) +
