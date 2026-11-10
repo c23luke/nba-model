@@ -398,11 +398,17 @@ def allowed_lines(p: dict, slate: list[dict]) -> tuple[float, float]:
     bar = (p.get("meta") or {}).get("bar")
     if p["system"] == 4 and bar is not None:      # S4: the total must stay above this season's average
         lo = max(lo, bar + 0.01)
-    if p["system"] == 113:               # T13: the players-model edge must stay 3+ at the number we take
+    if p["system"] == 113:               # T13: the players-model edge must stay 4+ at the number we take (the T13 rule
+        from .systems import T13_GAP     # since 2026-10-27; this said 3 until 2026-11-10, which let DEN +4.5 through)
         for g in slate:
             c = ((g.get("personnel") or {}).get("case") or {})
             if g.get("game_id") == p["game_id"] and c.get("side") == p["side"] and c.get("cushion") is not None:
-                lo = max(lo, c["line"] - (c["cushion"] - 3.0))
+                lo = max(lo, c["line"] - (c["cushion"] - T13_GAP))
+    # never more than 2 points (3 on totals) from the number the pick fired at: the record's rule, now also the
+    # bettor's (Nov 9: T13 fired at DEN +9 on a stale line, the market went to +4.5 within minutes, and the bettor
+    # bought +4.5 because it measured from the market, not from the pick)
+    if p.get("line") is not None and p["bet"] in WINDOW:
+        lo, hi = max(lo, p["line"] - WINDOW[p["bet"]]), min(hi, p["line"] + WINDOW[p["bet"]])
     return lo, hi
 
 
@@ -536,6 +542,12 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                        f"Set a limit on Kalshi {at_line['contract']} at {amer_txt(cap + kalshi_fee(cap))}")
             else:
                 verdict, why = "PASS", f"Not enough edge at today's prices (best: {_desc(best)}, {best['ev']:+.1%})"
+        elif any(q["bet"] == p["bet"] and q["side"] == p["side"] for q in p.get("shop") or []):
+            # there IS a market, just none we may take: the line has run away from this pick's number
+            lo, hi = allowed_lines(p, slate)
+            verdict, why = "PASS", (f"No bet: the market moved off this pick's number ({p['label']}); "
+                                    f"we only take {lo:g} to {hi:g}" if hi < 900 and lo > -900 else
+                                    "No bet: no price inside the numbers this pick allows")
         elif win > BREAK_EVEN_110:
             verdict, why = "BET", "No exchange market yet: take it at -110 or better"
         else:

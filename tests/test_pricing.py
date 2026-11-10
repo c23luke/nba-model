@@ -148,9 +148,11 @@ def test_locked_bet_is_shopped_from_where_the_market_is_now():
     # T13 locked MEM -1; the market has since gone to MEM +1.5 and the case (rebuilt at +1.5) still says 52.9%
     slate = [{"game_id": "g1", "home": "MEM", "home_spread": 1.5,
               "personnel": {"case": {"side": "MEM", "win_est": 0.529, "line": 1.5}}}]
-    shop = [xq("polymarket", "MEM", 1.5, -122)]
+    shop = [xq("polymarket", "MEM", 1.5, -122), xq("prophetx", "MEM", 0.5, -104)]
     c = build_card([pk(113, "MEM", shop, line=-1.0)], slate, now=NOW)[0]
-    assert c["best"]["win"] == 0.529 and c["best"]["ev"] < 0       # no 2.5-point head start from the old number
+    # +1.5 is 2.5 points from the number T13 fired at: not this bet any more (the record's 2-point rule, 2026-11-10)
+    assert [q["line"] for q in c["shop"]] == [0.5]
+    assert c["best"]["win"] < 0.529                                 # priced from the market now, no head start
 
 
 def test_quote_far_off_the_market_is_treated_as_bad_data():
@@ -220,9 +222,9 @@ def test_shopping_never_leaves_what_the_system_allows():
     shop = [kq("H", 6.5, 0.50), kq("H", 7.5, 0.47), kq("H", 5.5, 0.45)]
     c = build_card([pk(202, "H", shop, line=6.5)], slate, now=NOW)[0]
     assert {q["line"] for q in c["shop"]} == {6.5, 5.5}
-    # T13: edge must stay 3+ at the number taken — gap 4.0 at +3.5 allows down to +2.5, not +1.5
+    # T13: edge must stay 4+ at the number taken (the T13 rule) — gap 5.0 at +3.5 allows down to +2.5, not +1.5
     slate = [{"game_id": "g1", "home": "H", "home_spread": 3.5,
-              "personnel": {"case": {"side": "H", "win_est": 0.56, "line": 3.5, "cushion": 4.0, "level": "High"}}}]
+              "personnel": {"case": {"side": "H", "win_est": 0.56, "line": 3.5, "cushion": 5.0, "level": "High"}}}]
     shop = [kq("H", 3.5, 0.50), kq("H", 2.5, 0.45), kq("H", 1.5, 0.38)]
     c = build_card([pk(113, "H", shop, line=3.5)], slate, now=NOW)[0]
     assert {q["line"] for q in c["shop"]} == {3.5, 2.5}
@@ -336,3 +338,14 @@ def test_buying_points_down_needs_a_clear_gain():
     assert [x["line"] for x in thin] == [12.5]
     alone = buydown_ok([q(10.5, 0.06)], 12.0, "spread", 0.04)                      # nothing at the number: vs the 4% floor
     assert alone == [] and buydown_ok([q(10.5, 0.08)], 12.0, "spread", 0.04) == [q(10.5, 0.08)]
+
+
+def test_t13_is_never_bought_where_its_edge_is_under_4_or_far_from_its_number():
+    # Nov 9: T13 fired at DEN +9 (gap 4.9) on a stale line; the market went to DEN +4.5 (gap 3.9) minutes later.
+    # The bettor bought DEN +4.5. Neither 4.5 points off the pick's number nor a gap under 4 may be bought.
+    slate = [{"game_id": "g1", "home": "HOU", "home_spread": -4.5,
+              "personnel": {"case": {"side": "DEN", "win_est": 0.55, "line": 4.5, "cushion": 3.9, "level": "Low"}}}]
+    shop = [xq("betopenly", "DEN", 4.5, +102), xq("prophetx", "DEN", 6.5, -132)]
+    c = build_card([pk(113, "DEN", shop, line=9.0)], slate, now=NOW)[0]
+    assert c["shop"] == [] and c["verdict"] != "BET"
+    assert c["model"]["lo"] >= 7.0                                  # the bettor's own floor: within 2 of +9
