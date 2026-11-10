@@ -66,7 +66,8 @@ def latest(now: datetime | None = None, fetch=_get) -> dict | None:
         pdf = fetch(url)
         if pdf:
             rows, missing = parse(pdf)
-            return {"at": at, "url": url, "rows": rows, "not_submitted": missing}
+            return {"at": at, "url": url, "rows": rows, "not_submitted": missing,
+                    "not_submitted_games": list(getattr(parse_lines, "last_missing_games", []))}
     return None
 
 
@@ -85,7 +86,12 @@ def lines_from_pdf(pdf: bytes) -> list[str]:
 
 
 def parse_lines(lines: list[str]) -> tuple[list[dict], list[str]]:
+    """rows, and the teams marked NOT YET SUBMITTED. parse_lines.last_missing_games keeps WHICH game each of those
+    is for: the report covers today's and tomorrow's games, and a team that hasn't filed for tomorrow has still
+    filed for tonight (Nov 10: OKC and POR were treated as unfiled for their game that night)."""
     rows, missing = [], []
+    missing_games: list = []
+    parse_lines.last_missing_games = missing_games
     date = match = team = None
     for raw in lines:
         s = " ".join(raw.split())
@@ -107,6 +113,8 @@ def parse_lines(lines: list[str]) -> tuple[list[dict], list[str]]:
         if "NOT YET SUBMITTED" in rest.upper():
             if team and team not in missing:
                 missing.append(team)
+            if team:
+                missing_games.append((team, date, match))
             continue
         comma = rest.find(",")
         st = _STATUS.search(rest, comma + 1) if comma > 0 else None
@@ -162,8 +170,12 @@ def submitted_for(report: dict | None, games) -> set[str]:
     out = set()
     for t, (gd, away, home) in want.items():
         key = (gd.strftime("%m/%d/%Y") if hasattr(gd, "strftime") else str(gd))
-        if any(d == key and m and {code(x) for x in m.split("@")} == {away, home} for d, m in matchups) \
-                and t not in (report.get("not_submitted") or []):
+        if "not_submitted_games" in report:     # per game: unfiled for THIS game, not for some later one
+            unfiled = any(tm == t and d == key and m and {code(x) for x in m.split("@")} == {away, home}
+                          for tm, d, m in report["not_submitted_games"])
+        else:
+            unfiled = t in (report.get("not_submitted") or [])
+        if any(d == key and m and {code(x) for x in m.split("@")} == {away, home} for d, m in matchups) and not unfiled:
             out.add(t)
     return out
 

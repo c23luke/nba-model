@@ -392,3 +392,20 @@ def test_espn_day_to_day_gives_way_to_a_filed_official_report():
     q = [dict(dtd, official_status="Questionable")] + [ath("Role Wing")] * 8
     t2 = P.rate_team("POR", q, LAST, live=lv, team_dates=dates, report_in=True)
     assert next(p for p in t2.players if p.name == "Star Guard").status == "day-to-day"
+
+
+def test_a_team_unfiled_for_tomorrow_has_still_filed_for_tonight():
+    # Nov 10, 11 AM report: OKC and POR marked NOT YET SUBMITTED for a later game; tonight's OKC@POR was filed
+    from datetime import date
+    from engine.injury_report import parse_lines, submitted_for
+    lines = ["11/10/2026 10:00 (ET) OKC@POR Oklahoma City Thunder Holmgren, Chet Out Injury/Illness - Back",
+             "Portland Trail Blazers Morant, Ja Out Injury/Illness - Left Hamstring Strain",
+             "11/11/2026 07:00 (ET) POR@CHA Portland Trail Blazers NOT YET SUBMITTED"]
+    rows, missing = parse_lines(lines)
+    rep = {"rows": rows, "not_submitted": missing, "not_submitted_games": parse_lines.last_missing_games}
+    assert missing == ["POR"] and rep["not_submitted_games"] == [("POR", "11/11/2026", "POR@CHA")]
+    games = [(date(2026, 11, 10), "OKC", "POR"), (date(2026, 11, 11), "POR", "CHA")]
+    assert submitted_for(rep, games) == {"OKC", "POR"}
+    # filed nothing for tonight -> not in
+    rep2 = {**rep, "not_submitted_games": [("POR", "11/10/2026", "OKC@POR")]}
+    assert submitted_for(rep2, games) == {"OKC"}
