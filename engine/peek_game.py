@@ -8,7 +8,7 @@ from .store import get_store
 
 
 def main():
-    team = os.environ.get("GAME", "TOR")
+    team = os.environ.get("GAME", "BOS")
     st = get_store()
     b = ((st._req("GET", "/board?id=eq.1&select=data") or [{}])[0].get("data") or {})
     g = next((x for x in b.get("slate") or [] if team in (x.get("away"), x.get("home"))), None)
