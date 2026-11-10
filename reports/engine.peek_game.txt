@@ -1,42 +1,29 @@
-game 401909961 BOS @ PHI tip 2026-11-11T01:00Z | board generated 2026-11-10T15:38:34.721931+00:00
-market now: home spread 1.5 from Odds API consensus 10 updated 2026-11-10T15:38:34.721931+00:00
+game 401909965 OKC @ POR tip 2026-11-11T04:00Z | board generated 2026-11-10T15:55:00.095333+00:00
+market now: home spread 2.0 from Odds API consensus 10 updated 2026-11-10T15:00:12.588455+00:00
 
 === line history (consensus home spread, each logged run)
-  2026-11-09T05:00:10 home spread -1.0 total 215.5
-  2026-11-09T11:48:38 home spread -0.5 total 215.5
-  2026-11-09T12:38:53 home spread 0.5 total 215.5
-  2026-11-09T13:48:17 home spread -1.5 total 215.5
-  2026-11-09T16:21:27 home spread -1.0 total 215.5
-  2026-11-09T16:27:03 home spread 0.5 total 215.5
-  2026-11-09T19:03:37 home spread 1.5 total 215.5
-  2026-11-09T19:36:47 home spread 1.0 total 215.5
-  2026-11-09T19:44:19 home spread 1.5 total 215.5
-  2026-11-10T07:10:48 home spread 1.0 total 217.5
-  2026-11-10T14:32:56 home spread 1.5 total 218.5
-  2026-11-10T14:38:24 home spread 1.0 total 218.5
-  2026-11-10T15:05:41 home spread 1.5 total 218.0
-  2026-11-10T15:11:12 home spread 1.0 total 218.0
-  2026-11-10T15:16:38 home spread 1.5 total 217.0
-  2026-11-10T15:22:05 home spread 1.0 total 217.0
-  2026-11-10T15:33:06 home spread 1.5 total 217.0
+  2026-11-09T23:31:00 home spread 1.5 total 226.0
+  2026-11-10T04:51:36 home spread 2.0 total 227.0
+  2026-11-10T07:21:23 home spread 2.5 total 226.5
+  2026-11-10T12:44:14 home spread 2.0 total 226.5
 
 === players model view now
 {
- "gap": -3.0,
- "raw": 4.5,
+ "gap": 3.2,
+ "raw": -1.6,
  "call": {
-  "call": "now",
-  "side": "away",
-  "worst_gap": -3.0
+  "call": "waiting",
+  "side": "home",
+  "best_gap": 3.2
  },
  "case": {
-  "line": -1.5,
-  "side": "BOS",
-  "level": "Medium",
-  "worst": 3.0,
-  "cushion": 3.0,
+  "line": 2.0,
+  "side": "POR",
+  "level": "Low",
+  "worst": 1.1,
+  "cushion": 3.2,
   "p_cover": 0.584,
-  "p_worst": 0.584,
+  "p_worst": 0.531,
   "win_est": 0.5289,
   "measured": {
    "l": 33,
@@ -56,40 +43,44 @@ market now: home spread 1.5 from Odds API consensus 10 updated 2026-11-10T15:38:
   "sections": [
    {
     "lines": [
-     "BOS -1.5. Market: BOS by 1.5. Our players-only line: BOS by 4.5.",
-     "That's 3.0 points of cushion on BOS.",
-     "No other system is on this side."
+     "POR +2. Market: OKC by 2.0. Our players-only line: POR by 1.0.",
+     "That's 3.2 points of cushion on POR.",
+     "Also on this side: T7 Fade the blowout winner (TEST)"
     ],
     "title": "The bet"
    },
    {
     "lines": [
      "Every team is rated only from the players on tonight's roster \u2014 each player's own last two seasons wherever he played, aged with a measured curve, plus this season's games once they exist. Last season's team results are not used.",
-     "BOS: +9.0 pts per 100 vs an average team (3 of 30). 80% of minutes from players who finished last season with BOS.",
-     "  carries them \u2014 Jayson Tatum: rated +4.1 (BPM scale), 33 projected min (33-min role before fitting the roster into 240) \u2192 +2.83 pts/100 for BOS (same team as last season; this season 9 g, 34 mpg, box impact +4.8)",
-     "  carries them \u2014 Derrick White: rated +2.3 (BPM scale), 30 projected min (30-min role before fitting the roster into 240) \u2192 +1.44 pts/100 for BOS (same team as last season; this season 10 g, 30 mpg, box impact -0.1)",
-     "  carries them \u2014 Payton Pritchard: rated +2.0 (BPM scale), 27 projected min (27-min role before fitting the roster into 240) \u2192 +1.12 pts/100 for BOS (same team as last season; this season 10 g, 26 mpg, box impact +0.3)",
-     "  out tonight: Devin Carter, Amari Williams",
-     "PHI: +2.9 pts per 100 vs an average team (12 of 30). 44% of minutes from players who finished last season with PHI.",
-     "  carries them \u2014 Tyrese Maxey: rated +3.8 (BPM scale), 36 projected min (36-min role before fitting the roster into 240) \u2192 +2.87 pts/100 for PHI (same team as last season; this season 11 g, 37 mpg, box impact +3.8)",
-     "  carries them \u2014 LeBron James: rated +2.5 (BPM scale), 33 projected min (33-min role before fitting the roster into 240) \u2192 +1.74 pts/100 for PHI (new, came from LAL; this season 9 g, 33 mpg, box impact +0.1)",
-     "  carries them \u2014 Joel Embiid: rated +1.9 (BPM scale), 31 projected min (31-min role before fitting the roster into 240) \u2192 +1.24 pts/100 for PHI (same team as last season; this season 9 g, 32 mpg, box impact -3.4)",
-     "  drags them down \u2014 Kentavious Caldwell-Pope: rated -1.6 (BPM scale), 22 projected min (22-min role before fitting the roster into 240) \u2192 -0.76 pts/100 for PHI (new, came from MEM; this season 11 g, 22 mpg, box impact -1.9)",
-     "  drags them down \u2014 Jabari Walker: rated -1.5 (BPM scale), 6 projected min (11-min role before fitting the roster into 240) \u2192 -0.18 pts/100 for PHI (same team as last season; this season 8 g, 10 mpg, box impact +0.8)",
-     "  out tonight: Dominick Barlow, Adem Bona, Ariel Hukporti"
+     "OKC: +2.7 pts per 100 vs an average team (13 of 30). 62% of minutes from players who finished last season with OKC.",
+     "  carries them \u2014 Shai Gilgeous-Alexander: rated +8.8 (BPM scale), 33 projected min (33-min role before fitting the roster into 240) \u2192 +5.97 pts/100 for OKC (same team as last season; this season 10 g, 33 mpg, box impact +4.2)",
+     "  carries them \u2014 Isaiah Hartenstein: rated +2.3 (BPM scale), 24 projected min (24-min role before fitting the roster into 240) \u2192 +1.15 pts/100 for OKC (same team as last season; this season 10 g, 24 mpg, box impact -0.1)",
+     "  carries them \u2014 Alex Caruso: rated +2.5 (BPM scale), 18 projected min (18-min role before fitting the roster into 240) \u2192 +0.96 pts/100 for OKC (same team as last season; this season 7 g, 18 mpg, box impact +7.5)",
+     "  drags them down \u2014 Micah Peavy: rated -4.3 (BPM scale), 15 projected min (15-min role before fitting the roster into 240) \u2192 -1.35 pts/100 for OKC (new, came from NOP; this season 8 g, 13 mpg, box impact -4.9)",
+     "  drags them down \u2014 Bennett Stirtz: rated -2.5 (BPM scale), 18 projected min (18-min role before fitting the roster into 240) \u2192 -0.94 pts/100 for OKC (rookie, rated on draft slot (#16 pick); this season 10 g, 18 mpg, box impact -0.1)",
+     "  drags them down \u2014 Aday Mara: rated -2.1 (BPM scale), 19 projected min (19-min role before fitting the roster into 240) \u2192 -0.82 pts/100 for OKC (rookie, rated on draft slot (#12 pick); this season 10 g, 20 mpg, box impact -1.7)",
+     "  out tonight: Chet Holmgren, Thomas Sorber, Nikola Topic, Cason Wallace, Jalen Williams, Jaylin Williams",
+     "POR: +2.6 pts per 100 vs an average team (15 of 30). 81% of minutes from players who finished last season with POR.",
+     "  carries them \u2014 Deni Avdija: rated +2.6 (BPM scale), 32 projected min (32-min role before fitting the roster into 240) \u2192 +1.76 pts/100 for POR (same team as last season; this season 9 g, 32 mpg, box impact +1.7)",
+     "  carries them \u2014 Donovan Clingan: rated +2.9 (BPM scale), 25 projected min (25-min role before fitting the roster into 240) \u2192 +1.48 pts/100 for POR (same team as last season; this season 9 g, 25 mpg, box impact +2.6)",
+     "  carries them \u2014 Robert Williams III: rated +3.3 (BPM scale), 16 projected min (16-min role before fitting the roster into 240) \u2192 +1.15 pts/100 for POR (same team as last season; this season 7 g, 16 mpg, box impact +6.3)",
+     "  drags them down \u2014 Scoot Henderson: rated -2.7 (BPM scale), 23 projected min (23-min role before fitting the roster into 240) \u2192 -1.33 pts/100 for POR (same team as last season; this season 9 g, 22 mpg, box impact -12.0)",
+     "  drags them down \u2014 Sidy Cissoko: rated -2.3 (BPM scale), 20 projected min (20-min role before fitting the roster into 240) \u2192 -0.95 pts/100 for POR (same team as last season; this season 9 g, 21 mpg, box impact -2.2)",
+     "  drags them down \u2014 Chris Youngblood: rated -1.7 (BPM scale), 11 projected min (11-min role before fitting the roster into 240) \u2192 -0.40 pts/100 for POR (same team as last season; this season 5 g, 13 mpg, box impact -5.2)",
+     "  out tonight: Vit Krejci, Ja Morant, Shaedon Sharpe, John Tonje"
     ],
     "title": "Why we're different from the market"
    },
    {
     "lines": [
      "We re-priced the game with our two most arguable choices flipped. The edge stayed 3+ in 4 of 4:",
-     "  base: +3.0 on BOS (BOS +9.0, PHI +2.9 per 100)",
-     "  even-shrink minutes: +3.8 on BOS (BOS +8.2, PHI +1.1 per 100)",
-     "  no injury penalty: +3.2 on BOS (BOS +9.0, PHI +2.9 per 100)",
-     "  both: +3.9 on BOS (BOS +8.2, PHI +1.1 per 100)",
-     "Day-to-day players (): edge +3.0 to +3.0 whether they play or sit.",
-     "For the market's number to be right, PHI has to be about 3.2 pts per 100 better than our read (that's PHI going from 12 of 30 to roughly a 6th-best team).",
-     "None of the stress tests moves the line toward PHI."
+     "  base: +3.2 on POR (OKC +2.7, POR +2.6 per 100)",
+     "  even-shrink minutes: +3.3 on POR (OKC +2.7, POR +2.6 per 100)",
+     "  no injury penalty: +4.6 on POR (OKC +2.7, POR +4.5 per 100)",
+     "  both: +4.6 on POR (OKC +2.7, POR +4.3 per 100)",
+     "Day-to-day players (OKC: Nique Clifford, POR: Robert Williams III): edge +1.1 to +3.2 whether they play or sit.",
+     "For the market's number to be right, OKC has to be about 3.4 pts per 100 better than our read (that's OKC going from 13 of 30 to roughly a 6th-best team).",
+     "None of the stress tests moves the line toward OKC."
     ],
     "title": "Why we think we're right"
    },
@@ -98,18 +89,22 @@ market now: home spread 1.5 from Odds API consensus 10 updated 2026-11-10T15:38:
      "Bet it now, at this number. Over the last two seasons the line moved toward this model: on gaps of 3+ it moved our way 355 times and against us 219 times, +0.57 points on average by tip-off. That's closing-line value, the best sign a bet was good.",
      "Same stage of the season (days 0-30), gaps of 3+: 43-33 (57%) against the opening line, average line move +1.03 our way (44 for us, 20 against).",
      "Expected win rate at this number: 52.9% (what that line movement is worth \u2014 the conservative read). Break-even at \u2212110 is 52.4%; on Kalshi at 50\u00a2 with the fee it's about 51.8%.",
-     "Pure math if our line were exactly right: 58% (58% in the weakest version). The measured record is the better guide."
+     "Pure math if our line were exactly right: 58% (53% in the weakest version). The measured record is the better guide."
     ],
     "title": "Where the value is"
    },
    {
     "lines": [
-     "T13 fires only when our line is 4+ points off the market in every day-to-day version and the model has no blind spots on either team. This game: +3.0 at the worst across the day-to-day versions, +3.0 at the worst across every check, no blind spots."
+     "T13 fires only when our line is 4+ points off the market in every day-to-day version and the model has no blind spots on either team. This game: +1.1 at the worst across the day-to-day versions, +1.1 at the worst across every check, no blind spots."
     ],
     "title": "Why we took it"
    },
    {
     "lines": [
+     "OKC: Nique Clifford is day-to-day (priced both ways above).",
+     "OKC: 37 minutes from rookies rated only on draft slot (Aday Mara, Bennett Stirtz).",
+     "POR: Robert Williams III is day-to-day (priced both ways above).",
+     "POR: Damian Lillard is back from a missed season \u2014 rated +0.2 (pre-injury level minus the measured first-year drop). With no injury penalty at all the edge is +4.6.",
      "Ratings come from box-score numbers; camp news (a new role, a minutes limit, a coach's rotation plan) only shows up once games are played.",
      "T13's live record: 16-18."
     ],
@@ -117,50 +112,71 @@ market now: home spread 1.5 from Odds API consensus 10 updated 2026-11-10T15:38:
    },
    {
     "lines": [
-     "Medium: the edge held 3+ in all 6 versions we tried, smallest +3.0.",
+     "Low: the edge dropped under 3 in at least one version (smallest +1.1).",
      "Track record behind it: two seasons replayed at the opening line \u2014 the market moved toward this model's gaps (t 7.4 over 2,038 games); 3+ gaps went 357-330 vs the open.",
      "T13 live: 34 graded games."
     ],
     "title": "Confidence"
    }
   ],
-  "cushion_dtd": 3.0
+  "cushion_dtd": 1.1
  },
- "fair": 4.5,
+ "fair": -1.0,
  "blind": [],
  "evidence": [
-  "BOS: 80% of projected minutes from players who finished last season here",
-  "New in the rotation: Paul George (PHI, 2469 min, BPM +1.7), Mitchell Robinson (NYK, 1465 min, BPM +3.5)",
-  "OUT: Devin Carter (15 mpg, BPM -2.6), Amari Williams (7 mpg, BPM -2.1)",
-  "BOS this season: 2.7 pts/game better than its players predicted, over 10 game(s) \u2192 rating +1.8 (results count more with every game)",
-  "This season so far: Jayson Tatum 304 min, box +4.8 \u2192 now +4.1, Derrick White 298 min, box -0.1 \u2192 now +2.3, Paul George 271 min, box +4.5 \u2192 now +1.0, Payton Pritchard 265 min, box +0.3 \u2192 now +2.0, Neemias Queta 217 min, box -0.3 \u2192 now +1.2",
-  "Day-to-day: Dillon Mitchell",
-  "PHI: 44% of projected minutes from players who finished last season here",
-  "New in the rotation: Jaylen Brown (BOS, 4601 min, BPM +3.3), LeBron James (LAL, 4433 min, BPM +3.5), Kentavious Caldwell-Pope (MEM, 3367 min, BPM -2.5), Anfernee Simons (CHI, 3664 min, BPM -0.1)",
-  "OUT: Dominick Barlow (19 mpg, BPM -1.1), Adem Bona (17 mpg, BPM -2.9), Ariel Hukporti (9 mpg, BPM -2.3)",
-  "PHI this season: 4.2 pts/game worse than its players predicted, over 11 game(s) \u2192 rating -2.9 (results count more with every game)",
-  "This season so far: Tyrese Maxey 402 min, box +3.8 \u2192 now +3.8, Jaylen Brown 359 min, box +0.3 \u2192 now +1.6, VJ Edgecombe 335 min, box -0.5 \u2192 now +0.3, LeBron James 296 min, box +0.1 \u2192 now +2.5, Joel Embiid 287 min, box -3.4 \u2192 now +1.9"
+  "OKC: 62% of projected minutes from players who finished last season here",
+  "New in the rotation: Micah Peavy (NOP, 913 min, BPM -5.2), Nique Clifford (SAC, 1882 min, BPM -4.9)",
+  "OUT: Chet Holmgren (28 mpg, BPM +4.2), Thomas Sorber (#15 pick 2025, rookie), Nikola Topic (16 mpg, BPM -8.4), Cason Wallace (27 mpg, BPM +1.2), Jalen Williams (31 mpg, BPM +2.1), Jaylin Williams (18 mpg, BPM +2.7)",
+  "Rookie (rated on draft slot) \u2014 Aday Mara, -2.1, 19 mpg: rookie prior: #12 pick 2026 \u2192 picks 8-14 averaged BPM -2.2 and 13 min per team game as rookies (86% of 14 played); last games minutes: 25, 18, 27 (latest 3 count double for the role); this season: 198 min in 10 g, box impact -1.7 \u2192 blended -2.06 (prior worth 400 min)",
+  "Rookie (rated on draft slot) \u2014 Bennett Stirtz, -2.5, 18 mpg: rookie prior: #16 pick 2026 \u2192 picks 15-30 averaged BPM -3.6 and 11 min per team game as rookies (94% of 32 played); last games minutes: 22, 24, 29 (latest 3 count double for the role); this season: 180 min in 10 g, box impact -0.1 \u2192 blended -2.49 (prior worth 400 min)",
+  "OKC this season: 0.3 pts/game better than its players predicted, over 10 game(s) \u2192 rating +0.2 (results count more with every game)",
+  "This season so far: Shai Gilgeous-Alexander 329 min, box +4.2 \u2192 now +8.8, Ajay Mitchell 272 min, box +2.2 \u2192 now +1.3, Jared McCain 252 min, box -4.4 \u2192 now -1.4, Isaiah Hartenstein 242 min, box -0.1 \u2192 now +2.3, Aday Mara 198 min, box -1.7 \u2192 now -2.1",
+  "Day-to-day: Nique Clifford",
+  "17 of 240 minutes can't be filled by known players (rated league-average)",
+  "POR: 81% of projected minutes from players who finished last season here",
+  "New in the rotation: Damian Lillard (MIL, 2093 min, BPM +4.0), Micah Potter (IND, 1613 min, BPM +0.7), Branden Carlson (OKC, 734 min, BPM +0.8)",
+  "OUT: Vit Krejci (21 mpg, BPM -1.6), Ja Morant (30 mpg, BPM -1.5), Shaedon Sharpe (31 mpg, BPM -1.4), John Tonje (7 mpg, BPM -5.1)",
+  "Back from a missed season \u2014 Damian Lillard, rated +0.20, 30 mpg: last healthy season 2024-25: BPM +4.0 in 2093 min \u2192 +2.48 after the small-sample pull; two years of aging (ages 34\u219236, measured curve): -0.80; first season back from Achilles (April 2025): PER 21.3 x 16.0% x 0.597 = -2.03; minutes x0.81; = -0.36; last games minutes: 33, 37, 20 (latest 3 count double for the role); this season: 265 min in 9 g, box impact +1.5 \u2192 blended +0.20 (prior worth 600 min)",
+  "POR this season: 2.3 pts/game better than its players predicted, over 9 game(s) \u2192 rating +1.5 (results count more with every game)",
+  "This season so far: Deni Avdija 289 min, box +1.7 \u2192 now +2.6, Damian Lillard 265 min, box +1.5 \u2192 now +0.2, Toumani Camara 245 min, box -1.2 \u2192 now -1.0, Jrue Holiday 233 min, box +3.9 \u2192 now +1.3, Donovan Clingan 223 min, box +2.6 \u2192 now +2.9",
+  "Day-to-day: Robert Williams III",
+  "2 of 240 minutes can't be filled by known players (rated league-average)"
  ],
  "scenarios": [
   {
-   "gap": -3.0,
+   "gap": 3.2,
    "away": "play",
-   "fair": 4.5,
+   "fair": -1.0,
    "home": "play"
   },
   {
-   "gap": -3.0,
+   "gap": 1.6,
+   "away": "play",
+   "fair": 0.5,
+   "home": "sit"
+  },
+  {
+   "gap": 2.7,
    "away": "sit",
-   "fair": 4.5,
+   "fair": -0.5,
    "home": "play"
+  },
+  {
+   "gap": 1.1,
+   "away": "sit",
+   "fair": 1.0,
+   "home": "sit"
   }
  ],
  "calibrated": true,
- "waiting_on": [],
- "away_rating": 9.04,
- "home_rating": 2.89
+ "waiting_on": [
+  "OKC: Nique Clifford",
+  "POR: Robert Williams III"
+ ],
+ "away_rating": 2.67,
+ "home_rating": 2.57
 }
 
 === pick rows for this game
-{"key": "401909961-S301-BOS", "game_id": "401909961", "game_date": "2026-11-10", "tip_utc": "2026-11-11T01:00Z", "away": "BOS", "home": "PHI", "system": 301, "bet": "spread", "side": "BOS", "label": "BOS -1.5", "line": -1.5, "first_line": 1.0, "first_seen": "2026-11-09T05:00:10.234444+00:00", "last_checked": "2026-11-10T15:38:34.721931+00:00", "active": true, "dropped_reason": "No longer qualifies at the current line", "evidence": ["Personnel likes BOS by 3.0 vs the market"], "kalshi": null, "result": null, "final_score": null, "graded_at": null, "meta": {"dtd": 0, "gap": 3.0, "call": "now", "level": "Medium", "gap_first": 3.8, "worst_gap": 3.0, "level_first": "Medium"}}
-{"key": "401909961-S113-BOS", "game_id": "401909961", "game_date": "2026-11-10", "tip_utc": "2026-11-11T01:00Z", "away": "BOS", "home": "PHI", "system": 113, "bet": "spread", "side": "BOS", "label": "BOS +1", "line": 1.0, "first_line": 1.0, "first_seen": "2026-11-09T11:05:41.343931+00:00", "last_checked": "2026-11-10T15:38:34.721931+00:00", "active": true, "dropped_reason": null, "evidence": ["Personnel fair line: PHI +6 vs market PHI +1.5 (gap -4.4)", "Ratings from current players: BOS +9.0, PHI +2.9 per 100", "No day-to-day players in either rotation"], "kalshi": {"fee": 0.02, "url": "https://kalshi.com/markets/kxnbagame/nba-game/kxnbagame-26nov10bosphi", "cost": 0.52, "exact": true, "price": 0.5, "ticker": "KXNBASPREAD-26NOV10BOSPHI-BOS2", "contract": "YES \u00b7 BOS wins by over 1.5"}, "result": null, "final_score": null, "graded_at": null, "meta": {"gap": 4.4, "call": "now", "level": "Medium", "alerted": "2026-11-09T11:06:03.011188+00:00", "card_snap": {"why": "Best price: BetOpenly BOS to win at -110 (fees not counted), +6.3% expected return. Next best: Polymarket BOS to win at -113 (fees not counted), +5.0%", "win": 0.529, "line": 1.0, "name": "Players model", "with": [], "label": "BOS +1", "to_win": 20, "history": {"l": 33, "w": 43, "label": "2 seasons, gaps of 3+, days 0-30, at the open"}, "players": 3.0, "also_combo": null, "confidence": null, "players_bucket": "agrees by 3-5", "players_history": {"l": 4, "w": 9, "label": "agrees by 3+"}}, "worst_gap": 4.4, "level_first": "Medium", "alerted_verdict": "BET"}}
+{"key": "401909965-S107-POR", "game_id": "401909965", "game_date": "2026-11-10", "tip_utc": "2026-11-11T04:00Z", "away": "OKC", "home": "POR", "system": 107, "bet": "spread", "side": "POR", "label": "POR +1.5", "line": 1.5, "first_line": 1.5, "first_seen": "2026-11-09T23:31:00.456911+00:00", "last_checked": "2026-11-10T15:55:00.095333+00:00", "active": true, "dropped_reason": null, "evidence": ["OKC won by 39 last game: WAS 75 @ OKC 114", "OKC is favored by 1.5 tonight"], "kalshi": null, "result": null, "final_score": null, "graded_at": null, "meta": {"alerted": "2026-11-10T03:00:45.806749+00:00", "card_snap": {"why": "No bet: the players model only likes POR by 1.1; a system needs it to agree by 3+", "win": null, "line": 1.5, "name": "Fade the blowout winner", "with": [], "label": "POR +1.5", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": 1.1, "also_combo": null, "confidence": null, "players_bucket": "agrees by 0-3", "players_history": null}, "alerted_verdict": "BET"}}
+{"key": "401909965-S301-POR", "game_id": "401909965", "game_date": "2026-11-10", "tip_utc": "2026-11-11T04:00Z", "away": "OKC", "home": "POR", "system": 301, "bet": "spread", "side": "POR", "label": "POR +2", "line": 2.0, "first_line": 1.5, "first_seen": "2026-11-09T23:31:00.456911+00:00", "last_checked": "2026-11-10T15:55:00.095333+00:00", "active": true, "dropped_reason": "No longer qualifies at the current line", "evidence": ["Personnel likes POR by 3.2 vs the market"], "kalshi": null, "result": null, "final_score": null, "graded_at": null, "meta": {"dtd": 2, "gap": 3.2, "call": "waiting", "level": "Low", "gap_first": 3.1, "worst_gap": 1.1, "level_first": "Low"}}
