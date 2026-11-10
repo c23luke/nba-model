@@ -80,12 +80,12 @@
   2026-11-10T07:44:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
   2026-11-10T07:44:03 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
 
-=== live site board generated 2026-11-10T12:44:14.514080+00:00
-  record under today's rules: 7 - 6 - 0 pnl 25.5 | open 1 at risk 21.01
+=== live site board generated 2026-11-10T12:49:44.933366+00:00
+  record under today's rules: 7 - 7 - 0 pnl 3.26 | open 2 at risk 41.02
   real account: 12 - 13 pnl -36.87
   has combo_live (new code): True | report card has systems_p3: True
    OPEN   - T13       BOS +1                 BetOpenly          real None  counted None
-   OPEN   - T7        POR +1.5               BetOpenly          real None  hidden: players model agreed by only 1.1: a system now needs it to agree by 3+
+   OPEN   - T7        POR +1.5               BetOpenly          real None  counted None
    FINAL  W E7        MEM +6.5               ProphetX           real 20.16  counted 20.0
    FINAL  W MONEYBALL DAL +6.5               ProphetX           real 30.29  counted 40.0
    FINAL  W S4        OVER 234.5             Kalshi             real 20.05  hidden: paid −124: S4 now bets only at -110 or better
@@ -108,6 +108,6 @@
    FINAL  L T13       MEM +2.5               Kalshi             real -17.08  counted -18.35
    FINAL  L MONEYBALL CLE +4.5               Kalshi             real -38.5  counted -38.02
    FINAL  W T13       LAL +1.5               Kalshi             real 20.11  counted 20.0
-   FINAL  L T9        ATL +2.5               ProphetX           real -22.42  hidden: players model had no clean read: a system now needs it to agree by 3+
+   FINAL  L T9        ATL +2.5               ProphetX           real -22.42  counted -22.24
    FINAL  L T13       DEN +4.5               BetOpenly + ProphetX real -22.54  hidden: bought 4.5 points off the card's number: today the limit is 2
    FINAL  L MONEYBALL PHX +6.5               ProphetX           real -29.83  counted -29.58
