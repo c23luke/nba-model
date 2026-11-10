@@ -1,0 +1,107 @@
+====================================================================================================
+GAME 401909946 2026-11-08 LAL @ DET  final=True score 121-116  tip 2026-11-08T23:00Z
+--- line history (home spread / total, each change)
+    2026-11-07T20:50:56 home spread -2.0 total 222.0
+    2026-11-07T22:04:41 home spread -3.0 total 222.0
+    2026-11-07T22:15:36 home spread -3.5 total 222.0
+    2026-11-07T22:23:48 home spread -4.5 total 220.5
+    2026-11-07T22:29:14 home spread -4.5 total 221.0
+    2026-11-07T22:36:06 home spread -4.5 total 220.5
+    2026-11-07T22:42:56 home spread -4.5 total 221.0
+    2026-11-07T22:48:24 home spread -4.5 total 221.5
+    2026-11-08T00:17:29 home spread -4.5 total 222.0
+    2026-11-08T00:28:34 home spread -4.5 total 221.5
+    2026-11-08T00:34:09 home spread -4.5 total 222.0
+    2026-11-08T00:37:09 home spread -4.5 total 221.5
+    2026-11-08T01:05:45 home spread -4.5 total 222.0
+    2026-11-08T01:10:32 home spread -4.5 total 221.5
+    2026-11-08T01:47:56 home spread -4.5 total 222.0
+    2026-11-08T08:28:00 home spread -4.5 total 221.5
+    2026-11-08T08:50:19 home spread -4.5 total 221.0
+    2026-11-08T09:16:40 home spread -4.5 total 220.5
+    2026-11-08T10:11:13 home spread -4.5 total 221.0
+    2026-11-08T10:27:46 home spread -4.5 total 221.5
+    2026-11-08T10:38:50 home spread -4.5 total 222.0
+    2026-11-08T12:11:09 home spread -4.5 total 221.5
+    2026-11-08T12:27:35 home spread -4.5 total 222.0
+    2026-11-08T13:38:33 home spread -4.5 total 221.5
+    2026-11-08T16:41:53 home spread -5.0 total 221.5
+    2026-11-08T18:00:15 home spread -5.0 total 220.5
+    2026-11-08T18:15:17 home spread -7.0 total 219.0
+    2026-11-08T18:20:36 home spread -7.5 total 218.5
+    2026-11-08T19:00:12 home spread -7.0 total 218.0
+    2026-11-08T19:16:06 home spread -7.0 total 217.5
+    2026-11-08T21:15:11 home spread -7.0 total 217.0
+    2026-11-08T22:00:12 home spread -7.5 total 217.0
+    2026-11-08T22:30:26 home spread -7.5 total 216.5
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-07T21:45:21 → 2026-11-08T22:54:16 DET Jalen Duren Out | Injury/Illness - Right Hamstring Strain
+    2026-11-07T21:45:21 → 2026-11-08T22:54:16 DET Isaiah Joe Out | Injury/Illness - Right Hip Contusion
+    2026-11-07T21:45:21 → 2026-11-08T22:54:16 DET Ugonna Onyenso Out | G League - Two-Way
+    2026-11-07T21:45:21 → 2026-11-08T17:44:04 DET Elijah Harkless Questionable | G League - Two-Way
+    2026-11-07T21:45:21 → 2026-11-08T17:44:04 DET Isaac Jones Questionable | G League - Two-Way
+    2026-11-07T22:00:17 → 2026-11-08T18:10:57 LAL Luka Doncic Questionable | Injury/Illness - Low Back Tightness
+    2026-11-07T22:00:17 → 2026-11-08T22:54:16 LAL Walker Kessler Available | Injury/Illness - Left Finger Splint
+    2026-11-08T17:45:30 → 2026-11-08T22:54:16 DET Elijah Harkless Out | G League - Two-Way
+    2026-11-08T17:45:30 → 2026-11-08T22:54:16 DET Isaac Jones Available | G League - Two-Way
+    2026-11-08T18:15:19 → 2026-11-08T22:54:16 LAL Luka Doncic Out | Injury/Illness - Low Back Tightness
+--- picks
+    {"key": "401909946-S301-LAL", "system": 301, "side": "LAL", "bet": "spread", "line": 7.5, "status": null, "result": "W", "first_seen": "2026-11-07T20:50:56.359880+00:00", "last_checked": "2026-11-08T22:54:16.295171+00:00", "close_line": null}
+       meta: {"clv": -5.5, "dtd": 3, "gap": 1.8, "call": "none", "level": null, "gap_first": 4.2, "worst_gap": 1.8, "close_line": 7.5, "level_first": "Medium", "result_first": "W"}
+    {"key": "401909946-S113-LAL", "system": 113, "side": "LAL", "bet": "spread", "line": 2.0, "status": null, "result": "W", "first_seen": "2026-11-07T20:50:56.359880+00:00", "last_checked": "2026-11-08T22:54:16.295171+00:00", "close_line": null}
+       meta: {"clv": -5.5, "gap": 4.4, "call": "now", "level": "Medium", "alerted": "2026-11-07T22:05:06.139555+00:00", "card_snap": {"why": "Best price: Kalshi NO \u00b7 DET wins by over 5.5  (= LAL +5.5) at +113, +23.7% expected return. Next best: Polymarket LAL +6.5 at -104 (fees not counted), +20.9%", "win": 0.56, "line": 2.0, "name": "Players model", "with": [], "label": "LAL +2", "to_win": 20, "history": {"l": 6, "w": 9, "label": "2 seasons, gaps of 5+, days 0-30, at the open"}, "players": -0.4, "also_combo": null, "confidence": null, "players_bucket": "players model disagrees", "players_history": {"l": 58, "w": 63, "label": "disagrees"}}, "worst_gap": 4.2, "close_line": 7.5, "level_first": "Medium", "result_first": "W", "alerted_verdict": "BET"}
+--- orders
+    {'created_at': '2026-11-07T21:01:01.526938+00:00', 'updated_at': '2026-11-07T22:01:01.123+00:00', 'venue': 'kalshi', 'status': 'filled', 'pick': 'LAL +2', 'contract': 'NO · DET wins by over 1.5  (= LAL +1.5)', 'count': 39, 'limit_price': 0.48, 'fill_count': 39, 'fill_cost': 18.72, 'reason': None}
+====================================================================================================
+GAME 401909952 2026-11-09 LAL @ ATL  final=True score 124-114  tip 2026-11-10T00:00Z
+--- line history (home spread / total, each change)
+    2026-11-09T03:30:33 home spread 2.5 total 235.5
+    2026-11-09T03:36:05 home spread 2.5 total 236.0
+    2026-11-09T03:54:28 home spread 2.5 total 235.5
+    2026-11-09T05:11:15 home spread 2.5 total 236.0
+    2026-11-09T08:42:46 home spread 2.0 total 236.0
+    2026-11-09T09:26:34 home spread 2.0 total 236.5
+    2026-11-09T10:33:10 home spread 1.5 total 236.0
+    2026-11-09T10:38:38 home spread 2.0 total 236.0
+    2026-11-09T10:55:09 home spread 1.5 total 236.5
+    2026-11-09T13:37:36 home spread -1.0 total 236.5
+    2026-11-09T14:16:19 home spread -1.5 total 236.5
+    2026-11-09T18:05:53 home spread -1.5 total 236.0
+    2026-11-09T18:12:27 home spread -1.5 total 236.5
+    2026-11-09T18:17:46 home spread -2.0 total 235.5
+    2026-11-09T18:22:04 home spread -2.0 total 236.0
+    2026-11-09T18:50:56 home spread -1.5 total 236.0
+    2026-11-09T18:52:15 home spread -1.5 total 235.5
+    2026-11-09T19:00:17 home spread -1.5 total 236.0
+    2026-11-09T19:39:05 home spread -1.5 total 236.5
+    2026-11-09T20:22:19 home spread -1.5 total 236.0
+    2026-11-09T21:05:43 home spread -1.5 total 236.5
+    2026-11-09T22:36:09 home spread -2.5 total 235.0
+    2026-11-09T22:41:39 home spread -2.5 total 233.5
+    2026-11-09T23:31:00 home spread -2.5 total 234.0
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Keshon Gilbert Out | Inflammation/Non-Surgical
+    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Mouhamed Gueye Out | Injury/Illness - Left Foot Fracture
+    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Asa Newell Out | 
+    2026-11-08T22:00:17 → 2026-11-09T21:51:01 ATL RayJ Dennis Questionable | G League - Two-Way
+    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Henri Veesaar Out | Injury/Illness - Right ACL Tear
+    2026-11-08T22:00:17 → 2026-11-09T21:51:01 ATL Jock Landale Questionable | Injury/Illness - Left Hip Strain
+    2026-11-08T22:00:17 → 2026-11-09T21:51:01 ATL Jalen Wilson Questionable | G League - Two-Way
+    2026-11-09T18:00:23 → 2026-11-09T23:50:38 LAL Quentin Grimes Out | Injury/Illness - Right Finger Sprain
+    2026-11-09T18:00:23 → 2026-11-09T23:50:38 LAL Walker Kessler Available | Injury/Illness - Left Finger Splint
+    2026-11-09T18:00:23 → 2026-11-09T22:41:39 LAL Austin Reaves Questionable | Injury/Illness - Illness
+    2026-11-09T22:00:23 → 2026-11-09T23:50:38 ATL Jock Landale Available | Injury/Illness - Face mask
+    2026-11-09T22:00:23 → 2026-11-09T23:50:38 ATL Jalen Wilson Out | G League - Two-Way
+    2026-11-09T22:00:23 → 2026-11-09T23:50:38 ATL RayJ Dennis Out | G League - Two-Way
+    2026-11-09T22:45:13 → 2026-11-09T23:50:38 LAL Austin Reaves Out | Injury/Illness - Illness
+--- picks
+    {"key": "401909952-S301-ATL", "system": 301, "side": "ATL", "bet": "spread", "line": -1.5, "status": null, "result": "L", "first_seen": "2026-11-09T03:30:33.574784+00:00", "last_checked": "2026-11-09T15:27:08.969852+00:00", "close_line": null}
+       meta: {"clv": 5.0, "dtd": 4, "gap": 0.2, "call": "none", "level": null, "gap_first": 3.4, "worst_gap": 0.1, "close_line": -2.5, "level_first": "Low", "result_first": "L"}
+    {"key": "401909952-S109-ATL", "system": 109, "side": "ATL", "bet": "spread", "line": 2.5, "status": null, "result": "L", "first_seen": "2026-11-09T03:30:33.574784+00:00", "last_checked": "2026-11-09T23:50:38.634324+00:00", "close_line": null}
+       meta: {"clv": 5.0, "alerted": "2026-11-09T03:31:02.179184+00:00", "card_snap": {"why": "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+", "win": null, "line": 2.5, "name": "Home dog vs a hot team", "with": [], "label": "ATL +2.5", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": null, "also_combo": null, "confidence": null, "players_bucket": null, "players_history": null}, "close_line": -2.5, "result_first": "L", "alerted_verdict": "BET"}
+    {"key": "401909952-S301-LAL", "system": 301, "side": "LAL", "bet": "spread", "line": 2.5, "status": null, "result": "W", "first_seen": "2026-11-09T15:27:08.969852+00:00", "last_checked": "2026-11-09T23:50:38.634324+00:00", "close_line": null}
+       meta: {"clv": -1.0, "dtd": 0, "gap": 5.1, "call": "blind", "level": null, "gap_first": 5.0, "worst_gap": 5.1, "close_line": 2.5, "level_first": "Low", "result_first": "W"}
+    {"key": "401909952-S113-LAL", "system": 113, "side": "LAL", "bet": "spread", "line": 2.5, "status": null, "result": "W", "first_seen": "2026-11-09T22:36:09.087269+00:00", "last_checked": "2026-11-09T23:50:38.634324+00:00", "close_line": null}
+       meta: {"clv": 0.0, "gap": 6.0, "call": "now", "level": "Medium", "alerted": "2026-11-09T22:36:36.758335+00:00", "card_snap": {"why": "Best price: BetOpenly LAL +2.5 at +104 (fees not counted), +14.3% expected return. Next best: ProphetX LAL +2.5 at +103 (fees not counted), +13.7%", "win": 0.56, "line": 2.5, "name": "Players model", "with": [], "label": "LAL +2.5", "to_win": 20, "history": {"l": 6, "w": 9, "label": "2 seasons, gaps of 5+, days 0-30, at the open"}, "players": 4.3, "also_combo": null, "confidence": null, "players_bucket": "agrees by 3-5", "players_history": {"l": 4, "w": 9, "label": "agrees by 3+"}}, "worst_gap": 4.3, "close_line": 2.5, "level_first": "Medium", "result_first": "W", "alerted_verdict": "BET"}
+--- orders
+    {'created_at': '2026-11-09T03:44:06.055359+00:00', 'updated_at': '2026-11-09T03:44:18.59+00:00', 'venue': 'prophetx', 'status': 'partial', 'pick': 'ATL +2.5', 'contract': 'ATL +2.5', 'count': 43, 'limit_price': 0.5215, 'fill_count': 42.99, 'fill_cost': 22.42, 'reason': None}
