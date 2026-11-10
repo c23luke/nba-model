@@ -1,0 +1,141 @@
+
+=== 2024-25: 1187 games with an open and a close
+  situation (side it points at)                                  n   moved   beat  worse   ATS open        ATS close
+  2+ more days of rest (home)                                   53   +0.66    55%    25%    34-19  64.2%    31-22  58.5%
+  system T12                                                    69   +0.55    55%    28%    39-28  58.2%    36-30  54.5%
+  rested team vs a back-to-back (away)                         149   +0.44    48%    35%    84-63  57.1%    84-63  57.1%
+  system T8                                                     70   +0.41    53%    31%    32-37  46.4%    30-38  44.1%
+  won last game by 20+ (home)                                  125   +0.40    41%    38%    64-59  52.0%    60-60  50.0%
+  first 3 weeks: away team                                     164   +0.38    45%    31%    82-80  50.6%    84-77  52.2%
+  rested team vs a back-to-back (home)                         158   +0.38    44%    34%    83-70  54.2%    78-75  51.0%
+  better record (10+ games, by .150+) (away)                   275   +0.25    49%    36%   129-138 48.3%   129-141 47.8%
+  home fav 3-6 (home)                                          216   +0.22    49%    34%   105-107 49.5%   101-113 47.2%
+  won 5+ in a row (away)                                        68   +0.22    50%    29%    33-35  48.5%    34-34  50.0%
+  home fav 6.5-9.5 (home)                                      187   +0.20    46%    34%    90-94  48.9%    90-94  48.9%
+  system T2                                                     47   +0.19    43%    32%    27-20  57.4%    26-20  56.5%
+  better record (10+ games, by .150+) (home)                   270   +0.18    44%    38%   141-122 53.6%   142-119 54.4%
+  2+ more days of rest (away)                                   48   +0.04    40%    42%    27-21  56.2%    25-21  54.3%
+  3 games in 4 nights (away)                                   325   +0.03    42%    39%   158-161 49.5%   155-164 48.6%
+  home fav 10+ at the open (home)                              190   +0.03    40%    42%   102-84  54.8%   101-82  55.2%
+  every home team                                             1187   +0.01    39%    42%   594-570 51.0%   583-581 50.1%
+  every away team                                             1187   -0.01    42%    39%   570-594 49.0%   581-583 49.9%
+  lost last game by 20+ (home)                                 119   -0.03    37%    48%    49-66  42.6%    51-68  42.9%
+  home dog 3.5-6.5 (home)                                      176   -0.03    35%    48%    94-77  55.0%    93-81  53.4%
+  won last game by 20+ (away)                                  118   -0.03    36%    44%    60-55  52.2%    62-50  55.4%
+  home dog 0-3 (home)                                          129   -0.07    33%    50%    64-63  50.4%    65-62  51.2%
+  system T7                                                     95   -0.12    42%    38%    47-47  50.0%    45-46  49.5%
+  3 games in 4 nights (home)                                   316   -0.12    40%    42%   162-150 51.9%   160-152 51.3%
+  home fav under 3 (home)                                      120   -0.12    42%    42%    57-61  48.3%    52-65  44.4%
+  system T10                                                    39   -0.15    46%    41%    22-17  56.4%    20-19  51.3%
+  lost 5+ in a row (home)                                       86   -0.20    41%    51%    43-40  51.8%    46-39  54.1%
+  lost 5+ in a row (away)                                       70   -0.23    34%    51%    32-36  47.1%    34-34  50.0%
+  last game went to OT (away)                                   64   -0.27    36%    47%    32-32  50.0%    32-30  51.6%
+  home dog 7+ (home)                                           169   -0.28    28%    51%    82-84  49.4%    81-84  49.1%
+  system E5                                                     36   -0.32    36%    56%    20-16  55.6%    19-16  54.3%
+  system T6                                                    136   -0.32    33%    51%    65-68  48.9%    69-65  51.5%
+  won 5+ in a row (home)                                        79   -0.34    46%    34%    39-40  49.4%    39-38  50.6%
+  system E2                                                     33   -0.38    24%    55%    19-14  57.6%    18-14  56.2%
+  on a back-to-back, opponent rested (away)                    158   -0.38    34%    44%    70-83  45.8%    75-78  49.0%
+  first 3 weeks: home team                                     164   -0.38    31%    45%    80-82  49.4%    77-84  47.8%
+  system T9                                                     45   -0.39    24%    58%    22-23  48.9%    21-24  46.7%
+  lost last game by 20+ (away)                                 121   -0.44    36%    51%    61-56  52.1%    66-53  55.5%
+  on a back-to-back, opponent rested (home)                    149   -0.44    35%    48%    63-84  42.9%    63-84  42.9%
+  last game went to OT (home)                                   48   -0.50    42%    40%    13-34  27.7%    14-32  30.4%
+  open on a key number (3), the favorite (home)                 25   -0.60    40%    44%    11-14  44.0%    11-14  44.0%
+  system E4                                                     47   -0.69    26%    45%    23-24  48.9%    24-23  51.1%
+  open on a key number (7), the favorite (home)                 30   -0.82    50%    37%    10-20  33.3%    12-17  41.4%
+
+=== 2025-26: 1194 games with an open and a close
+  situation (side it points at)                                  n   moved   beat  worse   ATS open        ATS close
+  home dog 0-3 (home)                                          158   +0.61    41%    37%    85-70  54.8%    86-72  54.4%
+  lost 5+ in a row (home)                                       85   +0.60    39%    33%    47-38  55.3%    45-40  52.9%
+  2+ more days of rest (away)                                   41   +0.57    49%    34%    19-22  46.3%    18-23  43.9%
+  rested team vs a back-to-back (home)                         155   +0.53    47%    29%    75-78  49.0%    76-78  49.4%
+  2+ more days of rest (home)                                   53   +0.50    47%    25%    32-21  60.4%    32-21  60.4%
+  system T7                                                    107   +0.42    36%    41%    46-61  43.0%    45-61  42.5%
+  system T2                                                     52   +0.39    48%    27%    29-23  55.8%    29-23  55.8%
+  rested team vs a back-to-back (away)                         142   +0.30    50%    28%    70-72  49.3%    70-71  49.6%
+  system T12                                                    73   +0.29    48%    23%    38-34  52.8%    40-33  54.8%
+  system T9                                                     47   +0.18    49%    40%    24-22  52.2%    24-22  52.2%
+  home fav 10+ at the open (home)                              212   +0.15    43%    33%   111-98  53.1%   111-98  53.1%
+  home dog 3.5-6.5 (home)                                      175   +0.13    33%    46%    90-85  51.4%    90-82  52.3%
+  home fav 3-6 (home)                                          193   +0.12    37%    37%   103-88  53.9%   100-90  52.6%
+  system T10                                                    29   +0.05    48%    28%    12-17  41.4%    12-17  41.4%
+  system T8                                                     50   +0.05    38%    30%    23-27  46.0%    23-27  46.0%
+  won last game by 20+ (home)                                  133   +0.05    38%    33%    77-56  57.9%    76-56  57.6%
+  every home team                                             1194   +0.03    38%    39%   597-584 50.6%   601-578 51.0%
+  3 games in 4 nights (home)                                   330   +0.02    36%    43%   160-167 48.9%   163-162 50.2%
+  first 3 weeks: home team                                     161   +0.01    35%    41%    85-73  53.8%    89-67  57.1%
+  system E2                                                     35   +0.00    29%    57%    19-15  55.9%    20-14  58.8%
+  last game went to OT (away)                                   57   +0.00    37%    40%    26-30  46.4%    28-29  49.1%
+  lost last game by 20+ (home)                                 130   +0.00    35%    42%    65-63  50.8%    65-62  51.2%
+  first 3 weeks: away team                                     161   -0.01    41%    35%    73-85  46.2%    67-89  42.9%
+  every away team                                             1194   -0.03    39%    38%   584-597 49.4%   578-601 49.0%
+  won 5+ in a row (home)                                        70   -0.06    47%    36%    26-44  37.1%    28-42  40.0%
+  lost last game by 20+ (away)                                 129   -0.06    38%    40%    69-59  53.9%    68-59  53.5%
+  better record (10+ games, by .150+) (home)                   291   -0.06    36%    39%   137-150 47.7%   138-150 47.9%
+  system T6                                                    156   -0.14    35%    44%    82-73  52.9%    80-73  52.3%
+  system E4                                                     49   -0.19    29%    45%    24-25  49.0%    24-25  49.0%
+  better record (10+ games, by .150+) (away)                   291   -0.20    41%    35%   146-141 50.9%   144-142 50.3%
+  home dog 7+ (home)                                           177   -0.21    32%    45%    85-90  48.6%    87-86  50.3%
+  3 games in 4 nights (away)                                   320   -0.23    35%    40%   155-161 49.1%   153-164 48.3%
+  won last game by 20+ (away)                                  129   -0.23    40%    40%    74-55  57.4%    73-53  57.9%
+  won 5+ in a row (away)                                        64   -0.27    36%    52%    31-31  50.0%    31-32  49.2%
+  on a back-to-back, opponent rested (home)                    142   -0.30    28%    50%    72-70  50.7%    71-70  50.4%
+  home fav 6.5-9.5 (home)                                      182   -0.36    40%    36%    85-95  47.2%    87-93  48.3%
+  home fav under 3 (home)                                       97   -0.37    43%    36%    38-58  39.6%    40-57  41.2%
+  lost 5+ in a row (away)                                       98   -0.39    30%    51%    44-53  45.4%    47-49  49.0%
+  on a back-to-back, opponent rested (away)                    155   -0.53    29%    47%    78-75  51.0%    78-76  50.6%
+  system E5                                                     29   -0.64    21%    52%    12-17  41.4%    13-14  48.1%
+  last game went to OT (home)                                   49   -0.84    35%    47%    24-24  50.0%    27-20  57.4%
+
+=== both: 2381 games with an open and a close
+  situation (side it points at)                                  n   moved   beat  worse   ATS open        ATS close
+  2+ more days of rest (home)                                  106   +0.58    51%    25%    66-40  62.3%    63-43  59.4%
+  rested team vs a back-to-back (home)                         313   +0.46    45%    31%   158-148 51.6%   154-153 50.2%
+  system T12                                                   142   +0.42    51%    25%    77-62  55.4%    76-63  54.7%
+  open on a key number (3), the favorite (home)                 48   +0.41    44%    44%    20-28  41.7%    20-28  41.7%
+  rested team vs a back-to-back (away)                         291   +0.37    49%    32%   154-135 53.3%   154-134 53.5%
+  home dog 0-3 (home)                                          287   +0.30    37%    43%   149-133 52.8%   151-134 53.0%
+  system T2                                                     99   +0.30    45%    29%    56-43  56.6%    55-43  56.1%
+  2+ more days of rest (away)                                   89   +0.29    44%    38%    46-43  51.7%    43-44  49.4%
+  system T8                                                    120   +0.26    47%    31%    55-64  46.2%    53-65  44.9%
+  won last game by 20+ (home)                                  258   +0.22    39%    35%   141-115 55.1%   136-116 54.0%
+  lost 5+ in a row (home)                                      171   +0.20    40%    42%    90-78  53.6%    91-79  53.5%
+  first 3 weeks: away team                                     325   +0.19    43%    33%   155-165 48.4%   151-166 47.6%
+  open on a key number (7), the favorite (away)                 27   +0.19    44%    26%    16-11  59.3%    17-9   65.4%
+  home fav 3-6 (home)                                          409   +0.17    43%    35%   208-195 51.6%   201-203 49.8%
+  system T7                                                    202   +0.16    39%    40%    93-108 46.3%    90-107 45.7%
+  home fav 10+ at the open (home)                              402   +0.09    42%    37%   213-182 53.9%   212-180 54.1%
+  better record (10+ games, by .150+) (home)                   561   +0.06    40%    39%   278-272 50.5%   280-269 51.0%
+  home dog 3.5-6.5 (home)                                      351   +0.05    34%    47%   184-162 53.2%   183-163 52.9%
+  every home team                                             2381   +0.02    39%    40%   1191-1154 50.8%   1184-1159 50.5%
+  better record (10+ games, by .150+) (away)                   566   +0.02    45%    36%   275-279 49.6%   273-283 49.1%
+  lost last game by 20+ (home)                                 249   -0.01    36%    45%   114-129 46.9%   116-130 47.2%
+  won 5+ in a row (away)                                       132   -0.02    43%    40%    64-66  49.2%    65-66  49.6%
+  every away team                                             2381   -0.02    40%    39%   1154-1191 49.2%   1159-1184 49.5%
+  3 games in 4 nights (home)                                   646   -0.05    38%    43%   322-317 50.4%   323-314 50.7%
+  system T10                                                    68   -0.07    47%    35%    34-34  50.0%    32-36  47.1%
+  home fav 6.5-9.5 (home)                                      369   -0.08    43%    35%   175-189 48.1%   177-187 48.6%
+  system T3                                                     27   -0.09    37%    41%    13-14  48.1%    13-14  48.1%
+  3 games in 4 nights (away)                                   645   -0.10    38%    40%   313-322 49.3%   308-328 48.4%
+  system T9                                                     92   -0.10    37%    49%    46-45  50.5%    45-46  49.5%
+  won last game by 20+ (away)                                  247   -0.13    38%    42%   134-110 54.9%   135-103 56.7%
+  last game went to OT (away)                                  121   -0.14    36%    44%    58-62  48.3%    60-59  50.4%
+  system E2                                                     68   -0.18    26%    56%    38-29  56.7%    38-28  57.6%
+  first 3 weeks: home team                                     325   -0.19    33%    43%   165-155 51.6%   166-151 52.4%
+  won 5+ in a row (home)                                       149   -0.20    46%    35%    65-84  43.6%    67-80  45.6%
+  open on a key number (3), the favorite (away)                 35   -0.21    37%    46%    16-19  45.7%    15-18  45.5%
+  system T6                                                    292   -0.22    34%    48%   147-141 51.0%   149-138 51.9%
+  home fav under 3 (home)                                      217   -0.23    42%    39%    95-119 44.4%    92-122 43.0%
+  home dog 7+ (home)                                           346   -0.24    30%    48%   167-174 49.0%   168-170 49.7%
+  lost last game by 20+ (away)                                 250   -0.24    37%    46%   130-115 53.1%   134-112 54.5%
+  lost 5+ in a row (away)                                      168   -0.32    32%    51%    76-89  46.1%    81-83  49.4%
+  system E7                                                     26   -0.37    31%    42%    11-15  42.3%    10-14  41.7%
+  on a back-to-back, opponent rested (home)                    291   -0.37    32%    49%   135-154 46.7%   134-154 46.5%
+  system E4                                                     96   -0.44    27%    45%    47-49  49.0%    48-48  50.0%
+  on a back-to-back, opponent rested (away)                    313   -0.46    31%    45%   148-158 48.4%   153-154 49.8%
+  system E5                                                     65   -0.46    29%    54%    32-33  49.2%    32-30  51.6%
+  system E3                                                     33   -0.62    30%    45%    18-15  54.5%    18-14  56.2%
+  last game went to OT (home)                                   97   -0.67    38%    43%    37-58  38.9%    41-52  44.1%
+  open on a key number (7), the favorite (home)                 51   -0.81    51%    37%    18-33  35.3%    20-30  40.0%
