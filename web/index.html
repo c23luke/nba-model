@@ -758,9 +758,18 @@ function renderLab(b) {
     TS.map(x => `<div class="game"><div><div class="t">${esc(x.name)}${x.ready ? ` <b>· ready for real money</b>` : ""}</div>
       <div class="muted" style="font-size:14px">${esc(x.how)} Backtest: ${esc(x.backtest)}.</div>
       <div style="font-size:14px">Paper record ${x.w}-${x.l}${x.open ? `, ${x.open} open` : ""} · ${x.bets} of ${x.bar} bets · CLV ${x.avg_clv == null ? "—" : `${x.avg_clv > 0 ? "+" : ""}${x.avg_clv} ${esc(x.clv_unit)}`}</div></div><div></div></div>`).join("");
+  const PR = ((b.props_desk || {}).recent || []);
+  const statName = {pts: "points", reb: "rebounds", ast: "assists"};
+  const tstAll = tst + (PR.length ? `<h3 style="margin-top:14px">Latest props paper bets</h3>` + PR.map(x => `<div class="game"><div>
+      <div class="t">${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(statName[x.stat] || x.stat)} (${x.price > 0 ? "+" : ""}${x.price})${x.result ? ` · ${x.result === "W" ? "won" : x.result === "L" ? "lost" : x.result === "VOID" ? "void, he sat" : "push"}` : ""}</div>
+      <div class="muted" style="font-size:14px">${esc(x.team)}, ${esc(when(x.tip_utc))}. Out: ${(x.because || []).map(esc).join(", ")}.
+        ${x.kind === "fake" ? `Expected to gain minutes, but in ${x.n_wo} games without ${esc(x.split_of)} he played ${x.min_wo} (${x.min_with} with him).`
+          : x.kind === "jump_hist" ? `In ${x.n_wo} games without ${esc(x.split_of)} he played ${x.min_wo} minutes (${x.min_with} with him).`
+          : `Players model gives him ${x.model_min} minutes (averages ${x.mpg}).`}
+        Our number ${x.proj_stat}${x.clv != null ? `, line moved ${x.clv > 0 ? "+" : ""}${x.clv} our way` : ""}.</div></div><div></div></div>`).join("") : "");
   const sc = b.scoring;
   $("tab-lab").innerHTML = `<h2>Model lab</h2><p class="lede">Everything the model tracks behind the card. Open a section to dig in.</p>` +
-    box("Testing side", TS.length ? `${TS.length} ideas on paper, ${TS.filter(x => x.ready).length} ready` : "tracking only", tst) +
+    box("Testing side", TS.length ? `${TS.length} ideas on paper, ${TS.filter(x => x.ready).length} ready` : "tracking only", tstAll) +
     box("Injury desk", D ? `${D.events} news events, ${D.paper.bets} paper bets, tracking only` : "tracking only", desk) +
     box("Today and tomorrow", `${(b.slate || []).length} games, lines from ${esc(b.line_source)}`, slate) +
     box("Why the players model likes it", `${(b.slate || []).filter(g => g.personnel && g.personnel.case).length} cases`, cases) +

@@ -62,9 +62,11 @@ def test_testing_side_lists_every_idea_and_the_bar_to_real_money():
     from engine.run import TESTING_BAR, testing_side
     board = {"shadow_systems": {302: {"if_first": {"w": 30, "l": 22, "p": 0}, "avg_clv": 0.4, "open": 1}},
              "injury_desk": {"paper": {"bets": 3, "w": 2, "l": 1, "avg_clv": 1.5}},
-             "props_desk": {"bets": 0, "w": 0, "l": 0, "avg_clv": None},
+             "props_desk": {"by_kind": {"fake": {"name": "Fake bump", "bets": 2, "w": 1, "l": 1, "avg_clv": 0.5, "open": 0}}},
              "placed": {"bets": [{"game_id": "g", "side": "WAS", "result": "W", "rules": {"counted": True}, "market": {"beat_close": 2.0}}]}}
     t = testing_side(board, [{"system": 302, "game_id": "g", "side": "WAS"}])
-    assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: pl", "Our bet +"]
+    # 2026-11-10: props split into three kinds (history jump, fake bump, model jump)
+    assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: ju", "Props: Fa", "Props: ju", "Our bet +"]
+    assert t[3]["bets"] == 2 and t[3]["avg_clv"] == 0.5
     assert (t[0]["w"], t[0]["l"], t[0]["bets"], t[0]["ready"]) == (30, 22, 52, True)
-    assert t[1]["ready"] is False and t[3]["w"] == 1 and t[3]["avg_clv"] == 2.0 and TESTING_BAR == 50
+    assert t[1]["ready"] is False and t[5]["w"] == 1 and t[5]["avg_clv"] == 2.0 and TESTING_BAR == 50

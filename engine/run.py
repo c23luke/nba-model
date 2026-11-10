@@ -565,11 +565,17 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
     out.append(item("Injury desk: beat the market to the news",
                     "Injury news leaves our worst-case read 3+ points off the market: paper bet at that moment's line.",
                     "new: no history before Nov 10", P.get("w", 0), P.get("l", 0), P.get("bets", 0), P.get("avg_clv"), "pts"))
-    R = board.get("props_desk") or {}
-    out.append(item("Props: players who gain minutes",
-                    "A rotation player is freshly ruled out; a teammate's minutes jump 5+; our points projection is 3+ over the line.",
-                    "new: no history before Nov 10", R.get("w", 0), R.get("l", 0), R.get("bets", 0), R.get("avg_clv"),
-                    "points on the prop line"))
+    R = (board.get("props_desk") or {}).get("by_kind") or {}
+    how = {"jump_hist": "A rotation player is freshly ruled out and, in this season's games he missed, a teammate really "
+                        "played 5+ more minutes: over on that teammate's points / rebounds / assists when the line is short of what he did then.",
+           "jump_model": "A rotation player is freshly ruled out, no games yet without him, and the players model gives a "
+                         "teammate 5+ more minutes: over when our projection beats the line.",
+           "fake": "The players model (and likely the market) expects a teammate to get 5+ more minutes, but in 3+ games "
+                   "this season without that player he gained under 2: under when the line sits above what he did then."}
+    for k in ("jump_hist", "fake", "jump_model"):
+        x = R.get(k) or {}
+        out.append(item("Props: " + (x.get("name") or k), how[k], "new: prop lines can't be backtested (no history of them)",
+                        x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "on the prop line", x.get("open", 0)))
     x2_sides = {(p["game_id"], p["side"]) for p in picks if p.get("system") == 302}
     x2_sides |= {(str(x["paper"].get("game_id")), x["paper"]["side"])          # injury-desk paper bets too
                  for x in (board.get("injury_desk") or {}).get("recent") or [] if x.get("paper")}
