@@ -1,107 +1,309 @@
 ====================================================================================================
-GAME 401909946 2026-11-08 LAL @ DET  final=True score 121-116  tip 2026-11-08T23:00Z
+GAME 401909931 2026-11-04 TOR @ DEN  final=True score 109-128  tip 2026-11-05T02:00Z
 --- line history (home spread / total, each change)
-    2026-11-07T20:50:56 home spread -2.0 total 222.0
-    2026-11-07T22:04:41 home spread -3.0 total 222.0
-    2026-11-07T22:15:36 home spread -3.5 total 222.0
-    2026-11-07T22:23:48 home spread -4.5 total 220.5
-    2026-11-07T22:29:14 home spread -4.5 total 221.0
-    2026-11-07T22:36:06 home spread -4.5 total 220.5
-    2026-11-07T22:42:56 home spread -4.5 total 221.0
-    2026-11-07T22:48:24 home spread -4.5 total 221.5
-    2026-11-08T00:17:29 home spread -4.5 total 222.0
-    2026-11-08T00:28:34 home spread -4.5 total 221.5
-    2026-11-08T00:34:09 home spread -4.5 total 222.0
-    2026-11-08T00:37:09 home spread -4.5 total 221.5
-    2026-11-08T01:05:45 home spread -4.5 total 222.0
-    2026-11-08T01:10:32 home spread -4.5 total 221.5
-    2026-11-08T01:47:56 home spread -4.5 total 222.0
-    2026-11-08T08:28:00 home spread -4.5 total 221.5
-    2026-11-08T08:50:19 home spread -4.5 total 221.0
-    2026-11-08T09:16:40 home spread -4.5 total 220.5
-    2026-11-08T10:11:13 home spread -4.5 total 221.0
-    2026-11-08T10:27:46 home spread -4.5 total 221.5
-    2026-11-08T10:38:50 home spread -4.5 total 222.0
-    2026-11-08T12:11:09 home spread -4.5 total 221.5
-    2026-11-08T12:27:35 home spread -4.5 total 222.0
-    2026-11-08T13:38:33 home spread -4.5 total 221.5
-    2026-11-08T16:41:53 home spread -5.0 total 221.5
-    2026-11-08T18:00:15 home spread -5.0 total 220.5
-    2026-11-08T18:15:17 home spread -7.0 total 219.0
-    2026-11-08T18:20:36 home spread -7.5 total 218.5
-    2026-11-08T19:00:12 home spread -7.0 total 218.0
-    2026-11-08T19:16:06 home spread -7.0 total 217.5
-    2026-11-08T21:15:11 home spread -7.0 total 217.0
-    2026-11-08T22:00:12 home spread -7.5 total 217.0
-    2026-11-08T22:30:26 home spread -7.5 total 216.5
+    2026-11-03T21:00:19 home spread -5.5 total 231.5
+    2026-11-03T22:11:05 home spread -5.5 total 232.0
+    2026-11-03T22:29:26 home spread -5.5 total 231.5
+    2026-11-03T23:23:33 home spread -5.5 total 230.5
+    2026-11-03T23:29:07 home spread -4.5 total 231.5
+    2026-11-03T23:51:36 home spread -4.5 total 230.5
+    2026-11-04T00:36:16 home spread -4.5 total 231.5
+    2026-11-04T03:11:35 home spread -4.5 total 231.0
+    2026-11-04T04:54:00 home spread -4.5 total 230.5
+    2026-11-04T08:17:09 home spread -4.5 total 230.0
+    2026-11-04T08:28:26 home spread -4.5 total 230.5
+    2026-11-04T08:39:45 home spread -4.5 total 230.0
+    2026-11-04T08:51:01 home spread -4.5 total 230.5
+    2026-11-04T16:16:21 home spread -4.5 total 231.0
+    2026-11-04T16:43:01 home spread -4.5 total 231.5
+    2026-11-04T16:53:44 home spread -4.5 total 231.0
+    2026-11-04T17:45:20 home spread -4.5 total 231.5
+    2026-11-05T01:05:47 home spread -5.0 total 231.5
+    2026-11-05T01:50:24 home spread -5.0 total 231.0
 --- injury report (both teams, this game date), in the order it appeared
-    2026-11-07T21:45:21 → 2026-11-08T22:54:16 DET Jalen Duren Out | Injury/Illness - Right Hamstring Strain
-    2026-11-07T21:45:21 → 2026-11-08T22:54:16 DET Isaiah Joe Out | Injury/Illness - Right Hip Contusion
-    2026-11-07T21:45:21 → 2026-11-08T22:54:16 DET Ugonna Onyenso Out | G League - Two-Way
-    2026-11-07T21:45:21 → 2026-11-08T17:44:04 DET Elijah Harkless Questionable | G League - Two-Way
-    2026-11-07T21:45:21 → 2026-11-08T17:44:04 DET Isaac Jones Questionable | G League - Two-Way
-    2026-11-07T22:00:17 → 2026-11-08T18:10:57 LAL Luka Doncic Questionable | Injury/Illness - Low Back Tightness
-    2026-11-07T22:00:17 → 2026-11-08T22:54:16 LAL Walker Kessler Available | Injury/Illness - Left Finger Splint
-    2026-11-08T17:45:30 → 2026-11-08T22:54:16 DET Elijah Harkless Out | G League - Two-Way
-    2026-11-08T17:45:30 → 2026-11-08T22:54:16 DET Isaac Jones Available | G League - Two-Way
-    2026-11-08T18:15:19 → 2026-11-08T22:54:16 LAL Luka Doncic Out | Injury/Illness - Low Back Tightness
+    2026-11-03T23:30:50 → 2026-11-05T01:52:57 TOR Nate Bittle Out | 
+    2026-11-03T23:30:50 → 2026-11-05T01:52:57 TOR Kawhi Leonard Out | 
+    2026-11-03T23:30:50 → 2026-11-05T01:52:57 TOR Malachi Smith Out | G League - Two-Way
+    2026-11-03T23:30:50 → 2026-11-05T01:26:56 TOR Jakob Poeltl Questionable | Injury/Illness - Left Shoulder Bursitis
+    2026-11-03T23:46:07 → 2026-11-05T01:52:57 DEN Spencer Jones Out | 
+    2026-11-03T23:46:07 → 2026-11-05T01:52:57 DEN Julian Strawther Out | Injury/Illness - Left Knee Sprain
+    2026-11-03T23:46:07 → 2026-11-05T01:13:21 DEN Alpha Diallo Probable | Injury/Illness - Right Wrist Sprain
+    2026-11-03T23:46:07 → 2026-11-05T01:13:21 DEN Cameron Johnson Probable | 
+    2026-11-05T01:15:43 → 2026-11-05T01:52:57 DEN Alpha Diallo Available | Injury/Illness - Right Wrist Sprain
+    2026-11-05T01:15:43 → 2026-11-05T01:52:57 DEN Cameron Johnson Available | 
+    2026-11-05T01:30:18 → 2026-11-05T01:52:57 TOR Jakob Poeltl Available | Injury/Illness - Left Shoulder Bursitis
 --- picks
-    {"key": "401909946-S301-LAL", "system": 301, "side": "LAL", "bet": "spread", "line": 7.5, "status": null, "result": "W", "first_seen": "2026-11-07T20:50:56.359880+00:00", "last_checked": "2026-11-08T22:54:16.295171+00:00", "close_line": null}
-       meta: {"clv": -5.5, "dtd": 3, "gap": 1.8, "call": "none", "level": null, "gap_first": 4.2, "worst_gap": 1.8, "close_line": 7.5, "level_first": "Medium", "result_first": "W"}
-    {"key": "401909946-S113-LAL", "system": 113, "side": "LAL", "bet": "spread", "line": 2.0, "status": null, "result": "W", "first_seen": "2026-11-07T20:50:56.359880+00:00", "last_checked": "2026-11-08T22:54:16.295171+00:00", "close_line": null}
-       meta: {"clv": -5.5, "gap": 4.4, "call": "now", "level": "Medium", "alerted": "2026-11-07T22:05:06.139555+00:00", "card_snap": {"why": "Best price: Kalshi NO \u00b7 DET wins by over 5.5  (= LAL +5.5) at +113, +23.7% expected return. Next best: Polymarket LAL +6.5 at -104 (fees not counted), +20.9%", "win": 0.56, "line": 2.0, "name": "Players model", "with": [], "label": "LAL +2", "to_win": 20, "history": {"l": 6, "w": 9, "label": "2 seasons, gaps of 5+, days 0-30, at the open"}, "players": -0.4, "also_combo": null, "confidence": null, "players_bucket": "players model disagrees", "players_history": {"l": 58, "w": 63, "label": "disagrees"}}, "worst_gap": 4.2, "close_line": 7.5, "level_first": "Medium", "result_first": "W", "alerted_verdict": "BET"}
+    {"key": "401909931-S301-TOR", "system": 301, "side": "TOR", "bet": "spread", "line": 5.0, "status": null, "result": "L", "first_seen": "2026-11-03T21:00:19.213807+00:00", "last_checked": "2026-11-05T01:52:57.122345+00:00", "close_line": null}
+       meta: {"clv": 0.5, "dtd": 0, "gap": 3.5, "call": "now", "level": "Medium", "gap_first": 2.7, "worst_gap": 3.5, "close_line": 5.0, "level_first": "Low", "result_first": "L"}
 --- orders
-    {'created_at': '2026-11-07T21:01:01.526938+00:00', 'updated_at': '2026-11-07T22:01:01.123+00:00', 'venue': 'kalshi', 'status': 'filled', 'pick': 'LAL +2', 'contract': 'NO · DET wins by over 1.5  (= LAL +1.5)', 'count': 39, 'limit_price': 0.48, 'fill_count': 39, 'fill_cost': 18.72, 'reason': None}
 ====================================================================================================
-GAME 401909952 2026-11-09 LAL @ ATL  final=True score 124-114  tip 2026-11-10T00:00Z
+GAME 401909932 2026-11-04 POR @ PHX  final=True score 132-119  tip 2026-11-05T02:00Z
 --- line history (home spread / total, each change)
-    2026-11-09T03:30:33 home spread 2.5 total 235.5
-    2026-11-09T03:36:05 home spread 2.5 total 236.0
-    2026-11-09T03:54:28 home spread 2.5 total 235.5
-    2026-11-09T05:11:15 home spread 2.5 total 236.0
-    2026-11-09T08:42:46 home spread 2.0 total 236.0
-    2026-11-09T09:26:34 home spread 2.0 total 236.5
-    2026-11-09T10:33:10 home spread 1.5 total 236.0
-    2026-11-09T10:38:38 home spread 2.0 total 236.0
-    2026-11-09T10:55:09 home spread 1.5 total 236.5
-    2026-11-09T13:37:36 home spread -1.0 total 236.5
-    2026-11-09T14:16:19 home spread -1.5 total 236.5
-    2026-11-09T18:05:53 home spread -1.5 total 236.0
-    2026-11-09T18:12:27 home spread -1.5 total 236.5
-    2026-11-09T18:17:46 home spread -2.0 total 235.5
-    2026-11-09T18:22:04 home spread -2.0 total 236.0
-    2026-11-09T18:50:56 home spread -1.5 total 236.0
-    2026-11-09T18:52:15 home spread -1.5 total 235.5
-    2026-11-09T19:00:17 home spread -1.5 total 236.0
-    2026-11-09T19:39:05 home spread -1.5 total 236.5
-    2026-11-09T20:22:19 home spread -1.5 total 236.0
-    2026-11-09T21:05:43 home spread -1.5 total 236.5
-    2026-11-09T22:36:09 home spread -2.5 total 235.0
-    2026-11-09T22:41:39 home spread -2.5 total 233.5
-    2026-11-09T23:31:00 home spread -2.5 total 234.0
+    2026-11-03T21:00:19 home spread 2.5 total 228.5
+    2026-11-03T21:14:02 home spread 3.0 total 228.5
+    2026-11-03T22:29:26 home spread 3.5 total 228.0
+    2026-11-04T00:11:09 home spread 3.5 total 228.5
+    2026-11-04T00:21:05 home spread 3.5 total 228.0
+    2026-11-04T00:24:21 home spread 3.0 total 228.0
+    2026-11-04T02:11:05 home spread 3.0 total 227.5
+    2026-11-04T10:05:33 home spread 3.0 total 228.0
+    2026-11-04T11:27:26 home spread 3.0 total 227.5
+    2026-11-04T15:00:17 home spread 3.0 total 228.0
+    2026-11-04T17:26:58 home spread 3.0 total 227.5
+    2026-11-04T23:30:15 home spread 2.5 total 227.5
+    2026-11-04T23:35:53 home spread 3.0 total 227.5
+    2026-11-05T00:00:16 home spread 2.5 total 227.5
+    2026-11-05T00:05:49 home spread 3.0 total 227.5
+    2026-11-05T00:38:23 home spread 2.5 total 227.5
+    2026-11-05T01:00:15 home spread 3.0 total 227.5
 --- injury report (both teams, this game date), in the order it appeared
-    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Keshon Gilbert Out | Inflammation/Non-Surgical
-    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Mouhamed Gueye Out | Injury/Illness - Left Foot Fracture
-    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Asa Newell Out | 
-    2026-11-08T22:00:17 → 2026-11-09T21:51:01 ATL RayJ Dennis Questionable | G League - Two-Way
-    2026-11-08T22:00:17 → 2026-11-09T23:50:38 ATL Henri Veesaar Out | Injury/Illness - Right ACL Tear
-    2026-11-08T22:00:17 → 2026-11-09T21:51:01 ATL Jock Landale Questionable | Injury/Illness - Left Hip Strain
-    2026-11-08T22:00:17 → 2026-11-09T21:51:01 ATL Jalen Wilson Questionable | G League - Two-Way
-    2026-11-09T18:00:23 → 2026-11-09T23:50:38 LAL Quentin Grimes Out | Injury/Illness - Right Finger Sprain
-    2026-11-09T18:00:23 → 2026-11-09T23:50:38 LAL Walker Kessler Available | Injury/Illness - Left Finger Splint
-    2026-11-09T18:00:23 → 2026-11-09T22:41:39 LAL Austin Reaves Questionable | Injury/Illness - Illness
-    2026-11-09T22:00:23 → 2026-11-09T23:50:38 ATL Jock Landale Available | Injury/Illness - Face mask
-    2026-11-09T22:00:23 → 2026-11-09T23:50:38 ATL Jalen Wilson Out | G League - Two-Way
-    2026-11-09T22:00:23 → 2026-11-09T23:50:38 ATL RayJ Dennis Out | G League - Two-Way
-    2026-11-09T22:45:13 → 2026-11-09T23:50:38 LAL Austin Reaves Out | Injury/Illness - Illness
+    2026-11-04T00:00:19 → 2026-11-04T20:13:59 PHX Rasheer Fleming Questionable | Injury/Illness - Left Ankle Sprain
+    2026-11-04T00:00:19 → 2026-11-05T00:52:33 PHX Jordan Goodwin Questionable | Injury/Illness - Right Calf Soreness
+    2026-11-04T00:00:19 → 2026-11-05T01:52:57 PHX Mark Williams Out | Injury/Illness - Left Shoulder Surgery
+    2026-11-04T00:15:33 → 2026-11-05T01:52:57 POR Jayson Kent Out | G League - Two-Way
+    2026-11-04T00:15:33 → 2026-11-05T01:52:57 POR Ja Morant Out | Injury/Illness - Left Hamstring Strain
+    2026-11-04T00:15:33 → 2026-11-05T01:52:57 POR Shaedon Sharpe Out | 
+    2026-11-04T00:15:33 → 2026-11-05T01:52:57 POR John Tonje Out | G League - Two-Way
+    2026-11-04T20:15:36 → 2026-11-05T01:52:57 PHX Rasheer Fleming Out | Injury/Illness - Left Ankle Sprain
+    2026-11-05T01:00:20 → 2026-11-05T01:52:57 PHX Jordan Goodwin Out | Injury/Illness - Right Calf Soreness
+    2026-11-05T01:00:20 → 2026-11-05T01:52:57 PHX Drew Timme Out | G League - Two-Way
 --- picks
-    {"key": "401909952-S301-ATL", "system": 301, "side": "ATL", "bet": "spread", "line": -1.5, "status": null, "result": "L", "first_seen": "2026-11-09T03:30:33.574784+00:00", "last_checked": "2026-11-09T15:27:08.969852+00:00", "close_line": null}
-       meta: {"clv": 5.0, "dtd": 4, "gap": 0.2, "call": "none", "level": null, "gap_first": 3.4, "worst_gap": 0.1, "close_line": -2.5, "level_first": "Low", "result_first": "L"}
-    {"key": "401909952-S109-ATL", "system": 109, "side": "ATL", "bet": "spread", "line": 2.5, "status": null, "result": "L", "first_seen": "2026-11-09T03:30:33.574784+00:00", "last_checked": "2026-11-09T23:50:38.634324+00:00", "close_line": null}
-       meta: {"clv": 5.0, "alerted": "2026-11-09T03:31:02.179184+00:00", "card_snap": {"why": "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+", "win": null, "line": 2.5, "name": "Home dog vs a hot team", "with": [], "label": "ATL +2.5", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": null, "also_combo": null, "confidence": null, "players_bucket": null, "players_history": null}, "close_line": -2.5, "result_first": "L", "alerted_verdict": "BET"}
-    {"key": "401909952-S301-LAL", "system": 301, "side": "LAL", "bet": "spread", "line": 2.5, "status": null, "result": "W", "first_seen": "2026-11-09T15:27:08.969852+00:00", "last_checked": "2026-11-09T23:50:38.634324+00:00", "close_line": null}
-       meta: {"clv": -1.0, "dtd": 0, "gap": 5.1, "call": "blind", "level": null, "gap_first": 5.0, "worst_gap": 5.1, "close_line": 2.5, "level_first": "Low", "result_first": "W"}
-    {"key": "401909952-S113-LAL", "system": 113, "side": "LAL", "bet": "spread", "line": 2.5, "status": null, "result": "W", "first_seen": "2026-11-09T22:36:09.087269+00:00", "last_checked": "2026-11-09T23:50:38.634324+00:00", "close_line": null}
-       meta: {"clv": 0.0, "gap": 6.0, "call": "now", "level": "Medium", "alerted": "2026-11-09T22:36:36.758335+00:00", "card_snap": {"why": "Best price: BetOpenly LAL +2.5 at +104 (fees not counted), +14.3% expected return. Next best: ProphetX LAL +2.5 at +103 (fees not counted), +13.7%", "win": 0.56, "line": 2.5, "name": "Players model", "with": [], "label": "LAL +2.5", "to_win": 20, "history": {"l": 6, "w": 9, "label": "2 seasons, gaps of 5+, days 0-30, at the open"}, "players": 4.3, "also_combo": null, "confidence": null, "players_bucket": "agrees by 3-5", "players_history": {"l": 4, "w": 9, "label": "agrees by 3+"}}, "worst_gap": 4.3, "close_line": 2.5, "level_first": "Medium", "result_first": "W", "alerted_verdict": "BET"}
+    {"key": "401909932-S301-PHX", "system": 301, "side": "PHX", "bet": "spread", "line": 3.0, "status": null, "result": "L", "first_seen": "2026-11-03T21:00:19.213807+00:00", "last_checked": "2026-11-05T01:30:14.384717+00:00", "close_line": null}
+       meta: {"clv": -0.5, "dtd": 2, "gap": 1.2, "call": "none", "level": null, "gap_first": 1.3, "worst_gap": 1.0, "close_line": 3.0, "result_first": "L"}
+    {"key": "401909932-S301-POR", "system": 301, "side": "POR", "bet": "spread", "line": -3.0, "status": null, "result": "W", "first_seen": "2026-11-05T01:30:14.384717+00:00", "last_checked": "2026-11-05T01:52:57.122345+00:00", "close_line": null}
+       meta: {"clv": 0.0, "dtd": 2, "gap": 1.5, "call": "none", "level": null, "gap_first": 1.5, "worst_gap": 1.5, "close_line": -3.0, "result_first": "W"}
 --- orders
-    {'created_at': '2026-11-09T03:44:06.055359+00:00', 'updated_at': '2026-11-09T03:44:18.59+00:00', 'venue': 'prophetx', 'status': 'partial', 'pick': 'ATL +2.5', 'contract': 'ATL +2.5', 'count': 43, 'limit_price': 0.5215, 'fill_count': 42.99, 'fill_cost': 22.42, 'reason': None}
+====================================================================================================
+GAME 401909294 2026-11-06 POR @ LAL  final=True score 118-124  tip 2026-11-07T03:00Z
+--- line history (home spread / total, each change)
+    2026-11-05T23:48:44 home spread -2.5 total 232.5
+    2026-11-06T00:00:18 home spread -2.5 total 233.5
+    2026-11-06T01:05:53 home spread -2.5 total 233.0
+    2026-11-06T01:15:45 home spread -2.5 total 233.5
+    2026-11-06T01:29:57 home spread -2.5 total 233.0
+    2026-11-06T05:13:32 home spread -2.5 total 232.5
+    2026-11-06T08:05:50 home spread -2.5 total 232.0
+    2026-11-06T13:33:39 home spread -3.0 total 232.0
+    2026-11-06T14:32:24 home spread -3.0 total 232.5
+    2026-11-06T14:37:44 home spread -3.0 total 232.0
+    2026-11-06T14:48:27 home spread -3.0 total 231.0
+    2026-11-06T15:00:19 home spread -3.0 total 231.5
+    2026-11-06T17:00:15 home spread -2.5 total 231.5
+    2026-11-06T17:05:46 home spread -3.0 total 231.5
+    2026-11-06T22:00:12 home spread -3.5 total 231.5
+    2026-11-06T22:01:55 home spread -3.0 total 231.5
+    2026-11-07T01:05:40 home spread -3.0 total 232.0
+    2026-11-07T01:22:31 home spread -3.0 total 231.5
+    2026-11-07T02:53:08 home spread -3.5 total 231.5
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 POR Vit Krejci Out | Injury/Illness - Left Ankle Fracture
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 POR Ja Morant Out | Injury/Illness - Left Hamstring Strain
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 POR Shaedon Sharpe Out | 
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 POR John Tonje Out | G League - Two-Way
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 LAL Cameron Carr Out | G League - On Assignment
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 LAL Bronny James Out | G League - On Assignment
+    2026-11-06T01:00:30 → 2026-11-07T02:56:26 LAL Walker Kessler Available | Injury/Illness - Left Finger Splint
+    2026-11-06T01:00:30 → 2026-11-06T21:13:13 LAL Sandro Mamukelashvili Questionable | Injury/Illness - Illness
+    2026-11-06T21:15:33 → 2026-11-07T02:56:26 LAL Sandro Mamukelashvili Available | Injury/Illness - Illness
+--- picks
+    {"key": "401909294-S301-LAL", "system": 301, "side": "LAL", "bet": "spread", "line": -3.5, "status": null, "result": "W", "first_seen": "2026-11-05T23:48:44.887607+00:00", "last_checked": "2026-11-07T02:56:26.789978+00:00", "close_line": null}
+       meta: {"clv": 1.0, "dtd": 1, "gap": 0.7, "call": "none", "level": null, "gap_first": 0.7, "worst_gap": 0.7, "close_line": -3.5, "level_first": "Low", "result_first": "W"}
+    {"key": "401909294-S301-POR", "system": 301, "side": "POR", "bet": "spread", "line": 3.0, "status": null, "result": "L", "first_seen": "2026-11-06T03:00:11.539793+00:00", "last_checked": "2026-11-07T01:00:16.110815+00:00", "close_line": null}
+       meta: {"clv": -1.0, "dtd": 1, "gap": 0.1, "call": "none", "level": null, "gap_first": 0.2, "worst_gap": 0.0, "close_line": 3.5, "result_first": "L"}
+--- orders
+====================================================================================================
+GAME 401909938 2026-11-07 DEN @ IND  final=True score 114-102  tip 2026-11-07T22:00Z
+--- line history (home spread / total, each change)
+    2026-11-07T01:05:40 home spread 6.5 total 229.5
+    2026-11-07T01:10:04 home spread 6.5 total 228.5
+    2026-11-07T01:52:58 home spread 7.0 total 228.5
+    2026-11-07T02:34:05 home spread 7.0 total 229.0
+    2026-11-07T07:05:50 home spread 7.5 total 229.0
+    2026-11-07T07:47:53 home spread 7.5 total 228.5
+    2026-11-07T13:16:07 home spread 7.5 total 229.0
+    2026-11-07T13:21:25 home spread 7.5 total 229.5
+    2026-11-07T17:00:12 home spread 7.5 total 228.5
+    2026-11-07T17:05:45 home spread 7.5 total 229.0
+    2026-11-07T17:46:22 home spread 7.5 total 229.5
+    2026-11-07T18:50:43 home spread 8.0 total 229.5
+    2026-11-07T19:29:42 home spread 7.5 total 229.5
+    2026-11-07T20:20:17 home spread 8.0 total 229.5
+    2026-11-07T20:27:09 home spread 7.5 total 229.5
+    2026-11-07T20:34:50 home spread 8.0 total 229.5
+    2026-11-07T20:40:11 home spread 7.5 total 229.0
+    2026-11-07T20:50:56 home spread 8.0 total 229.0
+    2026-11-07T21:38:30 home spread 8.0 total 229.5
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-06T22:45:55 → 2026-11-07T21:50:41 DEN Julian Strawther Out | Injury/Illness - Left Knee Sprain
+    2026-11-06T22:45:55 → 2026-11-07T21:11:04 DEN DeMar DeRozan Probable | Injury/Illness - Low Back Spasms
+    2026-11-06T23:00:19 → 2026-11-07T20:27:09 IND T.J. McConnell Questionable | Injury/Illness - Right Hamstring Strain
+    2026-11-06T23:00:19 → 2026-11-07T20:27:09 IND Kelly Oubre Jr. Questionable | Injury/Illness - Left Calf Contusion
+    2026-11-06T23:00:19 → 2026-11-07T21:50:41 IND Johnny Furphy Out | 
+    2026-11-06T23:00:19 → 2026-11-07T21:50:41 IND Tyrese Haliburton Out | Injury/Illness - Left Hamstring Strain
+    2026-11-06T23:00:19 → 2026-11-07T21:50:41 IND Ben Sheppard Out | Injury/Illness - Left Meniscus Surgery
+    2026-11-07T20:30:33 → 2026-11-07T21:50:41 IND T.J. McConnell Available | Injury/Illness - Right Hamstring Strain
+    2026-11-07T20:30:33 → 2026-11-07T21:50:41 IND Kelly Oubre Jr. Available | Injury/Illness - Left Calf Contusion
+    2026-11-07T21:15:31 → 2026-11-07T21:50:41 DEN DeMar DeRozan Available | Injury/Illness - Low Back Spasms
+--- picks
+    {"key": "401909938-S301-IND", "system": 301, "side": "IND", "bet": "spread", "line": 8.0, "status": null, "result": "L", "first_seen": "2026-11-07T15:49:38.550244+00:00", "last_checked": "2026-11-07T21:50:41.357273+00:00", "close_line": null}
+       meta: {"clv": -0.5, "dtd": 0, "gap": 0.6, "call": "none", "level": null, "gap_first": 0.2, "worst_gap": 0.6, "close_line": 8.0, "result_first": "L"}
+    {"key": "401909938-S301-DEN", "system": 301, "side": "DEN", "bet": "spread", "line": -7.5, "status": null, "result": "W", "first_seen": "2026-11-07T01:05:40.425868+00:00", "last_checked": "2026-11-07T20:50:56.359880+00:00", "close_line": null}
+       meta: {"clv": 1.5, "dtd": 0, "gap": 0.3, "call": "none", "level": null, "gap_first": 0.6, "worst_gap": 0.3, "close_line": -8.0, "result_first": "W"}
+    {"key": "401909938-S205-IND", "system": 205, "side": "IND", "bet": "spread", "line": 6.5, "status": null, "result": "L", "first_seen": "2026-11-07T01:05:40.425868+00:00", "last_checked": "2026-11-07T21:50:41.357273+00:00", "close_line": null}
+       meta: {"clv": -1.5, "card_snap": {"why": "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+", "win": null, "line": 6.5, "name": "Fade early blowout winner", "with": [], "label": "IND +6.5", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": null, "also_combo": null, "confidence": null, "players_bucket": null, "players_history": null}, "close_line": 8.0, "result_first": "L"}
+--- orders
+====================================================================================================
+GAME 401909944 2026-11-07 SAS @ POR  final=True score 125-103  tip 2026-11-08T03:00Z
+--- line history (home spread / total, each change)
+    2026-11-07T02:44:56 home spread 4.0 total 228.0
+    2026-11-07T02:46:24 home spread 4.5 total 227.5
+    2026-11-07T03:29:07 home spread 4.0 total 227.5
+    2026-11-07T03:34:33 home spread 3.5 total 227.5
+    2026-11-07T04:27:38 home spread 4.0 total 228.0
+    2026-11-07T04:49:08 home spread 3.5 total 228.0
+    2026-11-07T05:00:13 home spread 2.5 total 228.5
+    2026-11-07T05:11:16 home spread 3.5 total 228.5
+    2026-11-07T06:50:39 home spread 3.5 total 228.0
+    2026-11-07T07:00:33 home spread 4.5 total 228.0
+    2026-11-07T07:11:05 home spread 5.5 total 227.0
+    2026-11-07T07:37:24 home spread 5.5 total 227.5
+    2026-11-07T07:42:39 home spread 5.5 total 227.0
+    2026-11-07T09:10:55 home spread 6.0 total 227.0
+    2026-11-07T11:28:26 home spread 5.5 total 227.0
+    2026-11-07T14:52:28 home spread 5.5 total 226.5
+    2026-11-07T16:39:26 home spread 5.5 total 226.0
+    2026-11-07T17:00:12 home spread 5.5 total 225.5
+    2026-11-07T17:05:45 home spread 5.5 total 226.0
+    2026-11-07T17:46:22 home spread 5.5 total 226.5
+    2026-11-07T19:00:14 home spread 5.0 total 228.0
+    2026-11-07T19:05:42 home spread 5.0 total 228.5
+    2026-11-07T19:09:00 home spread 5.0 total 229.5
+    2026-11-07T20:00:12 home spread 4.5 total 229.5
+    2026-11-07T20:05:46 home spread 5.0 total 229.5
+    2026-11-07T20:21:48 home spread 5.5 total 229.5
+    2026-11-08T02:05:31 home spread 5.5 total 228.5
+    2026-11-08T02:16:12 home spread 5.5 total 229.0
+    2026-11-08T02:21:33 home spread 5.5 total 228.5
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-07T20:30:33 → 2026-11-08T02:53:40 SAS Jayden Quaintance Out | Injury/Illness - Right Knee Surgery
+    2026-11-07T20:30:33 → 2026-11-08T02:53:40 SAS Ja'Kobi Gillespie Out | G League - Two-Way
+    2026-11-07T20:30:33 → 2026-11-08T02:53:40 SAS Tobias Harris Out | Injury/Illness - Left Calf Strain
+    2026-11-07T20:30:33 → 2026-11-08T02:53:40 SAS Maliq Brown Out | G League - Two-Way
+    2026-11-07T21:00:16 → 2026-11-08T02:53:40 POR Vit Krejci Out | Injury/Illness - Left Ankle Fracture
+    2026-11-07T21:00:16 → 2026-11-08T02:53:40 POR Ja Morant Out | Injury/Illness - Left Hamstring Strain
+    2026-11-07T21:00:16 → 2026-11-08T02:53:40 POR Shaedon Sharpe Out | 
+    2026-11-07T21:00:16 → 2026-11-08T02:53:40 POR John Tonje Out | G League - Two-Way
+    2026-11-07T21:00:16 → 2026-11-08T02:53:40 POR Robert Williams III Out | Rest
+--- picks
+    {"key": "401909944-S301-SAS", "system": 301, "side": "SAS", "bet": "spread", "line": -3.5, "status": null, "result": "W", "first_seen": "2026-11-07T06:07:04.543099+00:00", "last_checked": "2026-11-07T07:00:33.618928+00:00", "close_line": null}
+       meta: {"clv": 2.0, "dtd": 1, "gap": 0.1, "call": "none", "level": null, "gap_first": 0.1, "worst_gap": 0.1, "close_line": -5.5, "result_first": "W"}
+    {"key": "401909944-S301-POR", "system": 301, "side": "POR", "bet": "spread", "line": 5.5, "status": null, "result": "L", "first_seen": "2026-11-07T02:44:56.315653+00:00", "last_checked": "2026-11-08T02:53:40.854567+00:00", "close_line": null}
+       meta: {"clv": -1.5, "dtd": 0, "gap": 1.9, "call": "blind", "level": null, "gap_first": 1.4, "worst_gap": 1.9, "close_line": 5.5, "result_first": "L"}
+    {"key": "401909944-S109-POR", "system": 109, "side": "POR", "bet": "spread", "line": 4.0, "status": null, "result": "L", "first_seen": "2026-11-07T06:07:04.543099+00:00", "last_checked": "2026-11-08T02:53:40.854567+00:00", "close_line": null}
+       meta: {"clv": -1.5, "close_line": 5.5, "result_first": "L"}
+    {"key": "401909944-S105-UNDER", "system": 105, "side": "UNDER", "bet": "total", "line": 228.0, "status": null, "result": "P", "first_seen": "2026-11-07T06:07:04.543099+00:00", "last_checked": "2026-11-08T02:53:40.854567+00:00", "close_line": null}
+       meta: {"clv": -0.5, "close_line": 228.5, "result_first": "P"}
+    {"key": "401909944-S205-POR", "system": 205, "side": "POR", "bet": "spread", "line": 4.0, "status": null, "result": "L", "first_seen": "2026-11-07T06:07:04.543099+00:00", "last_checked": "2026-11-08T02:53:40.854567+00:00", "close_line": null}
+       meta: {"clv": -1.5, "card_snap": {"why": "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+", "win": null, "line": 4.0, "name": "Fade early blowout winner", "with": ["T9"], "label": "POR +4", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": null, "also_combo": null, "confidence": null, "players_bucket": null, "players_history": null}, "close_line": 5.5, "result_first": "L"}
+--- orders
+====================================================================================================
+GAME 401909957 2026-11-09 DEN @ HOU  final=True score 100-110  tip 2026-11-10T01:30Z
+--- line history (home spread / total, each change)
+    2026-11-08T19:30:55 home spread -4.5 total 224.0
+    2026-11-08T19:37:34 home spread -4.5 total 223.0
+    2026-11-08T19:52:43 home spread -4.5 total 222.5
+    2026-11-08T22:00:12 home spread -4.0 total 222.5
+    2026-11-08T22:05:32 home spread -4.5 total 222.5
+    2026-11-08T22:20:30 home spread -4.0 total 222.5
+    2026-11-08T23:00:14 home spread -8.5 total 216.5
+    2026-11-08T23:05:41 home spread -8.5 total 217.0
+    2026-11-08T23:21:57 home spread -8.5 total 216.5
+    2026-11-09T01:36:16 home spread -8.5 total 217.0
+    2026-11-09T02:16:07 home spread -8.5 total 217.5
+    2026-11-09T02:22:35 home spread -9.0 total 217.5
+    2026-11-09T02:27:51 home spread -9.0 total 217.0
+    2026-11-09T02:33:07 home spread -9.0 total 217.5
+    2026-11-09T10:55:09 home spread -8.5 total 217.5
+    2026-11-09T11:11:05 home spread -8.5 total 217.0
+    2026-11-09T12:49:52 home spread -8.5 total 217.5
+    2026-11-09T13:16:14 home spread -9.0 total 217.5
+    2026-11-09T13:48:17 home spread -9.0 total 218.5
+    2026-11-09T13:53:38 home spread -9.0 total 219.0
+    2026-11-09T14:37:46 home spread -9.0 total 219.5
+    2026-11-09T18:34:58 home spread -8.5 total 219.5
+    2026-11-09T18:45:37 home spread -8.5 total 220.0
+    2026-11-09T19:03:37 home spread -9.0 total 220.0
+    2026-11-09T19:20:49 home spread -8.5 total 220.0
+    2026-11-09T19:26:08 home spread -4.5 total 222.5
+    2026-11-09T19:31:28 home spread -4.5 total 223.0
+    2026-11-09T19:44:19 home spread -4.5 total 223.5
+    2026-11-10T01:12:52 home spread -4.5 total 224.5
+    2026-11-10T01:27:25 home spread -5.0 total 224.5
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-08T22:30:31 → 2026-11-10T01:27:25 DEN Julian Strawther Out | Injury/Illness - Left Knee Sprain
+    2026-11-08T22:30:31 → 2026-11-09T19:14:12 DEN Jamal Murray Questionable | 
+    2026-11-08T22:30:31 → 2026-11-09T19:14:12 DEN Christian Braun Questionable | 
+    2026-11-08T22:30:31 → 2026-11-09T19:14:12 DEN Cameron Johnson Questionable | 
+    2026-11-08T22:30:31 → 2026-11-09T19:14:12 DEN Nikola Jokic Questionable | Injury/Illness - Right Elbow Sprain
+    2026-11-08T22:30:31 → 2026-11-09T19:14:12 DEN DeMar DeRozan Questionable | Injury/Illness - Low Back Spasms
+    2026-11-08T22:30:31 → 2026-11-09T19:14:12 DEN Aaron Gordon Questionable | 
+    2026-11-08T22:45:44 → 2026-11-10T01:27:25 HOU Clint Capela Out | Injury/Illness - Right Ankle Sprain
+    2026-11-08T22:45:44 → 2026-11-10T01:27:25 HOU Quadir Copeland Out | G League - Two-Way
+    2026-11-08T22:45:44 → 2026-11-10T01:27:25 HOU Julian Phillips Out | G League - Two-Way
+    2026-11-08T22:45:44 → 2026-11-10T01:27:25 HOU Steven Adams Out | Injury/Illness - Right Soleus Strain
+    2026-11-09T15:00:20 → 2026-11-10T01:27:25 HOU Oscar Tshiebwe Out | Injury/Illness - Illness
+    2026-11-09T19:15:33 → 2026-11-10T00:52:18 DEN Christian Braun Probable | 
+    2026-11-09T19:15:33 → 2026-11-10T00:52:18 DEN DeMar DeRozan Probable | Injury/Illness - Low Back Spasms
+    2026-11-09T19:15:33 → 2026-11-10T00:52:18 DEN Aaron Gordon Probable | 
+    2026-11-09T19:15:33 → 2026-11-10T00:52:18 DEN Cameron Johnson Probable | Injury/Illness - Right Ankle Sprain
+    2026-11-09T19:15:33 → 2026-11-10T00:52:18 DEN Nikola Jokic Probable | Injury/Illness - Right Elbow Sprain
+    2026-11-09T19:15:33 → 2026-11-10T00:52:18 DEN Jamal Murray Probable | 
+    2026-11-10T01:00:28 → 2026-11-10T01:27:25 DEN Christian Braun Available | 
+    2026-11-10T01:00:28 → 2026-11-10T01:27:25 DEN DeMar DeRozan Available | Injury/Illness - Low Back Spasms
+    2026-11-10T01:00:28 → 2026-11-10T01:27:25 DEN Aaron Gordon Available | 
+    2026-11-10T01:00:28 → 2026-11-10T01:27:25 DEN Cameron Johnson Available | Injury/Illness - Right Ankle Sprain
+    2026-11-10T01:00:28 → 2026-11-10T01:27:25 DEN Nikola Jokic Available | Injury/Illness - Right Elbow Sprain
+    2026-11-10T01:00:28 → 2026-11-10T01:27:25 DEN Jamal Murray Available | 
+--- picks
+    {"key": "401909957-S301-DEN", "system": 301, "side": "DEN", "bet": "spread", "line": 5.0, "status": null, "result": "L", "first_seen": "2026-11-08T19:30:55.999055+00:00", "last_checked": "2026-11-10T01:27:25.094737+00:00", "close_line": null}
+       meta: {"clv": -0.5, "dtd": 0, "gap": 3.4, "call": "now", "level": "Low", "gap_first": 1.9, "worst_gap": 3.4, "close_line": 5.0, "level_first": "Medium", "result_first": "L"}
+    {"key": "401909957-S113-DEN", "system": 113, "side": "DEN", "bet": "spread", "line": 9.0, "status": null, "result": "L", "first_seen": "2026-11-09T19:15:29.842211+00:00", "last_checked": "2026-11-10T01:27:25.094737+00:00", "close_line": null}
+       meta: {"clv": 4.0, "gap": 4.9, "call": "now", "level": "Medium", "alerted": "2026-11-09T19:15:47.291892+00:00", "card_snap": {"why": "No venue clears the 4% bar right now (best: Kalshi NO \u00b7 HOU wins by over 6.5  (= DEN +6.5) at -144, -0.9%). Set a limit on Kalshi NO \u00b7 HOU wins by over 6.5  (= DEN +6.5) at -138", "win": 0.529, "line": 9.0, "name": "Players model", "with": [], "label": "DEN +9", "to_win": 20, "history": {"l": 33, "w": 43, "label": "2 seasons, gaps of 3+, days 0-30, at the open"}, "players": 3.4, "also_combo": null, "confidence": null, "players_bucket": "agrees by 3-5", "players_history": {"l": 4, "w": 9, "label": "agrees by 3+"}}, "worst_gap": 4.9, "close_line": 5.0, "level_first": "Medium", "result_first": "L", "alerted_verdict": "BET"}
+--- orders
+    {'created_at': '2026-11-10T00:37:03.771278+00:00', 'updated_at': '2026-11-10T00:37:26.464+00:00', 'venue': 'prophetx', 'status': 'unfilled', 'pick': 'DEN +9', 'contract': 'DEN +4.5', 'count': 41, 'limit_price': 0.495, 'fill_count': 0, 'fill_cost': 0, 'reason': 'immediate-or-cancel: nothing filled at the limit'}
+    {'created_at': '2026-11-10T00:38:03.339115+00:00', 'updated_at': '2026-11-10T00:38:03.569+00:00', 'venue': 'betopenly', 'status': 'partial', 'pick': 'DEN +9', 'contract': 'DEN +4.5', 'count': 40, 'limit_price': 0.495, 'fill_count': 28, 'fill_cost': 14, 'reason': None}
+    {'created_at': '2026-11-10T00:39:03.629856+00:00', 'updated_at': '2026-11-10T00:39:26.155+00:00', 'venue': 'prophetx', 'status': 'unfilled', 'pick': 'DEN +9', 'contract': 'DEN +4.5', 'count': 13, 'limit_price': 0.4975, 'fill_count': 0, 'fill_cost': 0, 'reason': 'immediate-or-cancel: nothing filled at the limit'}
+    {'created_at': '2026-11-10T00:40:03.666521+00:00', 'updated_at': '2026-11-10T00:40:26.352+00:00', 'venue': 'prophetx', 'status': 'unfilled', 'pick': 'DEN +9', 'contract': 'DEN +4.5', 'count': 13, 'limit_price': 0.4975, 'fill_count': 0, 'fill_cost': 0, 'reason': 'immediate-or-cancel: nothing filled at the limit'}
+    {'created_at': '2026-11-10T00:44:03.487901+00:00', 'updated_at': '2026-11-10T00:44:25.965+00:00', 'venue': 'prophetx', 'status': 'unfilled', 'pick': 'DEN +9', 'contract': 'DEN +6.5', 'count': 15, 'limit_price': 0.569, 'fill_count': 0, 'fill_cost': 0, 'reason': 'immediate-or-cancel: nothing filled at the limit'}
+    {'created_at': '2026-11-10T00:45:07.902669+00:00', 'updated_at': '2026-11-10T00:45:30.703+00:00', 'venue': 'prophetx', 'status': 'unfilled', 'pick': 'DEN +9', 'contract': 'DEN +6.5', 'count': 15, 'limit_price': 0.569, 'fill_count': 0, 'fill_cost': 0, 'reason': 'immediate-or-cancel: nothing filled at the limit'}
+    {'created_at': '2026-11-10T01:01:03.478133+00:00', 'updated_at': '2026-11-10T01:01:26.011+00:00', 'venue': 'prophetx', 'status': 'filled', 'pick': 'DEN +9', 'contract': 'DEN +6.5', 'count': 15, 'limit_price': 0.569, 'fill_count': 15.01, 'fill_cost': 8.54, 'reason': None}
+====================================================================================================
+GAME 401909965 2026-11-10 OKC @ POR  final=False score None-None  tip 2026-11-11T04:00Z
+--- line history (home spread / total, each change)
+    2026-11-09T23:31:00 home spread 1.5 total 226.0
+    2026-11-10T01:00:13 home spread 1.5 total 226.5
+    2026-11-10T04:11:38 home spread 1.5 total 227.0
+    2026-11-10T04:51:36 home spread 2.0 total 227.0
+    2026-11-10T05:11:19 home spread 2.0 total 226.5
+    2026-11-10T07:21:23 home spread 2.5 total 226.5
+    2026-11-10T07:29:42 home spread 2.5 total 227.0
+    2026-11-10T09:48:35 home spread 2.5 total 226.5
+    2026-11-10T12:44:14 home spread 2.0 total 226.5
+--- injury report (both teams, this game date), in the order it appeared
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 OKC Chet Holmgren Out | 
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 OKC Thomas Sorber Out | Injury/Illness - Right Knee surgery
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 OKC Nikola Topic Out | G League - On Assignment
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 OKC Cason Wallace Out | Injury/Illness - Left Shoulder Surgery
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 OKC Jalen Williams Out | Injury/Illness - Left Ankle Surgery
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 OKC Jaylin Williams Out | Injury/Illness - Low Back Spasms
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 POR Vit Krejci Out | Injury/Illness - Left Ankle Fracture
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 POR Ja Morant Out | Injury/Illness - Left Hamstring Strain
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 POR Shaedon Sharpe Out | 
+    2026-11-10T00:45:27 → 2026-11-10T12:44:14 POR John Tonje Out | G League - Two-Way
+--- picks
+    {"key": "401909965-S107-POR", "system": 107, "side": "POR", "bet": "spread", "line": 1.5, "status": null, "result": null, "first_seen": "2026-11-09T23:31:00.456911+00:00", "last_checked": "2026-11-10T12:44:14.514080+00:00", "close_line": null}
+       meta: {"alerted": "2026-11-10T03:00:45.806749+00:00", "card_snap": {"why": "No bet: the players model only likes POR by 1.1; a system needs it to agree by 3+", "win": null, "line": 1.5, "name": "Fade the blowout winner", "with": [], "label": "POR +1.5", "to_win": 20, "history": {"l": 0, "w": 0, "label": null}, "players": 1.1, "also_combo": null, "confidence": null, "players_bucket": "agrees by 0-3", "players_history": null}, "alerted_verdict": "BET"}
+    {"key": "401909965-S301-POR", "system": 301, "side": "POR", "bet": "spread", "line": 2.0, "status": null, "result": null, "first_seen": "2026-11-09T23:31:00.456911+00:00", "last_checked": "2026-11-10T12:44:14.514080+00:00", "close_line": null}
+       meta: {"dtd": 2, "gap": 3.3, "call": "waiting", "level": "Low", "gap_first": 3.1, "worst_gap": 1.1, "level_first": "Low"}
+--- orders
+    {'created_at': '2026-11-10T03:01:03.350755+00:00', 'updated_at': '2026-11-10T03:01:03.612+00:00', 'venue': 'betopenly', 'status': 'filled', 'pick': 'POR +1.5', 'contract': 'POR +1.5', 'count': 41, 'limit_price': 0.4975, 'fill_count': 41, 'fill_cost': 20.4, 'reason': None}
