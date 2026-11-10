@@ -403,7 +403,9 @@ def allowed_lines(p: dict, slate: list[dict]) -> tuple[float, float]:
         for g in slate:
             c = ((g.get("personnel") or {}).get("case") or {})
             if g.get("game_id") == p["game_id"] and c.get("side") == p["side"] and c.get("cushion") is not None:
-                lo = max(lo, c["line"] - (c["cushion"] - T13_GAP))
+                # the WORST day-to-day version must stay 4+ (T13's rule), not just the main read (audit 2026-11-10)
+                cush = min(c["cushion"], c.get("cushion_dtd", c["cushion"]))
+                lo = max(lo, c["line"] - (cush - T13_GAP))
     # never more than 2 points (3 on totals) from the number the pick fired at: the record's rule, now also the
     # bettor's (Nov 9: T13 fired at DEN +9 on a stale line, the market went to +4.5 within minutes, and the bettor
     # bought +4.5 because it measured from the market, not from the pick)

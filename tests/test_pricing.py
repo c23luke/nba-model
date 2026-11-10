@@ -349,3 +349,13 @@ def test_t13_is_never_bought_where_its_edge_is_under_4_or_far_from_its_number():
     c = build_card([pk(113, "DEN", shop, line=9.0)], slate, now=NOW)[0]
     assert c["shop"] == [] and c["verdict"] != "BET"
     assert c["model"]["lo"] >= 7.0                                  # the bettor's own floor: within 2 of +9
+
+
+def test_t13_floor_uses_the_worst_day_to_day_version():
+    # main read 5.0 at +3.5 but 4.5 if the day-to-day players sit: the floor is +3.0, so +2.5 isn't bought
+    slate = [{"game_id": "g1", "home": "H", "home_spread": 3.5,
+              "personnel": {"case": {"side": "H", "win_est": 0.56, "line": 3.5, "cushion": 5.0, "cushion_dtd": 4.5,
+                                     "level": "Medium"}}}]
+    shop = [kq("H", 3.5, 0.50), kq("H", 2.5, 0.45)]
+    c = build_card([pk(113, "H", shop, line=3.5)], slate, now=NOW)[0]
+    assert {q["line"] for q in c["shop"]} == {3.5} and c["model"]["lo"] == 3.0

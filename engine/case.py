@@ -242,6 +242,7 @@ def build_case(away: str, home: str, side: str, bet_line: float, market_home: fl
     conf.append("T13 live: no graded games yet." if graded == 0 else f"T13 live: {graded} graded games.")
     sections.append({"title": "Confidence", "lines": conf})
     return {"side": side, "line": bet_line, "level": level, "cushion": round(cushion, 1),
+            "cushion_dtd": round(min(cushion_dtd), 1),      # worst day-to-day version: what T13's 4+ rule reads
             "worst": round(low, 1), "p_cover": round(p_cover, 3), "p_worst": round(p_worst, 3),
             "measured": m, "win_est": round(win_estimate(m), 4), "sections": sections}
 
