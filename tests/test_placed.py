@@ -318,3 +318,17 @@ def test_a_bet_from_before_the_rule_is_still_judged_by_it():
     picks = {"k": {"key": "k", "system": 102, "away": "WAS", "home": "ORL", "meta": {"bet_snap": {"players": -0.7}}}}
     r = placed_bets(orders, picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
     assert not r["rules"]["counted"] and "other side by 0.7" in r["rules"]["why"]
+
+
+def test_an_old_ticket_never_shows_a_later_no_bet_reason_as_why_we_bet():
+    # POR +1.5 (T7), placed Nov 10 03:01 UTC before snapshots were frozen; the card later said "No bet: players
+    # model only likes POR by 1.2". That isn't why we bet. Still counted (it passed the rule when placed).
+    from engine.placed import OLD_NOTE, placed_bets
+    now = datetime(2026, 11, 10, 15, 0, tzinfo=timezone.utc)
+    o = {"id": "o", "mode": "live", "venue": "betopenly", "bet_key": "k", "game_id": "g", "bet": "spread", "side": "POR",
+         "line": 1.5, "pick": "POR +1.5", "system": "T7", "fill_count": 41, "fill_cost": 20.4, "fees": 0, "ev": 0.11,
+         "created_at": "2026-11-10T03:01:03Z", "tip_utc": "2026-11-11T04:00:00+00:00", "status": "filled"}
+    picks = {"k": {"key": "k", "system": 107, "away": "OKC", "home": "POR",
+                   "meta": {"card_snap": {"players": 1.2, "why": "No bet: the players model only likes POR by 1.2"}}}}
+    r = placed_bets([o], picks, {}, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
+    assert r["price_note"] == OLD_NOTE and r["players"] is None and r["rules"]["counted"]

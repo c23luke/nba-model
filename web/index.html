@@ -572,7 +572,8 @@ function renderBets(placed, b) {
   const pnl = sum(done, "pnl"), risked = sum(done, "risk");
   const expOpen = Math.round(open.reduce((t, x) => t + (x.ev || 0) * x.risk, 0) * 100) / 100;
   // CLV across finished bets (Caden 2026-11-10: track CLV): points vs the closing line, and how often we beat it
-  const clvs = done.map(x => x.clv_pts).filter(v => v != null);
+  // measured in price, not just points: buying a point down at a better price isn't bad CLV (audit, Nov 10)
+  const clvs = done.map(x => (x.market || {}).beat_close).filter(v => v != null);
   const clvAvg = clvs.length ? Math.round(clvs.reduce((t, v) => t + v, 0) / clvs.length * 10) / 10 : null;
   const clvBeat = clvs.filter(v => v > 0).length, clvWorse = clvs.filter(v => v < 0).length;
   const sites = {}; for (const x of bets) sites[x.venue_name] = (sites[x.venue_name] || 0) + 1;
@@ -592,7 +593,7 @@ function renderBets(placed, b) {
         <div><span class="big n">${w}-${l}${pu ? "-" + pu : ""}</span><span class="lbl">Record${w + l ? `, ${Math.round(w / (w + l) * 100)}% won` : ""}</span></div>
         <div class="profit"><span class="big n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</span><span class="lbl">${risked ? pct(pnl / risked) + " return on " + money(risked) : "Profit"}</span></div>
       </div>
-      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))}</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets</span>${clvAvg != null ? `<span><b class="${clvAvg > 0 ? "pos" : clvAvg < 0 ? "neg" : ""}">${clvAvg > 0 ? "+" : ""}${clvAvg} pts</b>average CLV: beat the close ${clvBeat} of ${clvs.length}, worse ${clvWorse}</span>` : ""}</div>
+      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))}</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets</span>${clvAvg != null ? `<span><b class="${clvAvg > 0 ? "pos" : clvAvg < 0 ? "neg" : ""}">${clvAvg > 0 ? "+" : ""}${clvAvg}¢</b>average CLV per $1, price included: beat the close ${clvBeat} of ${clvs.length}</span>` : ""}</div>
     </div>
     ${allBets.length ? `${profitChart(bets)}
     <div class="filters">Show

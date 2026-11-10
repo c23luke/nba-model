@@ -31,6 +31,17 @@ def snapshot(card_row: dict) -> dict:
 RULES_LIVE_UTC = "2026-11-03T04:00:00"
 
 
+OLD_NOTE = ("This bet passed today's rules when it was placed. The card's exact reasoning at that moment wasn't saved "
+            "for bets before Nov 10, and the card has changed since.")
+
+
+def stale_snap(meta: dict, snap: dict, o: dict) -> bool:
+    """A system bet placed under today's rules whose saved card text now says it wouldn't bet: that text is from
+    after the bet, not from when we bet."""
+    return (not meta.get("bet_snap") and (o.get("created_at") or "") >= RULES_LIVE_UTC
+            and o.get("system") not in ("T13", "MONEYBALL") and str(snap.get("why") or "").startswith("No bet"))
+
+
 def all_in(risk: float, to_win: float):
     """The odds really paid, fee included, so Price agrees with Risked and To win (Caden 2026-11-06: Kalshi showed
     $14.32 for a $30 payout = +110, the ticket said +117 because it left the fee out)."""
@@ -211,10 +222,15 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "count": cnt, "cost": round(cost, 2), "fees": round(fees, 2), "risk": round(risk, 2),
             "to_win": round(to_win, 2), "ev": o.get("ev"), "model_price": o.get("model_price"),
             "system": o.get("system"), "group": p.get("group"), "name": snap.get("name") or (names or {}).get(o.get("system")),
-            "evidence": p.get("evidence") or [], "price_note": snap.get("why"), "confidence": snap.get("confidence"), "win": snap.get("win"),
+            "evidence": p.get("evidence") or [],
+            # before Nov 10 the card's reasoning wasn't frozen when we bet, so an old ticket can show a later
+            # "No bet: ..." that wasn't true when we bet (audit 2026-11-10). Say so instead of showing it.
+            "price_note": (OLD_NOTE if stale_snap(meta_, snap, o) else snap.get("why")),
+            "confidence": snap.get("confidence"), "win": snap.get("win"),
             # the players-model gap WHEN WE BET (T13: the gap it fired on) and now (the live card, if still on it)
             "players": (((meta_.get("bet_snap") or {}).get("worst_gap") or meta_.get("worst_gap")) if o.get("system") == "T13"
-                        else meta_.get("gap") if o.get("system") == "MONEYBALL" else snap.get("players")),
+                        else meta_.get("gap") if o.get("system") == "MONEYBALL"
+                        else None if stale_snap(meta_, snap, o) else snap.get("players")),
             "players_now": (snapshot(card[o["bet_key"]]) if o.get("bet_key") in card else {}).get("players"),
             "players_history": snap.get("players_history"),
             # placed after the card started enforcing today's rules: it passed them when we bet, so a later read
