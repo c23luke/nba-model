@@ -27,6 +27,7 @@ from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, eval
 from . import personnel as personnel_mod
 from . import boxscore
 from . import case as case_mod
+from . import cluster as cluster_mod
 
 PRICED = {113, 121, 122, 123, 124, 125, 130}          # test systems that also get a live Kalshi price (the main 4 always do)
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
@@ -146,6 +147,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 2a. this season's box scores (only games not stored yet)
     live, played, recent, results = {}, {}, {}, {}
+    box_rows = []
     try:
         box_rows = store.load_player_games()
         # games with a 0-minute (coach's decision) row were parsed with DNPs; recent games without one are
@@ -181,6 +183,11 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 2b. personnel read (current rosters x each player's own last two seasons + this season)
     views, reads, stress, cal, ranks = {}, {}, {}, None, {}
+    try:
+        rotations = cluster_mod.rotations(box_rows)        # X2 (tracking only): who each team's rotation is
+    except Exception as e:
+        rotations = {}
+        log.append(f"rotations for X2: {e}")
     if personnel_fetch == "default":
         def personnel_fetch():
             from . import injury_report
@@ -270,7 +277,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         picks = (rules
                  + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
                                       season_day=(g.game_date - season_start).days)
-                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id)))
+                 + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
+                 + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:

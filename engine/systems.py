@@ -61,6 +61,10 @@ SHADOW_SYSTEMS = {
     301: {"name": "Personnel side, every game", "bet": "spread", "idea": "tracking",
           "rule": "Whichever side the personnel line likes, every game, any gap. Graded so the "
                   "record can be split by gap size, day-to-day status and blind spots."},
+    302: {"name": "Fade the team missing 2+ rotation players", "bet": "spread", "idea": "injuries (testing)",
+          "rule": "A team is missing 2+ rotation players (20+ mpg), more than its opponent, at least one of them "
+                  "played its last game → bet the opponent. 2 seasons vs the close: 249-199 (55.6%), both seasons "
+                  "55-56% (engine/measure_cluster.py). Tracking only until it earns real money."},
 }
 
 # Bets made at the first line and kept there: once one of these fires, it stays a bet even if the
