@@ -571,6 +571,10 @@ function renderBets(placed, b) {
   const w = done.filter(x => x.result === "W").length, l = done.filter(x => x.result === "L").length, pu = done.filter(x => x.result === "P").length;
   const pnl = sum(done, "pnl"), risked = sum(done, "risk");
   const expOpen = Math.round(open.reduce((t, x) => t + (x.ev || 0) * x.risk, 0) * 100) / 100;
+  // CLV across finished bets (Caden 2026-11-10: track CLV): points vs the closing line, and how often we beat it
+  const clvs = done.map(x => x.clv_pts).filter(v => v != null);
+  const clvAvg = clvs.length ? Math.round(clvs.reduce((t, v) => t + v, 0) / clvs.length * 10) / 10 : null;
+  const clvBeat = clvs.filter(v => v > 0).length, clvWorse = clvs.filter(v => v < 0).length;
   const sites = {}; for (const x of bets) sites[x.venue_name] = (sites[x.venue_name] || 0) + 1;
   const opts = (vals, cur, all) => `<option value="">${all}</option>` + vals.map(v => `<option${v === cur ? " selected" : ""}>${esc(v)}</option>`).join("");
   const uniq = k => [...new Set(allBets.map(x => x[k] || "None"))].sort();
@@ -588,14 +592,14 @@ function renderBets(placed, b) {
         <div><span class="big n">${w}-${l}${pu ? "-" + pu : ""}</span><span class="lbl">Record${w + l ? `, ${Math.round(w / (w + l) * 100)}% won` : ""}</span></div>
         <div class="profit"><span class="big n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</span><span class="lbl">${risked ? pct(pnl / risked) + " return on " + money(risked) : "Profit"}</span></div>
       </div>
-      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))}</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets</span></div>
+      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))}</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets</span>${clvAvg != null ? `<span><b class="${clvAvg > 0 ? "pos" : clvAvg < 0 ? "neg" : ""}">${clvAvg > 0 ? "+" : ""}${clvAvg} pts</b>average CLV: beat the close ${clvBeat} of ${clvs.length}, worse ${clvWorse}</span>` : ""}</div>
     </div>
     ${allBets.length ? `${profitChart(bets)}
     <div class="filters">Show
       <select id="f-site" aria-label="Site">${opts(uniq("venue_name"), fSite, "All sites")}</select>
       <select id="f-sys" aria-label="System">${opts(uniq("system"), fSys, "All systems")}</select>
     </div>` : ""}` +
-    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), and the players model alone at 4+. No totals. One bet per game. Bought at the best price on Kalshi, ProphetX and BetOpenly, sized to win $20 (MONEYBALL $40).</p>` +
+    `<h2>Open bets</h2><p class="lede">What we bet: a system only when the players model agrees by 3+ points (2+ systems = MONEYBALL), and the players model alone at 4+. No totals. One bet per game. Bought at the best price on Kalshi, ProphetX, BetOpenly and Novig, sized to win $20 (MONEYBALL $40).</p>` +
     (open.length ? open.map(ticket).join("") : `<div class="empty">${allBets.length && (fSite || fSys) ? "No open bets match these filters." : "No open bets. When a card bet fires and the price is right, it gets placed and shows up here."}</div>`) +
     (np.length ? `<h2>Looking for a price</h2><p class="lede">The model wants these, but no site has offered a good enough price yet. The bettor checks every minute${placerAt ? ` (last check ${esc(ago(placerAt))})` : ""}, and where it can it leaves an order on Kalshi at the most we'd pay.</p>` +
       np.map(c => cardRow(c, c.reason || "Not checked yet: the bettor looks every minute.")).join("") : "") +
