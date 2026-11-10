@@ -1,0 +1,9 @@
+6 games with a read history
+  read:401909960 2026-11-10T14:33:19 1 entries; last: {'hi': -13.0, 'lo': -17.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['MIL: Pete Nance', 'MIL: Tyler Herro', 'NYK: Josh Hart'], 'mkt': -15.5, 'fair': -15.0, 'blind': False}
+  read:401909961 2026-11-10T14:33:19 1 entries; last: {'hi': 4.5, 'lo': 4.5, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': [], 'mkt': 1.5, 'fair': 4.5, 'blind': False}
+  read:401909962 2026-11-10T14:33:19 1 entries; last: {'hi': 0.5, 'lo': 0.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['PHX: Drew Timme'], 'mkt': -3.5, 'fair': 0.5, 'blind': False}
+  read:401909963 2026-11-10T14:33:19 1 entries; last: {'hi': 10.0, 'lo': 8.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['UTA: Lauri Markkanen'], 'mkt': 8.5, 'fair': 8.0, 'blind': False}
+  read:401909964 2026-11-10T14:33:19 1 entries; last: {'hi': 5.0, 'lo': 0.5, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['ORL: Desmond Bane', 'SAC: Domantas Sabonis', 'SAC: Keegan Murray'], 'mkt': 6.0, 'fair': 2.0, 'blind': True}
+  read:401909965 2026-11-10T14:33:19 1 entries; last: {'hi': 1.0, 'lo': -1.0, 'ts': '2026-11-10T14:32:56.414911+00:00', 'dtd': ['OKC: Nique Clifford', 'POR: Robert Williams III'], 'mkt': 2.0, 'fair': -1.0, 'blind': False}
+board 2026-11-10T14:32:56.414911+00:00 injury_desk on board: True
+notes mentioning the desk: []
