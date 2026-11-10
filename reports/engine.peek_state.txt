@@ -5,10 +5,13 @@
   read:401909961 2026-11-10T15:33:30 7 entries; last: {'hi': 4.5, 'lo': 4.5, 'ts': '2026-11-10T15:33:06.903261+00:00', 'dtd': [], 'mkt': 1.5, 'fair': 4.5, 'blind': False}
   read:401909965 2026-11-10T16:09:02 2 entries; last: {'hi': -1.0, 'lo': -1.0, 'ts': '2026-11-10T16:08:35.674162+00:00', 'dtd': [], 'mkt': 2.0, 'fair': -1.0, 'blind': False}
   read:401909963 2026-11-10T15:33:30 7 entries; last: {'hi': 10.0, 'lo': 8.0, 'ts': '2026-11-10T15:33:06.903261+00:00', 'dtd': ['UTA: Lauri Markkanen'], 'mkt': 8.5, 'fair': 8.0, 'blind': False}
-board 2026-11-10T17:27:06.558003+00:00 injury_desk on board: True
+board 2026-11-10T17:42:39.376767+00:00 injury_desk on board: True
 testing: X2: fade the team missing 2+ rotation players 0-0 bets 0 open 0 clv None ready False
 testing: Injury desk: beat the market to the news 0-0 bets 0 open 0 clv None ready False
-testing: Props: players who gain minutes 0-0 bets 0 open 0 clv None ready False
+testing: Props: Hidden bump (history says +5 min, the players model doesn't see it): overs 0-0 bets 0 open 0 clv None ready False
+testing: Props: Minutes jump (this season's games without him): overs 0-0 bets 0 open 0 clv None ready False
+testing: Props: Fake bump (everyone expects minutes, history says no): unders 0-0 bets 0 open 0 clv None ready False
+testing: Props: Minutes jump (players model only): overs 0-0 bets 0 open 0 clv None ready False
 testing: Our bet + an injury edge on the same side (bigger-bet candidate) 0-0 bets 0 open 0 clv None ready False
 props desk: {'bets': 0, 'w': 0, 'l': 0, 'avg_clv': None} []
 X2 picks today: []
