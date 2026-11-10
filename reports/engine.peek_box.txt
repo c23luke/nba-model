@@ -1,0 +1,59 @@
+=== game 401909952 26 rows
+   columns: ['ast', 'blk', 'drb', 'espn_id', 'fg3a', 'fg3m', 'fga', 'fgm', 'fta', 'ftm', 'game_date', 'game_id', 'game_min', 'id', 'min', 'name', 'orb', 'pf', 'pm', 'pts', 'stl', 'team', 'team_poss', 'tov']
+   {'team': 'ATL', 'name': 'Jalen Johnson', 'min': 38, 'pts': 15}
+   {'team': 'ATL', 'name': 'Nickeil Alexander-Walker', 'min': 34, 'pts': 20}
+   {'team': 'ATL', 'name': 'Dyson Daniels', 'min': 31, 'pts': 10}
+   {'team': 'ATL', 'name': 'Onyeka Okongwu', 'min': 30, 'pts': 16}
+   {'team': 'ATL', 'name': 'Kingston Flemings', 'min': 24, 'pts': 8}
+   {'team': 'ATL', 'name': 'CJ McCollum', 'min': 24, 'pts': 21}
+   {'team': 'ATL', 'name': 'Aaron Wiggins', 'min': 23, 'pts': 15}
+   {'team': 'ATL', 'name': 'Luguentz Dort', 'min': 18, 'pts': 4}
+   {'team': 'ATL', 'name': 'Jock Landale', 'min': 14, 'pts': 5}
+   {'team': 'ATL', 'name': 'Zuby Ejiofor', 'min': 4, 'pts': 0}
+   {'team': 'ATL', 'name': 'Dorian Finney-Smith', 'min': 0, 'pts': 0}
+   {'team': 'ATL', 'name': 'Corey Kispert', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Luka Doncic', 'min': 39, 'pts': 32}
+   {'team': 'LAL', 'name': 'Jake LaRavia', 'min': 32, 'pts': 4}
+   {'team': 'LAL', 'name': 'Sandro Mamukelashvili', 'min': 32, 'pts': 23}
+   {'team': 'LAL', 'name': 'Walker Kessler', 'min': 30, 'pts': 21}
+   {'team': 'LAL', 'name': 'Ziaire Williams', 'min': 28, 'pts': 12}
+   {'team': 'LAL', 'name': 'Collin Sexton', 'min': 27, 'pts': 18}
+   {'team': 'LAL', 'name': 'Matisse Thybulle', 'min': 23, 'pts': 6}
+   {'team': 'LAL', 'name': 'Jarred Vanderbilt', 'min': 13, 'pts': 4}
+   {'team': 'LAL', 'name': 'Adou Thiero', 'min': 7, 'pts': 2}
+   {'team': 'LAL', 'name': 'Cameron Carr', 'min': 7, 'pts': 2}
+   {'team': 'LAL', 'name': 'Kevon Looney', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Lawson Lovering', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Bronny James', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Jaden Hardy', 'min': 0, 'pts': 0}
+=== game 401909946 29 rows
+   columns: ['ast', 'blk', 'drb', 'espn_id', 'fg3a', 'fg3m', 'fga', 'fgm', 'fta', 'ftm', 'game_date', 'game_id', 'game_min', 'id', 'min', 'name', 'orb', 'pf', 'pm', 'pts', 'stl', 'team', 'team_poss', 'tov']
+   {'team': 'DET', 'name': 'Cade Cunningham', 'min': 38, 'pts': 14}
+   {'team': 'DET', 'name': 'Kevin Huerter', 'min': 35, 'pts': 24}
+   {'team': 'DET', 'name': 'John Collins', 'min': 32, 'pts': 8}
+   {'team': 'DET', 'name': 'Daniss Jenkins', 'min': 32, 'pts': 31}
+   {'team': 'DET', 'name': 'Duncan Robinson', 'min': 27, 'pts': 12}
+   {'team': 'DET', 'name': 'Ausar Thompson', 'min': 24, 'pts': 7}
+   {'team': 'DET', 'name': 'Paul Reed', 'min': 20, 'pts': 8}
+   {'team': 'DET', 'name': 'Javonte Green', 'min': 17, 'pts': 7}
+   {'team': 'DET', 'name': 'Ronald Holland II', 'min': 14, 'pts': 5}
+   {'team': 'DET', 'name': 'Taurean Prince', 'min': 0, 'pts': 0}
+   {'team': 'DET', 'name': 'Tolu Smith', 'min': 0, 'pts': 0}
+   {'team': 'DET', 'name': 'Isaac Jones', 'min': 0, 'pts': 0}
+   {'team': 'DET', 'name': 'Chaz Lanier', 'min': 0, 'pts': 0}
+   {'team': 'DET', 'name': 'Ebuka Okorie', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Austin Reaves', 'min': 37, 'pts': 43}
+   {'team': 'LAL', 'name': 'Quentin Grimes', 'min': 32, 'pts': 12}
+   {'team': 'LAL', 'name': 'Walker Kessler', 'min': 29, 'pts': 12}
+   {'team': 'LAL', 'name': 'Jake LaRavia', 'min': 29, 'pts': 5}
+   {'team': 'LAL', 'name': 'Matisse Thybulle', 'min': 28, 'pts': 4}
+   {'team': 'LAL', 'name': 'Collin Sexton', 'min': 24, 'pts': 17}
+   {'team': 'LAL', 'name': 'Ziaire Williams', 'min': 21, 'pts': 17}
+   {'team': 'LAL', 'name': 'Sandro Mamukelashvili', 'min': 18, 'pts': 7}
+   {'team': 'LAL', 'name': 'Jarred Vanderbilt', 'min': 14, 'pts': 2}
+   {'team': 'LAL', 'name': 'Adou Thiero', 'min': 8, 'pts': 2}
+   {'team': 'LAL', 'name': 'Kevon Looney', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Lawson Lovering', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Bronny James', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Jaden Hardy', 'min': 0, 'pts': 0}
+   {'team': 'LAL', 'name': 'Cameron Carr', 'min': 0, 'pts': 0}
