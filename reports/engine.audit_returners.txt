@@ -1,0 +1,27 @@
+2026-10-30T01:01 MEM +6       E7        opp POR: report filed (2026-10-29T00:16); opp players 15+ min who sat their previous game: none
+2026-10-30T22:46 DAL +5.5     MONEYBALL opp HOU: report filed (2026-10-29T20:30); opp players 15+ min who sat their previous game: ['Marcus Smart 17min']
+2026-10-31T00:42 OVER 234.5   S4        opp SAC: report filed (2026-10-30T20:05); opp players 15+ min who sat their previous game: ['Jonathan Mogbo 25min']
+2026-11-01T15:01 LAL -4.5     E4        opp TOR: report filed (2026-10-31T22:15); opp players 15+ min who sat their previous game: ['Alijah Martin 16min']
+2026-11-01T23:39 BKN +15      MONEYBALL opp NYK: report filed (2026-11-01T22:00); opp players 15+ min who sat their previous game: none
+2026-11-01T23:43 OVER 240     S4        opp CHI: report filed (2026-11-01T21:00); opp players 15+ min who sat their previous game: none
+2026-11-02T00:01 HOU -5       S3        opp BOS: report NOT filed when we bet (2026-11-02T19:00); opp players 15+ min who sat their previous game: ['Mitchell Robinson 15min']
+2026-11-02T01:11 WAS +1.5     T2        opp ORL: report NOT filed when we bet (2026-11-02T17:00); opp players 15+ min who sat their previous game: ['Jevon Carter 18min']
+2026-11-02T01:27 OVER 234.5   S4        opp SAC: report filed (2026-11-01T23:00); opp players 15+ min who sat their previous game: ['Leaky Black 25min']
+2026-11-02T01:32 NYK -15      T12       opp BKN: report NOT filed when we bet (2026-11-02T17:45); opp players 15+ min who sat their previous game: ['Mikel Brown Jr. 27min']
+2026-11-02T04:01 OVER 231     S4        opp UTA: report filed (2026-11-01T23:00); opp players 15+ min who sat their previous game: none
+2026-11-02T04:35 LAL -1.5     E4        opp MIA: report filed (2026-11-02T00:15); opp players 15+ min who sat their previous game: none
+2026-11-02T05:06 MIA +1.5     T2        opp LAL: report NOT filed when we bet (2026-11-02T21:00); opp players 15+ min who sat their previous game: ['Ziaire Williams 15min']
+2026-11-02T18:13 IND +6.5     E2        opp ATL: report filed (2026-11-01T22:00); opp players 15+ min who sat their previous game: ['Zuby Ejiofor 15min']
+2026-11-03T12:34 MIN +9.5     E5        opp HOU: report NOT filed when we bet (2026-11-03T22:00); opp players 15+ min who sat their previous game: none
+2026-11-03T21:38 CHI +12      E4        opp NYK: report NOT filed when we bet (2026-11-03T21:45); opp players 15+ min who sat their previous game: ['Dalton Knecht 16min']
+2026-11-04T16:12 DAL +12.5    MONEYBALL opp SAS: report filed (2026-11-03T23:00); opp players 15+ min who sat their previous game: none
+2026-11-04T17:46 MEM -6       T13       opp IND: report filed (2026-11-03T23:30); opp players 15+ min who sat their previous game: ['Pascal Siakam 30min', 'Ivica Zubac 19min', 'Andrew Nembhard 38min', 'Aaron Nesmith 30min', 'Obi Toppin 19min']
+2026-11-06T00:27 MEM +4       T13       opp OKC: report filed (2026-11-05T23:15); opp players 15+ min who sat their previous game: ['Josh Dix 15min']
+2026-11-06T22:01 WAS +6.5     MONEYBALL opp ATL: report filed (2026-11-05T22:00); opp players 15+ min who sat their previous game: none
+2026-11-07T15:12 CLE +4.5     MONEYBALL opp NYK: report filed (2026-11-06T21:45); opp players 15+ min who sat their previous game: none
+2026-11-07T21:01 LAL +2       T13       opp DET: report NOT filed when we bet (2026-11-07T21:45); opp players 15+ min who sat their previous game: none
+2026-11-09T03:44 ATL +2.5     T9        opp LAL: report NOT filed when we bet (2026-11-09T18:00); opp players 15+ min who sat their previous game: ['Luka Doncic 39min']
+2026-11-09T11:49 BOS +1       T13       opp PHI: report NOT filed when we bet (2026-11-09T22:00); opp players 15+ min who sat their previous game: none
+2026-11-09T15:28 PHX +7.5     MONEYBALL opp SAS: report filed (2026-11-09T00:15); opp players 15+ min who sat their previous game: none
+2026-11-10T00:38 DEN +9       T13       opp HOU: report filed (2026-11-08T22:45); opp players 15+ min who sat their previous game: none
+2026-11-10T03:01 POR +1.5     T7        opp OKC: report filed (2026-11-10T00:45); opp players 15+ min who sat their previous game: none
