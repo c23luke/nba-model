@@ -1,0 +1,5 @@
+board 2026-11-10T16:05:34.318568+00:00
+ - Box scores: 7 new games stored
+ - Official injury report 11:00 AM ET: 44 players listed; differs from ESPN on 18: Devin Carter (BOS): Out — G League - Two-Way; Dillon Mitchell (BOS): Questionable — G League - Two-Way; Amari Williams (BOS): Out — G League - Two-Way; Cam Christie (LAC): Questionable — Injury/Illness - Right Ankle Sprain; Nick Martinelli (LAC): Questionable — G League - Two-Way; Giannis Antetokounmpo (MIA): Probable — Injury/Illness - Right Wrist Sprain; Tyler Herro (MIL): Questionable — Injury/Illness - Right Contusion; Josh Hart (NYK): Questionable — Injury/Illness - Right Ankle Soreness; not yet submitted: PHX, BOS, TOR, CLE, NYK, WAS, IND, BKN, NOP, DEN, MEM, LAL, MIL, SAS, CHI, ORL, UTA, GSW, HOU, OKC, POR
+ - Personnel: 16 games rated, calibrated market = +0.3 + 0.94 x personnel
+ - Roster check — playing but not on the roster we used: CLE: Tristan Enaruna (3 mpg); OKC: Dalen Terry (4 mpg); SAC: Nique Clifford (3 mpg)
