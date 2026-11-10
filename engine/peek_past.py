@@ -9,8 +9,8 @@ from .store import get_store
 
 def main():
     st = get_store()
-    teams = os.environ.get("TEAMS", "ATL,LAL").split(",")
-    d0, d1 = os.environ.get("FROM", "2026-11-08"), os.environ.get("TO", "2026-11-10")
+    teams = os.environ.get("TEAMS", "DEN,POR").split(",")
+    d0, d1 = os.environ.get("FROM", "2026-11-03"), os.environ.get("TO", "2026-11-10")
     games = st._req("GET", f"/games?game_date=gte.{d0}&game_date=lte.{d1}&select=*") or []
     for g in sorted(games, key=lambda x: x.get("game_date") or ""):
         if g.get("away") not in teams and g.get("home") not in teams:
