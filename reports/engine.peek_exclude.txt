@@ -1,4 +1,4 @@
 raw: [{'key': 'exclude', 'value': '[{"game_id":"401909843","side":"CHA","why":"Model bug: counted Kon Knueppel, who had missed every game and was out."},{"game_id":"401909853","side":"CHA","why":"Model bug: counted Kon Knueppel, who had missed every game and was out."}]'}]
 parsed: [{'game_id': '401909843', 'side': 'CHA', 'why': 'Model bug: counted Kon Knueppel, who had missed every game and was out.'}, {'game_id': '401909853', 'side': 'CHA', 'why': 'Model bug: counted Kon Knueppel, who had missed every game and was out.'}]
-board 2026-11-10T14:54:44.447944+00:00 excluded: None
+board 2026-11-10T15:00:12.588455+00:00 excluded: None
 notes: []
