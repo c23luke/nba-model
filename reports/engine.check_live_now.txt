@@ -39,6 +39,8 @@
   {'created_at': '2026-11-07T21:01:01.526938+00:00', 'updated_at': '2026-11-07T22:01:01.123+00:00', 'status': 'filled', 'pick': 'LAL +2', 'contract': 'NO · DET wins by over 1.5  (= LAL +1.5)', 'count': 39, 'fill_count': 39, 'fill_cost': 18.72, 'reason': None}
 
 === bettor log, newest 40
+  2026-11-10T15:35:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+  2026-11-10T15:35:03 info Key check — Kalshi prod: keys work, balance $155.71 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $57.02 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check:
   2026-11-10T15:19:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
   2026-11-10T15:19:03 info Key check — Kalshi prod: keys work, balance $155.71 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $57.02 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check:
   2026-11-10T15:04:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
@@ -77,10 +79,8 @@
   2026-11-10T10:54:05 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
   2026-11-10T10:38:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
   2026-11-10T10:38:03 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
-  2026-11-10T10:22:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
-  2026-11-10T10:22:03 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
 
-=== live site board generated 2026-11-10T15:27:37.627739+00:00
+=== live site board generated 2026-11-10T15:38:34.721931+00:00
   record under today's rules: 7 - 6 - 0 pnl 25.5 | open 2 at risk 41.02
   real account: 12 - 12 pnl -14.45
   has combo_live (new code): True | report card has systems_p3: True
