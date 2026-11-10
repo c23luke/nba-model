@@ -13,7 +13,11 @@ Three kinds of paper bet, tracked separately:
   * "fake bump": the players model gives this teammate 5+ more minutes, but in 3+ games this season without the
     absent player he gained under 2. History says the minutes don't come, but measured over 2 seasons his points
     still rise about 2.5 (usage), so the UNDER only fires when the line is 3+ above his usual night plus that.
-  Projections are his usual night (last 10 games) plus the measured gain, not raw averages (see the constants).
+  * "returning": a 28+ mpg player back after 3+ straight games out; his first game back averages 5 fewer minutes and
+    2.6 fewer points (2 seasons). UNDER.
+  * "fill_back": the teammates who filled in while he was out; they keep only about half their extra minutes the
+    night he's back. UNDER against what they did while he was out.
+  Projections are his usual night (last 10 games) plus the measured change, not raw averages (see the constants).
 Lines: The Odds API (points, rebounds, assists; 3 credits per read), only for games with such news, read when the
 news appears and then every 90 minutes, plus once in the last 30 minutes before tip (that read is the closing line
 for CLV). Graded from the box score. Nothing is ever bet from this. Stored in bet_state "props_desk".
@@ -27,6 +31,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from .personnel import norm
+from .props_splits import returns as star_returns
 from .props_splits import splits as with_without
 
 GAIN_MIN = 5.0          # minutes above his average before we look
@@ -49,7 +54,19 @@ HIST_TRUST = {"bench": 0.95, "other": 0.60}
 BENCH_MPG = 15.0
 NO_HISTORY_GAIN = {"pts": 2.8, "reb": 0.5, "ast": 0.7}
 FAKE_GAIN_STATS = {"pts": 2.5, "reb": 0.4, "ast": 0.6}
-KINDS = {"hidden": "Hidden bump (history says +5 min, the players model doesn't see it): overs",
+# Measured 2026-11-10 (engine/measure_minutes_spots.py, 2 seasons, 289 returns of a 28+ mpg player after 3+ straight
+# games out): his first game back vs his usual, by how long he was out (minutes, points, rebounds, assists).
+# 63% scored below their usual; both seasons agree. The team's ATS in that game: 136-142, nothing.
+RETURN_GAME1 = ((5, {"min": -3.6, "pts": -1.8, "reb": -0.4, "ast": -0.6}),
+                (10, {"min": -6.7, "pts": -4.0, "reb": -1.0, "ast": -0.5}),
+                (20, {"min": -6.4, "pts": -2.7, "reb": -0.3, "ast": -0.7}),
+                (999, {"min": -9.1, "pts": -3.0, "reb": -1.6, "ast": -1.4}))
+# The fill-ins (5+ above their usual while he was out): usual 17.2, during 26.2, the night he returns 21.4 -> they
+# keep 47% of the extra minutes.
+FILL_KEEP = 0.47
+KINDS = {"returning": "Star back from 3+ games out (minutes usually limited): unders",
+         "fill_back": "Fill-ins the night the star returns (they lose about half the extra minutes): unders",
+         "hidden": "Hidden bump (history says +5 min, the players model doesn't see it): overs",
          "jump_hist": "Minutes jump (this season's games without him): overs",
          "jump_model": "Minutes jump (players model only): overs",
          "fake": "Fake bump (everyone expects minutes, history says no): unders"}
@@ -75,10 +92,44 @@ def scoring(box_rows: list[dict]) -> dict[tuple[str, str], dict]:
     return out
 
 
-def candidates(game, reads: dict, rotations: dict, score: dict, splits: dict | None = None) -> list[dict]:
-    """Teammates of a freshly-out rotation player whose minutes should (or are assumed to) jump."""
-    splits = splits or {}
+def returning(game, reads: dict, score: dict, rets: dict) -> list[dict]:
+    """A 28+ mpg player back tonight after 3+ straight games out (unders on him), and the teammates who filled in
+    for him (unders: they give back about half the extra minutes)."""
     out = []
+    for team in (game.away, game.home):
+        r = reads.get(team)
+        if r is None:
+            continue
+        status = {norm(p.name): p.status for p in r.players}
+        for k, x in (rets.get(team) or {}).items():
+            st = status.get(k)
+            if st is None or st == "out":
+                continue                                  # not on tonight's read, or still out
+            delta = next(d for lim, d in RETURN_GAME1 if x["missed"] <= lim)
+            out.append({"game_id": game.id, "team": team, "player": x["name"], "because": [f"back after {x['missed']} games out"],
+                        "kind": "returning", "missed": x["missed"], "mpg": x["pre"]["min"], "dtd": st == "day-to-day",
+                        "proj": {s: round(x["pre"][s] + delta[s], 1) for s in EDGE},
+                        "proj_min": round(x["pre"]["min"] + delta["min"], 1)})
+            if st == "day-to-day":
+                continue                                  # his fill-ins only once he's confirmed back
+            for b, f in x["fill"].items():
+                s = score.get((team, b))
+                if not s or status.get(b) == "out":
+                    continue
+                pm = f["usual_min"] + FILL_KEEP * (f["during_min"] - f["usual_min"])
+                out.append({"game_id": game.id, "team": team, "player": f["name"], "because": [f"{x['name']} is back"],
+                            "kind": "fill_back", "returner": x["name"], "usual_min": f["usual_min"],
+                            "during_min": f["during_min"], "n_during": f["n"], "mpg": round(s["mpg"], 1),
+                            "dtd": status.get(b) == "day-to-day", "proj_min": round(pm, 1),
+                            "proj": {"pts": round(pm * s["ppm"], 1), "reb": round(pm * s["rpm"], 1), "ast": round(pm * s["apm"], 1)}})
+    return out
+
+
+def candidates(game, reads: dict, rotations: dict, score: dict, splits: dict | None = None,
+               rets: dict | None = None) -> list[dict]:
+    """Teammates of a freshly-out rotation player whose minutes should (or are assumed to) jump; plus returning stars."""
+    splits = splits or {}
+    out = returning(game, reads, score, rets or {})
     for team in (game.away, game.home):
         r = reads.get(team)
         rot = rotations.get(team) or {}
@@ -178,12 +229,13 @@ def step(state: dict, now: datetime, games: list, reads: dict, rotations: dict, 
     state = {"bets": [dict(b) for b in state.get("bets") or []], "fetched": dict(state.get("fetched") or {})}
     score = scoring(box_rows)
     sp = with_without(box_rows)
+    rets = star_returns(box_rows)
     open_games = {b["game_id"] for b in state["bets"] if not b.get("result")}
     for g in games:
         tip = datetime.fromisoformat(str(g.tip_utc).replace("Z", "+00:00")) if g.tip_utc else None
         if not tip or tip <= now or tip - now > timedelta(hours=14):
             continue
-        cands = candidates(g, reads, rotations, score, sp)
+        cands = candidates(g, reads, rotations, score, sp, rets)
         if not cands and g.id not in open_games:
             continue
         last = state["fetched"].get(g.id)
@@ -209,7 +261,7 @@ def step(state: dict, now: datetime, games: list, reads: dict, rotations: dict, 
                 p = props.get((norm(c["player"]), stat))
                 if not p or (g.id, norm(c["player"]), stat) in have:
                     continue
-                side = "under" if c["kind"] == "fake" else "over"
+                side = "under" if c["kind"] in ("fake", "returning", "fill_back") else "over"
                 edge = (proj - p["line"]) if side == "over" else (p["line"] - proj)
                 price = p["over"] if side == "over" else p["under"]
                 if edge >= EDGE[stat] and price is not None:

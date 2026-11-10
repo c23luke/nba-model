@@ -65,8 +65,9 @@ def test_testing_side_lists_every_idea_and_the_bar_to_real_money():
              "props_desk": {"by_kind": {"fake": {"name": "Fake bump", "bets": 2, "w": 1, "l": 1, "avg_clv": 0.5, "open": 0}}},
              "placed": {"bets": [{"game_id": "g", "side": "WAS", "result": "W", "rules": {"counted": True}, "market": {"beat_close": 2.0}}]}}
     t = testing_side(board, [{"system": 302, "game_id": "g", "side": "WAS"}])
-    # 2026-11-10: props split into four kinds (hidden bump, history jump, fake bump, model jump)
-    assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: hi", "Props: ju", "Props: Fa", "Props: ju", "Our bet +"]
-    assert t[4]["bets"] == 2 and t[4]["avg_clv"] == 0.5
+    # 2026-11-10: props split into six kinds (returning star, fill-ins, hidden bump, history jump, fake bump, model jump)
+    assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: re", "Props: fi", "Props: hi", "Props: ju",
+                                          "Props: Fa", "Props: ju", "Our bet +"]
+    assert t[6]["bets"] == 2 and t[6]["avg_clv"] == 0.5
     assert (t[0]["w"], t[0]["l"], t[0]["bets"], t[0]["ready"]) == (30, 22, 52, True)
-    assert t[1]["ready"] is False and t[6]["w"] == 1 and t[6]["avg_clv"] == 2.0 and TESTING_BAR == 50
+    assert t[1]["ready"] is False and t[8]["w"] == 1 and t[8]["avg_clv"] == 2.0 and TESTING_BAR == 50

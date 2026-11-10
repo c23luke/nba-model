@@ -134,3 +134,48 @@ def test_parse_props_takes_the_most_common_line_and_its_prices():
     p = PD.parse_props(js)
     assert p[("bench guard", "pts")] == {"line": 8.5, "over": -115, "under": -110, "books": 3}
     assert p[("bench guard", "ast")] == {"line": 2.5, "over": 120, "under": -150, "books": 1}
+
+
+def returning_box():
+    """Star plays 34 min / 25 pts for 8 games, then misses 4. Sub plays 14 min / 6 pts, then 28 min / 12 pts while he's out."""
+    rows = []
+    for i in range(12):
+        gid = f"x{i}"
+        if i < 8:
+            rows += [row(gid, "Star", 34, 25, 6, 5), row(gid, "Sub", 14, 6, 2, 1)]
+        else:
+            rows += [row(gid, "Star", 0, 0), row(gid, "Sub", 28, 12, 4, 2)]
+    return rows
+
+
+def returning_reads(star="active"):
+    tr = TeamRead("POR")
+    tr.players = [Player("Star", star, 5, None, minutes=34.0), Player("Sub", "active", 3, None, minutes=14.0)]
+    return {"POR": tr, "OKC": TeamRead("OKC")}
+
+
+def test_a_star_back_after_3_plus_games_and_his_fill_ins_are_unders():
+    from engine.props_splits import returns
+    b = returning_box()
+    r = returns(b)["POR"]["star"]
+    assert r["missed"] == 4 and r["pre"]["min"] == 34.0 and r["fill"]["sub"]["during_min"] == 28.0
+    c = PD.candidates(G, returning_reads(), {}, PD.scoring(b), {}, returns(b))
+    star = next(x for x in c if x["kind"] == "returning")
+    # out 3-5 games: measured game-1 change -3.6 min, -1.8 pts, -0.4 reb, -0.6 ast
+    assert star["proj"] == {"pts": 23.2, "reb": 5.6, "ast": 4.4} and star["proj_min"] == 30.4
+    sub = next(x for x in c if x["kind"] == "fill_back")
+    # keeps 47% of his extra 14 minutes: 14 + 6.6 = 20.6 min at his last-10 rate (196 min, 84 pts = 0.43/min) -> 8.8 pts
+    assert sub["proj_min"] == 20.6 and sub["proj"]["pts"] == 8.8
+    st = PD.step({}, NOW, [G], returning_reads(), {}, b,
+                 lambda g: {("star", "pts"): {"line": 26.5, "over": -110, "under": -110, "books": 5},
+                            ("sub", "pts"): {"line": 12.5, "over": -110, "under": -110, "books": 5}}, {})
+    got = {(x["player"], x["side"], x["stat"], x["edge"]) for x in st["bets"]}
+    assert got == {("Star", "under", "pts", 3.3), ("Sub", "under", "pts", 3.7)}
+
+
+def test_no_returning_bets_while_he_is_still_out_or_questionable_for_his_fill_ins():
+    from engine.props_splits import returns
+    b = returning_box()
+    assert PD.candidates(G, returning_reads("out"), {}, PD.scoring(b), {}, returns(b)) == []
+    c = PD.candidates(G, returning_reads("day-to-day"), {}, PD.scoring(b), {}, returns(b))
+    assert [x["kind"] for x in c] == ["returning"] and c[0]["dtd"] is True

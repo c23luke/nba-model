@@ -66,3 +66,57 @@ def splits(box_rows: list[dict]) -> dict[str, dict[str, dict[str, dict]]]:
                 team[a] = per
         out[t] = team
     return out
+
+
+STAR_MPG = 28.0         # a "star" for the returning test: 28+ minutes a game before he went out
+RETURN_MISSED = 3       # straight team games missed
+
+
+def returns(box_rows: list[dict]) -> dict[str, dict[str, dict]]:
+    """team -> normalised name -> a 28+ mpg player who has missed his team's last 3+ games (as of its latest game):
+    {"name", "missed", "pre": {min, pts, reb, ast usual over his last 10 games before}, "fill": {teammate: {...}}}.
+    fill = teammates who played 5+ minutes above their own usual over the games he missed (2+ of them)."""
+    games = defaultdict(dict)                        # team -> game id -> date
+    rows = defaultdict(dict)                         # (team, game) -> name -> row
+    names = {}
+    for r in box_rows:
+        t, g = r.get("team"), r.get("game_id")
+        if not t or not g:
+            continue
+        games[t][g] = str(r.get("game_date") or "")
+        k = norm(r.get("name") or "")
+        rows[(t, g)][k] = r
+        names[k] = r.get("name")
+    out = {}
+    for t, gs in games.items():
+        order = sorted(gs, key=lambda g: (gs[g], g))
+        played = lambda k, g: (rows[(t, g)].get(k) or {}).get("min", 0) > 0
+
+        def usual(k, upto):
+            rs = [rows[(t, g)][k] for g in order[:upto] if played(k, g)][-10:]
+            if len(rs) < 5:
+                return None
+            return {s: sum(_stat(r, s) for r in rs) / len(rs) for s in STATS}
+        team = {}
+        everyone = {k for g in order for k in rows[(t, g)]}
+        for k in everyone:
+            last = max((i for i, g in enumerate(order) if played(k, g)), default=None)
+            if last is None:
+                continue
+            missed = len(order) - 1 - last
+            if missed < RETURN_MISSED:
+                continue
+            pre = usual(k, last + 1)
+            if not pre or pre["min"] < STAR_MPG:
+                continue
+            gone = order[last + 1:]
+            fill = {}
+            for b in everyone - {k}:
+                u = usual(b, last + 1)
+                dur = [rows[(t, g)][b]["min"] for g in gone if played(b, g)]
+                if u and len(dur) >= 2 and sum(dur) / len(dur) - u["min"] >= 5:
+                    fill[b] = {"name": names[b], "usual_min": round(u["min"], 1), "during_min": round(sum(dur) / len(dur), 1),
+                               "n": len(dur)}
+            team[k] = {"name": names[k], "missed": missed, "pre": {s: round(v, 1) for s, v in pre.items()}, "fill": fill}
+        out[t] = team
+    return out

@@ -574,9 +574,15 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                    "this season without that player he gained under 2: under when the line sits above what he did then."}
     how["hidden"] = ("In this season's games a rotation player missed, a teammate played 5+ more minutes, but the players "
                      "model doesn't give him the bump tonight (so the market may not either): over.")
-    for k in ("hidden", "jump_hist", "fake", "jump_model"):
+    how["returning"] = ("A player who averaged 28+ minutes comes back after missing 3+ straight games: under on his "
+                        "points / rebounds / assists when the line sits 3+ (1.5 on rebounds/assists) above our number.")
+    how["fill_back"] = ("The teammates who played 5+ more minutes while he was out, the night he comes back: under when "
+                        "the line still reflects their bigger role.")
+    for k in ("returning", "fill_back", "hidden", "jump_hist", "fake", "jump_model"):
         x = R.get(k) or {}
-        out.append(item("Props: " + (x.get("name") or k), how[k], {"hidden": "minutes study: real +5.5 min, +2.7 pts (388 cases, 2 seasons); no prop-line history, so CLV decides",
+        out.append(item("Props: " + (x.get("name") or k), how[k], {"returning": "minutes study: game 1 back -5.1 min, -2.6 pts, 63% below their usual (289 returns, both seasons agree); no prop-line history",
+                         "fill_back": "minutes study: fill-ins went 17.2 usual / 26.2 while he was out / 21.4 the night he returned (627); no prop-line history",
+                         "hidden": "minutes study: real +5.5 min, +2.7 pts (388 cases, 2 seasons); no prop-line history, so CLV decides",
                          "jump_hist": "minutes study: bench guys with a history bump got +8.4 min, +3.9 pts (603 cases); no prop-line history",
                          "fake": "minutes study: +0.8 min but still +2.5 pts (244 cases): a weak under; no prop-line history",
                          "jump_model": "minutes study: the naive bump came in at +1.5 min, +2.8 pts (1,368 cases); no prop-line history"}[k],
