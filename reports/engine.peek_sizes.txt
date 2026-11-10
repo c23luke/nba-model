@@ -1,0 +1,43 @@
+board (the site loads this every 60 s per open tab)         0.25 MB       1 rows  0.3s
+picks, all rows (model, every run)                          0.64 MB     741 rows  0.2s
+games, all rows (model, every run)                          0.05 MB     170 rows  0.1s
+player_games, all (model, every 30 min)                     0.34 MB    1000 rows  0.2s
+bet_orders live filled (model, every run)                   0.10 MB      78 rows  0.1s
+bet_feed (bettor, every minute)                             0.23 MB     122 rows  0.1s
+bet_log last 50                                             0.02 MB      50 rows  0.4s
+injury_log all                                              0.30 MB    1000 rows  0.1s
+price_log last 2 days                                       0.68 MB    1000 rows  0.4s
+
+board parts:
+  slate                             64.2 KB
+  placed                            55.8 KB
+  tracking                          34.1 KB
+  test_history                      19.0 KB
+  power                             13.0 KB
+  roster_audit                      10.6 KB
+  test_systems                       9.2 KB
+  early_history                      9.0 KB
+  history                            7.8 KB
+  tests                              5.2 KB
+  report_card                        4.3 KB
+  early_systems                      3.8 KB
+  card                               3.6 KB
+  gap_tracker                        3.1 KB
+  bets                               2.3 KB
+  systems                            1.8 KB
+  notes                              1.0 KB
+  card_done                          0.7 KB
+  shadow_systems                     0.5 KB
+  card_holding                       0.3 KB
+  injury_desk                        0.2 KB
+  stacks                             0.2 KB
+  placer                             0.1 KB
+  scoring                            0.1 KB
+  combo_live                         0.1 KB
+  odds_api                           0.0 KB
+  generated_at                       0.0 KB
+  today                              0.0 KB
+  line_source                        0.0 KB
+  early                              0.0 KB
+  benched                            0.0 KB
+  dropped                            0.0 KB
