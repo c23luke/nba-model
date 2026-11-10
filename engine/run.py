@@ -572,9 +572,14 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                          "teammate 5+ more minutes: over when our projection beats the line.",
            "fake": "The players model (and likely the market) expects a teammate to get 5+ more minutes, but in 3+ games "
                    "this season without that player he gained under 2: under when the line sits above what he did then."}
-    for k in ("jump_hist", "fake", "jump_model"):
+    how["hidden"] = ("In this season's games a rotation player missed, a teammate played 5+ more minutes, but the players "
+                     "model doesn't give him the bump tonight (so the market may not either): over.")
+    for k in ("hidden", "jump_hist", "fake", "jump_model"):
         x = R.get(k) or {}
-        out.append(item("Props: " + (x.get("name") or k), how[k], "new: prop lines can't be backtested (no history of them)",
+        out.append(item("Props: " + (x.get("name") or k), how[k], {"hidden": "minutes study: real +5.5 min, +2.7 pts (388 cases, 2 seasons); no prop-line history, so CLV decides",
+                         "jump_hist": "minutes study: bench guys with a history bump got +8.4 min, +3.9 pts (603 cases); no prop-line history",
+                         "fake": "minutes study: +0.8 min but still +2.5 pts (244 cases): a weak under; no prop-line history",
+                         "jump_model": "minutes study: the naive bump came in at +1.5 min, +2.8 pts (1,368 cases); no prop-line history"}[k],
                         x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "on the prop line", x.get("open", 0)))
     x2_sides = {(p["game_id"], p["side"]) for p in picks if p.get("system") == 302}
     x2_sides |= {(str(x["paper"].get("game_id")), x["paper"]["side"])          # injury-desk paper bets too

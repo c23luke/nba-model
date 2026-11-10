@@ -57,22 +57,34 @@ def test_splits_show_what_a_teammate_did_with_and_without_a_rotation_player():
 def test_no_history_yet_uses_the_players_model_minutes():
     b = box()
     c = PD.candidates(G, reads(), ROT, PD.scoring(b), splits(b))
-    assert len(c) == 1 and c[0]["kind"] == "jump_model" and c[0]["proj"]["pts"] == 13.0 and c[0]["proj_min"] == 26.0
+    # calibrated 2026-11-10: his usual night (12 min, 6 pts, 2 reb, 1 ast) + the measured no-history gain (+2.8/+0.5/+0.7)
+    assert len(c) == 1 and c[0]["kind"] == "jump_model" and c[0]["proj"] == {"pts": 8.8, "reb": 2.5, "ast": 1.7}
 
 
 def test_a_real_minutes_jump_in_past_games_projects_from_those_games():
     b = box(bench_without=28, n_without=2)
     c = PD.candidates(G, reads(), ROT, PD.scoring(b), splits(b))
-    assert c[0]["kind"] == "jump_hist" and c[0]["proj"] == {"pts": 14.0, "reb": 4.0, "ast": 3.0} and c[0]["n_wo"] == 2
+    # usual night over his last 10: 15.2 min (not a bench guy), 7.6 pts, 2.4 reb, 1.4 ast; history gain without the
+    # starter +16 min / +8 pts / +2 reb / +2 ast, trusted 60% (measured): 7.6 + 4.8, 2.4 + 1.2, 1.4 + 1.2
+    assert c[0]["kind"] == "jump_hist" and c[0]["proj"] == {"pts": 12.4, "reb": 3.6, "ast": 2.6} and c[0]["n_wo"] == 2
+    assert c[0]["proj_min"] == 24.8 and c[0]["trust"] == 0.6
+
+
+def test_hidden_bump_when_history_says_minutes_but_the_players_model_does_not():
+    b = box(bench_without=28, n_without=2)
+    c = PD.candidates(G, reads(13.0), ROT, PD.scoring(b), splits(b))
+    assert c[0]["kind"] == "hidden" and c[0]["proj"]["pts"] == 12.4
 
 
 def test_fake_bump_when_the_model_expects_minutes_but_history_says_no():
     b = box(bench_without=13, n_without=3)              # he played 13 without the starter, 12 with: no bump
     c = PD.candidates(G, reads(26.0), ROT, PD.scoring(b), splits(b))
-    assert c[0]["kind"] == "fake" and c[0]["proj"]["pts"] == 6.0
-    st = PD.step({}, NOW, [G], reads(26.0), ROT, b, lambda g: props(pts=10.5), {})
+    # his usual 6.0 pts + the 2.5 points fake-bump players still gained over 2 seasons (usage) = 8.5
+    assert c[0]["kind"] == "fake" and c[0]["proj"] == {"pts": 8.5, "reb": 3.0, "ast": 2.2}
+    assert PD.step({}, NOW, [G], reads(26.0), ROT, b, lambda g: props(pts=10.5), {})["bets"] == []    # only 2 over
+    st = PD.step({}, NOW, [G], reads(26.0), ROT, b, lambda g: props(pts=11.5), {})
     bet = st["bets"][0]
-    assert (bet["side"], bet["stat"], bet["line"], bet["price"], bet["edge"]) == ("under", "pts", 10.5, -110, 4.5)
+    assert (bet["side"], bet["stat"], bet["line"], bet["price"], bet["edge"]) == ("under", "pts", 11.5, -110, 3.0)
     # two games of history isn't enough to call a bump fake
     b2 = box(bench_without=13, n_without=2)
     assert PD.candidates(G, reads(26.0), ROT, PD.scoring(b2), splits(b2)) == []
@@ -80,15 +92,15 @@ def test_fake_bump_when_the_model_expects_minutes_but_history_says_no():
 
 def test_paper_over_then_clv_then_grade_and_a_void_if_he_sits():
     b = box()
-    st = PD.step({}, NOW, [G], reads(), ROT, b, lambda g: props(pts=8.5, reb=5.5), {})
+    st = PD.step({}, NOW, [G], reads(), ROT, b, lambda g: props(pts=5.5, reb=5.5), {})
     got = {(x["stat"], x["side"]) for x in st["bets"]}
-    assert got == {("pts", "over")}                     # 26 min x 0.1 reb/min = 2.6 projected: no rebound bet
+    assert got == {("pts", "over")}                     # 2.5 rebounds projected vs 5.5: no rebound bet
     # 30 minutes later: not re-read (every 90 minutes)...
     calls = []
-    PD.step(st, NOW + timedelta(minutes=30), [G], reads(), ROT, b, lambda g: calls.append(1) or props(10.5), {})
+    PD.step(st, NOW + timedelta(minutes=30), [G], reads(), ROT, b, lambda g: calls.append(1) or props(7.5), {})
     assert calls == []
     # ...but read once in the last 30 minutes before tip: the closing line, CLV +2
-    st = PD.step(st, datetime(2026, 11, 11, 2, 40, tzinfo=timezone.utc), [G], reads(), ROT, b, lambda g: props(10.5), {})
+    st = PD.step(st, datetime(2026, 11, 11, 2, 40, tzinfo=timezone.utc), [G], reads(), ROT, b, lambda g: props(7.5), {})
     assert st["bets"][0]["clv"] == 2.0
     b2 = b + [row("g1", "Bench Guard", 27, 11)]
     st2 = PD.step(st, NOW + timedelta(hours=8), [], reads(), ROT, b2, lambda g: None, {"g1": {"final": True}})
@@ -101,7 +113,7 @@ def test_paper_over_then_clv_then_grade_and_a_void_if_he_sits():
 
 def test_no_bet_when_the_line_already_moved_or_the_news_is_old():
     b = box()
-    assert PD.step({}, NOW, [G], reads(), ROT, b, lambda g: props(pts=11.5), {})["bets"] == []
+    assert PD.step({}, NOW, [G], reads(), ROT, b, lambda g: props(pts=6.5), {})["bets"] == []     # 8.8 vs 6.5: only 2.3
     rot = {"POR": {"starter": {"name": "Starter", "mpg": 32.0, "last": False}}}      # out a while: nothing new
     assert PD.candidates(G, reads(), rot, PD.scoring(b), splits(b)) == []
 

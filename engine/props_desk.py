@@ -9,9 +9,11 @@ Three kinds of paper bet, tracked separately:
   * "jump (model)": no games yet without the absent player, but the players model (which re-fits every team to 240
     minutes with tonight's absences) gives this teammate 5+ more minutes. Projection = tonight's minutes x his rate
     over his last 10 games. OVER only.
+  * "hidden bump": a history jump the players model doesn't see (it gives him under +2 minutes). OVER only.
   * "fake bump": the players model gives this teammate 5+ more minutes, but in 3+ games this season without the
-    absent player he gained under 2. The market likely assumes the bump; history says it doesn't come.
-    We take the UNDER when the line sits above what he did in those games.
+    absent player he gained under 2. History says the minutes don't come, but measured over 2 seasons his points
+    still rise about 2.5 (usage), so the UNDER only fires when the line is 3+ above his usual night plus that.
+  Projections are his usual night (last 10 games) plus the measured gain, not raw averages (see the constants).
 Lines: The Odds API (points, rebounds, assists; 3 credits per read), only for games with such news, read when the
 news appears and then every 90 minutes, plus once in the last 30 minutes before tip (that read is the closing line
 for CLV). Graded from the box score. Nothing is ever bet from this. Stored in bet_state "props_desk".
@@ -38,7 +40,17 @@ CLOSE_READ = timedelta(minutes=30)
 EVENTS = "https://api.the-odds-api.com/v4/sports/basketball_nba/events?apiKey={key}"
 PROPS = ("https://api.the-odds-api.com/v4/sports/basketball_nba/events/{eid}/odds?apiKey={key}"
          "&regions=us&markets=" + ",".join(MARKETS) + "&oddsFormat=american")
-KINDS = {"jump_hist": "Minutes jump (this season's games without him): overs",
+# Measured 2026-11-10 (engine/measure_props_minutes.py, 2 seasons, 17,299 teammate-games with a fresh absence):
+#  * history (2+ games) said +8.5 min -> real +5.0 overall, but bench guys (under 15 mpg) +8.8 -> +8.4: so a
+#    teammate's history gain is trusted 95% for bench guys and 60% for everyone else.
+#  * the naive "his minutes get shared out" guess said +5.9 -> real +1.5 min, yet points still rose +2.8, rebounds
+#    +0.5, assists +0.7 (usage goes up even without minutes). Same for fake bumps: +0.8 min, +2.5 pts, +0.4 reb, +0.6 ast.
+HIST_TRUST = {"bench": 0.95, "other": 0.60}
+BENCH_MPG = 15.0
+NO_HISTORY_GAIN = {"pts": 2.8, "reb": 0.5, "ast": 0.7}
+FAKE_GAIN_STATS = {"pts": 2.5, "reb": 0.4, "ast": 0.6}
+KINDS = {"hidden": "Hidden bump (history says +5 min, the players model doesn't see it): overs",
+         "jump_hist": "Minutes jump (this season's games without him): overs",
          "jump_model": "Minutes jump (players model only): overs",
          "fake": "Fake bump (everyone expects minutes, history says no): unders"}
 
@@ -94,17 +106,20 @@ def candidates(game, reads: dict, rotations: dict, score: dict, splits: dict | N
                     break
             base = {"game_id": game.id, "team": team, "player": p.name, "because": because,
                     "mpg": round(s["mpg"], 1), "model_min": round(p.minutes, 1), "dtd": p.status == "day-to-day"}
+            now_ = {"pts": s["ppm"] * s["mpg"], "reb": s["rpm"] * s["mpg"], "ast": s["apm"] * s["mpg"]}   # his usual night
             if sp:
                 real_gain = sp["min_wo"] - sp["min_with"]
                 hist = {"split_of": who, "n_wo": sp["n_wo"], "min_with": sp["min_with"], "min_wo": sp["min_wo"]}
-                proj = {k: sp[f"{k}_wo"] for k in EDGE}
                 if real_gain >= GAIN_MIN:
-                    out.append({**base, **hist, "kind": "jump_hist", "proj": proj, "proj_min": sp["min_wo"]})
+                    tr = HIST_TRUST["bench" if s["mpg"] < BENCH_MPG else "other"]
+                    proj = {k: round(now_[k] + tr * (sp[f"{k}_wo"] - sp[f"{k}_with"]), 1) for k in EDGE}
+                    out.append({**base, **hist, "kind": "hidden" if model_gain < FAKE_GAIN else "jump_hist", "trust": tr,
+                                "proj": proj, "proj_min": round(s["mpg"] + tr * real_gain, 1)})
                 elif model_gain >= GAIN_MIN and real_gain < FAKE_GAIN and sp["n_wo"] >= SPLIT_GAMES:
-                    out.append({**base, **hist, "kind": "fake", "proj": proj, "proj_min": sp["min_wo"]})
+                    proj = {k: round(now_[k] + FAKE_GAIN_STATS[k], 1) for k in EDGE}
+                    out.append({**base, **hist, "kind": "fake", "proj": proj, "proj_min": round(s["mpg"] + max(real_gain, 0), 1)})
             elif model_gain >= GAIN_MIN:
-                proj = {"pts": round(p.minutes * s["ppm"], 1), "reb": round(p.minutes * s["rpm"], 1),
-                        "ast": round(p.minutes * s["apm"], 1)}
+                proj = {k: round(now_[k] + NO_HISTORY_GAIN[k], 1) for k in EDGE}
                 out.append({**base, "kind": "jump_model", "proj": proj, "proj_min": round(p.minutes, 1)})
     return out
 

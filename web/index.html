@@ -764,7 +764,7 @@ function renderLab(b) {
       <div class="t">${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(statName[x.stat] || x.stat)} (${x.price > 0 ? "+" : ""}${x.price})${x.result ? ` · ${x.result === "W" ? "won" : x.result === "L" ? "lost" : x.result === "VOID" ? "void, he sat" : "push"}` : ""}</div>
       <div class="muted" style="font-size:14px">${esc(x.team)}, ${esc(when(x.tip_utc))}. Out: ${(x.because || []).map(esc).join(", ")}.
         ${x.kind === "fake" ? `Expected to gain minutes, but in ${x.n_wo} games without ${esc(x.split_of)} he played ${x.min_wo} (${x.min_with} with him).`
-          : x.kind === "jump_hist" ? `In ${x.n_wo} games without ${esc(x.split_of)} he played ${x.min_wo} minutes (${x.min_with} with him).`
+          : (x.kind === "jump_hist" || x.kind === "hidden") ? `In ${x.n_wo} games without ${esc(x.split_of)} he played ${x.min_wo} minutes (${x.min_with} with him).`
           : `Players model gives him ${x.model_min} minutes (averages ${x.mpg}).`}
         Our number ${x.proj_stat}${x.clv != null ? `, line moved ${x.clv > 0 ? "+" : ""}${x.clv} our way` : ""}.</div></div><div></div></div>`).join("") : "");
   const sc = b.scoring;
