@@ -26,6 +26,11 @@ def snapshot(card_row: dict) -> dict:
     return s
 
 
+# when the card began applying today's rules before a bet goes out (commit a75cb44, 2026-11-02 22:47 ET); bets placed
+# after this were BETs under those rules when they were placed
+RULES_LIVE_UTC = "2026-11-03T04:00:00"
+
+
 def all_in(risk: float, to_win: float):
     """The odds really paid, fee included, so Price agrees with Risked and To win (Caden 2026-11-06: Kalshi showed
     $14.32 for a $30 payout = +110, the ticket said +117 because it left the fee out)."""
@@ -157,7 +162,9 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
         fees = float(o.get("fees") or 0)
         venue = o.get("venue") or ""
         p = picks.get(o.get("bet_key")) or {}
-        snap = snapshot(card[o["bet_key"]]) if o.get("bet_key") in card else ((p.get("meta") or {}).get("card_snap") or {})
+        meta_ = p.get("meta") or {}
+        # what the card said when we bet (frozen), else the live card, else the last thing it said
+        snap = meta_.get("bet_snap") or (snapshot(card[o["bet_key"]]) if o.get("bet_key") in card else (meta_.get("card_snap") or {}))
         o = {**o, "bet": o.get("bet") or p.get("bet"), "side": o.get("side") or p.get("side")}
         per = cost / cnt
         upfront_fee = fees if venue == "kalshi" else 0.0          # BetOpenly takes its cut out of winnings
@@ -206,12 +213,16 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "system": o.get("system"), "group": p.get("group"), "name": snap.get("name") or (names or {}).get(o.get("system")),
             "evidence": p.get("evidence") or [], "price_note": snap.get("why"), "confidence": snap.get("confidence"), "win": snap.get("win"),
             # the players-model gap WHEN WE BET (T13: the gap it fired on) and now (the live card, if still on it)
-            "players": ((p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13"
-                        else (p.get("meta") or {}).get("gap") if o.get("system") == "MONEYBALL" else snap.get("players")),
-            "players_now": snap.get("players"), "players_history": snap.get("players_history"),
+            "players": (((meta_.get("bet_snap") or {}).get("worst_gap") or meta_.get("worst_gap")) if o.get("system") == "T13"
+                        else meta_.get("gap") if o.get("system") == "MONEYBALL" else snap.get("players")),
+            "players_now": (snapshot(card[o["bet_key"]]) if o.get("bet_key") in card else {}).get("players"),
+            "players_history": snap.get("players_history"),
+            # placed after the card started enforcing today's rules: it passed them when we bet, so a later read
+            # (an injury, a line move) can't take it back out of the record
+            "under_rules": (o.get("created_at") or "") >= RULES_LIVE_UTC,
             "also_combo": snap.get("also_combo"), "with": snap.get("with") or [],
             # what the bet was sized to win when placed (older bets: $10 when the retired Low-confidence rule applied)
-            "t13_gap": (p.get("meta") or {}).get("worst_gap") if o.get("system") == "T13" else None,
+            "t13_gap": ((meta_.get("bet_snap") or {}).get("worst_gap") or meta_.get("worst_gap")) if o.get("system") == "T13" else None,
             "resting_fill": o.get("ask_at_check") is None and o.get("limit_price") is not None,   # a standing order that got hit
             # S4's bar: this season's average total that day (the pick's own, else from the games played before it)
             "s4_bar": ((p.get("meta") or {}).get("bar") or (s4_bars or {}).get(str(p.get("game_date")))) if o.get("system") == "S4" else None,
@@ -275,6 +286,8 @@ def rules_now(rows: list[dict], agree=None) -> dict:
         why = None
         if r.get("bet") == "total":
             why = "totals aren't bet now (S4 is tracking only)"
+        elif r.get("under_rules"):
+            pass        # the card applied today's players rule when this bet was placed (it was a BET then)
         elif r["system"] not in ("T13", "MONEYBALL"):
             if r.get("bet") == "total":
                 why = "totals aren't bet now"
@@ -286,7 +299,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
                     why = ("players model had no clean read: a system now needs it to agree by 3+" if g is None else
                            f"players model {'liked the other side by ' + format(abs(g), 'g') if g < 0 else 'agreed by only ' + format(g, 'g')}: "
                            "a system now needs it to agree by 3+")
-        if r["system"] == "T13" and r.get("t13_gap") is not None and r["t13_gap"] < T13_GAP_NOW:
+        if r["system"] == "T13" and not r.get("under_rules") and r.get("t13_gap") is not None and r["t13_gap"] < T13_GAP_NOW:
             why = f"T13 gap {r['t13_gap']:g}: today it needs 4+"
         if r["system"] == "S4" and r.get("line") is not None and (r.get("s4_bar") is None or float(r["line"]) <= r["s4_bar"]):
             why = (f"S4 total {float(r['line']):g} isn't above this season's average ({r['s4_bar']:.1f})" if r.get("s4_bar")

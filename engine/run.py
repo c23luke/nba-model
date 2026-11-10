@@ -460,14 +460,27 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     board["placer"] = placer
     # keep each card bet's reasoning on its pick, so a placed bet can still explain itself after it tips
     from .placed import snapshot
-    snaps = []
+    snaps = {}
+    # freeze what the card said when a bet was placed (Caden 2026-11-10: the Hawks bet vanished from the record
+    # because a later players read replaced the one we bet on). card_snap is still the one the bettor read, so
+    # the first run that sees a filled order copies it to bet_snap, and bet_snap is never changed after that.
+    # only recent orders: an older bet's card_snap may already have been rewritten, so freezing it now would lie
+    recent = (now - timedelta(hours=6)).isoformat()
+    bet_keys = {o.get("bet_key") for o in orders if (o.get("fill_count") or 0) > 0 and (o.get("created_at") or "") >= recent}
+    for k in bet_keys:
+        p = all_picks.get(k)
+        meta = (p or {}).get("meta") or {}
+        if p is not None and "bet_snap" not in meta and meta.get("card_snap"):
+            snaps[k] = {**p, "meta": {**meta, "bet_snap": {**meta["card_snap"], "worst_gap": meta.get("worst_gap"),
+                                                          "frozen_at": now.isoformat()}}}
     for c in board["card"]:
-        p = all_picks.get(c["key"])
+        p = snaps.get(c["key"]) or all_picks.get(c["key"])
         if p is None:
             continue
         meta, s = p.get("meta") or {}, snapshot(c)
         if meta.get("card_snap") != s:
-            snaps.append({**p, "meta": {**meta, "card_snap": s}})
+            snaps[c["key"]] = {**p, "meta": {**meta, "card_snap": s}}
+    snaps = list(snaps.values())
     if snaps:
         store.save_picks(snaps)
     store.save_board(board)

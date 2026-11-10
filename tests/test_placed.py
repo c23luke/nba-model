@@ -59,10 +59,16 @@ def test_placed_bet_keeps_its_reasoning_after_it_tips_and_grades(tmp_path):
                                  "line": 6.5, "contract": "NO · MIL wins by over 6.5 (= LAL +6.5)", "status": "filled",
                                  "fill_count": 36, "fill_cost": 19.8, "fees": 0.6, "ev": 0.08,
                                  "created_at": "2025-11-15T15:01:00+00:00"}])
+    # the next run (minutes later, as in production) freezes what the card said when we bet
+    run(now=datetime(2025, 11, 15, 15, 6, tzinfo=timezone.utc),
+        fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=fake_lines, **kw)
     # during the game: off the card, but the bet still says why we took it
     b = run(now=datetime(2025, 11, 16, 1, 0, tzinfo=timezone.utc),
             fetch_day=make_fetch_day(date(2025, 11, 15), date(2025, 11, 14)), fetch_lines=lambda: ({}, {}), **kw)
     assert not any(x["key"] == c["key"] for x in b["card"])
+    # the card's reasoning when we bet is frozen on the pick and never rewritten (Caden 2026-11-10, the Hawks bet)
+    snap = next(p for p in store.load_picks() if p["key"] == c["key"])["meta"]["bet_snap"]
+    assert snap["why"] == c["why"] and snap["players"] == c["players"] and snap["frozen_at"].startswith("2025-11-15T15:06")
     r = b["placed"]["bets"][0]
     assert (r["status"], r["holding"], r["price_note"], r["name"]) == ("LIVE", "LAL +6.5", c["why"], c["name"])
     assert r["evidence"] and "S1, T24" in r["evidence"][0]           # the MONEYBALL pick's own notes
@@ -270,3 +276,45 @@ def test_ticket_price_includes_the_fee_like_kalshi_shows_it():
     from engine.placed import all_in
     assert all_in(14.32, 30 - 14.32) == 109
     assert all_in(0, 5) is None and all_in(5, 0) is None
+
+
+def test_a_bet_placed_under_todays_rules_stays_in_the_record_when_a_later_read_changes():
+    # Nov 9, ATL +2.5 (S109): the players model backed ATL by 3.4 when we bet at 10:44 PM; by morning it had moved
+    # to the Lakers. The bet lost. It must stay in the record (it was a BET under today's rule when placed).
+    # A T13 bet placed at a 4+ gap stays in too after its gap later shrinks.
+    from engine.placed import placed_bets
+    now = datetime(2026, 11, 10, 12, 0, tzinfo=timezone.utc)
+    games = {"g": {"final": True, "home": "ATL", "away": "LAL", "home_score": 114, "away_score": 124},
+             "h": {"final": True, "home": "MEM", "away": "OKC", "home_score": 110, "away_score": 100}}
+    o = lambda **k: {"mode": "live", "venue": "prophetx", "bet": "spread", "status": "filled", "ev": 0.12,
+                     "fill_count": 43, "fill_cost": 22.42, "fees": 0, **k}
+    orders = [o(id="a", bet_key="g-S109-ATL", game_id="g", side="ATL", line=2.5, pick="ATL +2.5", system="S109",
+                created_at="2026-11-09T03:44:06Z", tip_utc="2026-11-10T00:00:00+00:00"),
+              o(id="b", bet_key="h-S113-MEM", game_id="h", side="MEM", line=3.5, pick="MEM +4", system="T13",
+                created_at="2026-11-06T12:23:04Z", tip_utc="2026-11-07T01:00:00+00:00")]
+    picks = {"g-S109-ATL": {"key": "g-S109-ATL", "system": 109, "away": "LAL", "home": "ATL",
+                            "meta": {"card_snap": {"players": None, "why": "No bet: no clean read"},
+                                     "bet_snap": {"players": 3.4, "why": "Best price: ProphetX ATL +2.5"}}},
+             "h-S113-MEM": {"key": "h-S113-MEM", "system": 113, "away": "OKC", "home": "MEM",
+                            "meta": {"worst_gap": 1.5, "bet_snap": {"players": 5.0, "worst_gap": 5.0}}}}
+    out = placed_bets(orders, picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now, agree=lambda g, s: 0.1)
+    atl = next(r for r in out["bets"] if r["side"] == "ATL")
+    mem = next(r for r in out["bets"] if r["side"] == "MEM")
+    assert atl["rules"]["counted"] and atl["result"] == "L" and atl["players"] == 3.4
+    assert atl["price_note"] == "Best price: ProphetX ATL +2.5"            # the reason we bet, not the later one
+    assert mem["rules"]["counted"] and mem["players"] == 5.0
+    assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 1)
+
+
+def test_a_bet_from_before_the_rule_is_still_judged_by_it():
+    # Nov 2 bets were placed before the card applied the players rule: those are still re-judged (Caden 2026-11-02)
+    from engine.placed import placed_bets
+    now = datetime(2026, 11, 3, 15, 0, tzinfo=timezone.utc)
+    games = {"g": {"final": True, "home": "ORL", "away": "WAS", "home_score": 94, "away_score": 103}}
+    orders = [{"id": "c", "mode": "live", "venue": "kalshi", "bet": "spread", "status": "filled", "bet_key": "k",
+               "game_id": "g", "side": "WAS", "line": 1.5, "pick": "WAS +1.5", "system": "T2", "fill_count": 41,
+               "fill_cost": 20.5, "fees": 0.41, "ev": 0.0445, "created_at": "2026-11-02T01:11:06Z",
+               "tip_utc": "2026-11-03T00:30:00+00:00"}]
+    picks = {"k": {"key": "k", "system": 102, "away": "WAS", "home": "ORL", "meta": {"bet_snap": {"players": -0.7}}}}
+    r = placed_bets(orders, picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
+    assert not r["rules"]["counted"] and "other side by 0.7" in r["rules"]["why"]
