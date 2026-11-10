@@ -39,6 +39,10 @@
   {'created_at': '2026-11-07T21:01:01.526938+00:00', 'updated_at': '2026-11-07T22:01:01.123+00:00', 'status': 'filled', 'pick': 'LAL +2', 'contract': 'NO · DET wins by over 1.5  (= LAL +1.5)', 'count': 39, 'fill_count': 39, 'fill_cost': 18.72, 'reason': None}
 
 === bettor log, newest 40
+  2026-11-10T15:19:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
+  2026-11-10T15:19:03 info Key check — Kalshi prod: keys work, balance $155.71 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $57.02 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check:
+  2026-11-10T15:04:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
+  2026-11-10T15:04:03 info Key check — Kalshi prod: keys work, balance $155.71 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $57.02 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check:
   2026-11-10T14:48:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
   2026-11-10T14:48:03 info Key check — Kalshi prod: keys work, balance $0.60 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $0.00 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: OK
   2026-11-10T14:32:03 info run (live, prod): 0 bets on the card, 0 action(s), 0 skipped
@@ -75,14 +79,10 @@
   2026-11-10T10:38:03 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
   2026-11-10T10:22:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
   2026-11-10T10:22:03 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
-  2026-11-10T10:06:04 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
-  2026-11-10T10:06:04 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
-  2026-11-10T09:50:03 info run (live, prod): 1 bets on the card, 0 action(s), 1 skipped
-  2026-11-10T09:50:03 info Key check — Kalshi prod: keys work, balance $29.66 · Kalshi demo: no keys · BetOpenly: key works, balance $153.80 · ProphetX: keys work, balance $78.04 · POLYMARKET_KEY_ID: not set · Novig: signature OK; location check: 
 
-=== live site board generated 2026-11-10T15:00:12.588455+00:00
-  record under today's rules: 7 - 7 - 0 pnl 3.26 | open 2 at risk 41.02
-  real account: 12 - 13 pnl -36.87
+=== live site board generated 2026-11-10T15:27:37.627739+00:00
+  record under today's rules: 7 - 6 - 0 pnl 25.5 | open 2 at risk 41.02
+  real account: 12 - 12 pnl -14.45
   has combo_live (new code): True | report card has systems_p3: True
    OPEN   - T13       BOS +1                 BetOpenly          real None  counted None
    OPEN   - T7        POR +1.5               BetOpenly          real None  counted None
@@ -108,6 +108,5 @@
    FINAL  L T13       MEM +2.5               Kalshi             real -17.08  counted -18.35
    FINAL  L MONEYBALL CLE +4.5               Kalshi             real -38.5  counted -38.02
    FINAL  W T13       LAL +1.5               Kalshi             real 20.11  counted 20.0
-   FINAL  L T9        ATL +2.5               ProphetX           real -22.42  counted -22.24
    FINAL  L T13       DEN +4.5               BetOpenly + ProphetX real -22.54  hidden: bought 4.5 points off the card's number: today the limit is 2
    FINAL  L MONEYBALL PHX +6.5               ProphetX           real -29.83  counted -29.58
