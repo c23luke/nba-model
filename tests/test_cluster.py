@@ -56,3 +56,15 @@ def test_long_absences_alone_dont_fire():
     g = Game(id="g1", game_date=date(2026, 11, 12), away="WAS", home="ORL")
     reads = {"ORL": read("ORL", {"A": "out", "B": "out"}), "WAS": read("WAS", {})}
     assert C.cluster_pick(g, -3.5, rot, reads) == []
+
+
+def test_testing_side_lists_every_idea_and_the_bar_to_real_money():
+    from engine.run import TESTING_BAR, testing_side
+    board = {"shadow_systems": {302: {"if_first": {"w": 30, "l": 22, "p": 0}, "avg_clv": 0.4, "open": 1}},
+             "injury_desk": {"paper": {"bets": 3, "w": 2, "l": 1, "avg_clv": 1.5}},
+             "props_desk": {"bets": 0, "w": 0, "l": 0, "avg_clv": None},
+             "placed": {"bets": [{"game_id": "g", "side": "WAS", "result": "W", "rules": {"counted": True}, "market": {"beat_close": 2.0}}]}}
+    t = testing_side(board, [{"system": 302, "game_id": "g", "side": "WAS"}])
+    assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: pl", "Our bet +"]
+    assert (t[0]["w"], t[0]["l"], t[0]["bets"], t[0]["ready"]) == (30, 22, 52, True)
+    assert t[1]["ready"] is False and t[3]["w"] == 1 and t[3]["avg_clv"] == 2.0 and TESTING_BAR == 50

@@ -129,7 +129,7 @@ def judge(event: dict, game: dict, h: list[dict]) -> dict | None:
         if not after["blind"] and worst(after, side) >= PAPER_GAP and worst(before, side) < PAPER_GAP:
             line = after["mkt"] if side == "home" else -after["mkt"]
             team = game["home"] if side == "home" else game["away"]
-            bet = {"side": team, "line": line, "gap": round(worst(after, side), 1)}
+            bet = {"game_id": game.get("id"), "side": team, "line": line, "gap": round(worst(after, side), 1)}
             if close is not None:
                 c = close if side == "home" else -close
                 bet["clv"] = round(line - c, 1)          # + = our number was better than the close

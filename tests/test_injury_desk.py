@@ -52,7 +52,9 @@ def test_news_that_moves_our_number_is_judged_against_the_market():
     assert j["our_move"] == 4.5 and j["mkt_at"] == -8.5 and j["mkt_15"] == -4.5 and j["mkt_close"] == -5.0
     assert j["seconds_to_read"] == 60
     assert j["market_followed"] == 3.5                     # the market moved 3.5 the way our number did
-    assert j["paper"] == {"side": "DEN", "line": 8.5, "gap": 7.0, "clv": 3.5, "result": "L"}
+    # paper bets carry the game id (2026-11-10) so the testing side can match them to our real bets
+    assert {k: v for k, v in j["paper"].items() if k != "game_id"} == {"side": "DEN", "line": 8.5, "gap": 7.0, "clv": 3.5, "result": "L"}
+    assert "game_id" in j["paper"]
 
 
 def test_small_moves_and_no_read_are_not_events():

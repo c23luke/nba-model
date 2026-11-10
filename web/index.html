@@ -751,8 +751,16 @@ function renderLab(b) {
        <div style="font-size:14px">Our line ${spr(x.fair_before, x.home)} → ${spr(x.fair_after, x.home)} (${x.our_move > 0 ? "+" : ""}${x.our_move}).
          Market when we'd read it ${spr(x.mkt_at, x.home)}, 15 min ${spr(x.mkt_15, x.home)}, 1 hr ${spr(x.mkt_60, x.home)}, last before tip ${spr(x.mkt_close, x.home)}.
          ${x.paper ? `<b>Paper bet ${esc(x.paper.side)} ${x.paper.line > 0 ? "+" : ""}${x.paper.line}</b> (worst case ${x.paper.gap} off)${x.paper.clv != null ? `, CLV ${x.paper.clv > 0 ? "+" : ""}${x.paper.clv}` : ""}${x.paper.result ? `, ${x.paper.result === "W" ? "won" : x.paper.result === "L" ? "lost" : "push"}` : ""}.` : ""}</div></div><div></div></div>`).join("");
+  // the testing side: every idea being paper-tested, and how far each is from earning real money
+  const TS = b.testing || [];
+  const tst = !TS.length ? `<div class="muted">Fills in on the next model run.</div>` :
+    `<p class="muted" style="font-size:14px">Ideas we track on paper before any real money. An idea earns real bets only after ${TS[0].bar} paper bets with positive CLV and a winning record.</p>` +
+    TS.map(x => `<div class="game"><div><div class="t">${esc(x.name)}${x.ready ? ` <b>· ready for real money</b>` : ""}</div>
+      <div class="muted" style="font-size:14px">${esc(x.how)} Backtest: ${esc(x.backtest)}.</div>
+      <div style="font-size:14px">Paper record ${x.w}-${x.l}${x.open ? `, ${x.open} open` : ""} · ${x.bets} of ${x.bar} bets · CLV ${x.avg_clv == null ? "—" : `${x.avg_clv > 0 ? "+" : ""}${x.avg_clv} ${esc(x.clv_unit)}`}</div></div><div></div></div>`).join("");
   const sc = b.scoring;
   $("tab-lab").innerHTML = `<h2>Model lab</h2><p class="lede">Everything the model tracks behind the card. Open a section to dig in.</p>` +
+    box("Testing side", TS.length ? `${TS.length} ideas on paper, ${TS.filter(x => x.ready).length} ready` : "tracking only", tst) +
     box("Injury desk", D ? `${D.events} news events, ${D.paper.bets} paper bets, tracking only` : "tracking only", desk) +
     box("Today and tomorrow", `${(b.slate || []).length} games, lines from ${esc(b.line_source)}`, slate) +
     box("Why the players model likes it", `${(b.slate || []).filter(g => g.personnel && g.personnel.case).length} cases`, cases) +

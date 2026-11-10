@@ -440,6 +440,10 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                                                  sources.get_json, {g.id: {"final": g.final} for g in games})
         except Exception as e:
             log.append(f"props desk: {str(e)[:160]}")
+    try:
+        board["testing"] = testing_side(board, list(all_picks.values()))
+    except Exception as e:
+        log.append(f"testing side: {str(e)[:160]}")
     # stale-price research: what the books' consensus said and what the exchanges offered, this run
     if hasattr(store, "save_price_log") and upcoming:
         try:
@@ -537,6 +541,47 @@ def _wl(results) -> dict:
     return {"w": w, "l": l, "p": pu, "n": w + l + pu,
             "win_pct": round(w / (w + l), 4) if w + l else None,
             "units": round(w - 1.1 * l, 2)}                   # risk 1.1u to win 1u (-110)
+
+
+TESTING_BAR = 50      # paper bets before an idea can move to real money (with positive CLV and a winning record)
+
+
+def testing_side(board: dict, picks: list[dict]) -> list[dict]:
+    """Every idea being paper-tested (Caden 2026-11-10: "a testing side"): its record, CLV, and whether it has earned
+    real money yet. Nothing here is ever bet."""
+    def item(name, how, backtest, w, l, n, clv, unit, open_=0):
+        return {"name": name, "how": how, "backtest": backtest, "w": w, "l": l, "bets": n, "open": open_,
+                "avg_clv": clv, "clv_unit": unit, "bar": TESTING_BAR,
+                "ready": n >= TESTING_BAR and (clv or 0) > 0 and w > l}
+    out = []
+    sh = board.get("shadow_systems") or {}
+    x2 = sh.get(302) or sh.get("302") or {}
+    f = x2.get("if_first") or {}
+    out.append(item("X2: fade the team missing 2+ rotation players",
+                    "A team is missing 2+ rotation players (more than its opponent, at least one fresh): bet the opponent.",
+                    "249-199 (55.6%) over two seasons vs the closing line", f.get("w", 0), f.get("l", 0),
+                    f.get("w", 0) + f.get("l", 0) + f.get("p", 0), x2.get("avg_clv"), "pts", x2.get("open", 0)))
+    P = (board.get("injury_desk") or {}).get("paper") or {}
+    out.append(item("Injury desk: beat the market to the news",
+                    "Injury news leaves our worst-case read 3+ points off the market: paper bet at that moment's line.",
+                    "new: no history before Nov 10", P.get("w", 0), P.get("l", 0), P.get("bets", 0), P.get("avg_clv"), "pts"))
+    R = board.get("props_desk") or {}
+    out.append(item("Props: players who gain minutes",
+                    "A rotation player is freshly ruled out; a teammate's minutes jump 5+; our points projection is 3+ over the line.",
+                    "new: no history before Nov 10", R.get("w", 0), R.get("l", 0), R.get("bets", 0), R.get("avg_clv"),
+                    "points on the prop line"))
+    x2_sides = {(p["game_id"], p["side"]) for p in picks if p.get("system") == 302}
+    x2_sides |= {(str(x["paper"].get("game_id")), x["paper"]["side"])          # injury-desk paper bets too
+                 for x in (board.get("injury_desk") or {}).get("recent") or [] if x.get("paper")}
+    both = [r for r in (board.get("placed") or {}).get("bets") or []
+            if (r.get("rules") or {}).get("counted") and (r.get("game_id"), r.get("side")) in x2_sides]
+    done = [r for r in both if r.get("result") in ("W", "L")]
+    cl = [(r.get("market") or {}).get("beat_close") for r in both if (r.get("market") or {}).get("beat_close") is not None]
+    out.append(item("Our bet + an injury edge on the same side (bigger-bet candidate)",
+                    "A real card bet where X2 or the injury desk also lands on the same side: tracked to see if these deserve a bigger bet.",
+                    "new", sum(r["result"] == "W" for r in done), sum(r["result"] == "L" for r in done), len(done),
+                    round(sum(cl) / len(cl), 1) if cl else None, "cents per $1", len(both) - len(done)))
+    return out
 
 
 def _meta(p, k):
