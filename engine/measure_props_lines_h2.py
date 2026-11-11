@@ -5,4 +5,4 @@ Run: python -m engine.measure_props_lines_h2"""
 from .measure_props_lines import main
 
 if __name__ == "__main__":
-    main("2026-01-24")
+    main("2026-01-24", "engine.measure_props_lines_h2")

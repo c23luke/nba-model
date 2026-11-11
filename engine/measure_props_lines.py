@@ -27,7 +27,8 @@ from .teams import code
 KEY = os.environ.get("ODDS_API_KEY", "")
 H = "https://api.the-odds-api.com/v4/historical/sports/basketball_nba"
 N = int(os.environ.get("GAMES", "600"))
-SAVE = Path(__file__).resolve().parent.parent / "reports" / "engine.measure_props_lines.json"
+REPORTS = Path(__file__).resolve().parent.parent / "reports"
+SAVE = REPORTS / "engine.measure_props_lines.json"
 spent = {"credits": 0, "left": None}
 
 
@@ -55,7 +56,9 @@ def rec(rs):
     return f"{w}-{l}" + (f"  {w / (w + l):5.1%}  {u:+7.1f}u  ({u / (w + l):+5.1%} a bet)" if w + l else "")
 
 
-def main(start: str = "0000", label: str = ""):
+def main(start: str = "0000", save_as: str = "engine.measure_props_lines"):
+    global SAVE
+    SAVE = REPORTS / f"{save_as}.json"          # the workflow saves reports/<module>.* back to the repo
     rows = [f for f in features("2025-26") if f["date"] >= start]
     by_game = defaultdict(list)
     for f in rows:
