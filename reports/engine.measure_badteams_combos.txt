@@ -1,0 +1,89 @@
+
+=== 2024-25 (at the open, one bet per side, -110)
+  System bet (1 system + players 3+): all 39-26  60.0%    +9.5u
+    ranked 1-10                      7-6  53.8%    +0.4u
+    ranked 11-20                     8-9  47.1%    -1.7u
+    ranked 21-30 (bottom 10)         23-11  67.6%    +9.9u
+      bottom 10, first 30 days       5-2  71.4%    +2.5u
+      bottom 10, after 30 days       18-9  66.7%    +7.4u
+      bottom 10, getting 10+ pts     11-3  78.6%    +7.0u
+      bottom 10, under 10 pts        12-8  60.0%    +2.9u
+    any rank, getting 10+ pts        11-5  68.8%    +5.0u
+    no full ranking yet              1-0  100.0%    +0.9u
+  MONEYBALL (2+ systems + players 3+): all 11-4  73.3%    +6.0u
+    ranked 1-10                      1-1  50.0%    -0.1u
+    ranked 11-20                     3-1  75.0%    +1.7u
+    ranked 21-30 (bottom 10)         7-2  77.8%    +4.4u
+      bottom 10, first 30 days       3-1  75.0%    +1.7u
+      bottom 10, after 30 days       4-1  80.0%    +2.6u
+      bottom 10, getting 10+ pts     4-0  100.0%    +3.6u
+      bottom 10, under 10 pts        3-2  60.0%    +0.7u
+    any rank, getting 10+ pts        5-0  100.0%    +4.5u
+
+=== 2025-26 (at the open, one bet per side, -110)
+  System bet (1 system + players 3+): all 40-25  61.5%   +11.4u
+    ranked 1-10                      5-3  62.5%    +1.5u
+    ranked 11-20                     6-7  46.2%    -1.5u
+    ranked 21-30 (bottom 10)         29-15  65.9%   +11.4u
+      bottom 10, first 30 days       7-2  77.8%    +4.4u
+      bottom 10, after 30 days       22-13  62.9%    +7.0u
+      bottom 10, getting 10+ pts     9-10  47.4%    -1.8u
+      bottom 10, under 10 pts        20-5  80.0%   +13.2u
+    any rank, getting 10+ pts        11-10  52.4%    +0.0u
+  MONEYBALL (2+ systems + players 3+): all 18-7  72.0%    +9.4u
+    ranked 1-10                      2-0  100.0%    +1.8u
+    ranked 11-20                     6-1  85.7%    +4.5u
+    ranked 21-30 (bottom 10)         10-6  62.5%    +3.1u
+      bottom 10, first 30 days       8-5  61.5%    +2.3u
+      bottom 10, after 30 days       2-1  66.7%    +0.8u
+      bottom 10, getting 10+ pts     3-2  60.0%    +0.7u
+      bottom 10, under 10 pts        7-4  63.6%    +2.4u
+    any rank, getting 10+ pts        3-2  60.0%    +0.7u
+
+=== both (at the open, one bet per side, -110)
+  System bet (1 system + players 3+): all 79-51  60.8%   +20.8u
+    ranked 1-10                      12-9  57.1%    +1.9u
+    ranked 11-20                     14-16  46.7%    -3.3u
+    ranked 21-30 (bottom 10)         52-26  66.7%   +21.3u
+      bottom 10, first 30 days       12-4  75.0%    +6.9u
+      bottom 10, after 30 days       40-22  64.5%   +14.4u
+      bottom 10, getting 10+ pts     20-13  60.6%    +5.2u
+      bottom 10, under 10 pts        32-13  71.1%   +16.1u
+    any rank, getting 10+ pts        22-15  59.5%    +5.0u
+    no full ranking yet              1-0  100.0%    +0.9u
+  MONEYBALL (2+ systems + players 3+): all 29-11  72.5%   +15.4u
+    ranked 1-10                      3-1  75.0%    +1.7u
+    ranked 11-20                     9-2  81.8%    +6.2u
+    ranked 21-30 (bottom 10)         17-8  68.0%    +7.5u
+      bottom 10, first 30 days       11-6  64.7%    +4.0u
+      bottom 10, after 30 days       6-2  75.0%    +3.5u
+      bottom 10, getting 10+ pts     7-2  77.8%    +4.4u
+      bottom 10, under 10 pts        10-6  62.5%    +3.1u
+    any rank, getting 10+ pts        8-2  80.0%    +5.3u
+
+=== every MONEYBALL on a bottom-10 team
+  2024-25 day   3: TOR (rank 26) +3.5 gap +3.7, systems [106, 202, 204] -> W
+  2024-25 day  11: LAC (rank 21) +5.5 gap +3.6, systems [109, 202, 205, 207] -> L
+  2024-25 day  13: BKN (rank 25) +5.5 gap +4.8, systems [202, 205] -> W
+  2024-25 day  13: TOR (rank 29) +10.0 gap +4.0, systems [107, 203, 205] -> W
+  2024-25 day  40: BKN (rank 26) +8.5 gap +3.7, systems [109, 110] -> W
+  2024-25 day  68: TOR (rank 28) +1.5 gap +5.5, systems [102, 106] -> L
+  2024-25 day 102: WAS (rank 30) +16.0 gap +3.1, systems [106, 107] -> W
+  2024-25 day 108: TOR (rank 26) +19.0 gap +7.6, systems [106, 107] -> W
+  2024-25 day 158: SAS (rank 21) +11.5 gap +3.9, systems [107, 109] -> W
+  2025-26 day   3: BKN (rank 29) +13.0 gap +5.2, systems [203, 204] -> W
+  2025-26 day   5: IND (rank 28) +12.5 gap +4.0, systems [106, 203, 204] -> W
+  2025-26 day   5: POR (rank 25) +7.5 gap +4.7, systems [107, 205] -> W
+  2025-26 day   6: BKN (rank 30) +14.5 gap +7.0, systems [203, 206] -> L
+  2025-26 day   8: BKN (rank 30) +8.0 gap +6.8, systems [106, 204, 206] -> W
+  2025-26 day  11: CHA (rank 22) +5.5 gap +4.0, systems [202, 204] -> L
+  2025-26 day  12: BKN (rank 30) +6.0 gap +6.2, systems [202, 206] -> L
+  2025-26 day  12: PHX (rank 24) +6.5 gap +3.8, systems [109, 202, 207] -> W
+  2025-26 day  13: BKN (rank 30) +9.0 gap +4.2, systems [204, 205, 206] -> L
+  2025-26 day  15: BKN (rank 30) +6.5 gap +4.8, systems [204, 206] -> W
+  2025-26 day  15: POR (rank 21) +5.0 gap +5.1, systems [109, 205, 207] -> W
+  2025-26 day  18: WAS (rank 29) +4.5 gap +5.0, systems [106, 204] -> L
+  2025-26 day  18: CHI (rank 22) +8.5 gap +3.3, systems [107, 204, 205] -> W
+  2025-26 day 122: CHA (rank 23) +6.0 gap +3.1, systems [107, 109] -> W
+  2025-26 day 148: MEM (rank 23) +13.0 gap +4.5, systems [106, 107] -> W
+  2025-26 day 155: MEM (rank 23) +16.5 gap +3.8, systems [106, 107, 109] -> L
