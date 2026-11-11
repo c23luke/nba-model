@@ -78,6 +78,10 @@ def main():
             for scope in (season, "both"):
                 cells[(scope, kind)][band].append(res)
                 if band.startswith("ranked 21-30"):
+                    r_ = info["rank"][side]
+                    cells[(scope, kind)]["  ranked 28-30 (bottom 3)" if r_ >= 28 else "  ranked 21-27"].append(res)
+                    cells[(scope, kind)]["  ranked 26-30 (bottom 5)" if r_ >= 26 else "  ranked 21-25"].append(res)
+                    cells[(scope, kind)][f"    rank {r_}"].append(res)
                     cells[(scope, kind)]["  bottom 10, first 30 days" if info["day"] < 30 else "  bottom 10, after 30 days"].append(res)
                     if line is not None:
                         cells[(scope, kind)]["  bottom 10, getting 10+ pts" if line >= 10 else "  bottom 10, under 10 pts"].append(res)
@@ -86,8 +90,8 @@ def main():
             if band.startswith("ranked 21-30") and k >= 2:
                 examples.append(f"{season} day {info['day']:3}: {side} (rank {info['rank'][side]}) {line:+} "
                                 f"gap {gap:+.1f}, systems {sorted({p['system'] for p in ps})} -> {res}")
-    order = ["ranked 1-10", "ranked 11-20", "ranked 21-30 (bottom 10)", "  bottom 10, first 30 days",
-             "  bottom 10, after 30 days", "  bottom 10, getting 10+ pts", "  bottom 10, under 10 pts",
+    order = ["ranked 1-10", "ranked 11-20", "ranked 21-30 (bottom 10)", "  ranked 21-25", "  ranked 26-30 (bottom 5)",
+             "  ranked 21-27", "  ranked 28-30 (bottom 3)"] + [f"    rank {i}" for i in range(21, 31)] + [ "  bottom 10, first 30 days", "  bottom 10, after 30 days", "  bottom 10, getting 10+ pts", "  bottom 10, under 10 pts",
              "any rank, getting 10+ pts", "no full ranking yet"]
     for scope in list(BO.SEASONS) + ["both"]:
         print(f"\n=== {scope} (at the open, one bet per side, -110)")
