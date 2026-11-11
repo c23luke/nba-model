@@ -63,7 +63,8 @@ def season_rows(season):
                     r = (t - p.line) if p.side == "OVER" else (p.line - t)
                     gos = None
                 res = "W" if r > 0 else "L" if r < 0 else "P"
-                out.append({"game": g.id, "bet": p.bet, "side": p.side, "system": p.system, "res": res, "gap": gos})
+                out.append({"game": g.id, "bet": p.bet, "side": p.side, "system": p.system, "res": res, "gap": gos,
+                            "line": p.line})
             if gap is not None and op is not None:
                 m = g.home_score - g.away_score
                 side_home = gap > 0
