@@ -441,6 +441,13 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                                                  sources.get_json, {g.id: {"final": g.final} for g in games})
         except Exception as e:
             log.append(f"props desk: {str(e)[:160]}")
+        # props +EV vs Pinnacle (tracking only)
+        try:
+            from . import props_ev
+            board["props_ev"] = props_ev.run(store, now, upcoming, box_rows, key, sources.get_json,
+                                             {g.id: {"final": g.final} for g in games})
+        except Exception as e:
+            log.append(f"props ev: {str(e)[:160]}")
     try:
         board["testing"] = testing_side(board, list(all_picks.values()))
     except Exception as e:
@@ -588,6 +595,14 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                          "fake": "minutes study: +0.8 min but still +2.5 pts (244 cases): a weak under; no prop-line history",
                          "jump_model": "minutes study: the naive bump came in at +1.5 min, +2.8 pts (1,368 cases); no prop-line history"}[k],
                         x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "on the prop line", x.get("open", 0)))
+    E = board.get("props_ev") or {}
+    for nm, x, hw in (("Props: +EV vs Pinnacle (any prop)", E,
+                       "A ProphetX / Novig / BetOpenly prop price pays 3%+ more than Pinnacle's fair odds at the same line."),
+                      ("Props: +EV vs Pinnacle AND our minutes read agrees", E.get("stacked") or {},
+                       "Same, and our props desk (injury / minutes) is on the same player, stat and side.")):
+        out.append(item(nm, hw, "beating Pinnacle's closing price is the test; prop lines with Pinnacle exist back to 2023 for a backtest",
+                        x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "cents per $1 vs Pinnacle's close",
+                        x.get("open", 0)))
     x2_sides = {(p["game_id"], p["side"]) for p in picks if p.get("system") == 302}
     x2_sides |= {(str(x["paper"].get("game_id")), x["paper"]["side"])          # injury-desk paper bets too
                  for x in (board.get("injury_desk") or {}).get("recent") or [] if x.get("paper")}
