@@ -84,6 +84,7 @@ def features(season):
             known = {nm for gm in H.tgames[team][-10:] for nm in gm} | set(tonight[team])
             for f in H.features(team, opp, playing, known - playing, hs, gt, team == g.home):
                 f["season"] = season
+                f["date"], f["home"], f["away"] = g.game_date.isoformat(), g.home, g.away
                 for i, s in enumerate(STATS, start=1):
                     f[f"{s}_act"] = tonight[team][f["name"]][i]
                 f["min_act"] = tonight[team][f["name"]][0]
