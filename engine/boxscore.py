@@ -117,8 +117,47 @@ def recent_players(rows: list[dict], last_n: int = 3) -> dict[str, list[dict]]:
     return dict(out)
 
 
-def season_impact(rows: list[dict]) -> dict[str, dict]:
-    """Per player (keyed by ESPN id): minutes, games, minutes per game and box impact (BPM scale)."""
+OPP_BETA = 0.0        # opponent adjustment (see opponent_strength). 0 = off: the live model as it was.
+                      # Tested 2026-11-11 by engine/measure_opp_adjust.py; only turned on if it beats 0.
+
+
+def opponent_strength(rows: list[dict]) -> dict[str, float]:
+    """Each team's net points per 100 possessions over the games in `rows` (+ = better than the teams it played
+    scored against it). Only the rows given, so in a replay only games before the one being priced."""
+    pts = defaultdict(lambda: defaultdict(float))          # game -> team -> points
+    poss = defaultdict(dict)                                # game -> team -> possessions
+    for r in rows:
+        pts[r["game_id"]][r["team"]] += r.get("pts") or 0
+        if r.get("team_poss"):
+            poss[r["game_id"]][r["team"]] = r["team_poss"]
+    net, n = defaultdict(float), defaultdict(float)
+    for g, by in pts.items():
+        if len(by) != 2 or len(poss[g]) != 2:
+            continue
+        (t1, p1), (t2, p2) = by.items()
+        ps = (poss[g][t1] + poss[g][t2]) / 2
+        if ps <= 0:
+            continue
+        net[t1] += (p1 - p2) / ps * 100; n[t1] += 1
+        net[t2] += (p2 - p1) / ps * 100; n[t2] += 1
+    return {t: net[t] / n[t] for t in n}
+
+
+def season_impact(rows: list[dict], opp_beta: float | None = None) -> dict[str, dict]:
+    """Per player (keyed by ESPN id): minutes, games, minutes per game and box impact (BPM scale).
+    opp_beta > 0: each player's impact moves by opp_beta x the average strength (net per 100) of the opponents
+    he faced, weighted by his possessions in each game: numbers against good teams count for more."""
+    beta = OPP_BETA if opp_beta is None else opp_beta
+    opp_of = {}
+    if beta:
+        teams = defaultdict(set)
+        for r in rows:
+            teams[r["game_id"]].add(r["team"])
+        strength = opponent_strength(rows)
+        for g, ts in teams.items():
+            if len(ts) == 2:
+                a_, b_ = ts
+                opp_of[(g, a_)], opp_of[(g, b_)] = strength.get(b_, 0.0), strength.get(a_, 0.0)
     acc: dict[str, dict] = {}
     for r in rows:
         p = acc.setdefault(r["espn_id"], {"name": r["name"], "min": 0.0, "games": 0, "poss": 0.0,
@@ -128,7 +167,10 @@ def season_impact(rows: list[dict]) -> dict[str, dict]:
         p["dates"].append(r["game_date"])
         p["log"].append((str(r["game_date"]), r["min"]))
         if r.get("game_min"):
-            p["poss"] += r["team_poss"] * r["min"] / r["game_min"]
+            on = r["team_poss"] * r["min"] / r["game_min"]
+            p["poss"] += on
+            if beta:
+                p["opp_w"] = p.get("opp_w", 0.0) + on * opp_of.get((r["game_id"], r["team"]), 0.0)
         for s in STATS:
             p[s] += r[s]
     out = {}
@@ -143,6 +185,8 @@ def season_impact(rows: list[dict]) -> dict[str, dict]:
             continue
         per100 = {s: p[s] / p["poss"] * 100 for s in STATS}
         bpm = BOX_COEF["const"] + sum(BOX_COEF[s] * per100[s] for s in STATS)
+        if beta:
+            bpm += beta * p.get("opp_w", 0.0) / p["poss"]          # average opponent strength he faced
         # role minutes lean on the latest games: a coach's rotation change shows up there first
         log = sorted(p["log"])
         wts = [RECENT_WEIGHT if i >= len(log) - RECENT_GAMES else 1.0 for i in range(len(log))]
