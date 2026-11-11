@@ -374,5 +374,6 @@ def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict, 
                 pr = project(f, TUNED)
                 out[(g.id, norm(f["name"]))] = {**{k: round(v, 1) for k, v in pr.items()}, "name": f["name"],
                                                 "team": team, "l10": {s: round(f[f"{s}_l10avg"], 1) for s in STATS},
-                                                "fresh_out": f["fresh_names"], "returning": f["returning"]}
+                                                "fresh_out": f["fresh_names"], "returning": f["returning"],
+                                                "mpg": round(f["m10"], 1)}
     return out

@@ -618,6 +618,19 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
         out.append(item(nm, hw, "beating Pinnacle's closing price is the test; prop lines with Pinnacle exist back to 2023 for a backtest",
                         x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "cents per $1 vs Pinnacle's close",
                         x.get("open", 0)))
+    M = E.get("model") or {}
+    for nm, x, hw, bt in (
+            ("Props model: points 3+ off Pinnacle's line", M,
+             "Our props model's points projection is 3+ off Pinnacle's line (the other stats are tracked but untested).",
+             "vs Pinnacle's real closing lines, 2025-26 Oct-Jan: 323-264 (55.0%, +1.2% a bet)"),
+            ("Props spot: 3+ off with a rotation teammate freshly out", E.get("spot_fresh") or {},
+             "Points 3+ off Pinnacle's line AND a rotation teammate (20+ mpg) who played the last game is out tonight.",
+             "vs Pinnacle's real closing lines, 2025-26 Oct-Jan: 109-79 (58.0%, +7.6% a bet)"),
+            ("Props spot: 3+ off on a bench player (under 20 mpg)", E.get("spot_bench") or {},
+             "Points 3+ off Pinnacle's line on a player averaging under 20 minutes over his last 10.",
+             "vs Pinnacle's real closing lines, 2025-26 Oct-Jan: 45-25 (64.3%, +20.5% a bet)")):
+        out.append(item(nm, hw, bt, x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"),
+                        "cents per $1 vs Pinnacle's close", x.get("open", 0)))
     x2_sides = {(p["game_id"], p["side"]) for p in picks if p.get("system") == 302}
     x2_sides |= {(str(x["paper"].get("game_id")), x["paper"]["side"])          # injury-desk paper bets too
                  for x in (board.get("injury_desk") or {}).get("recent") or [] if x.get("paper")}

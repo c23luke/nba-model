@@ -113,7 +113,9 @@ def model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
                     "side": side.lower(), "venue": venue, "price": best, "fair": round(f[side], 4),
                     "pin_price": p[side], "ev": round(f[side] * dec(best) - 1, 4), "proj": pr[k[1]],
                     "proj_min": pr.get("min"), "l10": (pr.get("l10") or {}).get(k[1]),
-                    "fresh_out": pr.get("fresh_out"), "returning": pr.get("returning")})
+                    "fresh_out": pr.get("fresh_out"), "returning": pr.get("returning"), "mpg": pr.get("mpg"),
+                    # the two spots that beat Pinnacle's close in the real-lines test (points, 3+ off, 2025-26):
+                    "spot_fresh": bool(pr.get("fresh_out")), "spot_bench": (pr.get("mpg") or 99) < 20})
     return out
 
 
@@ -190,6 +192,11 @@ def summary(state: dict) -> dict:
     return {**_rec(bets), "stacked": _rec([b for b in bets if b.get("stacked")]),
             "model": {**_rec(model), "recent": sorted(model, key=lambda b: b["at"], reverse=True)[:40]},
             "model_and_ev": _rec([b for b in model if b["ev"] > 0]),
+            # tracked on their own (Caden 2026-11-11): points only, as tested
+            "spot_fresh": {**_rec(sf := [b for b in model if b.get("spot_fresh") and b["stat"] == "pts"]),
+                           "recent": sorted(sf, key=lambda b: b["at"], reverse=True)[:20]},
+            "spot_bench": {**_rec(sb := [b for b in model if b.get("spot_bench") and b["stat"] == "pts"]),
+                           "recent": sorted(sb, key=lambda b: b["at"], reverse=True)[:20]},
             "by_venue": {v: _rec([b for b in bets if b["venue"] == v]) for v in VENUES},
             "recent": sorted(bets, key=lambda b: (-b["ev"], b["at"]))[:40] if bets else []}
 
