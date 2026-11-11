@@ -17,6 +17,10 @@ def main():
     pd = b.get("props_desk") or {}
     print("props desk:", {k: pd.get(k) for k in ("bets", "w", "l", "avg_clv")}, [ (r["player"], r["line"], r["proj_pts"]) for r in pd.get("recent") or []][:5])
     print("X2 picks today:", [(p.get("label"), (p.get("evidence") or [""])[0]) for p in b.get("shadow") or b.get("shadow_picks") or []][:8])
+    for g in b.get("slate") or []:
+        pv = g.get("personnel") or {}
+        if pv.get("thin_share"):
+            print("thin:", g.get("away"), "@", g.get("home"), pv.get("thin_share"), "flag:", pv.get("thin"))
     print("notes:", [n for n in b.get("log") or b.get("notes") or [] if "props" in str(n) or "testing" in str(n) or "cluster" in str(n)])
     print("notes mentioning the desk:", [n for n in b.get("notes") or [] if "desk" in n.lower()])
 
