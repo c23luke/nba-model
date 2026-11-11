@@ -4,6 +4,20 @@
     ranked 1-10                      7-6  53.8%    +0.4u
     ranked 11-20                     8-9  47.1%    -1.7u
     ranked 21-30 (bottom 10)         23-11  67.6%    +9.9u
+      ranked 21-25                   8-4  66.7%    +3.3u
+      ranked 26-30 (bottom 5)        15-7  68.2%    +6.6u
+      ranked 21-27                   15-7  68.2%    +6.6u
+      ranked 28-30 (bottom 3)        8-4  66.7%    +3.3u
+        rank 21                      3-1  75.0%    +1.7u
+        rank 22                      2-0  100.0%    +1.8u
+        rank 23                      1-2  33.3%    -1.1u
+        rank 24                      1-0  100.0%    +0.9u
+        rank 25                      1-1  50.0%    -0.1u
+        rank 26                      4-1  80.0%    +2.6u
+        rank 27                      3-2  60.0%    +0.7u
+        rank 28                      2-0  100.0%    +1.8u
+        rank 29                      5-3  62.5%    +1.5u
+        rank 30                      1-1  50.0%    -0.1u
       bottom 10, first 30 days       5-2  71.4%    +2.5u
       bottom 10, after 30 days       18-9  66.7%    +7.4u
       bottom 10, getting 10+ pts     11-3  78.6%    +7.0u
@@ -14,6 +28,16 @@
     ranked 1-10                      1-1  50.0%    -0.1u
     ranked 11-20                     3-1  75.0%    +1.7u
     ranked 21-30 (bottom 10)         7-2  77.8%    +4.4u
+      ranked 21-25                   2-1  66.7%    +0.8u
+      ranked 26-30 (bottom 5)        5-1  83.3%    +3.5u
+      ranked 21-27                   5-1  83.3%    +3.5u
+      ranked 28-30 (bottom 3)        2-1  66.7%    +0.8u
+        rank 21                      1-1  50.0%    -0.1u
+        rank 25                      1-0  100.0%    +0.9u
+        rank 26                      3-0  100.0%    +2.7u
+        rank 28                      0-1   0.0%    -1.0u
+        rank 29                      1-0  100.0%    +0.9u
+        rank 30                      1-0  100.0%    +0.9u
       bottom 10, first 30 days       3-1  75.0%    +1.7u
       bottom 10, after 30 days       4-1  80.0%    +2.6u
       bottom 10, getting 10+ pts     4-0  100.0%    +3.6u
@@ -25,6 +49,19 @@
     ranked 1-10                      5-3  62.5%    +1.5u
     ranked 11-20                     6-7  46.2%    -1.5u
     ranked 21-30 (bottom 10)         29-15  65.9%   +11.4u
+      ranked 21-25                   13-7  65.0%    +4.8u
+      ranked 26-30 (bottom 5)        16-8  66.7%    +6.5u
+      ranked 21-27                   15-7  68.2%    +6.6u
+      ranked 28-30 (bottom 3)        14-8  63.6%    +4.7u
+        rank 21                      0-3   0.0%    -3.0u
+        rank 22                      2-2  50.0%    -0.2u
+        rank 23                      4-1  80.0%    +2.6u
+        rank 24                      4-1  80.0%    +2.6u
+        rank 25                      3-0  100.0%    +2.7u
+        rank 27                      2-0  100.0%    +1.8u
+        rank 28                      5-4  55.6%    +0.5u
+        rank 29                      6-2  75.0%    +3.5u
+        rank 30                      3-2  60.0%    +0.7u
       bottom 10, first 30 days       7-2  77.8%    +4.4u
       bottom 10, after 30 days       22-13  62.9%    +7.0u
       bottom 10, getting 10+ pts     9-10  47.4%    -1.8u
@@ -34,6 +71,18 @@
     ranked 1-10                      2-0  100.0%    +1.8u
     ranked 11-20                     6-1  85.7%    +4.5u
     ranked 21-30 (bottom 10)         10-6  62.5%    +3.1u
+      ranked 21-25                   6-2  75.0%    +3.5u
+      ranked 26-30 (bottom 5)        4-4  50.0%    -0.4u
+      ranked 21-27                   6-2  75.0%    +3.5u
+      ranked 28-30 (bottom 3)        4-4  50.0%    -0.4u
+        rank 21                      1-0  100.0%    +0.9u
+        rank 22                      1-1  50.0%    -0.1u
+        rank 23                      2-1  66.7%    +0.8u
+        rank 24                      1-0  100.0%    +0.9u
+        rank 25                      1-0  100.0%    +0.9u
+        rank 28                      1-0  100.0%    +0.9u
+        rank 29                      1-1  50.0%    -0.1u
+        rank 30                      2-3  40.0%    -1.2u
       bottom 10, first 30 days       8-5  61.5%    +2.3u
       bottom 10, after 30 days       2-1  66.7%    +0.8u
       bottom 10, getting 10+ pts     3-2  60.0%    +0.7u
@@ -45,6 +94,20 @@
     ranked 1-10                      12-9  57.1%    +1.9u
     ranked 11-20                     14-16  46.7%    -3.3u
     ranked 21-30 (bottom 10)         52-26  66.7%   +21.3u
+      ranked 21-25                   21-11  65.6%    +8.1u
+      ranked 26-30 (bottom 5)        31-15  67.4%   +13.2u
+      ranked 21-27                   30-14  68.2%   +13.3u
+      ranked 28-30 (bottom 3)        22-12  64.7%    +8.0u
+        rank 21                      3-4  42.9%    -1.3u
+        rank 22                      4-2  66.7%    +1.6u
+        rank 23                      5-3  62.5%    +1.5u
+        rank 24                      5-1  83.3%    +3.5u
+        rank 25                      4-1  80.0%    +2.6u
+        rank 26                      4-1  80.0%    +2.6u
+        rank 27                      5-2  71.4%    +2.5u
+        rank 28                      7-4  63.6%    +2.4u
+        rank 29                      11-5  68.8%    +5.0u
+        rank 30                      4-3  57.1%    +0.6u
       bottom 10, first 30 days       12-4  75.0%    +6.9u
       bottom 10, after 30 days       40-22  64.5%   +14.4u
       bottom 10, getting 10+ pts     20-13  60.6%    +5.2u
@@ -55,6 +118,19 @@
     ranked 1-10                      3-1  75.0%    +1.7u
     ranked 11-20                     9-2  81.8%    +6.2u
     ranked 21-30 (bottom 10)         17-8  68.0%    +7.5u
+      ranked 21-25                   8-3  72.7%    +4.3u
+      ranked 26-30 (bottom 5)        9-5  64.3%    +3.2u
+      ranked 21-27                   11-3  78.6%    +7.0u
+      ranked 28-30 (bottom 3)        6-5  54.5%    +0.5u
+        rank 21                      2-1  66.7%    +0.8u
+        rank 22                      1-1  50.0%    -0.1u
+        rank 23                      2-1  66.7%    +0.8u
+        rank 24                      1-0  100.0%    +0.9u
+        rank 25                      2-0  100.0%    +1.8u
+        rank 26                      3-0  100.0%    +2.7u
+        rank 28                      1-1  50.0%    -0.1u
+        rank 29                      2-1  66.7%    +0.8u
+        rank 30                      3-3  50.0%    -0.3u
       bottom 10, first 30 days       11-6  64.7%    +4.0u
       bottom 10, after 30 days       6-2  75.0%    +3.5u
       bottom 10, getting 10+ pts     7-2  77.8%    +4.4u
