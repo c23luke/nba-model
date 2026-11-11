@@ -332,3 +332,13 @@ def test_an_old_ticket_never_shows_a_later_no_bet_reason_as_why_we_bet():
                    "meta": {"card_snap": {"players": 1.2, "why": "No bet: the players model only likes POR by 1.2"}}}}
     r = placed_bets([o], picks, {}, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
     assert r["price_note"] == OLD_NOTE and r["players"] is None and r["rules"]["counted"]
+
+
+def test_rules_now_counts_a_t13_thin_fade_bet_at_40():
+    from engine.placed import rules_now
+    rows = [{"status": "FINAL", "bet": "spread", "manual": False, "game_id": "g1", "side": "BOS", "system": "T13",
+             "t13_gap": 4.5, "holding": "BOS -3", "result": "W", "pnl": 40.0, "risk": 44.0, "to_win": 40.0, "target": 40},
+            {"status": "FINAL", "bet": "spread", "manual": False, "game_id": "g2", "side": "DET", "system": "T13",
+             "t13_gap": 4.5, "holding": "DET -3", "result": "W", "pnl": 20.0, "risk": 22.0, "to_win": 20.0, "target": 20}]
+    r = rules_now(rows)
+    assert rows[0]["rules"]["to_win"] == 40.0 and rows[1]["rules"]["to_win"] == 20.0 and r["pnl"] == 60.0

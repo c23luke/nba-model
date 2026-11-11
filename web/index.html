@@ -362,7 +362,8 @@ function plainWhy(o) {
       S.push(`The best price right now is ${amerOf(o.price)}: that needs a ${be}% win rate to break even and the model has it at about ${win}%, so the edge is too thin to take.${o.verdict === "LIMIT" ? " A limit order is waiting in case the price gets better." : ""}`);
     else S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
-  if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet" : ""}.`);
+  if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet"
+    : o.thinFade ? ` (2 units) because ${esc(o.thinFade.team)} leans on players the model barely knows (${Math.round(o.thinFade.share * 100)}% of its minutes vs ${Math.round(o.thinFade.ours * 100)}%): the players model went 40-17 betting against teams like that` : ""}.`);
   const N = o.now;
   if (N && N.low != null && o.gap != null && (Math.abs(N.low - o.gap) >= 1 || Math.abs(N.high - o.gap) >= 1)) {
     const who = (N.dtd || []).map(n => n.replace(/^[A-Z]+:\s*/, ""));
@@ -385,7 +386,7 @@ function whyHead(tag, tags, gap, side) {
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL $40)";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL and players-model bets against a thin roster: $40)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];
@@ -475,7 +476,7 @@ function ticket(x) {
       ${unitNote}
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
-        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, away: x.away, home: x.home })}
+        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, thinFade: x.thin_fade, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
@@ -631,7 +632,7 @@ function cardRow(c, reason) {
         <div class="why-h">${esc(status)}</div>
         <div class="sub">${esc(reason || c.why || "")}</div>
         ${plainWhy({ verdict: c.verdict, tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
-          market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, away: c.away, home: c.home })}
+          market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, thinFade: c.thin_fade, away: c.away, home: c.home })}
 
         ${whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet)}
       </div>

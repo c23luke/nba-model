@@ -42,3 +42,14 @@ def test_no_solo_bet_on_the_thinner_side_but_the_other_side_is_fine():
     v3 = view(-5.0)                                       # 4% apart: about even, no flag
     P.flag_thin(v3, team("CHI", 9.6), team("BOS", 0.0))
     assert "thin" not in v3
+
+
+def test_t13_against_a_thin_roster_is_sized_at_2_units_and_counted_that_way():
+    from engine.pricing import THIN_FADE_TO_WIN, thin_fade
+    slate = [{"game_id": "g", "home": "BOS", "away": "CHI", "personnel": {"thin_share": {"home": 0.0, "away": 0.2}}}]
+    t13 = {"system": 113, "bet": "spread", "game_id": "g", "side": "BOS"}
+    assert thin_fade(t13, slate) == {"team": "CHI", "share": 0.2, "ours": 0.0} and THIN_FADE_TO_WIN == 40
+    assert thin_fade({**t13, "side": "CHI"}, slate) is None          # we'd be the thin side (and T13 can't fire there)
+    assert thin_fade({**t13, "system": 130}, slate) is None          # MONEYBALL is already 2 units
+    slate[0]["personnel"]["thin_share"]["away"] = 0.04
+    assert thin_fade(t13, slate) is None                             # under 5 points apart

@@ -16,7 +16,7 @@ VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "P
                "polymarket": "Polymarket", "prophetx": "ProphetX", "novig": "Novig", "manual": "Other book"}
 
 # what the website needs from a card row to explain a bet later, after the row has left the card
-SNAP_KEYS = ("name", "why", "confidence", "to_win", "win", "players", "players_bucket", "players_history",
+SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "win", "players", "players_bucket", "players_history",
              "also_combo", "with", "label", "line")
 
 
@@ -243,6 +243,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             # S4's bar: this season's average total that day (the pick's own, else from the games played before it)
             "s4_bar": ((p.get("meta") or {}).get("bar") or (s4_bars or {}).get(str(p.get("game_date")))) if o.get("system") == "S4" else None,
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
+            "thin_fade": snap.get("thin_fade"),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
             "clv_pts": clv_pts,
@@ -342,7 +343,8 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
                                    "status": r["status"], "pnl": r["pnl"], "why": why})
             continue
-        target = 40.0 if r["system"] == "MONEYBALL" else 20.0
+        # 2 units: MONEYBALL, and (from 2026-11-11) a T13 bet sized at $40 because it fades a thin roster
+        target = 40.0 if r["system"] == "MONEYBALL" or (r["system"] == "T13" and r.get("target") == 40) else 20.0
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)
         pnl = None

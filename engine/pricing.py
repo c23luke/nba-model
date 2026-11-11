@@ -48,6 +48,29 @@ AGREE = [("players model disagrees", -99, 0), ("agrees by 0-3", 0, 3), ("agrees 
          ("agrees by 5+", 5, 99)]
 
 
+# 2 units on a T13 bet AGAINST a team leaning on players the model barely knows (Caden 2026-11-11). Measured
+# (engine/measure_unknowns.py, 2 seasons at the open): players model 4+ backing the side whose opponent gets 5+ points
+# more of its minutes from "thin" players went 40-17 (2024-25 17-9, 2025-26 23-8), level with MONEYBALL (29-11).
+THIN_FADE_TO_WIN = 40
+
+
+def thin_fade(pick: dict, slate: list[dict]) -> dict | None:
+    """For a T13 pick: the other team's and our team's thin-player shares when the OTHER team leans on thin
+    players by 5+ points more. None otherwise."""
+    from .personnel import THIN_EDGE
+    if pick.get("system") != 113 or pick.get("bet") != "spread":
+        return None
+    for g in slate:
+        if g.get("game_id") == pick["game_id"]:
+            sh = (g.get("personnel") or {}).get("thin_share") or {}
+            if not sh:
+                return None
+            mine, other = ("home", "away") if pick["side"] == g.get("home") else ("away", "home")
+            if sh.get(other, 0) > sh.get(mine, 0) + THIN_EDGE:
+                return {"team": g.get(other), "share": sh[other], "ours": sh.get(mine, 0)}
+    return None
+
+
 def agree_bucket(gap_on_side: float) -> str:
     for name, lo, hi in AGREE:
         if lo <= gap_on_side < hi:
@@ -571,7 +594,9 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "verdict": verdict, "why": why, "edge": round(edge, 4),
                      # bet size: every card bet wins $20; MONEYBALL wins $40 (2 units). (Confidence sizing removed
                      # 2026-10-27: T13 now needs a 4+ gap, so the small, weak edges it shrank are gone.)
-                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else TO_WIN,
+                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else
+                               THIN_FADE_TO_WIN if thin_fade(p, slate) else TO_WIN,
+                     "thin_fade": thin_fade(p, slate),
                      # what an order placer needs to price ANY number on this bet (e.g. P2P offers)
                      "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
                                "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,
