@@ -23,6 +23,14 @@
   the side we'd bet is thinner   all 3+ 15-27 35.7%  -13.4u          4+ 9-18 33.3%   -9.8u
   about even                     all 3+ 127-95 57.2%  +20.5u         4+ 84-50 62.7%  +26.4u
   the other side is thinner      all 3+ 30-20 60.0%   +7.3u          4+ 17-9 65.4%   +6.5u
+  system bet (players model 3+):
+      the side we'd bet is thinner   4-6 40.0%   -2.4u
+      about even                     24-17 58.5%   +4.8u
+      the other side is thinner      11-3 78.6%   +7.0u
+  MONEYBALL (players model 3+):
+      the side we'd bet is thinner   3-1 75.0%   +1.7u
+      about even                     6-2 75.0%   +3.5u
+      the other side is thinner      2-1 66.7%   +0.8u
 
 === 2025-26: players model gap 3+ at the open, by the share of minutes played by thin players
   under 10%    all 3+ 118-81 59.3%  +26.3u         4+ 69-45 60.5%  +17.7u
@@ -48,6 +56,14 @@
   the side we'd bet is thinner   all 3+ 48-52 48.0%   -8.4u          4+ 32-36 47.1%   -6.9u
   about even                     all 3+ 95-68 58.3%  +18.4u          4+ 52-36 59.1%  +11.3u
   the other side is thinner      all 3+ 32-13 71.1%  +16.1u          4+ 23-8 74.2%  +12.9u
+  system bet (players model 3+):
+      the side we'd bet is thinner   19-9 67.9%   +8.3u
+      about even                     16-11 59.3%   +3.5u
+      the other side is thinner      5-5 50.0%   -0.5u
+  MONEYBALL (players model 3+):
+      the side we'd bet is thinner   5-4 55.6%   +0.5u
+      about even                     8-2 80.0%   +5.3u
+      the other side is thinner      5-1 83.3%   +3.5u
 
 === both: players model gap 3+ at the open, by the share of minutes played by thin players
   under 10%    all 3+ 260-190 57.8%  +46.4u        4+ 163-107 60.4%  +41.2u
@@ -73,3 +89,11 @@
   the side we'd bet is thinner   all 3+ 63-79 44.4%  -21.7u          4+ 41-54 43.2%  -16.7u
   about even                     all 3+ 222-163 57.7%  +38.8u        4+ 136-86 61.3%  +37.6u
   the other side is thinner      all 3+ 62-33 65.3%  +23.4u          4+ 40-17 70.2%  +19.4u
+  system bet (players model 3+):
+      the side we'd bet is thinner   23-15 60.5%   +5.9u
+      about even                     40-28 58.8%   +8.4u
+      the other side is thinner      16-8 66.7%   +6.5u
+  MONEYBALL (players model 3+):
+      the side we'd bet is thinner   8-5 61.5%   +2.3u
+      about even                     14-4 77.8%   +8.7u
+      the other side is thinner      7-2 77.8%   +4.4u
