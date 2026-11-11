@@ -1,0 +1,7 @@
+ESPN summary keys: ['againstTheSpread', 'article', 'boxscore', 'broadcasts', 'format', 'gameInfo', 'header', 'injuries', 'leaders', 'meta', 'news', 'odds', 'pickcenter', 'plays', 'seasonseries', 'standings', 'videos', 'wallclockAvailable', 'winprobability']
+plays: 467 | shooting plays: 220
+{"text": "Ziaire Williams misses two point shot", "coordinate": {"x": 23, "y": 1}, "scoreValue": 0, "scoringPlay": false, "type": {"id": "126", "text": "Layup Driving Reverse"}, "participants": [{"athlete": {"id": "4433137"}}]}
+{"text": "Onyeka Okongwu makes 24-foot running jump shot (Kingston Flemings assists)", "coordinate": {"x": 27, "y": 25}, "scoreValue": 3, "scoringPlay": true, "type": {"id": "113", "text": "Running Jump Shot"}, "participants": [{"athlete": {"id": "4431680"}}, {"athlete": {"id": "5149077"}}]}
+{"text": "Luka Doncic makes 14-foot fade away jump shot", "coordinate": {"x": 24, "y": 15}, "scoreValue": 2, "scoringPlay": true, "type": {"id": "121", "text": "Fade Away Jump Shot"}, "participants": [{"athlete": {"id": "3945274"}}]}
+NBA.com closest-defender shooting : FAILED The read operation timed out
+NBA.com shot locations : FAILED The read operation timed out
