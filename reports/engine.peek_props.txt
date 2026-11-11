@@ -1,22 +1,12 @@
-events listed: 14 | credits left: 463533 used: 536467
-game: Boston Celtics @ Toronto Raptors 2026-11-12T00:10:00Z
-credits left: 463524 | this call cost: 9
-  fanduel                {'player_assists': 10, 'player_points': 22, 'player_rebounds': 22}
-  polymarket             {'player_assists': 69, 'player_points': 95, 'player_rebounds': 88}
-  fanatics               {'player_assists': 2, 'player_points': 2, 'player_rebounds': 2}
-  novig                  {'player_assists': 91, 'player_points': 129, 'player_rebounds': 112}
-  prophetx               {'player_assists': 105, 'player_points': 259, 'player_rebounds': 162}
-  williamhill_us         {'player_assists': 10, 'player_points': 22, 'player_rebounds': 22}
-  draftkings             {'player_assists': 14, 'player_points': 22, 'player_rebounds': 22}
-  betrivers              {'player_assists': 16, 'player_points': 20, 'player_rebounds': 20}
-  betmgm                 {'player_assists': 14, 'player_points': 22, 'player_rebounds': 22}
-  pinnacle               {'player_assists': 10, 'player_points': 18, 'player_rebounds': 18}
-  betonlineag            {'player_assists': 20, 'player_points': 22, 'player_rebounds': 22}
-  bovada                 {'player_assists': 28, 'player_points': 118, 'player_rebounds': 54}
-  betopenly              {'player_assists': 1, 'player_points': 4}
-   pinnacle sample: player_assists Derrick White Over 4.5 -123
-   pinnacle sample: player_assists Derrick White Under 4.5 -107
-   pinnacle sample: player_assists Immanuel Quickley Over 5.5 -145
-   pinnacle sample: player_assists Immanuel Quickley Under 5.5 109
-   pinnacle sample: player_assists Jayson Tatum Over 6.5 103
-   pinnacle sample: player_assists Jayson Tatum Under 6.5 -137
+
+historical events on 2026-03-10: 11 | cost: 1
+historical game: Memphis Grizzlies @ Philadelphia 76ers | cost: 20 | left: 463495
+  fanduel                [('player_points', 28)]
+  draftkings             [('player_points', 26)]
+  fanatics               [('player_points', 2)]
+  betonlineag            [('player_points', 28)]
+  williamhill_us         [('player_points', 28)]
+  betrivers              [('player_points', 56)]
+  pinnacle               [('player_points', 20)]
+  bovada                 [('player_points', 148)]
+  betmgm                 [('player_points', 24)]
