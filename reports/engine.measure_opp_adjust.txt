@@ -1,0 +1,113 @@
+done beta 0.0 2024-25
+done beta 0.0 2025-26
+done beta 0.25 2024-25
+done beta 0.25 2025-26
+done beta 0.5 2024-25
+done beta 0.5 2025-26
+done beta 0.75 2024-25
+done beta 0.75 2025-26
+done beta 1.0 2024-25
+done beta 1.0 2025-26
+
+=== 2024-25 (opening line, -110)
+  BETA 0.0   line moved toward us +0.61 pts (169 toward / 97 against)
+      3+                             172-143 54.6%  +13.4u
+      4+                             110-77 58.8%  +23.0u
+      3-4                            62-66 48.4%   -9.6u
+      4-5                            53-28 65.4%  +20.2u
+      5-6                            25-33 43.1%  -10.3u
+      6+                             32-16 66.7%  +13.1u
+      system bet (1 system + 3+)     39-26 60.0%   +9.5u
+      MONEYBALL (2+ systems + 3+)    11-4 73.3%   +6.0u
+  BETA 0.25  line moved toward us +0.55 pts (171 toward / 100 against)
+      3+                             178-144 55.3%  +17.8u
+      4+                             108-81 57.1%  +17.2u
+      3-4                            70-63 52.6%   +0.6u
+      4-5                            48-36 57.1%   +7.6u
+      5-6                            26-29 47.3%   -5.4u
+      6+                             34-16 68.0%  +14.9u
+      system bet (1 system + 3+)     42-27 60.9%  +11.2u
+      MONEYBALL (2+ systems + 3+)    10-4 71.4%   +5.1u
+  BETA 0.5   line moved toward us +0.53 pts (169 toward / 104 against)
+      3+                             177-149 54.3%  +11.9u
+      4+                             112-80 58.3%  +21.8u
+      3-4                            65-69 48.5%   -9.9u
+      4-5                            48-32 60.0%  +11.6u
+      5-6                            30-27 52.6%   +0.3u
+      6+                             34-21 61.8%   +9.9u
+      system bet (1 system + 3+)     40-30 57.1%   +6.4u
+      MONEYBALL (2+ systems + 3+)    9-3 75.0%   +5.2u
+  BETA 0.75  line moved toward us +0.46 pts (167 toward / 112 against)
+      3+                             179-155 53.6%   +7.7u
+      4+                             117-82 58.8%  +24.4u
+      3-4                            62-73 45.9%  -16.6u
+      4-5                            43-26 62.3%  +13.1u
+      5-6                            36-33 52.2%   -0.3u
+      6+                             38-23 62.3%  +11.5u
+      system bet (1 system + 3+)     43-31 58.1%   +8.1u
+      MONEYBALL (2+ systems + 3+)    9-4 69.2%   +4.2u
+  BETA 1.0   line moved toward us +0.40 pts (171 toward / 121 against)
+      3+                             187-163 53.4%   +7.0u
+      4+                             120-90 57.1%  +19.1u
+      3-4                            67-73 47.9%  -12.1u
+      4-5                            42-27 60.9%  +11.2u
+      5-6                            35-36 49.3%   -4.2u
+      6+                             43-27 61.4%  +12.1u
+      system bet (1 system + 3+)     45-35 56.2%   +5.9u
+      MONEYBALL (2+ systems + 3+)    11-5 68.8%   +5.0u
+
+=== 2025-26 (opening line, -110)
+  BETA 0.0   line moved toward us +0.71 pts (160 toward / 80 against)
+      3+                             175-133 56.8%  +26.1u
+      4+                             107-80 57.2%  +17.3u
+      3-4                            68-53 56.2%   +8.8u
+      4-5                            56-36 60.9%  +14.9u
+      5-6                            30-22 57.7%   +5.3u
+      6+                             21-22 48.8%   -2.9u
+      system bet (1 system + 3+)     40-25 61.5%  +11.4u
+      MONEYBALL (2+ systems + 3+)    18-7 72.0%   +9.4u
+  BETA 0.25  line moved toward us +0.77 pts (168 toward / 82 against)
+      3+                             181-141 56.2%  +23.5u
+      4+                             106-84 55.8%  +12.4u
+      3-4                            75-57 56.8%  +11.2u
+      4-5                            52-43 54.7%   +4.3u
+      5-6                            32-17 65.3%  +12.1u
+      6+                             22-24 47.8%   -4.0u
+      system bet (1 system + 3+)     41-25 62.1%  +12.3u
+      MONEYBALL (2+ systems + 3+)    18-10 64.3%   +6.4u
+  BETA 0.5   line moved toward us +0.74 pts (172 toward / 88 against)
+      3+                             187-149 55.7%  +21.0u
+      4+                             104-91 53.3%   +3.5u
+      3-4                            83-58 58.9%  +17.5u
+      4-5                            38-47 44.7%  -12.5u
+      5-6                            38-19 66.7%  +15.5u
+      6+                             28-25 52.8%   +0.5u
+      system bet (1 system + 3+)     41-29 58.6%   +8.3u
+      MONEYBALL (2+ systems + 3+)    18-11 62.1%   +5.4u
+  BETA 0.75  line moved toward us +0.73 pts (176 toward / 94 against)
+      3+                             192-154 55.5%  +20.5u
+      4+                             112-98 53.3%   +3.8u
+      3-4                            80-56 58.8%  +16.7u
+      4-5                            42-49 46.2%  -10.8u
+      5-6                            37-20 64.9%  +13.6u
+      6+                             33-29 53.2%   +1.0u
+      system bet (1 system + 3+)     44-29 60.3%  +11.0u
+      MONEYBALL (2+ systems + 3+)    16-12 57.1%   +2.5u
+  BETA 1.0   line moved toward us +0.67 pts (177 toward / 101 against)
+      3+                             194-165 54.0%  +11.4u
+      4+                             122-101 54.7%   +9.9u
+      3-4                            72-64 52.9%   +1.5u
+      4-5                            48-44 52.2%   -0.4u
+      5-6                            38-25 60.3%   +9.5u
+      6+                             36-32 52.9%   +0.7u
+      system bet (1 system + 3+)     45-32 58.4%   +8.9u
+      MONEYBALL (2+ systems + 3+)    14-12 53.8%   +0.7u
+
+CHOSEN on 2024-25 (best units, players model 3+): BETA 0.25
+TESTED untouched on 2025-26 vs today's model (BETA 0):
+  3+ record (units)            FAIL
+  4+ record (units)            FAIL
+  line movement toward us      PASS
+  system bets not worse        PASS
+  MONEYBALL not worse          FAIL
+VERDICT: KEEP TODAY'S MODEL
