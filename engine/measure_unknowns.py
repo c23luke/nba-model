@@ -76,6 +76,28 @@ def main():
                 if a >= 4:
                     cells[(sc, "4+ share", b)].append(x)
                     cells[(sc, "4+ who", who)].append(x)
+    # system bets and MONEYBALL: same "who is thinner" split, one bet per game side
+    for season in BO.SEASONS:
+        sh = thin_shares(season)
+        games, _ = MS.fetch(season)
+        key = {str(g.id): (g.game_date, g.home, g.away) for g, _, _ in games}
+        sides = defaultdict(list)
+        for r in MS.season_rows(season):
+            if r["bet"] == "spread" and r["system"] < 300 and r["system"] != 113 and r["gap"] is not None:
+                sides[(r["game"], r["side"])].append(r)
+        for (gid, side), ps in sides.items():
+            if ps[0]["gap"] < 3 or ps[0]["res"] == "P":
+                continue
+            k = key.get(str(gid))
+            s = sh.get(k) if k else None
+            if not s or side not in s:
+                continue
+            other = k[2] if side == k[1] else k[1]
+            who = ("the side we'd bet is thinner" if s[side] > s[other] + 0.05 else
+                   "the other side is thinner" if s[other] > s[side] + 0.05 else "about even")
+            kind = "MONEYBALL" if len({p["system"] for p in ps}) >= 2 else "system bet"
+            for sc in (season, "both"):
+                cells[(sc, kind, who)].append(ps[0]["res"])
     bands = ["under 10%", "10-20%", "20-30%", "30%+"]
     whos = ["the side we'd bet is thinner", "about even", "the other side is thinner"]
     for sc in list(BO.SEASONS) + ["both"]:
@@ -86,6 +108,10 @@ def main():
                 print(f"      gap {gb:4} {rec(cells[(sc, 'share x gap', b, gb)])[1]}")
         for w in whos:
             print(f"  {w:30} all 3+ {rec(cells[(sc, 'who', w)])[1]:28} 4+ {rec(cells[(sc, '4+ who', w)])[1]}")
+        for kind in ("system bet", "MONEYBALL"):
+            print(f"  {kind} (players model 3+):")
+            for w in whos:
+                print(f"      {w:30} {rec(cells[(sc, kind, w)])[1]}")
 
 
 if __name__ == "__main__":
