@@ -455,6 +455,10 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 proj = live_projections(box_rows, upcoming, reads, pos)
             board["props_ev"] = props_ev.run(store, now, upcoming, box_rows, key, sources.get_json,
                                              {g.id: {"final": g.final} for g in games}, proj)
+            if board["props_ev"] is not None:
+                board["props_ev"]["projected"] = len(proj or {})
+                board["props_ev"]["sample_proj"] = sorted(((v["name"], v["team"], v["pts"], v["l10"]["pts"])
+                                                           for v in (proj or {}).values()), key=lambda x: -abs(x[2] - x[3]))[:8]
         except Exception as e:
             log.append(f"props ev: {str(e)[:160]}")
     try:
