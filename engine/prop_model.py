@@ -105,7 +105,36 @@ def _avg(xs):
 
 
 TUNED = P(w5=0.4, w10=0.2, split_trust=0.3, share_trust=0.0, rate_recent=0.3, shrink_min=50.0, usage_k=0.5,
-          team_total_exp=0.0, game_total_exp=0.0, opp_w=0.5, opp_shrink=10.0)   # chosen on 2024-25 (2026-11-11)
+          team_total_exp=0.0, game_total_exp=0.0, opp_w=0.5, opp_shrink=10.0,
+          luck_l=0.25, match_w=0.5)   # chosen on 2024-25 (2026-11-11); shots tested +0.0024 / +0.0022 on 2025-26
+
+
+_SHOT_CACHE: dict = {}
+
+
+def load_shots(store, finals: list, fetch, log: list, limit: int = 40) -> dict:
+    """game_id -> shot counts for this season's finished games: kept in memory, stored in bet_state "shots:<id>",
+    and fetched from ESPN (free) for games we don't have yet, at most `limit` per run."""
+    want = [str(g.id) for g in finals if str(g.id) not in _SHOT_CACHE]
+    for i in range(0, len(want), 100):
+        got = store.load_state([f"shots:{gid}" for gid in want[i:i + 100]])
+        for k, v in got.items():
+            _SHOT_CACHE[k.split(":", 1)[1]] = v
+    missing = [gid for gid in want if gid not in _SHOT_CACHE][:limit]
+    new = {}
+    from .boxscore import SUMMARY
+    for gid in missing:
+        try:
+            c = shot_counts(fetch(SUMMARY.format(gid)) or {})
+        except Exception as e:
+            log.append(f"shots {gid}: {str(e)[:80]}")
+            continue
+        _SHOT_CACHE[gid] = c
+        new[f"shots:{gid}"] = c
+    if new:
+        store.save_state(new)
+        log.append(f"Shot locations: {len(new)} games stored")
+    return _SHOT_CACHE
 
 
 ZONES = ("rim", "short", "mid", "corner3", "above3")
@@ -118,6 +147,61 @@ def zone(x: float, y: float, three: bool) -> str:
     if three:
         return "corner3" if y < 9 else "above3"
     return "rim" if d < 4 else "short" if d < 14 else "mid"
+
+
+def shot_list(js: dict) -> list:
+    """[(team, name, zone, points)] from an ESPN game summary's play-by-play: every field-goal attempt with a
+    court location (points 0 on a miss)."""
+    from .teams import code
+    t_, n_ = {}, {}
+    for t in (js.get("boxscore") or {}).get("players", []):
+        team = code(t["team"]["abbreviation"])
+        for a in (t["statistics"][0].get("athletes") or []):
+            ath = a.get("athlete") or {}
+            t_[str(ath.get("id"))] = team
+            n_[str(ath.get("id"))] = ath.get("displayName", "")
+    out = []
+    for pl in js.get("plays") or []:
+        if not pl.get("shootingPlay"):
+            continue
+        txt = (pl.get("text") or "").lower()
+        if "free throw" in txt:
+            continue
+        c = pl.get("coordinate") or {}
+        parts = pl.get("participants") or []
+        if c.get("x") is None or c.get("y") is None or not parts:
+            continue
+        aid = str((parts[0].get("athlete") or {}).get("id"))
+        nm, tm = n_.get(aid), t_.get(aid)
+        if not nm or not tm or c["x"] < 0 or c["y"] < 0 or c["y"] > 47:
+            continue
+        three = "three point" in txt or pl.get("scoreValue") == 3
+        out.append((tm, nm, zone(float(c["x"]), float(c["y"]), three),
+                    int(pl.get("scoreValue") or 0) if pl.get("scoringPlay") else 0))
+    return out
+
+
+def shot_counts(js: dict) -> dict:
+    """Compact form for storage: {"TEAM|Name": [attempts, points] for each zone in ZONES order}."""
+    out = {}
+    for team, name, z, pts in shot_list(js):
+        v = out.setdefault(f"{team}|{name}", [0] * (2 * len(ZONES)))
+        i = ZONES.index(z)
+        v[2 * i] += 1
+        v[2 * i + 1] += pts
+    return out
+
+
+def counts_to_shots(counts: dict) -> list:
+    out = []
+    for k, v in counts.items():
+        team, name = k.split("|", 1)
+        for i, z in enumerate(ZONES):
+            # rebuild the attempts: all of the zone's points on one row, the rest as misses (totals exact)
+            if v[2 * i]:
+                out.append((team, name, z, v[2 * i + 1]))
+                out += [(team, name, z, 0)] * (v[2 * i] - 1)
+    return out
 
 
 class History:
@@ -261,7 +345,7 @@ class History:
         return out
 
 
-def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict) -> dict:
+def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict, shots: dict | None = None) -> dict:
     """(game_id, normalised name) -> projection for every player on tonight's reads who isn't ruled out,
     using this season's box scores (engine.boxscore rows) and the TUNED weights."""
     from .personnel import norm
@@ -275,6 +359,8 @@ def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict) 
     for gid in sorted(by_game, key=lambda g: (meta[g], g)):
         teams = list(by_game[gid])
         if len(teams) == 2:
+            if shots and shots.get(gid):
+                H.add_shots(teams[0], teams[1], counts_to_shots(shots[gid]))
             H.add(teams[0], teams[1], by_game[gid])
     out = {}
     for g in games:

@@ -452,7 +452,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 except Exception as e:
                     pos = {}
                     log.append(f"props model: no roster positions ({str(e)[:80]}), everyone counted as a wing")
-                proj = live_projections(box_rows, upcoming, reads, pos)
+                from .prop_model import load_shots
+                shots = load_shots(store, [g for g in games if g.final], sources.get_json, log)
+                proj = live_projections(box_rows, upcoming, reads, pos, shots)
             board["props_ev"] = props_ev.run(store, now, upcoming, box_rows, key, sources.get_json,
                                              {g.id: {"final": g.final} for g in games}, proj)
             if board["props_ev"] is not None:

@@ -22,7 +22,7 @@ from . import backtest as BT
 from . import backtest_open as BO
 from . import personnel as PERS
 from . import sources
-from .prop_model import STATS, History, P, project
+from .prop_model import STATS, History, P, project, shot_list
 from .teams import code
 
 
@@ -46,40 +46,6 @@ def box(js: dict):
             out.append((team, ath.get("displayName", ""), (ath.get("position") or {}).get("abbreviation") or "",
                         m, n("points") if m else 0, n("rebounds") if m else 0, n("assists") if m else 0))
     return out
-
-
-def shots(js: dict, teams_by_id: dict, names_by_id: dict):
-    """[(team, name, zone, points)] from ESPN play-by-play: every field-goal attempt with a court location."""
-    from .prop_model import zone
-    out = []
-    for pl in js.get("plays") or []:
-        if not pl.get("shootingPlay"):
-            continue
-        txt = (pl.get("text") or "").lower()
-        if "free throw" in txt:
-            continue
-        c = pl.get("coordinate") or {}
-        parts = pl.get("participants") or []
-        if c.get("x") is None or c.get("y") is None or not parts:
-            continue
-        aid = str((parts[0].get("athlete") or {}).get("id"))
-        nm, tm = names_by_id.get(aid), teams_by_id.get(aid)
-        if not nm or not tm or c["x"] < 0 or c["y"] < 0 or c["y"] > 47:
-            continue
-        three = "three point" in txt or (pl.get("scoreValue") == 3)
-        out.append((tm, nm, zone(float(c["x"]), float(c["y"]), three), int(pl.get("scoreValue") or 0) if pl.get("scoringPlay") else 0))
-    return out
-
-
-def ids(js: dict):
-    t_, n_ = {}, {}
-    for t in (js.get("boxscore") or {}).get("players", []):
-        team = code(t["team"]["abbreviation"])
-        for a in (t["statistics"][0].get("athletes") or []):
-            ath = a.get("athlete") or {}
-            t_[str(ath.get("id"))] = team
-            n_[str(ath.get("id"))] = ath.get("displayName", "")
-    return t_, n_
 
 
 def avg(xs):
@@ -122,8 +88,7 @@ def features(season):
                     f[f"{s}_act"] = tonight[team][f["name"]][i]
                 f["min_act"] = tonight[team][f["name"]][0]
                 out.append(f)
-        tb, nb = ids(sums.get(g.id) or {})
-        H.add_shots(g.home, g.away, shots(sums.get(g.id) or {}, tb, nb))
+        H.add_shots(g.home, g.away, shot_list(sums.get(g.id) or {}))
         H.add(g.home, g.away, tonight)
     return out
 

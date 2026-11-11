@@ -65,3 +65,11 @@ def test_shot_zones_and_shooting_luck():
         H.add("A", "B", {"A": {"HOT": (10, 4, 0, 0)}, "B": {"COLD": (10, 0, 0, 0)}})
     hot, cold = H.shot_features("HOT", "B"), H.shot_features("COLD", "A")
     assert round(hot["luck_pm"], 6) == 0.2 and round(cold["luck_pm"], 6) == -0.2
+
+
+def test_shot_counts_round_trip_keeps_attempts_and_points():
+    from engine.prop_model import counts_to_shots
+    c = {"BOS|Jaylen Brown": [3, 4, 0, 0, 2, 2, 1, 3, 4, 3]}      # rim 3 att 4 pts, mid 2/2, corner3 1/3, above3 4/3
+    rows = counts_to_shots(c)
+    assert len(rows) == 10 and sum(r[3] for r in rows) == 12
+    assert sum(1 for r in rows if r[2] == "above3") == 4
