@@ -11,7 +11,7 @@
   read:401909972 2026-11-11T22:00:40 43 entries; last: {'hi': -0.5, 'lo': -2.5, 'ts': '2026-11-11T22:00:15.061247+00:00', 'dtd': ['NOP: Trey Murphy III'], 'mkt': -3.5, 'fair': -2.5, 'blind': False}
   read:401909974 2026-11-11T21:20:59 26 entries; last: {'hi': -0.5, 'lo': -0.5, 'ts': '2026-11-11T21:20:45.102413+00:00', 'dtd': [], 'mkt': -6.5, 'fair': -0.5, 'blind': True}
   read:401909967 2026-11-11T21:28:31 34 entries; last: {'hi': 0.5, 'lo': -2.0, 'ts': '2026-11-11T21:28:19.051101+00:00', 'dtd': ['CLE: Jaylon Tyson', 'NYK: Karl-Anthony Towns'], 'mkt': -4.5, 'fair': -2.0, 'blind': False}
-board 2026-11-11T22:21:13.249133+00:00 injury_desk on board: True
+board 2026-11-11T22:24:35.434987+00:00 injury_desk on board: True
 testing: X2: fade the team missing 2+ rotation players 0-1 bets 1 open 0 clv 0.0 ready False
 testing: Injury desk: beat the market to the news 0-0 bets 0 open 0 clv None ready False
 testing: Props: Star back from 3+ games out (minutes usually limited): unders 0-0 bets 0 open 0 clv None ready False
@@ -44,7 +44,7 @@ props ev: {'bets': 51, 'w': 0, 'l': 0, 'open': 51, 'avg_ev': 0.0455, 'avg_clv': 
     Andre Drummond under 8.5 reb novig -104.0 pin -137.0 ev 0.059
     Collin Murray-Boyles over 12.5 pts novig 108.0 pin -119.0 ev 0.0568
     Deni Avdija over 6.5 ast novig 108.0 pin -119.0 ev 0.0546
-props model: {'bets': 0, 'w': 0, 'l': 0, 'open': 0}
+props model: {'bets': 0, 'w': 0, 'l': 0, 'open': 0} | players projected tonight: None | biggest moves vs last-10: None
 all notes: ['Box scores: 9 new games stored', 'Official injury report 05:15 PM ET: 113 players listed; differs from ESPN on 40: Devin Carter (BOS): Out — G League - Two-Way; Amari Williams (BOS): Out — G League - Two-Way; Tyler Bilodeau (BKN): Out — G League - Two-Way; Joshua Jefferson (BKN): Out — G League - On Assignment; Grant Nelson (BKN): Out — G League - Two-Way; Ben Saraf (BKN): Out — G League - On Assignment; Zach Collins (CHI): Questionable — Injury/Illness - Respiratory Illness; Norman Powell (CHI): Questionable — Injury/Illness - Low Back Spasms; not yet submitted: WAS, TOR, CHA, PHX', 'Personnel: 14 games rated, calibrated market = +0.1 + 0.75 x personnel', 'Roster check — playing but not on the roster we used: CLE: Tristan Enaruna (3 mpg); DET: Chaz Lanier (1 mpg); MIN: Isaiah Evans (1 mpg); OKC: Dalen Terry (4 mpg)']
 notes: []
 notes mentioning the desk: []
