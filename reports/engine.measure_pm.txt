@@ -1,0 +1,133 @@
+done weight 0.0 shrink 1000.0 2024-25
+done weight 0.0 shrink 1000.0 2025-26
+done weight 0.25 shrink 1000.0 2024-25
+done weight 0.25 shrink 1000.0 2025-26
+done weight 0.5 shrink 1000.0 2024-25
+done weight 0.5 shrink 1000.0 2025-26
+done weight 1.0 shrink 1000.0 2024-25
+done weight 1.0 shrink 1000.0 2025-26
+done weight 0.5 shrink 3000.0 2024-25
+done weight 0.5 shrink 3000.0 2025-26
+done weight 1.0 shrink 3000.0 2024-25
+done weight 1.0 shrink 3000.0 2025-26
+
+=== 2024-25 (opening line, -110)
+  weight 0.0  shrink 1000   line moved toward us +0.62 pts (169 toward / 96 against)
+      3+                             172-142 54.8%  +14.4u
+      4+                             110-77 58.8%  +23.0u
+      3-4                            62-65 48.8%   -8.6u
+      4-5                            53-28 65.4%  +20.2u
+      5-6                            25-34 42.4%  -11.3u
+      6+                             32-15 68.1%  +14.1u
+      system bet (1 system + 3+)     39-26 60.0%   +9.5u
+      MONEYBALL (2+ systems + 3+)    11-4 73.3%   +6.0u
+  weight 0.25 shrink 1000   line moved toward us +0.53 pts (168 toward / 96 against)
+      3+                             171-142 54.6%  +13.5u
+      4+                             108-77 58.4%  +21.2u
+      3-4                            63-65 49.2%   -7.7u
+      4-5                            51-32 61.4%  +14.4u
+      5-6                            23-30 43.4%   -9.1u
+      6+                             34-15 69.4%  +15.9u
+      system bet (1 system + 3+)     39-27 59.1%   +8.5u
+      MONEYBALL (2+ systems + 3+)    10-4 71.4%   +5.1u
+  weight 0.5  shrink 1000   line moved toward us +0.56 pts (173 toward / 93 against)
+      3+                             177-139 56.0%  +21.9u
+      4+                             106-83 56.1%  +13.4u
+      3-4                            71-56 55.9%   +8.5u
+      4-5                            49-34 59.0%  +10.5u
+      5-6                            23-34 40.4%  -13.1u
+      6+                             34-15 69.4%  +15.9u
+      system bet (1 system + 3+)     39-26 60.0%   +9.5u
+      MONEYBALL (2+ systems + 3+)    11-4 73.3%   +6.0u
+  weight 1.0  shrink 1000   line moved toward us +0.55 pts (173 toward / 95 against)
+      3+                             177-138 56.2%  +22.9u
+      4+                             105-91 53.6%   +4.5u
+      3-4                            72-47 60.5%  +18.5u
+      4-5                            50-42 54.3%   +3.5u
+      5-6                            20-30 40.0%  -11.8u
+      6+                             35-19 64.8%  +12.8u
+      system bet (1 system + 3+)     38-27 58.5%   +7.5u
+      MONEYBALL (2+ systems + 3+)    11-3 78.6%   +7.0u
+  weight 0.5  shrink 3000   line moved toward us +0.53 pts (168 toward / 96 against)
+      3+                             173-141 55.1%  +16.3u
+      4+                             107-77 58.2%  +20.3u
+      3-4                            66-64 50.8%   -4.0u
+      4-5                            49-31 61.3%  +13.5u
+      5-6                            24-30 44.4%   -8.2u
+      6+                             34-16 68.0%  +14.9u
+      system bet (1 system + 3+)     38-27 58.5%   +7.5u
+      MONEYBALL (2+ systems + 3+)    11-4 73.3%   +6.0u
+  weight 1.0  shrink 3000   line moved toward us +0.55 pts (172 toward / 93 against)
+      3+                             176-137 56.2%  +23.0u
+      4+                             107-85 55.7%  +12.3u
+      3-4                            69-52 57.0%  +10.7u
+      4-5                            54-37 59.3%  +12.1u
+      5-6                            18-30 37.5%  -13.6u
+      6+                             35-18 66.0%  +13.8u
+      system bet (1 system + 3+)     39-25 60.9%  +10.5u
+      MONEYBALL (2+ systems + 3+)    11-4 73.3%   +6.0u
+
+=== 2025-26 (opening line, -110)
+  weight 0.0  shrink 1000   line moved toward us +0.71 pts (160 toward / 80 against)
+      3+                             175-133 56.8%  +26.1u
+      4+                             107-80 57.2%  +17.3u
+      3-4                            68-53 56.2%   +8.8u
+      4-5                            56-36 60.9%  +14.9u
+      5-6                            30-22 57.7%   +5.3u
+      6+                             21-22 48.8%   -2.9u
+      system bet (1 system + 3+)     40-25 61.5%  +11.4u
+      MONEYBALL (2+ systems + 3+)    18-7 72.0%   +9.4u
+  weight 0.25 shrink 1000   line moved toward us +0.78 pts (163 toward / 81 against)
+      3+                             175-136 56.3%  +23.1u
+      4+                             105-80 56.8%  +15.5u
+      3-4                            70-56 55.6%   +7.6u
+      4-5                            55-35 61.1%  +15.0u
+      5-6                            28-23 54.9%   +2.5u
+      6+                             22-22 50.0%   -2.0u
+      system bet (1 system + 3+)     41-25 62.1%  +12.3u
+      MONEYBALL (2+ systems + 3+)    16-7 69.6%   +7.5u
+  weight 0.5  shrink 1000   line moved toward us +0.81 pts (165 toward / 79 against)
+      3+                             171-140 55.0%  +15.5u
+      4+                             108-81 57.1%  +17.2u
+      3-4                            63-59 51.6%   -1.7u
+      4-5                            55-36 60.4%  +14.0u
+      5-6                            28-23 54.9%   +2.5u
+      6+                             25-22 53.2%   +0.7u
+      system bet (1 system + 3+)     41-27 60.3%  +10.3u
+      MONEYBALL (2+ systems + 3+)    16-7 69.6%   +7.5u
+  weight 1.0  shrink 1000   line moved toward us +0.72 pts (168 toward / 89 against)
+      3+                             174-152 53.4%   +6.2u
+      4+                             112-85 56.9%  +16.8u
+      3-4                            62-67 48.1%  -10.6u
+      4-5                            58-37 61.1%  +15.7u
+      5-6                            26-25 51.0%   -1.4u
+      6+                             28-23 54.9%   +2.5u
+      system bet (1 system + 3+)     43-27 61.4%  +12.1u
+      MONEYBALL (2+ systems + 3+)    16-8 66.7%   +6.5u
+  weight 0.5  shrink 3000   line moved toward us +0.71 pts (164 toward / 80 against)
+      3+                             174-137 55.9%  +21.2u
+      4+                             104-79 56.8%  +15.5u
+      3-4                            70-58 54.7%   +5.6u
+      4-5                            54-34 61.4%  +15.1u
+      5-6                            27-23 54.0%   +1.5u
+      6+                             23-22 51.1%   -1.1u
+      system bet (1 system + 3+)     40-26 60.6%  +10.4u
+      MONEYBALL (2+ systems + 3+)    16-7 69.6%   +7.5u
+  weight 1.0  shrink 3000   line moved toward us +0.80 pts (166 toward / 79 against)
+      3+                             173-140 55.3%  +17.3u
+      4+                             108-78 58.1%  +20.2u
+      3-4                            65-62 51.2%   -2.9u
+      4-5                            54-33 62.1%  +16.1u
+      5-6                            29-24 54.7%   +2.4u
+      6+                             25-21 54.3%   +1.7u
+      system bet (1 system + 3+)     43-27 61.4%  +12.1u
+      MONEYBALL (2+ systems + 3+)    16-7 69.6%   +7.5u
+
+CHOSEN on 2024-25 (best units, players model 3+): weight 1.0 shrink 3000
+TESTED untouched on 2025-26 vs today's model:
+  3+ record (units)            FAIL
+  4+ record (units)            PASS
+  line movement toward us      PASS
+  system bets not worse        PASS
+  MONEYBALL not worse          FAIL
+VERDICT: KEEP TODAY'S MODEL
