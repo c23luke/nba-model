@@ -1,37 +1,39 @@
-board (the site loads this every 60 s per open tab)         0.25 MB       1 rows  0.3s
-picks, all rows (model, every run)                          0.64 MB     741 rows  0.2s
-games, all rows (model, every run)                          0.05 MB     170 rows  0.1s
-player_games, all (model, every 30 min)                     0.34 MB    1000 rows  0.2s
-bet_orders live filled (model, every run)                   0.10 MB      78 rows  0.1s
-bet_feed (bettor, every minute)                             0.23 MB     122 rows  0.1s
-bet_log last 50                                             0.02 MB      50 rows  0.4s
-injury_log all                                              0.30 MB    1000 rows  0.1s
-price_log last 2 days                                       0.68 MB    1000 rows  0.4s
+board (the site loads this every 60 s per open tab)         0.29 MB       1 rows  0.6s
+picks, all rows (model, every run)                          0.67 MB     775 rows  0.7s
+games, all rows (model, every run)                          0.06 MB     174 rows  0.2s
+player_games, all (model, every 30 min)                     0.34 MB    1000 rows  0.3s
+bet_orders live filled (model, every run)                   0.10 MB      82 rows  0.5s
+bet_feed (bettor, every minute)                             0.25 MB     134 rows  0.5s
+bet_log last 50                                             0.02 MB      50 rows  0.3s
+injury_log all                                              0.30 MB    1000 rows  0.3s
+price_log last 2 days                                       0.68 MB    1000 rows  0.6s
 
 board parts:
-  slate                             64.2 KB
-  placed                            55.8 KB
+  placed                            63.6 KB
+  slate                             60.1 KB
   tracking                          34.1 KB
-  test_history                      19.0 KB
+  tests                             20.8 KB
+  test_history                      20.7 KB
   power                             13.0 KB
-  roster_audit                      10.6 KB
+  card                              12.5 KB
+  roster_audit                       9.5 KB
   test_systems                       9.2 KB
   early_history                      9.0 KB
-  history                            7.8 KB
-  tests                              5.2 KB
+  history                            8.9 KB
   report_card                        4.3 KB
+  testing                            4.0 KB
   early_systems                      3.8 KB
-  card                               3.6 KB
   gap_tracker                        3.1 KB
-  bets                               2.3 KB
+  bets                               1.8 KB
   systems                            1.8 KB
-  notes                              1.0 KB
-  card_done                          0.7 KB
-  shadow_systems                     0.5 KB
-  card_holding                       0.3 KB
-  injury_desk                        0.2 KB
-  stacks                             0.2 KB
-  placer                             0.1 KB
+  props_desk                         1.2 KB
+  shadow_systems                     1.2 KB
+  card_holding                       1.2 KB
+  stacks                             1.1 KB
+  injury_desk                        1.0 KB
+  notes                              0.9 KB
+  card_done                          0.5 KB
+  placer                             0.3 KB
   scoring                            0.1 KB
   combo_live                         0.1 KB
   odds_api                           0.0 KB
