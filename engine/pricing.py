@@ -95,7 +95,9 @@ def players_agree(pick: dict, slate: list[dict]) -> float | None:
     """The players model's points on this side in the WORST day-to-day version of tonight (negative = it
     likes the other side). None when the model has no read or is blind on the game. Unlike players_gap,
     bottom-10 teams are NOT dropped: the combo records below were measured without that filter, and
-    MONEYBALL never had it."""
+    MONEYBALL never had it. TESTED 2026-11-11 (engine/measure_badteams_combos.py, 2 seasons at the open):
+    on bottom-10 teams, system bets went 52-26 (66.7%; 23-11 and 29-15) and MONEYBALL 17-8 (68%; 7-2 and 10-6),
+    as good as or better than on other teams. So no bottom-10 filter here."""
     if pick.get("bet") != "spread":
         return None
     for g in slate:
