@@ -749,6 +749,39 @@ def flag_bad_team(view: dict, away: str, home: str, ranks: dict) -> None:
         view["bad_team"] = {"team": side, "rank": r["rank"], "rating": r["rating"]}
 
 
+THIN_MIN = 200         # minutes this season below which a player with no NBA season behind him is "thin"
+THIN_EDGE = 0.05       # one side's thin share must exceed the other's by this much
+
+
+def thin_share(tr: TeamRead) -> float:
+    """Share of tonight's projected minutes going to players the model barely knows: no NBA season behind them
+    (rookies, new to the league) and under 200 minutes this season. Day-to-day players count at their minutes."""
+    ps = [p for p in tr.players if p.status != "out" and p.minutes > 0]
+    tot = sum(p.minutes for p in ps)
+    if not tot:
+        return 0.0
+    thin = sum(p.minutes for p in ps if not (p.last and p.last.get("mp", 0) > 0)
+               and not (p.live and p.live.get("min", 0) >= THIN_MIN))
+    return thin / tot
+
+
+def flag_thin(view: dict, away: TeamRead, home: TeamRead) -> None:
+    """If the side the players model likes leans on thin players (5+ points more of its minutes than the other
+    side), mark the view: the players model doesn't bet that side ALONE (T13).
+    MEASURED 2026-11-11 (engine/measure_unknowns.py, 2 seasons at the open): players model 4+ backing the thinner
+    side 41-54 (2024-25 9-18, 2025-26 32-36); about even 136-86; backing against the thinner side 40-17.
+    NOT applied to system bets or MONEYBALL: there the thinner side still won (23-15 and 8-5)."""
+    gap = view.get("gap")
+    if gap is None or not gap:
+        return
+    sh = {"home": thin_share(home), "away": thin_share(away)}
+    view["thin_share"] = {k: round(v, 2) for k, v in sh.items()}
+    side, other = ("home", "away") if gap > 0 else ("away", "home")
+    if sh[side] > sh[other] + THIN_EDGE:
+        view["thin"] = {"team": (home if side == "home" else away).team, "side": side,
+                        "share": round(sh[side], 2), "other": round(sh[other], 2)}
+
+
 def blind_reasons(tr: TeamRead) -> list[str]:
     """Where this model can't see what the market sees. A gap here is not an edge."""
     top8 = tr.rotation[:8]

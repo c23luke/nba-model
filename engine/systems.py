@@ -418,11 +418,14 @@ def personnel_call(view: dict | None, gap_to_fire: float = 3.0) -> dict:
     neg = [g for g in gaps if g <= -gap_to_fire]
     if len(pos) == len(gaps) or len(neg) == len(gaps):
         side = "home" if pos else "away"
+        if (view.get("thin") or {}).get("side") == side:
+            return {"call": "none", "thin": True}     # leans on players the model barely knows (measured 41-54)
         return {"call": "now", "side": side, "worst_gap": min(gaps, key=abs)}
+    thin = (view.get("thin") or {}).get("side")
     if pos and not neg:
-        return {"call": "waiting", "side": "home", "best_gap": max(pos)}
+        return {"call": "none", "thin": True} if thin == "home" else {"call": "waiting", "side": "home", "best_gap": max(pos)}
     if neg and not pos:
-        return {"call": "waiting", "side": "away", "best_gap": min(neg)}
+        return {"call": "none", "thin": True} if thin == "away" else {"call": "waiting", "side": "away", "best_gap": min(neg)}
     return {"call": "none"}
 
 
@@ -462,11 +465,16 @@ def evaluate_personnel_shadow(game: Game, home_spread: float | None, view: dict 
     gaps = [s["gap"] for s in view.get("scenarios") or [] if s["gap"] is not None] or [gap]
     same = [abs(g) for g in gaps if (g > 0) == home]
     c = personnel_call(view)
-    return [Pick(301, game.id, "spread", side, line, [
-        f"Personnel likes {side} by {abs(gap):.1f} vs the market"], {
+    ev = [f"Personnel likes {side} by {abs(gap):.1f} vs the market"]
+    th = view.get("thin")
+    if th:
+        ev.append(f"{th['team']} leans on players the model barely knows ({th['share']:.0%} of its minutes vs "
+                  f"{th['other']:.0%}): the players model doesn't bet that side alone (41-54 in two seasons)")
+    return [Pick(301, game.id, "spread", side, line, ev, {
         "gap": round(abs(gap), 1),
         "worst_gap": round(min(same), 1) if len(same) == len(gaps) else 0.0,   # 0 = versions disagree on side
-        "call": "blind" if view.get("blind") else "bad_team" if view.get("bad_team") else c["call"],
+        "call": "blind" if view.get("blind") else "bad_team" if view.get("bad_team") else
+                "thin" if c.get("thin") else c["call"],
         "dtd": len(view.get("waiting_on") or []),
     })]
 

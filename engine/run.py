@@ -227,6 +227,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                     views[g.id] = personnel_mod.game_view(reads[g.away], reads[g.home],
                                                           stored[g.id].get("home_spread"), cal, *rest[g.id])
                     personnel_mod.flag_bad_team(views[g.id], g.away, g.home, ranks)
+                    personnel_mod.flag_thin(views[g.id], reads[g.away], reads[g.home])
             try:
                 stress = personnel_mod.stress_lines(
                     reads, [(g.id, g.away, g.home, stored[g.id].get("home_spread")) for g in upcoming if g.id in raw],
