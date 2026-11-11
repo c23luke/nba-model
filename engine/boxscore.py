@@ -118,7 +118,10 @@ def recent_players(rows: list[dict], last_n: int = 3) -> dict[str, list[dict]]:
 
 
 OPP_BETA = 0.0        # opponent adjustment (see opponent_strength). 0 = off: the live model as it was.
-                      # Tested 2026-11-11 by engine/measure_opp_adjust.py; only turned on if it beats 0.
+                      # TESTED 2026-11-11 (engine/measure_opp_adjust.py): 0.25 was best on 2024-25, but on 2025-26
+                      # it made the players model's 4+ record worse (107-80 -> 106-84) and MONEYBALL worse (18-7 ->
+                      # 18-10); every larger value was worse still. Kept OFF. The results correction already
+                      # catches most of what schedule strength explains.
 
 
 def opponent_strength(rows: list[dict]) -> dict[str, float]:
