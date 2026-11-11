@@ -28,3 +28,28 @@ def test_returning_star_loses_minutes_and_opponent_factor_shrinks_with_few_games
     p = P(opp_w=1.0, opp_shrink=10.0)
     pr = project(f(pts_opp=1.2, opp_games=10), p)
     assert round(pr["pts"], 6) == round(15 * (1 + 0.2 * 10 / 20), 6)
+
+
+def test_live_projections_run_the_same_history_on_this_seasons_box_scores():
+    from datetime import date
+    from engine.personnel import Player, TeamRead
+    from engine.prop_model import TUNED, live_projections
+    from engine.state import Game
+    rows = []
+    for i in range(6):
+        for team, opp in (("BOS", "NYK"), ("NYK", "BOS")):
+            for j in range(5):
+                rows.append({"game_id": f"x{i}", "game_date": f"2026-11-0{i + 1}", "team": team, "name": f"{team}{j}",
+                             "min": 30 if j < 3 else 15, "pts": 15 if j < 3 else 6, "orb": 1, "drb": 4, "ast": 3})
+    g = Game(id="g", game_date=date(2026, 11, 11), away="NYK", home="BOS", tip_utc="2026-11-12T00:00Z")
+    reads = {}
+    for t in ("BOS", "NYK"):
+        tr = TeamRead(t)
+        tr.players = [Player(f"{t}{j}", "out" if (t, j) == ("BOS", 0) else "active", 3, None) for j in range(5)]
+        reads[t] = tr
+    pr = live_projections(rows, [g], reads, {})
+    assert ("g", "bos0") not in pr and ("g", "bos1") in pr and ("g", "nyk0") in pr
+    # 0.50 pts/min over 180 minutes, pulled 50/230 of the way toward the league wing rate (57 pts / 120 min) -> 14.8
+    assert pr[("g", "nyk0")]["min"] == 30.0 and pr[("g", "nyk0")]["pts"] == 14.8
+    assert pr[("g", "bos1")]["fresh_out"] == ["BOS0"] and pr[("g", "bos1")]["pts"] > 15.0   # usage vacuum
+    assert TUNED.usage_k == 0.5

@@ -88,3 +88,144 @@ def project(f: dict, p: P) -> dict:
             ctx *= (1 + (o - 1) * n / (n + p.opp_shrink)) ** p.opp_w
         out[s] = mins * rate * ctx
     return out
+
+
+# ------------------------------------------------------------------ shared history (backtest AND live)
+from collections import defaultdict as _dd
+
+
+def _avg(xs):
+    return sum(xs) / len(xs) if xs else 0.0
+
+
+TUNED = P(w5=0.4, w10=0.2, split_trust=0.3, share_trust=0.0, rate_recent=0.3, shrink_min=50.0, usage_k=0.5,
+          team_total_exp=0.0, game_total_exp=0.0, opp_w=0.5, opp_shrink=10.0)   # chosen on 2024-25 (2026-11-11)
+
+
+class History:
+    """Everything the projection needs from games already played this season. Feed games in date order with
+    add(home, away, {team: {name: (min, pts, reb, ast)}}); positions come from pos (name -> ESPN position)."""
+
+    def __init__(self, pos: dict | None = None):
+        self.pos = pos if pos is not None else {}
+        self.plog = _dd(list)
+        self.tgames = _dd(list)
+        self.tpts = _dd(list)
+        self.allowed = _dd(lambda: _dd(lambda: [0.0, 0.0, 0.0, 0.0]))
+        self.allowed_n = _dd(int)
+        self.league = _dd(lambda: [0.0, 0.0, 0.0, 0.0])
+        self.league_tot = []
+
+    def add(self, home: str, away: str, tonight: dict) -> None:
+        for team in (home, away):
+            opp = away if team == home else home
+            gm = tonight.get(team) or {}
+            self.tgames[team].append(gm)
+            self.tpts[team].append(sum(v[1] for v in gm.values()))
+            for nm, v in gm.items():
+                if v[0] > 0:
+                    self.plog[nm].append(v)
+                    grp = group(self.pos.get(nm, ""))
+                    A = self.allowed[opp][grp]
+                    for i in range(4):
+                        A[i] += v[i]
+                        self.league[grp][i] += v[i]
+            self.allowed_n[opp] += 1
+        self.league_tot.append(sum(v[1] for t in tonight.values() for v in t.values()))
+
+    def features(self, team: str, opp: str, playing: set, absent: set, home_spread: float | None,
+                 game_total: float | None, is_home: bool) -> list[dict]:
+        """Features for every player in `playing` (5+ games of his own). `absent` = players not playing tonight."""
+        past = self.tgames[team]
+        if len(past) < 5:
+            return []
+        last10 = past[-10:]
+        mins = _dd(list)
+        for gm in last10:
+            for nm, v in gm.items():
+                mins[nm].append(v[0])
+        rot = {nm: sum(v) / len(last10) for nm, v in mins.items()
+               if len([x for x in v if x > 0]) >= 5 and sum(v) / len(last10) >= 20}
+        prev = past[-1]
+        fresh = sorted([a for a in rot if a in absent and (prev.get(a) or (0,))[0] > 0], key=lambda a: -rot[a])
+        tot = [sum(v[i] for gm in last10 for v in gm.values()) or 1 for i in (1, 2, 3)]
+        ab_share = [sum(gm.get(a, (0, 0, 0, 0))[i] for gm in last10 for a in fresh) / tot[i - 1] for i in (1, 2, 3)]
+        mpg_now = {nm: _avg([x[0] for x in self.plog[nm][-10:]]) for nm in playing if self.plog[nm]}
+        denom = sum(mpg_now.values()) or 1
+        absent_min = sum(rot[a] for a in fresh)
+        team_total = None
+        if home_spread is not None and game_total is not None:
+            home_tt = (game_total - home_spread) / 2
+            team_total = home_tt if is_home else game_total - home_tt
+        spread = None if home_spread is None else (home_spread if is_home else -home_spread)
+        lt = _avg(self.league_tot) if len(self.league_tot) >= 20 else None
+        out = []
+        for nm in playing:
+            lg = self.plog[nm]
+            if len(lg) < 5:
+                continue
+            grp = group(self.pos.get(nm, ""))
+            l10 = lg[-10:]
+            f = {"name": nm, "team": team, "grp": grp,
+                 "m5": _avg([x[0] for x in lg[-5:]]), "m10": _avg([x[0] for x in l10]), "mseason": _avg([x[0] for x in lg]),
+                 "min_season": sum(x[0] for x in lg), "fresh_out": len(fresh), "fresh_names": fresh,
+                 "abs_spread": None if spread is None else abs(spread), "team_total": team_total,
+                 "team_avg": _avg(self.tpts[team]) if len(self.tpts[team]) >= 3 else None,
+                 "game_total": game_total, "league_total": lt, "opp_games": self.allowed_n[opp]}
+            L_ = self.league[grp]
+            A_ = self.allowed[opp][grp]
+            for i, s in enumerate(STATS, start=1):
+                f[f"{s}_r10"] = sum(x[i] for x in l10) / (sum(x[0] for x in l10) or 1)
+                f[f"{s}_rs"] = sum(x[i] for x in lg) / (sum(x[0] for x in lg) or 1)
+                f[f"{s}_rpos"] = L_[i] / L_[0] if L_[0] else f[f"{s}_rs"]
+                f[f"{s}_opp"] = (A_[i] / A_[0]) / (L_[i] / L_[0]) if A_[0] > 100 and L_[0] and L_[i] else None
+                f[f"{s}_absent_share"] = ab_share[i - 1]
+                f[f"{s}_l10avg"] = _avg([x[i] for x in l10])
+                f[f"{s}_savg"] = _avg([x[i] for x in lg])
+            f["split_gain"] = None
+            for a in fresh:
+                w = [gm[nm][0] for gm in past if (gm.get(nm) or (0,))[0] > 0 and (gm.get(a) or (0,))[0] > 0]
+                wo = [gm[nm][0] for gm in past if (gm.get(nm) or (0,))[0] > 0 and not (gm.get(a) or (0,))[0] > 0]
+                if len(wo) >= 2 and w:
+                    f["split_gain"] = _avg(wo) - _avg(w)
+                    break
+            f["share_gain"] = absent_min * mpg_now.get(nm, 0) / denom if fresh else 0.0
+            streak = 0
+            for gm in reversed(past):
+                if (gm.get(nm) or (0,))[0] > 0:
+                    break
+                streak += 1
+            f["returning"] = streak if streak >= 3 and f["mseason"] >= 28 else None
+            out.append(f)
+        return out
+
+
+def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict) -> dict:
+    """(game_id, normalised name) -> projection for every player on tonight's reads who isn't ruled out,
+    using this season's box scores (engine.boxscore rows) and the TUNED weights."""
+    from .personnel import norm
+    by_game = _dd(lambda: _dd(dict))
+    meta = {}
+    for r in box_rows:
+        by_game[r["game_id"]][r["team"]][r["name"]] = (r.get("min") or 0, r.get("pts") or 0,
+                                                       (r.get("orb") or 0) + (r.get("drb") or 0), r.get("ast") or 0)
+        meta[r["game_id"]] = str(r.get("game_date") or "")
+    H = History(pos)
+    for gid in sorted(by_game, key=lambda g: (meta[g], g)):
+        teams = list(by_game[gid])
+        if len(teams) == 2:
+            H.add(teams[0], teams[1], by_game[gid])
+    out = {}
+    for g in games:
+        for team, opp in ((g.home, g.away), (g.away, g.home)):
+            r = reads.get(team)
+            if r is None:
+                continue
+            playing = {p.name for p in r.players if p.status != "out"}
+            absent = {p.name for p in r.players if p.status == "out"}
+            for f in H.features(team, opp, playing, absent, None, None, team == g.home):
+                pr = project(f, TUNED)
+                out[(g.id, norm(f["name"]))] = {**{k: round(v, 1) for k, v in pr.items()}, "name": f["name"],
+                                                "team": team, "l10": {s: round(f[f"{s}_l10avg"], 1) for s in STATS},
+                                                "fresh_out": f["fresh_names"], "returning": f["returning"]}
+    return out

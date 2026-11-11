@@ -87,13 +87,44 @@ def edges(js: dict) -> list[dict]:
     return out
 
 
+MODEL_EDGE = {"pts": 3.0, "reb": 1.5, "ast": 1.5}   # our projection vs Pinnacle's line (2026-11-11 walk-forward)
+
+
+def model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
+    """Our props model vs Pinnacle's line: 3+ points (1.5 rebounds / assists) off -> paper bet on that side, at the
+    best venue price at that line (Pinnacle's own price if no venue has it)."""
+    px = prices(js)
+    out = []
+    for k, p in (px.get(SHARP) or {}).items():
+        f = fair(p)
+        pr = proj.get((game_id, k[0]))
+        if not f or not pr or k[1] not in pr:
+            continue
+        diff = pr[k[1]] - k[2]
+        if abs(diff) < MODEL_EDGE[k[1]]:
+            continue
+        side = "Over" if diff > 0 else "Under"
+        best, venue = p[side], "pinnacle"
+        for v in VENUES:
+            q = (px.get(v) or {}).get(k)
+            if q and side in q and q[side] > best:
+                best, venue = q[side], v
+        out.append({"kind": "model", "player": p["name"], "key": list(k), "stat": k[1], "line": k[2],
+                    "side": side.lower(), "venue": venue, "price": best, "fair": round(f[side], 4),
+                    "pin_price": p[side], "ev": round(f[side] * dec(best) - 1, 4), "proj": pr[k[1]],
+                    "proj_min": pr.get("min"), "l10": (pr.get("l10") or {}).get(k[1]),
+                    "fresh_out": pr.get("fresh_out"), "returning": pr.get("returning")})
+    return out
+
+
 def closing_fair(js: dict, bet: dict) -> float | None:
     p = (prices(js).get(SHARP) or {}).get(tuple([bet["key"][0], bet["key"][1], float(bet["key"][2])]))
     f = fair(p) if p else None
     return f["Over" if bet["side"] == "over" else "Under"] if f else None
 
 
-def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], finals: dict, desk_bets: list[dict]) -> dict:
+def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], finals: dict, desk_bets: list[dict],
+         proj: dict | None = None) -> dict:
     """One pass. fetch(game) -> the event's odds json or None."""
     state = {"bets": [dict(b) for b in state.get("bets") or []], "fetched": dict(state.get("fetched") or {})}
     stacked = {(b["game_id"], norm(b["player"]), b.get("stat", "pts"), b.get("side", "over")) for b in desk_bets}
@@ -117,10 +148,18 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
                 if cf is not None:
                     b["close_fair"], b["close_at"] = round(cf, 4), now.isoformat()
         have = {(b["game_id"], tuple(b["key"]), b["side"], b["venue"]) for b in state["bets"]}
+        have_model = {(b["game_id"], tuple(b["key"][:2])) for b in state["bets"] if b.get("kind") == "model"}
+        for e in model_edges(js, g.id, proj or {}):
+            if (g.id, tuple(e["key"][:2])) in have_model:
+                continue
+            state["bets"].append({**e, "game_id": g.id, "away": g.away, "home": g.home, "tip_utc": g.tip_utc,
+                                  "at": now.isoformat(), "close_fair": e["fair"],
+                                  "stacked": (g.id, e["key"][0], e["stat"], e["side"]) in stacked})
         for e in edges(js):
             k = (g.id, tuple(e["key"]), e["side"], e["venue"])
             if k in have:
                 continue
+            e["kind"] = "ev"
             state["bets"].append({**e, "game_id": g.id, "away": g.away, "home": g.home, "tip_utc": g.tip_utc,
                                   "at": now.isoformat(), "close_fair": e["fair"],
                                   "stacked": (g.id, e["key"][0], e["stat"], e["side"]) in stacked})
@@ -145,8 +184,12 @@ def _rec(bets):
 
 
 def summary(state: dict) -> dict:
-    bets = state.get("bets") or []
+    allb = state.get("bets") or []
+    bets = [b for b in allb if b.get("kind", "ev") == "ev"]
+    model = [b for b in allb if b.get("kind") == "model"]
     return {**_rec(bets), "stacked": _rec([b for b in bets if b.get("stacked")]),
+            "model": {**_rec(model), "recent": sorted(model, key=lambda b: b["at"], reverse=True)[:40]},
+            "model_and_ev": _rec([b for b in model if b["ev"] > 0]),
             "by_venue": {v: _rec([b for b in bets if b["venue"] == v]) for v in VENUES},
             "recent": sorted(bets, key=lambda b: (-b["ev"], b["at"]))[:40] if bets else []}
 
@@ -170,12 +213,13 @@ def make_fetch(api_key: str, get_json):
     return fetch
 
 
-def run(store, now, games, box_rows, api_key, get_json, finals) -> dict | None:
+def run(store, now, games, box_rows, api_key, get_json, finals, proj=None) -> dict | None:
     if not api_key or not hasattr(store, "load_state"):
         return None
     st = store.load_state(["props_ev", "props_desk"])
     old = st.get("props_ev") or {}
-    new = step(old, now, games, make_fetch(api_key, get_json), box_rows, finals, (st.get("props_desk") or {}).get("bets") or [])
+    new = step(old, now, games, make_fetch(api_key, get_json), box_rows, finals, (st.get("props_desk") or {}).get("bets") or [],
+               proj)
     if json.dumps(new, sort_keys=True, default=str) != json.dumps(old, sort_keys=True, default=str):
         store.save_state({"props_ev": new})
     return summary(new)

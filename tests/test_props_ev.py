@@ -50,3 +50,15 @@ def test_paper_bet_then_clv_against_pinnacles_close_then_grade():
     st = E.step(st, NOW + timedelta(hours=9), [], lambda g: None, box, {"g1": {"final": True}}, [])
     s = E.summary(st)
     assert (s["w"], s["l"], s["stacked"]["w"], s["units"]) == (1, 0, 1, 1.12)
+
+
+def test_model_edge_takes_the_best_venue_price_on_the_side_our_projection_points_to():
+    js = {"bookmakers": [book("pinnacle", -110, -110, point=12.5, name="Sub Guy", market="player_points"),
+                         book("novig", -105, -115, point=12.5, name="Sub Guy", market="player_points")]}
+    proj = {("g1", "sub guy"): {"pts": 16.0, "reb": 3.0, "ast": 2.0, "min": 26.0, "l10": {"pts": 11.0}}}
+    e = E.model_edges(js, "g1", proj)
+    assert len(e) == 1 and (e[0]["side"], e[0]["venue"], e[0]["price"], e[0]["proj"]) == ("over", "novig", -105.0, 16.0)
+    assert E.model_edges(js, "g1", {("g1", "sub guy"): {"pts": 14.0}}) == []          # only 1.5 off
+    st = E.step({}, NOW, [G], lambda g: js, [], {}, [], proj)
+    s = E.summary(st)
+    assert s["model"]["bets"] == 1 and s["bets"] == 0

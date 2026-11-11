@@ -289,6 +289,24 @@ def _status(athlete: dict) -> str:
     return "active"
 
 
+_POS_CACHE: dict = {}
+
+
+def roster_positions(fetch=get_json) -> dict[str, str]:
+    """name -> ESPN position abbreviation for every rostered player (fetched once a day per process)."""
+    from datetime import date as _date
+    day = _date.today().isoformat()
+    if _POS_CACHE.get("day") != day:
+        pos = {}
+        for athletes in fetch_rosters(fetch).values():
+            for a in athletes:
+                ab = (a.get("position") or {}).get("abbreviation")
+                if ab and a.get("displayName"):
+                    pos[a["displayName"]] = ab
+        _POS_CACHE.update({"day": day, "pos": pos})
+    return _POS_CACHE["pos"]
+
+
 def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
     teams = fetch(ESPN_TEAMS)["sports"][0]["leagues"][0]["teams"]
     out = {}

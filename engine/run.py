@@ -444,8 +444,17 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         # props +EV vs Pinnacle (tracking only)
         try:
             from . import props_ev
+            from .prop_model import live_projections
+            proj = None
+            if key and hasattr(store, "load_state"):
+                try:
+                    pos = personnel_mod.roster_positions()
+                except Exception as e:
+                    pos = {}
+                    log.append(f"props model: no roster positions ({str(e)[:80]}), everyone counted as a wing")
+                proj = live_projections(box_rows, upcoming, reads, pos)
             board["props_ev"] = props_ev.run(store, now, upcoming, box_rows, key, sources.get_json,
-                                             {g.id: {"final": g.final} for g in games})
+                                             {g.id: {"final": g.final} for g in games}, proj)
         except Exception as e:
             log.append(f"props ev: {str(e)[:160]}")
     try:

@@ -22,7 +22,7 @@ from . import backtest as BT
 from . import backtest_open as BO
 from . import personnel as PERS
 from . import sources
-from .prop_model import STATS, P, group, project
+from .prop_model import STATS, History, P, project
 from .teams import code
 
 
@@ -60,17 +60,11 @@ def features(season):
     games.sort(key=lambda g: (g.game_date, str(g.id)))
     with ThreadPoolExecutor(12) as ex:
         sums = dict(zip([g.id for g in games], ex.map(lambda g: BT._safe(sources.get_json, BT.SUM.format(g.id)) or {}, games)))
+    pos = {}
     sp = json.loads((PERS.STATIC / f"odds_openclose_{season.replace('-', '_')}.json").read_text())
     tt = json.loads((PERS.STATIC / f"odds_totals_{season.replace('-', '_')}.json").read_text())
 
-    plog = defaultdict(list)          # player -> [(min, pts, reb, ast)] games he played, oldest first
-    pos = {}
-    tgames = defaultdict(list)        # team -> [{name: (min, pts, reb, ast)}] oldest first
-    tpts = defaultdict(list)          # team -> points scored per game
-    allowed = defaultdict(lambda: defaultdict(lambda: [0.0, 0.0, 0.0, 0.0]))   # team -> group -> [min, pts, reb, ast] allowed
-    allowed_n = defaultdict(int)
-    league = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])                         # group -> [min, pts, reb, ast]
-    league_tot = []
+    H = History(pos)
     out = []
     for g in games:
         rows = box(sums.get(g.id) or {})
@@ -84,92 +78,17 @@ def features(season):
             tonight[team][name] = (m, pts, reb, ast)
             if ps:
                 pos[name] = ps
-        lt = avg(league_tot) if len(league_tot) >= 20 else None
         for team in (g.home, g.away):
             opp = g.away if team == g.home else g.home
-            past = tgames[team]
-            if len(past) < 5:
-                continue
-            last10 = past[-10:]
-            mins = defaultdict(list)
-            for gm in last10:
-                for nm, v in gm.items():
-                    mins[nm].append(v[0])
-            rot = {nm: sum(v) / len(last10) for nm, v in mins.items()
-                   if len([x for x in v if x > 0]) >= 5 and sum(v) / len(last10) >= 20}
-            played_now = {nm for nm, v in tonight[team].items() if v[0] > 0}
-            prev = past[-1]
-            fresh = sorted([a for a in rot if a not in played_now and (prev.get(a) or (0,))[0] > 0], key=lambda a: -rot[a])
-            # each fresh absentee's share of the team's points / rebounds / assists over the last 10 team games
-            tot = [sum(v[i] for gm in last10 for v in gm.values()) or 1 for i in (1, 2, 3)]
-            ab_share = [sum(gm.get(a, (0, 0, 0, 0))[i] for gm in last10 for a in fresh) / tot[i - 1] for i in (1, 2, 3)]
-            mpg_now = {nm: avg([x[0] for x in plog[nm][-10:]]) for nm in played_now if len(plog[nm]) >= 1}
-            denom = sum(mpg_now.values()) or 1
-            absent_min = sum(rot[a] for a in fresh)
-            if hs is not None and gt is not None:
-                home_tt = (gt - hs) / 2
-                team_total = home_tt if team == g.home else gt - home_tt
-            else:
-                team_total = None
-            spread = None if hs is None else (hs if team == g.home else -hs)
-            for nm in played_now:
-                lg = plog[nm]
-                if len(lg) < 5:
-                    continue
-                grp = group(pos.get(nm, ""))
-                l10 = lg[-10:]
-                f = {"name": nm, "team": team, "grp": grp, "season": season,
-                     "m5": avg([x[0] for x in lg[-5:]]), "m10": avg([x[0] for x in l10]), "mseason": avg([x[0] for x in lg]),
-                     "min_season": sum(x[0] for x in lg), "fresh_out": len(fresh), "abs_spread": None if spread is None else abs(spread),
-                     "team_total": team_total, "team_avg": avg(tpts[team]) if len(tpts[team]) >= 3 else None,
-                     "game_total": gt, "league_total": lt, "opp_games": allowed_n[opp]}
+            playing = {nm for nm, v in tonight[team].items() if v[0] > 0}
+            known = {nm for gm in H.tgames[team][-10:] for nm in gm} | set(tonight[team])
+            for f in H.features(team, opp, playing, known - playing, hs, gt, team == g.home):
+                f["season"] = season
                 for i, s in enumerate(STATS, start=1):
-                    m10 = sum(x[0] for x in l10) or 1
-                    ms = sum(x[0] for x in lg) or 1
-                    f[f"{s}_r10"] = sum(x[i] for x in l10) / m10
-                    f[f"{s}_rs"] = sum(x[i] for x in lg) / ms
-                    L = league[grp]
-                    f[f"{s}_rpos"] = L[i] / L[0] if L[0] else f[f"{s}_rs"]
-                    A = allowed[opp][grp]
-                    f[f"{s}_opp"] = (A[i] / A[0]) / (L[i] / L[0]) if A[0] > 100 and L[0] and L[i] else None
-                    f[f"{s}_absent_share"] = ab_share[i - 1]
-                    f[f"{s}_l10avg"] = avg([x[i] for x in l10])
-                    f[f"{s}_savg"] = avg([x[i] for x in lg])
-                    f[f"{s}_act"] = tonight[team][nm][i]
-                f["min_act"] = tonight[team][nm][0]
-                # minutes: real history without the biggest fresh absentee, else the naive share-out
-                f["split_gain"] = None
-                for a in fresh:
-                    w = [gm[nm][0] for gm in past if (gm.get(nm) or (0,))[0] > 0 and (gm.get(a) or (0,))[0] > 0]
-                    wo = [gm[nm][0] for gm in past if (gm.get(nm) or (0,))[0] > 0 and not (gm.get(a) or (0,))[0] > 0]
-                    if len(wo) >= 2 and w:
-                        f["split_gain"] = avg(wo) - avg(w)
-                        break
-                f["share_gain"] = absent_min * mpg_now.get(nm, 0) / denom if fresh else 0.0
-                # returning star: missed his team's last 3+ games, 28+ mpg before
-                streak = 0
-                for gm in reversed(past):
-                    if (gm.get(nm) or (0,))[0] > 0:
-                        break
-                    streak += 1
-                f["returning"] = streak if streak >= 3 and f["mseason"] >= 28 else None
+                    f[f"{s}_act"] = tonight[team][f["name"]][i]
+                f["min_act"] = tonight[team][f["name"]][0]
                 out.append(f)
-        # update history with tonight
-        for team in (g.home, g.away):
-            opp = g.away if team == g.home else g.home
-            gm = tonight[team]
-            tgames[team].append(gm)
-            tpts[team].append(sum(v[1] for v in gm.values()))
-            for nm, v in gm.items():
-                if v[0] > 0:
-                    plog[nm].append(v)
-                    grp = group(pos.get(nm, ""))
-                    A = allowed[opp][grp]
-                    for i in range(4):
-                        A[i] += v[i]
-                        league[grp][i] += v[i]
-            allowed_n[opp] += 1
-        league_tot.append(sum(v[1] for t in tonight.values() for v in t.values()))
+        H.add(g.home, g.away, tonight)
     return out
 
 
