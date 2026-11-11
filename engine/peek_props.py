@@ -31,5 +31,26 @@ def main():
                 print("   pinnacle sample:", m["key"], o.get("description"), o.get("name"), o.get("point"), o.get("price"))
 
 
+def hist():
+    """Historical player props: cost and which books, for one game from last season."""
+    meta = {}
+    url = (f"{BASE}/../../historical/sports/basketball_nba/events?apiKey={urllib.parse.quote(KEY)}"
+           "&date=2026-03-10T20:00:00Z")
+    url = url.replace("/sports/basketball_nba/../../", "/")
+    evs = (sources.get_json(url, meta=meta) or {}).get("data") or []
+    print("\nhistorical events on 2026-03-10:", len(evs), "| cost:", meta.get("x-requests-last"))
+    if not evs:
+        return
+    ev = evs[0]
+    meta = {}
+    js = sources.get_json(f"https://api.the-odds-api.com/v4/historical/sports/basketball_nba/events/{ev['id']}/odds"
+                          f"?apiKey={urllib.parse.quote(KEY)}&date=2026-03-10T22:00:00Z&regions=us,eu"
+                          "&markets=player_points&oddsFormat=american", meta=meta) or {}
+    print("historical game:", ev.get("away_team"), "@", ev.get("home_team"), "| cost:", meta.get("x-requests-last"),
+          "| left:", meta.get("x-requests-remaining"))
+    for bk in (js.get("data") or {}).get("bookmakers") or []:
+        print(f"  {bk['key']:22} {[ (m['key'], len(m.get('outcomes') or [])) for m in bk.get('markets') or []]}")
+
+
 if __name__ == "__main__":
-    main()
+    hist()
