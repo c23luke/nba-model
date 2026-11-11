@@ -25,6 +25,12 @@ def main():
     print("props ev:", {k: pe.get(k) for k in ("bets", "w", "l", "open", "avg_ev", "avg_clv")}, "stacked:", (pe.get("stacked") or {}).get("bets"))
     for x in (pe.get("recent") or [])[:8]:
         print("   ", x["player"], x["side"], x["line"], x["stat"], x["venue"], x["price"], "pin", x["pin_price"], "ev", x["ev"])
+    pm = (b.get("props_ev") or {}).get("model") or {}
+    print("props model:", {k: pm.get(k) for k in ("bets", "w", "l", "open")})
+    for x in (pm.get("recent") or [])[:12]:
+        print("   ", x["player"], x["side"], x["line"], x["stat"], "proj", x["proj"], "l10", x.get("l10"), x["venue"], x["price"],
+              "ev vs pin", x["ev"], "out:", x.get("fresh_out"), "ret:", x.get("returning"))
+    print("all notes:", [n for n in (b.get("log") or b.get("notes") or [])][:10])
     print("notes:", [n for n in b.get("log") or b.get("notes") or [] if "props" in str(n) or "testing" in str(n) or "cluster" in str(n)])
     print("notes mentioning the desk:", [n for n in b.get("notes") or [] if "desk" in n.lower()])
 
