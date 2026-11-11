@@ -55,8 +55,8 @@ def rec(rs):
     return f"{w}-{l}" + (f"  {w / (w + l):5.1%}  {u:+7.1f}u  ({u / (w + l):+5.1%} a bet)" if w + l else "")
 
 
-def main():
-    rows = features("2025-26")
+def main(start: str = "0000", label: str = ""):
+    rows = [f for f in features("2025-26") if f["date"] >= start]
     by_game = defaultdict(list)
     for f in rows:
         by_game[(f["date"], f["home"], f["away"])].append(f)
