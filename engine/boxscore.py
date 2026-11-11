@@ -146,11 +146,30 @@ def opponent_strength(rows: list[dict]) -> dict[str, float]:
     return {t: net[t] / n[t] for t in n}
 
 
-def season_impact(rows: list[dict], opp_beta: float | None = None) -> dict[str, dict]:
+PM_WEIGHT = 0.0       # plus-minus blend (see season_impact). 0 = off. Tested by engine/measure_pm.py.
+PM_SHRINK = 1000.0    # possessions: a player's plus-minus counts poss / (poss + PM_SHRINK) of the weight
+
+
+def season_impact(rows: list[dict], opp_beta: float | None = None, pm_weight: float | None = None) -> dict[str, dict]:
     """Per player (keyed by ESPN id): minutes, games, minutes per game and box impact (BPM scale).
     opp_beta > 0: each player's impact moves by opp_beta x the average strength (net per 100) of the opponents
     he faced, weighted by his possessions in each game: numbers against good teams count for more."""
     beta = OPP_BETA if opp_beta is None else opp_beta
+    pmw = PM_WEIGHT if pm_weight is None else pm_weight
+    team_net = {}                                   # (game, team) -> team margin per 100 that game
+    if pmw:
+        tp = defaultdict(lambda: defaultdict(float))
+        tposs = {}
+        for r in rows:
+            tp[r["game_id"]][r["team"]] += r.get("pts") or 0
+            if r.get("team_poss"):
+                tposs[(r["game_id"], r["team"])] = r["team_poss"]
+        for g, by in tp.items():
+            if len(by) == 2:
+                (t1, p1), (t2, p2) = by.items()
+                ps = (tposs.get((g, t1), 0) + tposs.get((g, t2), 0)) / 2
+                if ps > 0:
+                    team_net[(g, t1)], team_net[(g, t2)] = (p1 - p2) / ps * 100, (p2 - p1) / ps * 100
     opp_of = {}
     if beta:
         teams = defaultdict(set)
@@ -174,6 +193,10 @@ def season_impact(rows: list[dict], opp_beta: float | None = None) -> dict[str, 
             p["poss"] += on
             if beta:
                 p["opp_w"] = p.get("opp_w", 0.0) + on * opp_of.get((r["game_id"], r["team"]), 0.0)
+            if pmw and (r["game_id"], r["team"]) in team_net:
+                # his on-court margin minus what his team did that game, both per 100 of his possessions
+                p["pm_rel"] = p.get("pm_rel", 0.0) + (r.get("pm") or 0) - on * team_net[(r["game_id"], r["team"])] / 100
+                p["pm_poss"] = p.get("pm_poss", 0.0) + on
         for s in STATS:
             p[s] += r[s]
     out = {}
@@ -190,6 +213,9 @@ def season_impact(rows: list[dict], opp_beta: float | None = None) -> dict[str, 
         bpm = BOX_COEF["const"] + sum(BOX_COEF[s] * per100[s] for s in STATS)
         if beta:
             bpm += beta * p.get("opp_w", 0.0) / p["poss"]          # average opponent strength he faced
+        if pmw and p.get("pm_poss"):
+            rel = p["pm_rel"] / p["pm_poss"] * 100                    # on-court vs team, per 100
+            bpm += pmw * p["pm_poss"] / (p["pm_poss"] + PM_SHRINK) * rel
         # role minutes lean on the latest games: a coach's rotation change shows up there first
         log = sorted(p["log"])
         wts = [RECENT_WEIGHT if i >= len(log) - RECENT_GAMES else 1.0 for i in range(len(log))]

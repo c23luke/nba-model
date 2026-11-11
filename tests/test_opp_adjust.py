@@ -32,3 +32,17 @@ def test_off_by_default_and_numbers_against_good_teams_count_more():
     assert st["GOOD"] == 5.0 and st["BAD"] == -15.0
     assert round(adj["Star"]["bpm_live"] - plain["Star"]["bpm_live"], 6) == 5.0
     assert round(adj["Twin"]["bpm_live"] - plain["Twin"]["bpm_live"], 6) == -15.0
+
+
+def test_plus_minus_blend_is_off_by_default_and_credits_a_plus_player():
+    rows = game("g1", "A", "B", 100, 100)
+    for r in rows:
+        r["pm"] = 0
+        if r["name"] == "A0":
+            r["pm"] = 10                 # +10 while his team was even
+    assert B.PM_WEIGHT == 0.0
+    plain = B.season_impact(rows)
+    adj = B.season_impact(rows, pm_weight=1.0)
+    # 100 possessions on court: +10 per 100 relative, shrunk by 100 / (100 + 1000)
+    assert round(adj["A0"]["bpm_live"] - plain["A0"]["bpm_live"], 6) == round(10 * 100 / 1100, 6)
+    assert adj["A1"]["bpm_live"] == plain["A1"]["bpm_live"]
