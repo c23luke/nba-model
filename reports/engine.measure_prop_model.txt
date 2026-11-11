@@ -1,0 +1,62 @@
+TUNED on 2024-25: {'w5': 0.4, 'w10': 0.2, 'split_trust': 0.3, 'share_trust': 0.0, 'rate_recent': 0.3, 'shrink_min': 50.0, 'usage_k': 0.5, 'team_total_exp': 0.0, 'game_total_exp': 0.0, 'opp_w': 0.5, 'opp_shrink': 10.0}
+
+=== 2024-25 (tuned here): 23462 player-games (average miss; lower is better)
+  last-10 average (a basic book's start)       min  5.08   pts  4.72   reb  1.97   ast  1.38
+  season average                               min  5.33   pts  4.72   reb  1.95   ast  1.37
+  OUR MODEL                                    min  4.98   pts  4.63   reb  1.92   ast  1.35
+  -- a rotation teammate freshly out (7012)
+       last-10 average                         min  5.95   pts  4.99   reb  2.04   ast  1.43
+       OUR MODEL                               min  5.77   pts  4.85   reb  1.99   ast  1.39
+  -- 2+ rotation teammates freshly out (1461)
+       last-10 average                         min  7.91   pts  5.58   reb  2.22   ast  1.56
+       OUR MODEL                               min  7.51   pts  5.22   reb  2.09   ast  1.49
+  -- returning after 3+ games out (152)
+       last-10 average                         min  5.77   pts  6.32   reb  2.45   ast  1.93
+       OUR MODEL                               min  4.77   pts  5.74   reb  2.26   ast  1.80
+  -- spread 12+ (3632)
+       last-10 average                         min  5.00   pts  4.55   reb  1.93   ast  1.33
+       OUR MODEL                               min  4.98   pts  4.48   reb  1.89   ast  1.32
+  -- bench (under 20 mpg) (8852)
+       last-10 average                         min  5.89   pts  3.68   reb  1.78   ast  1.03
+       OUR MODEL                               min  5.74   pts  3.64   reb  1.73   ast  1.02
+  -- starters (30+ mpg) (6295)
+       last-10 average                         min  4.00   pts  5.97   reb  2.20   ast  1.83
+       OUR MODEL                               min  3.96   pts  5.81   reb  2.16   ast  1.78
+  disagree with last-10 on pts by 3.0+: 1242 (5%); model closer 59%; actual landed on the model's side of the last-10 average 68%
+  disagree with last-10 on reb by 1.5+: 667 (3%); model closer 61%; actual landed on the model's side of the last-10 average 70%
+  disagree with last-10 on ast by 1.5+: 208 (1%); model closer 55%; actual landed on the model's side of the last-10 average 71%
+
+=== 2025-26 (untouched test): 23719 player-games (average miss; lower is better)
+  last-10 average (a basic book's start)       min  5.03   pts  4.68   reb  1.94   ast  1.38
+  season average                               min  5.30   pts  4.70   reb  1.92   ast  1.37
+  OUR MODEL                                    min  4.90   pts  4.60   reb  1.89   ast  1.35
+  -- a rotation teammate freshly out (6846)
+       last-10 average                         min  5.62   pts  4.87   reb  2.02   ast  1.44
+       OUR MODEL                               min  5.44   pts  4.77   reb  1.99   ast  1.42
+  -- 2+ rotation teammates freshly out (1334)
+       last-10 average                         min  7.24   pts  5.60   reb  2.18   ast  1.60
+       OUR MODEL                               min  6.80   pts  5.28   reb  2.10   ast  1.55
+  -- returning after 3+ games out (155)
+       last-10 average                         min  6.49   pts  5.96   reb  2.12   ast  1.62
+       OUR MODEL                               min  4.24   pts  5.18   reb  1.84   ast  1.59
+  -- spread 12+ (4606)
+       last-10 average                         min  5.21   pts  4.66   reb  1.87   ast  1.36
+       OUR MODEL                               min  5.04   pts  4.56   reb  1.83   ast  1.34
+  -- bench (under 20 mpg) (8723)
+       last-10 average                         min  5.79   pts  3.66   reb  1.72   ast  1.03
+       OUR MODEL                               min  5.61   pts  3.62   reb  1.68   ast  1.02
+  -- starters (30+ mpg) (5484)
+       last-10 average                         min  4.10   pts  5.96   reb  2.16   ast  1.81
+       OUR MODEL                               min  3.97   pts  5.80   reb  2.09   ast  1.76
+  disagree with last-10 on pts by 3.0+: 1337 (6%); model closer 58%; actual landed on the model's side of the last-10 average 67%
+  disagree with last-10 on reb by 1.5+: 589 (2%); model closer 62%; actual landed on the model's side of the last-10 average 72%
+  disagree with last-10 on ast by 1.5+: 251 (1%); model closer 60%; actual landed on the model's side of the last-10 average 71%
+
+=== what each piece is worth on 2025-26 (sum of pts+reb+ast miss; + = worse without it)
+  without minutes: absences (history + share-out)    -0.0065
+  without minutes: returning star                    +0.0055
+  without minutes: blowout                           -0.0007
+  without rate: usage vacuum                         +0.0027
+  without context: market team total                 +0.0000
+  without context: market game total                 +0.0000
+  without context: opponent by position              +0.0170
