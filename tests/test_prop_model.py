@@ -53,3 +53,15 @@ def test_live_projections_run_the_same_history_on_this_seasons_box_scores():
     assert pr[("g", "nyk0")]["min"] == 30.0 and pr[("g", "nyk0")]["pts"] == 14.8
     assert pr[("g", "bos1")]["fresh_out"] == ["BOS0"] and pr[("g", "bos1")]["pts"] > 15.0   # usage vacuum
     assert TUNED.usage_k == 0.5
+
+
+def test_shot_zones_and_shooting_luck():
+    from engine.prop_model import History, zone
+    assert zone(25, 1, False) == "rim" and zone(25, 20, False) == "mid" and zone(3, 4, True) == "corner3"
+    H = History({})
+    for i in range(6):
+        # the league shoots 50% at the rim; HOT makes every one (1 point per minute above expected over 5 min a game... )
+        H.add_shots("A", "B", [("A", "HOT", "rim", 2), ("A", "HOT", "rim", 2), ("B", "COLD", "rim", 0), ("B", "COLD", "rim", 0)])
+        H.add("A", "B", {"A": {"HOT": (10, 4, 0, 0)}, "B": {"COLD": (10, 0, 0, 0)}})
+    hot, cold = H.shot_features("HOT", "B"), H.shot_features("COLD", "A")
+    assert round(hot["luck_pm"], 6) == 0.2 and round(cold["luck_pm"], 6) == -0.2

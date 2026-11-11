@@ -48,6 +48,8 @@ class P:
     game_total_exp: float = 0.5
     opp_w: float = 0.5         # opponent-by-position factor ^ opp_w
     opp_shrink: float = 10.0   # opponent factor uses n / (n + shrink) of its games
+    luck_l: float = 0.0        # shooting luck: take this share of his recent FG points above expected off his rate
+    match_w: float = 0.0       # shot diet vs the opponent's zone defense: factor ^ match_w
     blowout: bool = True
     returning: bool = True
     extra: dict = field(default_factory=dict)
@@ -76,6 +78,8 @@ def project(f: dict, p: P) -> dict:
         rate = p.rate_recent * r10 + (1 - p.rate_recent) * rs
         w = f["min_season"] / (f["min_season"] + p.shrink_min)
         rate = w * rate + (1 - w) * rpos
+        if s == "pts" and p.luck_l and f.get("luck_pm") is not None:
+            rate -= p.luck_l * f["luck_pm"]
         absent = min(0.6, f.get(f"{s}_absent_share") or 0.0)
         rate /= (1 - absent) ** p.usage_k
         ctx = 1.0
@@ -86,6 +90,8 @@ def project(f: dict, p: P) -> dict:
         o, n = f.get(f"{s}_opp"), f.get("opp_games") or 0
         if o:
             ctx *= (1 + (o - 1) * n / (n + p.opp_shrink)) ** p.opp_w
+        if s == "pts" and p.match_w and f.get("shot_match"):
+            ctx *= f["shot_match"] ** p.match_w
         out[s] = mins * rate * ctx
     return out
 
@@ -102,6 +108,18 @@ TUNED = P(w5=0.4, w10=0.2, split_trust=0.3, share_trust=0.0, rate_recent=0.3, sh
           team_total_exp=0.0, game_total_exp=0.0, opp_w=0.5, opp_shrink=10.0)   # chosen on 2024-25 (2026-11-11)
 
 
+ZONES = ("rim", "short", "mid", "corner3", "above3")
+
+
+def zone(x: float, y: float, three: bool) -> str:
+    """ESPN court coordinates (feet; basket at x=25, y~0)."""
+    import math
+    d = math.hypot(x - 25, y)
+    if three:
+        return "corner3" if y < 9 else "above3"
+    return "rim" if d < 4 else "short" if d < 14 else "mid"
+
+
 class History:
     """Everything the projection needs from games already played this season. Feed games in date order with
     add(home, away, {team: {name: (min, pts, reb, ast)}}); positions come from pos (name -> ESPN position)."""
@@ -115,6 +133,45 @@ class History:
         self.allowed_n = _dd(int)
         self.league = _dd(lambda: [0.0, 0.0, 0.0, 0.0])
         self.league_tot = []
+        self.shots = _dd(list)                                          # player -> [{zone: [att, pts]}] per game played
+        self.zdef = _dd(lambda: {z: [0.0, 0.0] for z in ZONES})        # team -> zone -> [att, pts] allowed
+        self.zleague = {z: [0.0, 0.0] for z in ZONES}
+
+    def add_shots(self, home: str, away: str, shots: list) -> None:
+        """shots: [(team, name, zone, points)] for tonight (points 0 on a miss). Call BEFORE add() for the game."""
+        per = _dd(lambda: {z: [0, 0] for z in ZONES})
+        for team, name, z, pts in shots:
+            opp = away if team == home else home
+            per[name][z][0] += 1; per[name][z][1] += pts
+            self.zdef[opp][z][0] += 1; self.zdef[opp][z][1] += pts
+            self.zleague[z][0] += 1; self.zleague[z][1] += pts
+        for name, d in per.items():
+            self.shots[name].append(d)
+        self._shot_names = set(per)
+
+    def shot_features(self, name: str, opp: str) -> dict:
+        """luck_pm: FG points per minute above what his shots were worth at league rates (last 10 games with shots);
+        shot_match: what tonight's opponent allows on HIS shot mix vs the league (shrunk by its attempts)."""
+        gs = self.shots.get(name) or []
+        if len(gs) < 5:
+            return {}
+        L = {z: (v[1] / v[0] if v[0] else 0.0) for z, v in self.zleague.items()}
+        last = gs[-10:]
+        att = {z: sum(g[z][0] for g in last) for z in ZONES}
+        pts = sum(g[z][1] for g in last for z in ZONES)
+        exp = sum(att[z] * L[z] for z in ZONES)
+        mins = sum(x[0] for x in self.plog[name][-len(last):]) or 1
+        tot = sum(att.values()) or 1
+        D = self.zdef[opp]
+        num = den = 0.0
+        for z in ZONES:
+            if not L[z]:
+                continue
+            a_ = D[z][0]
+            opp_rate = (D[z][1] + 50 * L[z]) / (a_ + 50)                # shrunk toward the league with 50 attempts
+            num += att[z] / tot * opp_rate
+            den += att[z] / tot * L[z]
+        return {"luck_pm": (pts - exp) / mins, "shot_match": num / den if den else None}
 
     def add(self, home: str, away: str, tonight: dict) -> None:
         for team in (home, away):
@@ -125,6 +182,8 @@ class History:
             for nm, v in gm.items():
                 if v[0] > 0:
                     self.plog[nm].append(v)
+                    if getattr(self, "_shot_names", None) is not None and nm not in self._shot_names and nm in self.shots:
+                        self.shots[nm].append({z: [0, 0] for z in ZONES})     # played, no shots: keep games lined up
                     grp = group(self.pos.get(nm, ""))
                     A = self.allowed[opp][grp]
                     for i in range(4):
@@ -132,6 +191,7 @@ class History:
                         self.league[grp][i] += v[i]
             self.allowed_n[opp] += 1
         self.league_tot.append(sum(v[1] for t in tonight.values() for v in t.values()))
+        self._shot_names = None
 
     def features(self, team: str, opp: str, playing: set, absent: set, home_spread: float | None,
                  game_total: float | None, is_home: bool) -> list[dict]:
@@ -196,6 +256,7 @@ class History:
                     break
                 streak += 1
             f["returning"] = streak if streak >= 3 and f["mseason"] >= 28 else None
+            f.update(self.shot_features(nm, opp))
             out.append(f)
         return out
 

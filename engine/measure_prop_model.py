@@ -48,6 +48,40 @@ def box(js: dict):
     return out
 
 
+def shots(js: dict, teams_by_id: dict, names_by_id: dict):
+    """[(team, name, zone, points)] from ESPN play-by-play: every field-goal attempt with a court location."""
+    from .prop_model import zone
+    out = []
+    for pl in js.get("plays") or []:
+        if not pl.get("shootingPlay"):
+            continue
+        txt = (pl.get("text") or "").lower()
+        if "free throw" in txt:
+            continue
+        c = pl.get("coordinate") or {}
+        parts = pl.get("participants") or []
+        if c.get("x") is None or c.get("y") is None or not parts:
+            continue
+        aid = str((parts[0].get("athlete") or {}).get("id"))
+        nm, tm = names_by_id.get(aid), teams_by_id.get(aid)
+        if not nm or not tm or c["x"] < 0 or c["y"] < 0 or c["y"] > 47:
+            continue
+        three = "three point" in txt or (pl.get("scoreValue") == 3)
+        out.append((tm, nm, zone(float(c["x"]), float(c["y"]), three), int(pl.get("scoreValue") or 0) if pl.get("scoringPlay") else 0))
+    return out
+
+
+def ids(js: dict):
+    t_, n_ = {}, {}
+    for t in (js.get("boxscore") or {}).get("players", []):
+        team = code(t["team"]["abbreviation"])
+        for a in (t["statistics"][0].get("athletes") or []):
+            ath = a.get("athlete") or {}
+            t_[str(ath.get("id"))] = team
+            n_[str(ath.get("id"))] = ath.get("displayName", "")
+    return t_, n_
+
+
 def avg(xs):
     return sum(xs) / len(xs) if xs else 0.0
 
@@ -88,6 +122,8 @@ def features(season):
                     f[f"{s}_act"] = tonight[team][f["name"]][i]
                 f["min_act"] = tonight[team][f["name"]][0]
                 out.append(f)
+        tb, nb = ids(sums.get(g.id) or {})
+        H.add_shots(g.home, g.away, shots(sums.get(g.id) or {}, tb, nb))
         H.add(g.home, g.away, tonight)
     return out
 
@@ -118,11 +154,12 @@ def base_err(rows, key):
 GRID = {"w5": [0.2, 0.4, 0.6], "w10": [0.2, 0.3, 0.4], "split_trust": [0.3, 0.6, 0.9], "share_trust": [0.0, 0.3, 0.6],
         "rate_recent": [0.3, 0.5, 0.7], "shrink_min": [50.0, 150.0, 400.0], "usage_k": [0.0, 0.5, 1.0],
         "team_total_exp": [0.0, 0.5, 1.0], "game_total_exp": [0.0, 0.5, 1.0], "opp_w": [0.0, 0.5, 1.0],
-        "opp_shrink": [5.0, 10.0, 25.0]}
+        "opp_shrink": [5.0, 10.0, 25.0], "luck_l": [0.0, 0.25, 0.5, 0.75], "match_w": [0.0, 0.5, 1.0, 1.5]}
 
 
 def tune(rows):
-    p = P()
+    from .prop_model import TUNED
+    p = TUNED
     best = score(errors(rows, p))
     for _ in range(2):
         for k, vals in GRID.items():
@@ -182,7 +219,9 @@ def main():
                   ("rate: usage vacuum", replace(p, usage_k=0.0)),
                   ("context: market team total", replace(p, team_total_exp=0.0)),
                   ("context: market game total", replace(p, game_total_exp=0.0)),
-                  ("context: opponent by position", replace(p, opp_w=0.0))):
+                  ("context: opponent by position", replace(p, opp_w=0.0)),
+                  ("shots: shooting luck", replace(p, luck_l=0.0)),
+                  ("shots: shot diet vs the opponent's zones", replace(p, match_w=0.0))):
         print(f"  without {nm:42} {score(errors(test, q)) - full:+.4f}")
 
 
