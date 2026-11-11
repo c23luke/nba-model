@@ -21,6 +21,10 @@ def main():
         pv = g.get("personnel") or {}
         if pv.get("thin_share"):
             print("thin:", g.get("away"), "@", g.get("home"), pv.get("thin_share"), "flag:", pv.get("thin"))
+    pe = b.get("props_ev") or {}
+    print("props ev:", {k: pe.get(k) for k in ("bets", "w", "l", "open", "avg_ev", "avg_clv")}, "stacked:", (pe.get("stacked") or {}).get("bets"))
+    for x in (pe.get("recent") or [])[:8]:
+        print("   ", x["player"], x["side"], x["line"], x["stat"], x["venue"], x["price"], "pin", x["pin_price"], "ev", x["ev"])
     print("notes:", [n for n in b.get("log") or b.get("notes") or [] if "props" in str(n) or "testing" in str(n) or "cluster" in str(n)])
     print("notes mentioning the desk:", [n for n in b.get("notes") or [] if "desk" in n.lower()])
 
