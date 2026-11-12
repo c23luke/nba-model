@@ -345,7 +345,8 @@ def rules_now(rows: list[dict], agree=None) -> dict:
                                    "status": r["status"], "pnl": r["pnl"], "why": why})
             continue
         # 2 units: MONEYBALL, and (from 2026-11-11) a T13 bet sized at $40 because it fades a thin roster
-        target = 40.0 if r["system"] == "MONEYBALL" or (r["system"] == "T13" and r.get("target") == 40) else 20.0
+        # and (from 2026-11-11) a STACK bet sized at $40 because the players model and a system are among its flags
+        target = 40.0 if r["system"] == "MONEYBALL" or (r["system"] in ("T13", "STACK") and r.get("target") == 40) else 20.0
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)
         pnl = None

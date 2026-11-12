@@ -86,7 +86,8 @@ def picks(game, hs, at, home_spread, total, luck: dict, first_home_spread: float
     return out
 
 
-STACK_FLAGS_RECORD = ("2 seasons at the close: 4 flags 225-184 (55.0%), 5+ flags 213-149 (58.8%; 59.3% / 58.4%) "
+STACK_FLAGS_RECORD = ("2 seasons at the close: 5+ flags 213-149 (58.8%; 59.3% / 58.4%); with the players model 3+ AND a "
+                      "card system among them 46-26 (63.9%; 64.7% / 63.2%), bet at 2 units "
                       "(engine/measure_stack_flags.py, Nov 11)")
 
 
@@ -145,6 +146,11 @@ def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread,
         fl = stack_flags(game, side, picks, view, hs, at, home_spread, first_home_spread, luck)
         line = home_spread if side == game.home else -home_spread
         if len(fl) >= 5:
+            # 2 units when the players model (3+) AND a card system are among the flags (Caden 2026-11-11):
+            # 46-26 (63.9%) at the close, both seasons 63-65%. Without both: 167-123 (57.6%), 1 unit.
+            pm = fl[0].startswith("players model likes")
+            sy = any(" card system" in f for f in fl)
             out.append(Pick(STACK, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
-                                                               STACK_FLAGS_RECORD], {"flags": fl, "n_flags": len(fl)}))
+                                                               STACK_FLAGS_RECORD],
+                            {"flags": fl, "n_flags": len(fl), "two_units": pm and sy}))
     return out

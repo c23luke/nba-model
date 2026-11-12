@@ -67,3 +67,16 @@ def test_stack_is_a_card_bet_without_needing_a_players_read():
     assert eligible(p, []) == (True, None)                    # no players-model read needed: the flags are the case
     assert history(p, [])["w"] == 213 and label(STACK) == "STACK" and group(STACK) == "FAV"
     assert abs(WIN[STACK] - 0.569) < 0.001 and TO_WIN == 20   # (213 + 50) / (362 + 100), one unit
+
+
+def test_stack_is_two_units_only_with_the_players_model_and_a_system():
+    from engine.situations import stack_picks
+    from engine.systems import Pick
+    big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=130, away_score=100, periods=4, final=True)
+    yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=4, final=True)
+    picks = [Pick(5, "g", "spread", "BOS", -4.0), Pick(305, "g", "spread", "BOS", -4.0, ["BOS won its last game by 30"])]
+    thin = {"home": 0.0, "away": 0.2}
+    both = stack_picks(G, picks, {"gap": 4.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
+    assert both[0].meta["n_flags"] == 6 and both[0].meta["two_units"] is True      # players model + 1 system
+    no_pm = stack_picks(G, picks, {"gap": 0.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
+    assert no_pm[0].meta["n_flags"] == 5 and no_pm[0].meta["two_units"] is False   # 5 flags, no players model: 1 unit

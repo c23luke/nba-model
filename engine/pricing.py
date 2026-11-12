@@ -32,6 +32,7 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
 STACK_REC = (213, 149)  # STACK: 5+ flags on one side, 2 seasons at the close (measure_stack_flags.py)
+STACK_2U_TO_WIN = 40  # STACK with the players model 3+ AND a card system among its flags: 46-26 (63.9%) at the close
 MONEYBALL_TO_WIN = 40  # 2 units (Caden 2026-11-05). MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
 # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet.
 # 4% (Caden 2026-10-27, was 2%): bets at a normal price clear it easily; the 2-4% ones were nearly all heavy
@@ -600,6 +601,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      # bet size: every card bet wins $20; MONEYBALL wins $40 (2 units). (Confidence sizing removed
                      # 2026-10-27: T13 now needs a 4+ gap, so the small, weak edges it shrank are gone.)
                      "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else
+                               STACK_2U_TO_WIN if p["system"] == 131 and (p.get("meta") or {}).get("two_units") else
                                THIN_FADE_TO_WIN if thin_fade(p, slate) else TO_WIN,
                      "thin_fade": thin_fade(p, slate),
                      "flags": (p.get("meta") or {}).get("flags") if p["system"] == 131 else None,

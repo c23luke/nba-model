@@ -348,7 +348,8 @@ function plainWhy(o) {
   }
   if (o.tag === "STACK") {
     const f = o.flags || [];
-    S.push(`${f.length || "5+"} separate edges line up on this side${f.length ? ": " + f.join("; ") : ""}. Sides with 5 or more went 213-149 (58.8%) over the last two seasons, graded at the closing line (59% and 58%).`);
+    S.push(`${f.length || "5+"} separate edges line up on this side${f.length ? ": " + f.join("; ") : ""}. Sides with 5 or more went 213-149 (58.8%) over the last two seasons, graded at the closing line (59% and 58%).`
+      + (o.toWin === 40 ? " The player ratings and a betting system are both among them: those went 46-26 (64%), so it's 2 units." : ""));
   } else if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
     const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
     S.push(`Two or more systems plus the player ratings on the same side is our strongest setup${h ? `: ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);
@@ -366,6 +367,7 @@ function plainWhy(o) {
     else S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
   if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet"
+    : o.tag === "STACK" && o.toWin === 40 ? " (2 units) because the player ratings and a betting system are both in the stack"
     : o.thinFade ? ` (2 units) because ${esc(o.thinFade.team)} leans on players the model barely knows (${Math.round(o.thinFade.share * 100)}% of its minutes vs ${Math.round(o.thinFade.ours * 100)}%): the players model went 40-17 betting against teams like that` : ""}.`);
   const N = o.now;
   if (N && N.low != null && o.gap != null && (Math.abs(N.low - o.gap) >= 1 || Math.abs(N.high - o.gap) >= 1)) {
@@ -390,7 +392,7 @@ function whyHead(tag, tags, gap, side) {
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL and players-model bets against a thin roster: $40)";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL, STACK with the players model and a system, and players-model bets against a thin roster: $40)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];
