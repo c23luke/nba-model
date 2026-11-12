@@ -64,3 +64,13 @@ def test_model_edge_takes_the_best_venue_price_on_the_side_our_projection_points
     s = E.summary(st)
     assert s["model"]["bets"] == 1 and s["bets"] == 0
     assert s["spot_fresh"]["bets"] == 1 and s["spot_bench"]["bets"] == 1           # both spots tracked on their own
+
+
+def test_model_vs_a_venues_own_line_even_when_pinnacle_has_a_different_number():
+    js = {"bookmakers": [book("pinnacle", -110, -110, point=14.5, name="Sub Guy", market="player_points"),
+                         book("novig", -110, -110, point=12.5, name="Sub Guy", market="player_points")]}
+    proj = {("g1", "sub guy"): {"pts": 16.0, "mpg": 25.0}}
+    e = E.venue_model_edges(js, "g1", proj)
+    assert len(e) == 1 and (e[0]["venue"], e[0]["line"], e[0]["side"], e[0]["fair"], e[0]["pin_line"]) == ("novig", 12.5, "over", None, 14.5)
+    st = E.step({}, NOW, [G], lambda g: js, [], {}, [], proj)
+    assert E.summary(st)["model_venue"]["bets"] == 1 and st["bets"][0]["clv"] is None

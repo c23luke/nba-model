@@ -68,8 +68,8 @@ def test_testing_side_lists_every_idea_and_the_bar_to_real_money():
     # 2026-11-10: props split into six kinds (returning star, fill-ins, hidden bump, history jump, fake bump, model jump)
     # 2026-11-11: two props +EV-vs-Pinnacle entries, then the props model and its two spots, before the bigger-bet candidates
     assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: re", "Props: fi", "Props: hi", "Props: ju",
-                                          "Props: Fa", "Props: ju", "Props: +E", "Props: +E", "Props mod", "Props spo",
-                                          "Props spo", "Our bet +"]
+                                          "Props: Fa", "Props: ju", "Props: +E", "Props: +E", "Props mod", "Props mod",
+                                          "Props spo", "Props spo", "Our bet +"]
     assert t[6]["bets"] == 2 and t[6]["avg_clv"] == 0.5
     assert (t[0]["w"], t[0]["l"], t[0]["bets"], t[0]["ready"]) == (30, 22, 52, True)
-    assert t[1]["ready"] is False and t[13]["w"] == 1 and t[13]["avg_clv"] == 2.0 and TESTING_BAR == 50
+    assert t[1]["ready"] is False and t[14]["w"] == 1 and t[14]["avg_clv"] == 2.0 and TESTING_BAR == 50

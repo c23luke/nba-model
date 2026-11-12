@@ -119,6 +119,33 @@ def model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
     return out
 
 
+def venue_model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
+    """Our props model vs each VENUE's own line (ProphetX / Novig / BetOpenly), at that venue's price: the bet we
+    would actually make (Caden 2026-11-11: beat the softer markets, not Pinnacle)."""
+    px = prices(js)
+    pin = px.get(SHARP) or {}
+    out = []
+    for v in VENUES:
+        for k, q in (px.get(v) or {}).items():
+            pr = proj.get((game_id, k[0]))
+            if not pr or k[1] not in pr:
+                continue
+            diff = pr[k[1]] - k[2]
+            if abs(diff) < MODEL_EDGE[k[1]]:
+                continue
+            side = "Over" if diff > 0 else "Under"
+            if side not in q:
+                continue
+            f = fair(pin[k]) if k in pin else None
+            out.append({"kind": "model_venue", "player": q["name"], "key": list(k), "stat": k[1], "line": k[2],
+                        "side": side.lower(), "venue": v, "price": q[side], "proj": pr[k[1]],
+                        "fair": round(f[side], 4) if f else None, "pin_line": None if f else
+                        next((kk[2] for kk in pin if kk[0] == k[0] and kk[1] == k[1]), None),
+                        "ev": round(f[side] * dec(q[side]) - 1, 4) if f else None, "mpg": pr.get("mpg"),
+                        "spot_fresh": bool(pr.get("fresh_out")), "spot_bench": (pr.get("mpg") or 99) < 20})
+    return out
+
+
 def closing_fair(js: dict, bet: dict) -> float | None:
     p = (prices(js).get(SHARP) or {}).get(tuple([bet["key"][0], bet["key"][1], float(bet["key"][2])]))
     f = fair(p) if p else None
@@ -151,6 +178,13 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
                     b["close_fair"], b["close_at"] = round(cf, 4), now.isoformat()
         have = {(b["game_id"], tuple(b["key"]), b["side"], b["venue"]) for b in state["bets"]}
         have_model = {(b["game_id"], tuple(b["key"][:2])) for b in state["bets"] if b.get("kind") == "model"}
+        have_venue = {(b["game_id"], tuple(b["key"][:2]), b["venue"]) for b in state["bets"] if b.get("kind") == "model_venue"}
+        for e in venue_model_edges(js, g.id, proj or {}):
+            if (g.id, tuple(e["key"][:2]), e["venue"]) in have_venue:
+                continue
+            have_venue.add((g.id, tuple(e["key"][:2]), e["venue"]))
+            state["bets"].append({**e, "game_id": g.id, "away": g.away, "home": g.home, "tip_utc": g.tip_utc,
+                                  "at": now.isoformat(), "close_fair": e["fair"]})
         for e in model_edges(js, g.id, proj or {}):
             if (g.id, tuple(e["key"][:2])) in have_model:
                 continue
@@ -169,7 +203,7 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
         if not b.get("result") and (finals.get(b["game_id"]) or {}).get("final"):
             b["result"] = grade({"game_id": b["game_id"], "player": b["player"], "stat": b["stat"], "side": b["side"],
                                  "line": b["line"]}, box_rows)
-        b["clv"] = round(b["close_fair"] - 1 / dec(b["price"]), 4)      # + = beat Pinnacle's close
+        b["clv"] = None if b.get("close_fair") is None else round(b["close_fair"] - 1 / dec(b["price"]), 4)   # + = beat Pinnacle's close
     state["bets"] = state["bets"][-1500:]
     return state
 
@@ -180,7 +214,7 @@ def _rec(bets):
     cl = [b["clv"] for b in bets if b.get("clv") is not None and b.get("result")]
     return {"bets": len(bets), "w": sum(b["result"] == "W" for b in g), "l": sum(b["result"] == "L" for b in g),
             "open": sum(1 for b in bets if not b.get("result")), "units": round(units, 2),
-            "avg_ev": round(sum(b["ev"] for b in bets) / len(bets), 4) if bets else None,
+            "avg_ev": round(sum(b["ev"] for b in bets if b.get("ev") is not None) / max(1, sum(1 for b in bets if b.get("ev") is not None)), 4) if bets else None,
             "avg_clv": round(sum(cl) / len(cl) * 100, 2) if cl else None, "beat_close": sum(c > 0 for c in cl),
             "n_clv": len(cl)}
 
@@ -192,6 +226,9 @@ def summary(state: dict) -> dict:
     return {**_rec(bets), "stacked": _rec([b for b in bets if b.get("stacked")]),
             "model": {**_rec(model), "recent": sorted(model, key=lambda b: b["at"], reverse=True)[:40]},
             "model_and_ev": _rec([b for b in model if b["ev"] > 0]),
+            "model_venue": {**_rec(mv := [b for b in allb if b.get("kind") == "model_venue" and b["stat"] == "pts"]),
+                            "by_venue": {v: _rec([b for b in mv if b["venue"] == v]) for v in VENUES},
+                            "recent": sorted(mv, key=lambda b: b["at"], reverse=True)[:30]},
             # tracked on their own (Caden 2026-11-11): points only, as tested
             "spot_fresh": {**_rec(sf := [b for b in model if b.get("spot_fresh") and b["stat"] == "pts"]),
                            "recent": sorted(sf, key=lambda b: b["at"], reverse=True)[:20]},
