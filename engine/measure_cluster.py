@@ -123,6 +123,12 @@ def bucket(outs):
         labs.append("2+ out, at least one FRESH (played the last game)")
     if n >= 2 and fresh == 0:
         labs.append("2+ out, all LONG absences")
+    if fresh >= 2:
+        labs.append("2+ FRESH out (both played the last game)")
+    if n >= 2 and fresh == 1:
+        labs.append("2+ out, exactly one fresh")
+    if n >= 2 and fresh >= 1 and not any(v >= 2 for v in by.values()):
+        labs.append("2+ out, one+ fresh, all different positions")
     mp = sum(o[1] for o in outs)
     if mp >= 60:
         labs.append("60+ rotation minutes out")
@@ -162,7 +168,9 @@ def main():
         print(f"  {'bucket':52} {'n':>5}  {'depleted ATS open':>18} {'depleted ATS close':>19}  {'opponent ATS close':>19}  {'line moved vs them':>18}  {'over at close':>15}")
         order = ["0 rotation players out", "1 out", "2 out", "3+ out", "2+ out at the SAME position", "2+ guards out",
                  "2+ wings out", "2+ bigs out", "2+ out, all different positions",
-                 "2+ out, at least one FRESH (played the last game)", "2+ out, all LONG absences", "60+ rotation minutes out"]
+                 "2+ out, at least one FRESH (played the last game)", "2+ out, all LONG absences", "60+ rotation minutes out",
+                 "2+ FRESH out (both played the last game)", "2+ out, exactly one fresh",
+                 "2+ out, one+ fresh, all different positions"]
         for lab in order:
             c = cats.get(lab)
             if not c or not c["dep_o"]:
