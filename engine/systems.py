@@ -65,6 +65,15 @@ SHADOW_SYSTEMS = {
           "rule": "A team is missing 2+ rotation players (20+ mpg), more than its opponent, at least one of them "
                   "played its last game → bet the opponent. 2 seasons vs the close: 249-199 (55.6%), both seasons "
                   "55-56% (engine/measure_cluster.py). Tracking only until it earns real money."},
+    303: {"name": "Fade the team missing 2+ FRESH rotation players", "bet": "spread", "idea": "injuries (testing)",
+          "rule": "Like X2, but at least 2 of the missing rotation players played the team's last game (fresh news; "
+                  "long absences are already priced). 2 seasons vs the close: 142-108 (56.8%; 58.1% / 55.6%), at the "
+                  "open 147-103 (engine/measure_cluster.py, Nov 11). Tracking only."},
+    304: {"name": "Fade the team missing 2+ rotation players at different positions", "bet": "spread",
+          "idea": "injuries (testing)",
+          "rule": "Like X2 (1+ fresh), and the missing players are all at different positions (guard / wing / big): "
+                  "the team can't just slide the next man in. 2 seasons vs the close: 139-103 (57.4%; 59.5% / 55.0%), "
+                  "at the open 142-101 (engine/measure_cluster.py, Nov 11). Tracking only."},
 }
 
 # Bets made at the first line and kept there: once one of these fires, it stays a bet even if the

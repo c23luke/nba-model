@@ -148,6 +148,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     # ---- 2a. this season's box scores (only games not stored yet)
     live, played, recent, results = {}, {}, {}, {}
     box_rows = []
+    x_pos = {}
     try:
         box_rows = store.load_player_games()
         # games with a 0-minute (coach's decision) row were parsed with DNPs; recent games without one are
@@ -185,6 +186,10 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     views, reads, stress, cal, ranks = {}, {}, {}, None, {}
     try:
         rotations = cluster_mod.rotations(box_rows)        # X2 (tracking only): who each team's rotation is
+        try:
+            x_pos = personnel_mod.roster_positions() if key else {}     # X4 needs positions (ESPN rosters, free)
+        except Exception:
+            x_pos = {}
     except Exception as e:
         rotations = {}
         log.append(f"rotations for X2: {e}")
@@ -279,7 +284,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                  + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
                                       season_day=(g.game_date - season_start).days)
                  + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
-                 + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads))
+                 + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads, x_pos))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:
@@ -604,6 +609,16 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                     "A team is missing 2+ rotation players (more than its opponent, at least one fresh): bet the opponent.",
                     "249-199 (55.6%) over two seasons vs the closing line", f.get("w", 0), f.get("l", 0),
                     f.get("w", 0) + f.get("l", 0) + f.get("p", 0), x2.get("avg_clv"), "pts", x2.get("open", 0)))
+    for sid, nm, hw, bt in ((303, "X3: fade the team missing 2+ FRESH rotation players",
+                             "Like X2, but 2+ of the missing players played the team's last game (fresh news).",
+                             "142-108 (56.8%) over two seasons vs the close; 147-103 at the open"),
+                            (304, "X4: fade the team missing 2+ rotation players at different positions",
+                             "Like X2, and the missing players are all at different positions (guard / wing / big).",
+                             "139-103 (57.4%) over two seasons vs the close; 142-101 at the open")):
+        x = sh.get(sid) or sh.get(str(sid)) or {}
+        f_ = x.get("if_first") or {}
+        out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),
+                        x.get("avg_clv"), "pts", x.get("open", 0)))
     P = (board.get("injury_desk") or {}).get("paper") or {}
     out.append(item("Injury desk: beat the market to the news",
                     "Injury news leaves our worst-case read 3+ points off the market: paper bet at that moment's line.",

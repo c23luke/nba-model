@@ -38,7 +38,8 @@ def test_fires_on_two_fresh_outs_more_than_the_opponent():
     g = Game(id="g1", game_date=date(2026, 11, 12), away="WAS", home="ORL")
     reads = {"ORL": read("ORL", {"Star A": "out", "Star B": "out", "Wing C": "active"}), "WAS": read("WAS", {"Guard D": "active"})}
     p = C.cluster_pick(g, -3.5, rot, reads)
-    assert [(x.system, x.side, x.line) for x in p] == [(302, "WAS", 3.5)]
+    # 2026-11-11: both outs played the last game, so X3 (2+ fresh) fires too; no positions given, so no X4
+    assert [(x.system, x.side, x.line) for x in p] == [(302, "WAS", 3.5), (303, "WAS", 3.5)]
     assert p[0].meta["n_out"] == 2 and "missing 2 rotation players" in p[0].evidence[0]
     # day-to-day doesn't count; one out doesn't count; the opponent missing as many doesn't count
     reads["ORL"] = read("ORL", {"Star A": "out", "Star B": "day-to-day"})
@@ -67,9 +68,29 @@ def test_testing_side_lists_every_idea_and_the_bar_to_real_money():
     t = testing_side(board, [{"system": 302, "game_id": "g", "side": "WAS"}])
     # 2026-11-10: props split into six kinds (returning star, fill-ins, hidden bump, history jump, fake bump, model jump)
     # 2026-11-11: props models A (opening lines), B (news desk), C (price-shopping, 2 entries), then the props model and its two spots, before the bigger-bet candidates
-    assert [x["name"][:9] for x in t] == ["X2: fade ", "Injury de", "Props: re", "Props: fi", "Props: hi", "Props: ju",
+    # 2026-11-11: X3 and X4 (tighter X2 versions) after X2
+    assert [x["name"][:9] for x in t] == ["X2: fade ", "X3: fade ", "X4: fade ", "Injury de", "Props: re", "Props: fi", "Props: hi", "Props: ju",
                                           "Props: Fa", "Props: ju", "Props A: ", "Props B: ", "Props C: ", "Props C: ",
                                           "Props mod", "Props mod", "Props spo", "Props spo", "Our bet +"]
-    assert t[6]["bets"] == 2 and t[6]["avg_clv"] == 0.5
+    assert t[8]["bets"] == 2 and t[8]["avg_clv"] == 0.5                  # the fake-bump props entry (moved by X3/X4)
     assert (t[0]["w"], t[0]["l"], t[0]["bets"], t[0]["ready"]) == (30, 22, 52, True)
-    assert t[1]["ready"] is False and t[16]["w"] == 1 and t[16]["avg_clv"] == 2.0 and TESTING_BAR == 50
+    assert t[3]["ready"] is False and t[18]["w"] == 1 and t[18]["avg_clv"] == 2.0 and TESTING_BAR == 50
+
+
+def test_x3_needs_two_fresh_absences_and_x4_needs_different_positions():
+    from datetime import date
+    from engine.cluster import cluster_pick
+    from engine.personnel import Player, TeamRead
+    from engine.state import Game
+    g = Game(id="g", game_date=date(2026, 11, 11), away="MIA", home="UTA", tip_utc="2026-11-12T02:00Z")
+    rot = {"UTA": {"keyonte george": {"name": "Keyonte George", "mpg": 32.0, "last": True},
+                   "lauri markkanen": {"name": "Lauri Markkanen", "mpg": 25.0, "last": False}}, "MIA": {}}
+    tr = TeamRead("UTA")
+    tr.players = [Player("Keyonte George", "out", 3, None), Player("Lauri Markkanen", "out", 8, None)]
+    reads = {"UTA": tr, "MIA": TeamRead("MIA")}
+    pos = {"Keyonte George": "PG", "Lauri Markkanen": "PF"}
+    tags = sorted(p.system for p in cluster_pick(g, 8.5, rot, reads, pos))
+    assert tags == [302, 304]                       # only one fresh: no X3; guard + big: X4
+    rot["UTA"]["lauri markkanen"]["last"] = True
+    pos["Lauri Markkanen"] = "SG"
+    assert sorted(p.system for p in cluster_pick(g, 8.5, rot, reads, pos)) == [302, 303]   # two fresh, two guards

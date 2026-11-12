@@ -59,16 +59,31 @@ def outs(team: str, rot: dict, reads: dict) -> list[dict]:
     return found
 
 
-def cluster_pick(game, home_spread: float | None, rot: dict, reads: dict) -> list[Pick]:
+def cluster_pick(game, home_spread: float | None, rot: dict, reads: dict, pos: dict | None = None) -> list[Pick]:
+    """X2, plus the two tighter versions from the Nov 11 split: X3 (2+ of them fresh) and X4 (all at different
+    positions; needs ESPN roster positions)."""
     if home_spread is None:
         return []
+    from .prop_model import group as pos_group
     oh, oa = outs(game.home, rot, reads), outs(game.away, rot, reads)
     picks = []
     for dep, o_dep, other, o_other in ((game.home, oh, game.away, oa), (game.away, oa, game.home, oh)):
         if len(o_dep) >= 2 and len(o_dep) > len(o_other) and any(x["last"] for x in o_dep):
             line = home_spread if other == game.home else -home_spread
             who = ", ".join(f"{x['name']} ({x['mpg']:.0f} mpg{'' if x['last'] else ', out a while'})" for x in o_dep)
+            meta = {"outs": [x["name"] for x in o_dep], "n_out": len(o_dep), "opp_out": len(o_other)}
             picks.append(Pick(302, game.id, "spread", other, line,
-                              [f"{dep} is missing {len(o_dep)} rotation players: {who}", RECORD],
-                              {"outs": [x["name"] for x in o_dep], "n_out": len(o_dep), "opp_out": len(o_other)}))
+                              [f"{dep} is missing {len(o_dep)} rotation players: {who}", RECORD], meta))
+            fresh = sum(1 for x in o_dep if x["last"])
+            if fresh >= 2:
+                picks.append(Pick(303, game.id, "spread", other, line,
+                                  [f"{dep} is missing {fresh} rotation players who played its last game: {who}",
+                                   "2 seasons vs the close: 142-108 (56.8%), both seasons"], {**meta, "fresh": fresh}))
+            if pos:
+                groups = [pos_group(pos.get(x["name"], "")) for x in o_dep]
+                if all(pos.get(x["name"]) for x in o_dep) and len(set(groups)) == len(groups):
+                    picks.append(Pick(304, game.id, "spread", other, line,
+                                      [f"{dep} is missing {len(o_dep)} rotation players at different positions "
+                                       f"({', '.join(groups)}): {who}", "2 seasons vs the close: 139-103 (57.4%), both seasons"],
+                                      {**meta, "groups": groups}))
     return picks
