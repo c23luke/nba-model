@@ -41,7 +41,7 @@ def test_follow_a_2_point_line_move_and_home_rest_edge():
     assert [(p.system, p.side) for p in ps] == [(309, "BOS")]       # 4 days vs 1
 
 
-def test_stack_counts_every_flag_with_its_evidence_and_fires_at_4_and_5():
+def test_stack_counts_every_flag_with_its_evidence_and_fires_at_5_plus():
     from engine.situations import stack_flags, stack_picks
     from engine.systems import Pick
     big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=130, away_score=100, periods=4, final=True)
@@ -57,4 +57,4 @@ def test_stack_counts_every_flag_with_its_evidence_and_fires_at_4_and_5():
     view["gap"] = 0.0
     picks = picks[:1]
     ps = stack_picks(G, picks, {"gap": 0.0, "thin_share": {"home": 0.0, "away": 0.2}}, st(big), st(yday), -4.0, -2.5, {})
-    assert [(p.system, p.meta["n_flags"]) for p in ps] == [(311, 4)]     # 1 system, moved 1.5, thin, back-to-back
+    assert ps == []                     # 4 flags (1 system, moved 1.5, thin, back-to-back): no longer a pick

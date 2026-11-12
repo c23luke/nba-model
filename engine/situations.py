@@ -136,7 +136,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
 
 
 def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread, luck: dict) -> list[Pick]:
-    """310: 5+ flags on one side. 311: exactly 4. Tracking only."""
+    """310: 5+ flags on one side. Tracking only. (4 flags, 225-184, dropped by Caden Nov 11.)"""
     if home_spread is None:
         return []
     out = []
@@ -146,7 +146,4 @@ def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread,
         if len(fl) >= 5:
             out.append(Pick(310, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
                                                                STACK_FLAGS_RECORD], {"flags": fl, "n_flags": len(fl)}))
-        elif len(fl) == 4:
-            out.append(Pick(311, game.id, "spread", side, line, [f"4 flags on {side}: " + "; ".join(fl),
-                                                               STACK_FLAGS_RECORD], {"flags": fl, "n_flags": 4}))
     return out

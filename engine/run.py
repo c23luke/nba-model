@@ -648,10 +648,7 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                             (310, "STACK 5+: five or more flags on one side",
                              "5+ flags line up on one side (players model, systems, injury fades, line moves, rest, "
                              "unknown players, shooting luck, back-to-back). Every flag is listed on the pick.",
-                             "213-149 (58.8%) at the close, both seasons (59.3% / 58.4%)"),
-                            (311, "STACK 4: four flags on one side",
-                             "Exactly 4 flags line up on one side.",
-                             "225-184 (55.0%) at the close, both seasons")):
+                             "213-149 (58.8%) at the close, both seasons (59.3% / 58.4%)")):
         x = sh.get(sid) or sh.get(str(sid)) or {}
         f_ = x.get("if_first") or {}
         out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),
