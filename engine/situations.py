@@ -4,6 +4,10 @@ X5  A team that WON its last game by 25+ -> bet that team. The market expects a 
     At the open 169-134 (55.8%; 52.8% / 58.5%), at the close 159-122 (56.6%; 54.2% / 58.7%).
 X6  The opponent's last game went to OVERTIME -> bet against it. At the open 117-90 (56.5%; 59.6% / 53.1%),
     but only 105-95 (52.5%) at the close: the market catches up, so this one only works early (first line).
+X8  The spread moved 2+ points from the first line we saw: follow the move, at the price after it. At the close
+    279-223 (55.6%; 55.1% / 56.1%) (engine/measure_ideas2.py). The big moves still don't go far enough.
+X9  Home team with 2+ more days of rest than the visitor -> home. 66-41 at the open, 63-43 at the close (both
+    seasons 58%+). The visitor with the rest edge shows nothing (47-43).
 X7  Both teams shot 2+ points a game WORSE than their shots were worth over their last 5 (shot locations) ->
     over. At the open 121-102 (54.3%; 54.9% / 53.7%), at the close 114-98 (53.8%).
 """
@@ -35,8 +39,25 @@ def team_luck(shots: dict, finals: list) -> dict[str, list[float]]:
     return out
 
 
-def picks(game, hs, at, home_spread, total, luck: dict) -> list[Pick]:
+def picks(game, hs, at, home_spread, total, luck: dict, first_home_spread: float | None = None) -> list[Pick]:
     out = []
+    # X8: follow a 2+ point line move (from the first line we saw to now), at the price after the move
+    if home_spread is not None and first_home_spread is not None:
+        mv = first_home_spread - home_spread              # + = the line moved toward the home team
+        if abs(mv) >= 2:
+            side = game.home if mv > 0 else game.away
+            out.append(Pick(308, game.id, "spread", side, home_spread if side == game.home else -home_spread,
+                            [f"The line moved {abs(mv):g} points toward {side} (from {first_home_spread:+g} to {home_spread:+g} home)",
+                             "2 seasons, following a 2+ move at the closing number: 279-223 (55.6%), both seasons"],
+                            {"move": mv}))
+    # X9: home team with 2+ more days of rest than the visitor
+    lh, la = getattr(hs, "last_game", None), getattr(at, "last_game", None)
+    if home_spread is not None and lh and la:
+        rh, ra = (game.game_date - lh.game_date).days, (game.game_date - la.game_date).days
+        if rh - ra >= 2:
+            out.append(Pick(309, game.id, "spread", game.home, home_spread,
+                            [f"{game.home} has {rh} days since its last game, {game.away} {ra}",
+                             "2 seasons: 66-41 at the open, 63-43 at the close, both seasons"], {"rest": [rh, ra]}))
     if home_spread is not None:
         for st, team, line in ((hs, game.home, home_spread), (at, game.away, -home_spread)):
             lg = getattr(st, "last_game", None)

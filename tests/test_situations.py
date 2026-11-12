@@ -28,3 +28,14 @@ def test_both_teams_cold_shooting_over():
     assert [(p.system, p.side, p.line) for p in ps] == [(307, "OVER", 221.5)]
     luck["CHI"] = [-1, -1, -1]
     assert picks(G, st(None), st(None), None, 221.5, luck) == []
+
+
+def test_follow_a_2_point_line_move_and_home_rest_edge():
+    from engine.situations import picks as P_
+    ps = P_(G, st(None), st(None), -6.0, None, {}, -3.5)          # moved 2.5 toward BOS (home)
+    assert [(p.system, p.side, p.line) for p in ps] == [(308, "BOS", -6.0)]
+    assert P_(G, st(None), st(None), -5.0, None, {}, -3.5) == []    # only 1.5
+    old = Game(id="o", game_date=date(2026, 11, 8), away="X", home="BOS", home_score=100, away_score=90, periods=4, final=True)
+    yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=4, final=True)
+    ps = P_(G, st(old), st(yday), -4.0, None, {}, None)
+    assert [(p.system, p.side) for p in ps] == [(309, "BOS")]       # 4 days vs 1

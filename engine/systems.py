@@ -83,6 +83,12 @@ SHADOW_SYSTEMS = {
     307: {"name": "Both teams shooting below their shot quality: over", "bet": "total", "idea": "shooting luck (testing)",
           "rule": "Both teams' field-goal points ran 2+ a game below what their shots were worth (shot locations, last "
                   "5 games). 2 seasons: 121-102 at the open, 114-98 at the close (engine/measure_ideas.py). Tracking only."},
+    308: {"name": "Follow a 2+ point line move", "bet": "spread", "idea": "market (testing)",
+          "rule": "The spread moved 2+ points from the first line we saw: bet the side it moved toward, at the price "
+                  "after the move. 2 seasons at the close: 279-223 (55.6%), both seasons (engine/measure_ideas2.py). Tracking only."},
+    309: {"name": "Home team with 2+ more days of rest", "bet": "spread", "idea": "rest (testing)",
+          "rule": "Home team rested 2+ more days than the visitor -> home. 2 seasons: 66-41 at the open, 63-43 at the "
+                  "close (engine/measure_ideas2.py). Tracking only."},
 }
 
 # Bets made at the first line and kept there: once one of these fires, it stays a bet even if the

@@ -293,7 +293,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                                       season_day=(g.game_date - season_start).days)
                  + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
                  + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads, x_pos)
-                 + situations_mod.picks(g, hs, at, row.get("home_spread"), row.get("total"), x_luck))
+                 + situations_mod.picks(g, hs, at, row.get("home_spread"), row.get("total"), x_luck, o_hs))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:
@@ -637,7 +637,13 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                              "117-90 (56.5%) at the open; only 105-95 at the close"),
                             (307, "X7: both teams shooting below their shot quality -> over",
                              "Both teams' field-goal points ran 2+ a game below what their shots were worth (last 5).",
-                             "121-102 (54.3%) at the open, 114-98 (53.8%) at the close")):
+                             "121-102 (54.3%) at the open, 114-98 (53.8%) at the close"),
+                            (308, "X8: follow a 2+ point line move",
+                             "The spread moved 2+ points from the first line we saw: bet the side it moved toward, after the move.",
+                             "279-223 (55.6%) at the closing number, both seasons"),
+                            (309, "X9: home team with 2+ more days of rest",
+                             "Home team rested 2+ more days than the visitor: bet the home team.",
+                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close")):
         x = sh.get(sid) or sh.get(str(sid)) or {}
         f_ = x.get("if_first") or {}
         out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),
