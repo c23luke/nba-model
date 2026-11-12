@@ -35,17 +35,23 @@ FLAGS = ["pm3", "sys", "sys2", "x2", "x3", "x4", "x5", "x6", "move2", "move1", "
 def season(season):
     games, _, _ = load(season)
     key_of = {str(g.id): f"{g.game_date.isoformat()}|{g.away}|{g.home}" for g in games}
+    # the players-model replay keeps its own game list: key its games by date|away|home too
+    for item in MS.fetch(season)[0]:
+        g0 = item[0] if isinstance(item, tuple) else item
+        key_of[str(g0.id)] = f"{g0.game_date.isoformat()}|{g0.away}|{g0.home}"
     gap, systems = {}, defaultdict(set)
     for r in MS.season_rows(season):
-        if r["bet"] != "spread":
-            continue
         k = key_of.get(str(r["game"]))
         if not k:
             continue
-        if r["system"] == 301 and r["gap"] is not None:
-            gap[(k, r["side"])] = r["gap"]
-        elif r["system"] < 300 and r["system"] != 113:
+        if r["system"] == 301 and r["gap"] is not None and r.get("side"):
+            gap[(k, r["side"])] = r["gap"]          # the side the players model likes, by how much
+            continue
+        if r["bet"] != "spread":
+            continue
+        if r["system"] < 300 and r["system"] != 113:
             systems[(k, r["side"])].add(r["system"])
+    print(f"{season}: players-model gaps matched for {len(gap)} game sides; system sides {len(systems)}", flush=True)
     clus = {f"{r['date']}|{r['away']}|{r['home']}": r for r in MC.season_rows(season)}
     ideas = {f"{r['date']}|{r['away']}|{r['home']}": r for r in MI.season_rows(season)}
     ideas2 = {f"{r['date']}|{r['away']}|{r['home']}": r for r in MI2.season_rows(season)}

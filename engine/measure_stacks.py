@@ -69,7 +69,7 @@ def season_rows(season):
                 m = g.home_score - g.away_score
                 side_home = gap > 0
                 r = (m + op) if side_home else (-m - op)
-                out.append({"game": g.id, "bet": "x1", "side": None, "system": 301,
+                out.append({"game": g.id, "bet": "x1", "side": g.home if side_home else g.away, "system": 301,
                             "res": "W" if r > 0 else "L" if r < 0 else "P", "gap": abs(gap)})
         finals += by_day[day]
         played_tot += [(totals.get(f"{day.isoformat()}|{g.away}|{g.home}") or {}).get("close") for g in by_day[day]]
