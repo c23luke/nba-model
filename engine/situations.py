@@ -86,9 +86,9 @@ def picks(game, hs, at, home_spread, total, luck: dict, first_home_spread: float
     return out
 
 
-STACK_FLAGS_RECORD = ("2 seasons at the close: 5+ flags 213-149 (58.8%; 59.3% / 58.4%); with the players model 3+ AND a "
-                      "card system among them 46-26 (63.9%; 64.7% / 63.2%), bet at 2 units "
-                      "(engine/measure_stack_flags.py, Nov 11)")
+STACK_FLAGS_RECORD = ("2 seasons at the close: 6+ flags 118-73 (61.8%; 60.0% / 63.7%); 5+ with the players model 3+ AND a "
+                      "card system among them 46-26 (63.9%; 64.7% / 63.2%). Both bet at 2 units. Exactly 5 without both: "
+                      "not bet (5 flags went 96-79, 54.9%) (engine/measure_stack_flags.py, Nov 11-12)")
 
 
 def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_spread, first_home_spread,
@@ -137,7 +137,9 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
 
 
 def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread, luck: dict) -> list[Pick]:
-    """STACK (131), a card bet: 5+ flags on one side (Caden 2026-11-11). 4 flags (225-184) was dropped by Caden."""
+    """STACK (131), a card bet at 2 units: 6+ flags on one side, or 5 flags when the players model (3+) AND a card
+    system are among them. Caden 2026-11-12: exactly 5 otherwise is not bet ("54% isn't good enough"); 4 was dropped
+    Nov 11."""
     from .systems import STACK
     if home_spread is None:
         return []
@@ -145,14 +147,12 @@ def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread,
     for side in (game.home, game.away):
         fl = stack_flags(game, side, picks, view, hs, at, home_spread, first_home_spread, luck)
         line = home_spread if side == game.home else -home_spread
-        if len(fl) >= 5:
-            # 2 units when the players model (3+) AND a card system are among the flags (Caden 2026-11-11):
-            # 46-26 (63.9%) at the close, both seasons 63-65%. Without both: 167-123 (57.6%), 1 unit.
-            pm = fl[0].startswith("players model likes")
-            sy = any(" card system" in f for f in fl)
+        pm = bool(fl) and fl[0].startswith("players model likes")
+        sy = any(" card system" in f for f in fl)
+        if len(fl) >= 6 or (len(fl) == 5 and pm and sy):
             out.append(Pick(STACK, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
                                                                STACK_FLAGS_RECORD],
-                            {"flags": fl, "n_flags": len(fl), "two_units": pm and sy}))
+                            {"flags": fl, "n_flags": len(fl), "two_units": True}))
     return out
 
 

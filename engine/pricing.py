@@ -31,8 +31,9 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
-STACK_REC = (213, 149)  # STACK: 5+ flags on one side, 2 seasons at the close (measure_stack_flags.py)
-STACK_2U_TO_WIN = 40  # STACK with the players model 3+ AND a card system among its flags: 46-26 (63.9%) at the close
+STACK_REC = (118, 73)   # STACK 6+ flags, 2 seasons at the close (measure_stack_flags.py). Exactly 5 bets only with the
+                        # players model + a system (46-26 as 5+); exactly 5 otherwise is not bet (Caden 2026-11-12)
+STACK_2U_TO_WIN = 40  # every STACK bet is 2 units since 2026-11-12
 MONEYBALL_TO_WIN = 40  # 2 units (Caden 2026-11-05). MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
 # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet.
 # 4% (Caden 2026-10-27, was 2%): bets at a normal price clear it easily; the 2-4% ones were nearly all heavy
@@ -250,7 +251,7 @@ def history(pick: dict, slate: list[dict]) -> dict | None:
     if sid == 130:
         return {"w": MONEYBALL_REC[0], "l": MONEYBALL_REC[1], "label": "2 seasons at the open: 2+ systems + players model 3+"}
     if sid == 131:
-        return {"w": STACK_REC[0], "l": STACK_REC[1], "label": "2 seasons at the close: 5+ flags on one side"}
+        return {"w": STACK_REC[0], "l": STACK_REC[1], "label": "2 seasons at the close: 6+ flags on one side"}
     if sid == 132:
         return {"w": SYS_X4_REC[0], "l": SYS_X4_REC[1], "label": "2 seasons at the close: a system + the X4 injury fade"}
     if sid in PAIR_REC:
@@ -317,7 +318,7 @@ PRICE_WIN = {
     124: _price_win(25, 10),                       # T24 -> 55.6%
     125: _price_win(86, 58),                       # T25 -> 55.7%
     130: _price_win(*MONEYBALL_REC),               # MONEYBALL -> 56.4%
-    131: _price_win(*STACK_REC),                   # STACK     -> 56.9%
+    131: _price_win(*STACK_REC),                   # STACK     -> 57.5%
     132: _price_win(*SYS_X4_REC),                  # SYS+X4    -> 57.5%
     133: _price_win(42, 18),                       # X4+B2B    -> 57.5%
     134: _price_win(62, 31),                       # X2+B2B    -> 58.0%
@@ -547,7 +548,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
             stacks.setdefault((p["game_id"], p["bet"], p["side"]), []).append(label(p["system"]))
     # ONE card bet per game side (Caden 2026-11-02): MONEYBALL first, then a system + players-model combo, then
     # the players model alone. The other systems on that side ride along in "with".
-    # STACK (5+ flags) after MONEYBALL ($40), ahead of a single system + players model (both $20)
+    # STACK (6+ flags, or 5 with the players model + a system) after MONEYBALL, ahead of a single system + players model
     rank = lambda p: 0 if p["system"] == 130 else 0.5 if p["system"] == 131 else 0.75 if p["system"] in (132, 133, 134, 135) else 2 if p["system"] == 113 else 1
     gorder = {"OG": 0, "FAV": 1, "EARLY": 2, "TEST": 3}
     chosen, skipped = {}, {}

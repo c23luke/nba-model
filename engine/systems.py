@@ -117,14 +117,16 @@ TEST_SYSTEMS.update({
           "rule": "Two or more of our systems on the same side AND the players model likes that side by 3+ points "
                   "(either way day-to-day players go). 2 seasons at the open: 29-11 (72.5%), both seasons 72-73%. "
                   "Sized to win $40 (2 units)."},
-    # STACK (Caden 2026-11-11: "lets bet anything stack 5+"; engine/measure_stack_flags.py, at the close):
-    #   5+ flags on one side 213-149 (58.8%) — 2024-25 105-72 (59.3%), 2025-26 108-77 (58.4%). Not yet paper-tested live.
-    131: {"win_est": 0.569, "name": "STACK: 5+ flags on one side", "bet": "spread", "idea": "stack",
-          "rule": "5 or more separate edges on the same side: players model 3+, card systems (1 / 2+), the injury fades "
+    # STACK (Caden 2026-11-11: "lets bet anything stack 5+"; 2026-11-12: exactly 5 "isn't good enough").
+    #   6+ flags 118-73 (61.8%; 60.0% / 63.7%); 5+ with the players model 3+ and a card system 46-26 (63.9%).
+    #   Exactly 5 flags overall went 96-79 (54.9%): not bet unless it has both. At the close; not yet tested live.
+    131: {"win_est": 0.575, "name": "STACK: 6+ flags on one side (or 5 with the players model and a system)", "bet": "spread",
+          "idea": "stack",
+          "rule": "6 or more separate edges on the same side (or 5 when two of them are the players model 3+ and a card system): players model 3+, card systems (1 / 2+), the injury fades "
                   "(X2-X4), blowout winner (X5), opponent off overtime (X6), line moved 1+ / 2+ toward it, home rest "
                   "edge, opponent leans on players the model barely knows, opponent shooting hot / us cold vs shot "
-                  "quality, opponent on a back-to-back. 2 seasons at the close: 213-149 (58.8%), 59.3% / 58.4%. "
-                  "Every flag is listed on the bet. Sized to win $20."},
+                  "quality, opponent on a back-to-back. 2 seasons at the close: 6+ 118-73 (61.8%), 60.0% / 63.7%; 5+ with the "
+                  "players model and a system 46-26 (63.9%). Every flag is listed on the bet. Sized to win $40 (2 units)."},
     # SYS+X4 (Caden 2026-11-11: "its really good ... id still like to bet it"; engine/measure_stack_flags.py, close):
     #   a card system on the side fading a team missing 2+ rotation players at different positions: 42-18 (70.0%),
     #   2024-25 22-10, 2025-26 20-8. Bet WITHOUT needing the players model. Not yet tested live.

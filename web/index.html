@@ -353,8 +353,10 @@ function plainWhy(o) {
     S.push(`A betting system is on this side and the other team is missing 2 or more rotation players at different positions. Together that went 42-18 (70%) over the last two seasons at the closing line (22-10 and 20-8). It doesn't need the player ratings to agree.`);
   } else if (o.tag === "STACK") {
     const f = o.flags || [];
-    S.push(`${f.length || "5+"} separate edges line up on this side${f.length ? ": " + f.join("; ") : ""}. Sides with 5 or more went 213-149 (58.8%) over the last two seasons, graded at the closing line (59% and 58%).`
-      + (o.toWin === 40 ? " The player ratings and a betting system are both among them: those went 46-26 (64%), so it's 2 units." : ""));
+    S.push(`${f.length || "6+"} separate edges line up on this side${f.length ? ": " + f.join("; ") : ""}. `
+      + (f.length >= 6 ? "Sides with 6 or more went 118-73 (62%) over the last two seasons, graded at the closing line (60% and 64%)."
+         : "The player ratings and a betting system are both among them: sides like that went 46-26 (64%) over the last two seasons.")
+      + " It's 2 units.");
   } else if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
     const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
     S.push(`Two or more systems plus the player ratings on the same side is our strongest setup${h ? `: ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);
@@ -373,7 +375,7 @@ function plainWhy(o) {
   }
   if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet"
     : o.thinSystem ? ` (1.5 units) because ${esc(o.thinSystem.team)} leans on players the model barely knows (${Math.round(o.thinSystem.share * 100)}% of its minutes vs ${Math.round(o.thinSystem.ours * 100)}%): a system plus the player ratings went 22-9 betting against teams like that`
-    : o.tag === "STACK" && o.toWin === 40 ? " (2 units) because the player ratings and a betting system are both in the stack"
+    : o.tag === "STACK" ? " (2 units): every STACK bet is 2 units"
     : o.thinFade ? ` (2 units) because ${esc(o.thinFade.team)} leans on players the model barely knows (${Math.round(o.thinFade.share * 100)}% of its minutes vs ${Math.round(o.thinFade.ours * 100)}%): the players model went 40-17 betting against teams like that` : ""}.`);
   const N = o.now;
   if (N && N.low != null && o.gap != null && (Math.abs(N.low - o.gap) >= 1 || Math.abs(N.high - o.gap) >= 1)) {

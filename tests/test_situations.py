@@ -65,11 +65,11 @@ def test_stack_is_a_card_bet_without_needing_a_players_read():
     from engine.systems import label, group, STACK
     p = {"system": STACK, "bet": "spread", "side": "BOS", "game_id": "g"}
     assert eligible(p, []) == (True, None)                    # no players-model read needed: the flags are the case
-    assert history(p, [])["w"] == 213 and label(STACK) == "STACK" and group(STACK) == "FAV"
-    assert abs(WIN[STACK] - 0.569) < 0.001 and TO_WIN == 20   # (213 + 50) / (362 + 100), one unit
+    assert history(p, [])["w"] == 118 and label(STACK) == "STACK" and group(STACK) == "FAV"   # 6+ flags, 118-73
+    assert abs(WIN[STACK] - (118 + 50) / (191 + 100)) < 0.001
 
 
-def test_stack_is_two_units_only_with_the_players_model_and_a_system():
+def test_stack_needs_6_flags_or_5_with_the_players_model_and_a_system_and_is_always_two_units():
     from engine.situations import stack_picks
     from engine.systems import Pick
     big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=130, away_score=100, periods=4, final=True)
@@ -79,7 +79,9 @@ def test_stack_is_two_units_only_with_the_players_model_and_a_system():
     both = stack_picks(G, picks, {"gap": 4.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
     assert both[0].meta["n_flags"] == 6 and both[0].meta["two_units"] is True      # players model + 1 system
     no_pm = stack_picks(G, picks, {"gap": 0.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
-    assert no_pm[0].meta["n_flags"] == 5 and no_pm[0].meta["two_units"] is False   # 5 flags, no players model: 1 unit
+    assert no_pm == []      # exactly 5 flags without the players model: not bet (Caden 2026-11-12, 96-79 is 54.9%)
+    five = stack_picks(G, picks[:1], {"gap": 4.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
+    assert [(p.system, p.meta["n_flags"]) for p in five] == [(131, 5)]   # players model, 1 system, moved, thin, b2b
 
 
 def test_sys_x4_needs_a_card_system_and_x4_on_the_same_side_and_thin_system_bets_are_30():
