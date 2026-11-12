@@ -87,7 +87,7 @@ def season_rows(season):
             outs = [(n, mp, group(position.get(n, "")), (prev.get(n, 0) > 0)) for n, mp in rot.items() if n not in played]
             teams[t] = outs
         if b and ln.get("open") is not None and ln.get("close") is not None:
-            out.append({"season": season, "home": g.home, "away": g.away, "margin": g.home_score - g.away_score,
+            out.append({"season": season, "date": g.game_date.isoformat(), "home": g.home, "away": g.away, "margin": g.home_score - g.away_score,
                         "pts": g.home_score + g.away_score, "open": ln["open"], "close": ln["close"],
                         "tot_close": tt.get("close"), "tot_open": tt.get("open"), "outs": teams})
         for t in (g.home, g.away):

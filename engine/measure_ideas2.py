@@ -48,7 +48,8 @@ def season_rows(season):
         js = sums.get(g.id) or {}
         k = f"{g.game_date.isoformat()}|{g.away}|{g.home}"
         ln = lines.get(k) or {}
-        row = {"season": season, "margin": g.home_score - g.away_score, "open": ln.get("open"),
+        row = {"season": season, "date": g.game_date.isoformat(), "home": g.home, "away": g.away,
+               "margin": g.home_score - g.away_score, "open": ln.get("open"),
                "close": ln.get("close"), "eve": ln.get("eve"), "morn": ln.get("morn")}
         lg = league[0] / league[1] if league[1] > 500 else None
         for side, t in (("h", g.home), ("a", g.away)):
