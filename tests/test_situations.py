@@ -131,3 +131,9 @@ def test_shot_quality_pairs_fire_only_with_both_flags_and_say_their_numbers():
     rim = next(p for p in ps if label(p.system) == "RIM+PM")
     assert "30% of its shots at the rim" in rim.meta["flags"][0] and "by 3.5" in rim.meta["flags"][1]
     assert sq_pair_picks(G, [], {"gap": 0.0}, -4.0, -4.0, {"BOS": bos, "CHI": nyk}) == []   # no second flag anywhere
+
+
+def test_a_system_plus_players_model_bet_is_two_units_and_t13_alone_is_one():
+    from engine.pricing import _is_combo
+    assert _is_combo({"system": 5, "bet": "spread"}) and not _is_combo({"system": 113, "bet": "spread"})
+    assert not _is_combo({"system": 130, "bet": "spread"}) and not _is_combo({"system": 136, "bet": "spread"})

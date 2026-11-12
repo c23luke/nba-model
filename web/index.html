@@ -407,7 +407,7 @@ function whyHead(tag, tags, gap, side) {
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20, except 2-unit bets at $40: MONEYBALL, STACK, and the players model or a system bet against a thin roster";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "bets are sized to win $40 (2 units) for MONEYBALL, STACK, a system + the player ratings, and the players model against a thin roster; everything else $20";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];

@@ -39,7 +39,7 @@ def stale_snap(meta: dict, snap: dict, o: dict) -> bool:
     """A system bet placed under today's rules whose saved card text now says it wouldn't bet: that text is from
     after the bet, not from when we bet."""
     return (not meta.get("bet_snap") and (o.get("created_at") or "") >= RULES_LIVE_UTC
-            and o.get("system") not in ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE") and str(snap.get("why") or "").startswith("No bet"))
+            and o.get("system") not in SPECIAL_TAGS and str(snap.get("why") or "").startswith("No bet"))
 
 
 def all_in(risk: float, to_win: float):
@@ -284,6 +284,9 @@ S4_CAP = round(110 / 210, 4)   # engine/pricing.SYSTEM_MAX_COST[4] (Caden 2026-1
 COMBO_GAP_NOW = 3.0    # engine/pricing.COMBO_MIN_GAP
 
 
+SPECIAL_TAGS = ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE")   # bets that are not "a system + the players model"
+
+
 def rules_now(rows: list[dict], agree=None) -> dict:
     """Caden 2026-10-27: "pretend we had this correct system the whole time". Every bet is re-judged
     under TODAY's rules, at the price we actually got, and each row gets a "rules" block the site shows
@@ -307,7 +310,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = "totals aren't bet now (S4 is tracking only)"
         elif r.get("under_rules"):
             pass        # the card applied today's players rule when this bet was placed (it was a BET then)
-        elif r["system"] not in ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE"):
+        elif r["system"] not in SPECIAL_TAGS:
             if r.get("bet") == "total":
                 why = "totals aren't bet now"
             else:
@@ -349,7 +352,9 @@ def rules_now(rows: list[dict], agree=None) -> dict:
         # and (from 2026-11-11) a STACK bet sized at $40 because the players model and a system are among its flags.
         # 1.5 units ($30, from 2026-11-11): a system + players model 3+ bet against a thin roster.
         # (2026-11-12) a system bet against a thin roster is 2 units too: any bet sized at $40 when placed keeps it
-        target = (40.0 if r["system"] == "MONEYBALL" or r.get("target") == 40
+        # (2026-11-12) every system + players model 3+ bet is 2 units: counted at $40 under today's rules
+        combo = r.get("bet") == "spread" and r["system"] not in SPECIAL_TAGS
+        target = (40.0 if r["system"] == "MONEYBALL" or combo or r.get("target") == 40
                   else 30.0 if r.get("target") == 30 else 20.0)
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)

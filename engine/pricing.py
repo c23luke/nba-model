@@ -58,6 +58,15 @@ THIN_FADE_TO_WIN = 40
 # 1.5 units on a SYSTEM bet (a system + players model 3+) against a thin roster (Caden 2026-11-11): 22-9 (71%) at the
 # close over 2 seasons (12-3 / 10-6; engine/measure_stack_flags.py, pm3 + sys + thin). Too few bets for 2 units.
 THIN_SYSTEM_TO_WIN = 40   # 2 units since Caden 2026-11-12 (was 1.5)
+# 2 units on every system + players model 3+ bet (Caden 2026-11-12, "make those changes"): 77-49 (61.1%) at the close,
+# 61.3% / 60.9% by season, 126 bets; 79-51 at the open. A planned rule, not from a search.
+COMBO_TO_WIN = 40
+
+
+def _is_combo(pick: dict) -> bool:
+    sid = pick.get("system")
+    return sid is not None and sid < 300 and sid not in (113, *range(130, 141)) and pick.get("bet") == "spread"
+
 SYS_X4_REC = (42, 18)       # SYS+X4, 2 seasons at the close
 # three more pairs Caden added Nov 11 (engine/measure_stack_flags.py, 2 seasons at the close), 1 unit each
 PAIR_REC = {133: (42, 18, "X4 + the opponent on a back-to-back"), 134: (62, 31, "X2 + the opponent on a back-to-back"),
@@ -638,7 +647,8 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else
                                STACK_2U_TO_WIN if p["system"] == 131 and (p.get("meta") or {}).get("two_units") else
                                THIN_FADE_TO_WIN if thin_fade(p, slate) else
-                               THIN_SYSTEM_TO_WIN if thin_system(p, slate) else TO_WIN,
+                               THIN_SYSTEM_TO_WIN if thin_system(p, slate) else
+                               COMBO_TO_WIN if _is_combo(p) else TO_WIN,
                      "thin_system": thin_system(p, slate),
                      "thin_fade": thin_fade(p, slate),
                      "flags": (p.get("meta") or {}).get("flags") if p["system"] in range(131, 141) else None,

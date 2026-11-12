@@ -227,6 +227,7 @@ def test_card_line_shops_kalshi_and_exchanges(tmp_path):
             "3HOT+MOVE", "System + players model 3+", "Players model alone 4+"} <= set(fw)
     assert fw["MONEYBALL"]["units"] == 2 and fw["System + players model 3+ against a thin roster"]["units"] == 2
     assert fw["SQ+THIN"]["units"] == 1 and fw["MONEYBALL"]["open"] >= 1        # LAL MONEYBALL is open tonight
+    assert fw["System + players model 3+"]["units"] == 2
 
 
 def test_tipped_card_bets_stay_up_with_their_result(tmp_path):

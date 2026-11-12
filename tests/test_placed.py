@@ -219,7 +219,7 @@ def test_split_fills_are_one_bet_and_systems_need_the_players_model():
     lal = next(r for r in out["bets"] if r["side"] == "LAL")
     assert len([r for r in out["bets"] if r["side"] == "LAL"]) == 1 and len(lal["fills"]) == 2
     assert lal["count"] == 39.98 and lal["cost"] == 19.09 and lal["result"] == "W"
-    assert lal["rules"]["counted"] and lal["rules"]["to_win"] == 20.0
+    assert lal["rules"]["counted"] and lal["rules"]["to_win"] == 40.0      # a system + players model 3+: 2 units since 2026-11-12
     was = next(r for r in out["bets"] if r["side"] == "WAS")
     assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
     assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 0)

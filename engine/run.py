@@ -1083,7 +1083,7 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
             row("STACK: 6+ flags, or 5 with the players model and a system", 2, f"{STACK_REC[0]}-{STACK_REC[1]} (6+) / 46-26 (5+ with both)", by(131, graded), by(131, openp)),
             row("Players model 4+ against a thin roster", 2, "40-17", thin(by(113, graded)), thin(by(113, openp))),
             row("System + players model 3+ against a thin roster", 2, "22-9", thin(side_once(sysp)), thin(side_once(sys_open))),
-            row("System + players model 3+", 1, f"{COMBO_REC[0]}-{COMBO_REC[1]} at the open", side_once(sysp), side_once(sys_open)),
+            row("System + players model 3+", 2, f"{COMBO_REC[0]}-{COMBO_REC[1]} at the open", side_once(sysp), side_once(sys_open)),
             row("Players model alone 4+", 1, "217-157", by(113, graded), by(113, openp)),
             row("SYS+X4: a system + X4 injury fade", 1, "42-18", by(132, graded), by(132, openp)),
         ]
