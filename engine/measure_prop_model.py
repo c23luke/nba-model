@@ -22,7 +22,9 @@ from . import backtest as BT
 from . import backtest_open as BO
 from . import personnel as PERS
 from . import sources
-from .prop_model import STATS, History, P, project, shot_list
+from .prop_model import STATS, TUNED, History, P, project, shot_list
+
+EARLY = False      # set by engine.measure_props_soft: also project with only what was known ~6 hours before tip
 from .teams import code
 
 
@@ -82,7 +84,16 @@ def features(season):
             opp = g.away if team == g.home else g.home
             playing = {nm for nm, v in tonight[team].items() if v[0] > 0}
             known = {nm for gm in H.tgames[team][-10:] for nm in gm} | set(tonight[team])
+            early = {}
+            if EARLY:
+                # what was known ~6 hours before tip: only players who had ALSO missed the team's previous game
+                prev_ = H.tgames[team][-1] if H.tgames[team] else {}
+                gone = {nm for nm in known - playing if not (prev_.get(nm) or (0,))[0] > 0}
+                for fe in H.features(team, opp, known - gone, gone, hs, gt, team == g.home):
+                    early[fe["name"]] = project(fe, TUNED)
             for f in H.features(team, opp, playing, known - playing, hs, gt, team == g.home):
+                if EARLY:
+                    f["early_proj"] = early.get(f["name"])
                 f["season"] = season
                 f["date"], f["home"], f["away"] = g.game_date.isoformat(), g.home, g.away
                 for i, s in enumerate(STATS, start=1):
