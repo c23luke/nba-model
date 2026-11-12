@@ -128,6 +128,21 @@ def main():
             xs = [r for r in data[s] if (len(r["flags"]) >= n if n == 5 else len(r["flags"]) == n)]
             line += f"   {s}: open {rec([r['res']['open'] for r in xs if r['res']['open'] is not None])[1]:>17}  close {rec([r['res']['close'] for r in xs])[1]:>17}"
         print(line)
+    print("\n=== 5+ flags, split by whether the players model (3+) is one of them (Caden 2026-11-11)")
+    for nm, keep in (("5+ WITH players model 3+", lambda r: len(r["flags"]) >= 5 and "pm3" in r["flags"]),
+                     ("5+ WITHOUT players model 3+", lambda r: len(r["flags"]) >= 5 and "pm3" not in r["flags"]),
+                     ("5 exactly, with players 3+", lambda r: len(r["flags"]) == 5 and "pm3" in r["flags"]),
+                     ("6+ with players 3+", lambda r: len(r["flags"]) >= 6 and "pm3" in r["flags"]),
+                     ("5+ with players 3+ AND 1+ system", lambda r: len(r["flags"]) >= 5 and {"pm3", "sys"} <= r["flags"]),
+                     ("5+ with players 3+, NO system", lambda r: len(r["flags"]) >= 5 and "pm3" in r["flags"] and "sys" not in r["flags"])):
+        line = f"  {nm:36}"
+        allc, allo = [], []
+        for s in seasons:
+            xs = [r for r in data[s] if keep(r)]
+            o = [r['res']['open'] for r in xs if r['res']['open'] is not None]; c = [r['res']['close'] for r in xs]
+            allo += o; allc += c
+            line += f"   {s}: open {rec(o)[1]:>17}  close {rec(c)[1]:>17}"
+        print(line + f"   BOTH: open {rec(allo)[1]}  close {rec(allc)[1]}")
     print("\n=== single flags")
     for fl in FLAGS:
         line = f"  {fl:9}"
