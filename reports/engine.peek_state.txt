@@ -1,9 +1,9 @@
 17 games with a read history
   read:401909960 2026-11-11T00:21:06 21 entries; last: {'hi': -15.5, 'lo': -15.5, 'ts': '2026-11-11T00:20:53.785385+00:00', 'dtd': [], 'mkt': -16.0, 'fair': -15.5, 'blind': False}
   read:401909964 2026-11-11T02:43:30 27 entries; last: {'hi': 2.5, 'lo': 2.5, 'ts': '2026-11-11T02:43:04.069430+00:00', 'dtd': [], 'mkt': 5.5, 'fair': 2.5, 'blind': True}
-  read:401909973 2026-11-12T00:59:11 25 entries; last: {'hi': 5.0, 'lo': 4.0, 'ts': '2026-11-12T00:58:55.865139+00:00', 'dtd': ['ORL: Jamal Cain', 'ORL: Tristan da Silva', 'UTA: Keyonte George'], 'mkt': 4.5, 'fair': 4.0, 'blind': False}
+  read:401909973 2026-11-12T01:00:41 26 entries; last: {'hi': 6.5, 'lo': 5.5, 'ts': '2026-11-12T01:00:16.004770+00:00', 'dtd': ['ORL: Jamal Cain', 'ORL: Tristan da Silva', 'UTA: Keyonte George'], 'mkt': 4.5, 'fair': 5.5, 'blind': False}
   read:401909963 2026-11-11T01:10:37 27 entries; last: {'hi': 10.5, 'lo': 10.5, 'ts': '2026-11-11T01:10:15.651243+00:00', 'dtd': [], 'mkt': 8.5, 'fair': 10.5, 'blind': True}
-  read:401909975 2026-11-12T00:00:47 47 entries; last: {'hi': -4.5, 'lo': -4.5, 'ts': '2026-11-12T00:00:29.285789+00:00', 'dtd': [], 'mkt': -2.5, 'fair': -4.5, 'blind': True}
+  read:401909975 2026-11-12T01:00:41 48 entries; last: {'hi': -6.0, 'lo': -6.0, 'ts': '2026-11-12T01:00:16.004770+00:00', 'dtd': [], 'mkt': -2.5, 'fair': -6.0, 'blind': True}
   read:401909966 2026-11-11T23:45:51 34 entries; last: {'hi': -4.0, 'lo': -4.0, 'ts': '2026-11-11T23:45:25.664726+00:00', 'dtd': [], 'mkt': -3.5, 'fair': -4.0, 'blind': False}
   read:401909961 2026-11-11T00:06:02 16 entries; last: {'hi': 4.5, 'lo': 4.5, 'ts': '2026-11-11T00:05:50.011207+00:00', 'dtd': [], 'mkt': 1.5, 'fair': 4.5, 'blind': False}
   read:401909974 2026-11-12T00:16:22 29 entries; last: {'hi': -1.0, 'lo': -1.0, 'ts': '2026-11-12T00:16:08.625977+00:00', 'dtd': [], 'mkt': -6.5, 'fair': -1.0, 'blind': True}
@@ -11,7 +11,7 @@
   read:401909968 2026-11-11T23:59:56 26 entries; last: {'hi': 3.0, 'lo': 3.0, 'ts': '2026-11-11T23:59:16.561232+00:00', 'dtd': [], 'mkt': 4.5, 'fair': 3.0, 'blind': True}
   read:401909970 2026-11-12T00:59:11 34 entries; last: {'hi': 0.5, 'lo': 0.5, 'ts': '2026-11-12T00:58:55.865139+00:00', 'dtd': [], 'mkt': 3.5, 'fair': 0.5, 'blind': False}
   read:401909972 2026-11-12T00:16:22 48 entries; last: {'hi': -1.0, 'lo': -1.0, 'ts': '2026-11-12T00:16:08.625977+00:00', 'dtd': [], 'mkt': -2.5, 'fair': -1.0, 'blind': False}
-board 2026-11-12T00:58:55.865139+00:00 injury_desk on board: True
+board 2026-11-12T01:04:29.675789+00:00 injury_desk on board: True
 testing: X2: fade the team missing 2+ rotation players 0-1 bets 1 open 0 clv 0.0 ready False
 testing: Injury desk: beat the market to the news 0-0 bets 0 open 0 clv None ready False
 testing: Props: Star back from 3+ games out (minutes usually limited): unders 0-0 bets 0 open 0 clv None ready False
@@ -31,14 +31,10 @@ testing: Props spot: 3+ off on a bench player (under 20 mpg) 0-0 bets 0 open 0 c
 testing: Our bet + an injury edge on the same side (bigger-bet candidate) 0-0 bets 0 open 0 clv None ready False
 props desk: {'bets': 0, 'w': 0, 'l': 0, 'avg_clv': None} []
 X2 picks today: []
-thin: SAS @ CHI {'away': 0.03, 'home': 0.01} flag: None
-thin: DEN @ MEM {'away': 0.07, 'home': 0.0} flag: None
-thin: LAL @ MIL {'away': 0.02, 'home': 0.06} flag: None
-thin: BKN @ NOP {'away': 0.0, 'home': 0.03} flag: None
 thin: ORL @ UTA {'away': 0.0, 'home': 0.0} flag: None
 thin: GSW @ HOU {'away': 0.03, 'home': 0.0} flag: None
 thin: OKC @ POR {'away': 0.15, 'home': 0.0} flag: None
-thin: DAL @ MIN {'away': 0.07, 'home': 0.0} flag: {'side': 'away', 'team': 'DAL', 'other': 0.0, 'share': 0.07}
+thin: DAL @ MIN {'away': 0.07, 'home': 0.0} flag: None
 props ev: {'bets': 126, 'w': 0, 'l': 0, 'open': 126, 'avg_ev': 0.043, 'avg_clv': None} stacked: 0
     Jayson Tatum under 6.5 ast prophetx 108.0 pin -137.0 ev 0.123
     Jayson Tatum under 6.5 ast novig 108.0 pin -137.0 ev 0.123
@@ -48,7 +44,7 @@ props ev: {'bets': 126, 'w': 0, 'l': 0, 'open': 126, 'avg_ev': 0.043, 'avg_clv':
     Alex Sarr over 10.5 pts prophetx 117.0 pin -110.0 ev 0.063
     Zach Edey over 9.5 pts novig 108.0 pin -120.0 ev 0.0611
     Andre Drummond under 8.5 reb novig -104.0 pin -137.0 ev 0.059
-props model: {'bets': 15, 'w': 0, 'l': 0, 'open': 15} | players projected tonight: 249 | biggest moves vs last-10: [['Ty Jerome', 'MEM', 22.8, 26.7], ['Stephen Curry', 'GSW', 26.9, 30.6], ['Victor Wembanyama', 'SAS', 28.4, 31.9], ['Terance Mann', 'BKN', 3.8, 0.4], ['Luka Doncic', 'LAL', 36.2, 39.3], ['Micah Peavy', 'OKC', 6.4, 3.7], ['Yaxel Lendeborg', 'GSW', 19.6, 22.3], ['Jamal Murray', 'DEN', 23.4, 25.8]]
+props model: {'bets': 15, 'w': 0, 'l': 0, 'open': 15} | players projected tonight: 163 | biggest moves vs last-10: [['Stephen Curry', 'GSW', 26.9, 30.6], ['Micah Peavy', 'OKC', 6.4, 3.7], ['Yaxel Lendeborg', 'GSW', 19.6, 22.3], ['Devin Booker', 'PHX', 22.7, 25.1], ['Jared McCain', 'OKC', 14.6, 12.2], ['Josh Dix', 'OKC', 5.1, 2.7], ['Cooper Flagg', 'DAL', 23.5, 25.9], ['Damian Lillard', 'POR', 17.7, 20.0]]
     Jalen Brunson under 6.5 ast proj 4.9 l10 5.2 prophetx -127.0 ev vs pin -0.0486 out: [] ret: None
     Josh Hart under 7.5 reb proj 5.9 l10 7.3 novig -127.0 ev vs pin -0.0523 out: [] ret: 3
     Ivica Zubac under 13.5 pts proj 8.5 l10 9.0 novig -174.0 ev vs pin -0.0541 out: [] ret: None
@@ -61,7 +57,7 @@ props model: {'bets': 15, 'w': 0, 'l': 0, 'open': 15} | players projected tonigh
     Josh Giddey under 6.5 reb proj 5.0 l10 4.9 prophetx -128.0 ev vs pin -0.0397 out: [] ret: None
     Nikola Jokic under 25.5 pts proj 20.7 l10 23.1 novig -111.0 ev vs pin -0.038 out: [] ret: None
     Kyle Kuzma over 4.5 reb proj 6.0 l10 5.7 novig 100.0 ev vs pin 0.0121 out: ['Myles Turner'] ret: None
-all notes: ['Box scores: 9 new games stored', 'Official injury report 07:45 PM ET: 123 players listed; differs from ESPN on 26: Tyler Bilodeau (BKN): Out — G League - Two-Way; Joshua Jefferson (BKN): Out — G League - On Assignment; Grant Nelson (BKN): Out — G League - Two-Way; Ben Saraf (BKN): Out — G League - On Assignment; Michael Ajayi (CHA): Out — G League - Two-Way; Kylan Boswell (CHA): Out — G League - Two-Way; Moussa Diabate (CHA): Probable; Hannes Steinbach (CHA): Out — G League - On Assignment; not yet submitted: WAS, TOR', 'Personnel: 11 games rated, calibrated market = -0.2 + 0.74 x personnel', 'Roster check — playing but not on the roster we used: CLE: Tristan Enaruna (3 mpg); DET: Chaz Lanier (1 mpg); MIN: Isaiah Evans (1 mpg); OKC: Dalen Terry (4 mpg)']
+all notes: ['Box scores: 9 new games stored', 'Official injury report 08:00 PM ET: 123 players listed; differs from ESPN on 19: Michael Ajayi (CHA): Out — G League - Two-Way; Kylan Boswell (CHA): Out — G League - Two-Way; Moussa Diabate (CHA): Probable; Hannes Steinbach (CHA): Out — G League - On Assignment; Grant Williams (CHA): Probable — Injury/Illness - Right Hamstring Strain; Morez Johnson Jr. (DAL): Probable; Elijah Harkless (DET): Questionable — G League - Two-Way; Isaac Jones (DET): Questionable — G League - Two-Way; not yet submitted: WAS, TOR', 'Personnel: 7 games rated, not calibrated (under 6 lines)', 'Roster check — playing but not on the roster we used: CLE: Tristan Enaruna (3 mpg); DET: Chaz Lanier (1 mpg); MIN: Isaiah Evans (1 mpg); OKC: Dalen Terry (4 mpg)']
 open_lines: {'bets': 0, 'w': 0, 'l': 0, 'open': 0, 'avg_move': None}
 news_desk: {'bets': 0, 'w': 0, 'l': 0, 'open': 0, 'avg_move': None}
 ready list games: 1 entries: 0
