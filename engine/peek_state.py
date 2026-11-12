@@ -32,6 +32,13 @@ def main():
         print("   ", x["player"], x["side"], x["line"], x["stat"], "proj", x["proj"], "l10", x.get("l10"), x["venue"], x["price"],
               "ev vs pin", x["ev"], "out:", x.get("fresh_out"), "ret:", x.get("returning"))
     print("all notes:", [n for n in (b.get("log") or b.get("notes") or [])][:10])
+    pe2 = b.get("props_ev") or {}
+    for k in ("open_lines", "news_desk"):
+        x = pe2.get(k) or {}
+        print(f"{k}:", {kk: x.get(kk) for kk in ("bets", "w", "l", "open", "avg_move")})
+    rd = pe2.get("ready") or {}
+    print("ready list games:", len(rd), "entries:", sum(len(v.get("list") or []) for v in rd.values()))
+    print("news notes:", [n for n in (b.get("log") or b.get("notes") or []) if "News desk" in str(n) or "props" in str(n).lower() or "Shot" in str(n)])
     print("notes:", [n for n in b.get("log") or b.get("notes") or [] if "props" in str(n) or "testing" in str(n) or "cluster" in str(n)])
     print("notes mentioning the desk:", [n for n in b.get("notes") or [] if "desk" in n.lower()])
 
