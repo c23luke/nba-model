@@ -109,7 +109,9 @@ def season(season):
                 f.add("thin")
             m = r["margin"] if side == home else -r["margin"]
             res = {w: (m + (r[w] if side == home else -r[w])) if r.get(w) is not None else None for w in ("open", "close")}
-            out.append({"season": season, "flags": f, "res": res})
+            out.append({"season": season, "flags": f, "res": res, "key": k, "side": side, "opp": opp, "home": home,
+                        # raw inputs, for the follow-up studies (measure_stack2)
+                        "mi": i, "mi2": r, "outs": (c or {}).get("outs") or {}, "th": th, "gap": g_})
     return out
 
 
