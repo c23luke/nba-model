@@ -39,7 +39,7 @@ def stale_snap(meta: dict, snap: dict, o: dict) -> bool:
     """A system bet placed under today's rules whose saved card text now says it wouldn't bet: that text is from
     after the bet, not from when we bet."""
     return (not meta.get("bet_snap") and (o.get("created_at") or "") >= RULES_LIVE_UTC
-            and o.get("system") not in ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN") and str(snap.get("why") or "").startswith("No bet"))
+            and o.get("system") not in ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE") and str(snap.get("why") or "").startswith("No bet"))
 
 
 def all_in(risk: float, to_win: float):
@@ -307,7 +307,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = "totals aren't bet now (S4 is tracking only)"
         elif r.get("under_rules"):
             pass        # the card applied today's players rule when this bet was placed (it was a BET then)
-        elif r["system"] not in ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN"):
+        elif r["system"] not in ("T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE"):
             if r.get("bet") == "total":
                 why = "totals aren't bet now"
             else:
@@ -348,7 +348,8 @@ def rules_now(rows: list[dict], agree=None) -> dict:
         # 2 units: MONEYBALL, and (from 2026-11-11) a T13 bet sized at $40 because it fades a thin roster
         # and (from 2026-11-11) a STACK bet sized at $40 because the players model and a system are among its flags.
         # 1.5 units ($30, from 2026-11-11): a system + players model 3+ bet against a thin roster.
-        target = (40.0 if r["system"] == "MONEYBALL" or (r["system"] in ("T13", "STACK") and r.get("target") == 40)
+        # (2026-11-12) a system bet against a thin roster is 2 units too: any bet sized at $40 when placed keeps it
+        target = (40.0 if r["system"] == "MONEYBALL" or r.get("target") == 40
                   else 30.0 if r.get("target") == 30 else 20.0)
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)

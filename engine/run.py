@@ -30,7 +30,7 @@ from . import boxscore
 from . import case as case_mod
 from . import cluster as cluster_mod
 
-PRICED = {113, 121, 122, 123, 124, 125, 130, 131, 132, 133, 134, 135}          # test systems that also get a live Kalshi price (the main 4 always do)
+PRICED = {113, 121, 122, 123, 124, 125, *range(130, 141)}          # test systems that also get a live Kalshi price (the main 4 always do)
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 SEASON_END = date.fromisoformat(os.environ.get("SEASON_END", "2027-04-11"))      # NBA release
 ALL_STAR = date.fromisoformat(os.environ.get("ALL_STAR", "2027-02-21"))          # All-Star Sunday
@@ -149,7 +149,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     # ---- 2a. this season's box scores (only games not stored yet)
     live, played, recent, results = {}, {}, {}, {}
     box_rows = []
-    x_pos, x_luck = {}, {}
+    x_pos, x_luck, x_sq = {}, {}, {}
     try:
         box_rows = store.load_player_games()
         # games with a 0-minute (coach's decision) row were parsed with DNPs; recent games without one are
@@ -195,7 +195,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             if key and hasattr(store, "load_state"):
                 from .prop_model import load_shots
                 from .situations import team_luck
-                x_luck = team_luck(load_shots(store, finals, sources.get_json, log), finals)
+                _shots = load_shots(store, finals, sources.get_json, log)
+                x_luck = team_luck(_shots, finals)
+                x_sq = situations_mod.team_sq(_shots, finals)
         except Exception as e:
             log.append(f"shooting luck: {str(e)[:120]}")
     except Exception as e:
@@ -297,7 +299,14 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         picks += situations_mod.system_x4_picks(g, picks)
         picks += situations_mod.pair_picks(g, picks, views.get(g.id), hs, at, row.get("home_spread"), o_hs)
+        picks += situations_mod.sq_pair_picks(g, picks, views.get(g.id), row.get("home_spread"), o_hs, x_sq)
         picks += situations_mod.stack_picks(g, picks, views.get(g.id), hs, at, row.get("home_spread"), o_hs, x_luck)
+        # forward tracking (2026-11-12): was this side betting against a thin roster? (sizes system bets / T13 at 2 units)
+        _th = (views.get(g.id) or {}).get("thin_share") or {}
+        for p in picks:
+            if p.bet == "spread" and _th:
+                me, them = ("home", "away") if p.side == g.home else ("away", "home")
+                p.meta["vs_thin"] = _th.get(them, 0) > _th.get(me, 0) + personnel_mod.THIN_EDGE
         keys = []
         for p in picks:
             prev = old.get(p.key, {})
@@ -368,7 +377,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                    or unplayed_before(g.away, g.game_date, games)}
     for k, p in old.items():
         if p["game_id"] in upcoming_ids and k not in seen_now and p.get("active"):
-            if p["game_id"] in waiting_ids and p["system"] < 300 and p["system"] not in (113, 130, 131, 132, 133, 134, 135):
+            if p["game_id"] in waiting_ids and p["system"] < 300 and p["system"] not in (113, *range(130, 141)):
                 # judged before a team's previous game finished: not a real pick (see unplayed_before)
                 pick_rows.append({**p, "active": False, "last_checked": now.isoformat(),
                                   "dropped_reason": "Judged before a team's previous game finished"})
@@ -795,7 +804,7 @@ def tracking(picks: list[dict]) -> dict:
     every pair), each group AND each system vs the players model in fine buckets, stacks + players model,
     and the players model by gap size and status. history (2 seasons, vs the open) sits next to each."""
     graded = [p for p in picks if p.get("result") and p.get("active")]
-    real = [p for p in graded if p["system"] < 300 and p["system"] not in (130, 131, 132, 133, 134, 135)]   # MONEYBALL and STACK are stacks
+    real = [p for p in graded if p["system"] < 300 and p["system"] not in range(130, 141)]   # MONEYBALL and STACK are stacks
     shadow = {p["game_id"]: p for p in graded if p["system"] == 301}
 
     def gap_for(gid, side):
@@ -989,7 +998,7 @@ def counts_today(p: dict, bars: dict, agree=None) -> bool:
     if not _counts_now(p):
         return False
     sid = p["system"]
-    if sid >= 300 or sid in (113, 130, 131, 132, 133, 134, 135):
+    if sid >= 300 or sid in (113, *range(130, 141)):
         return True
     if sid == 4:                         # S4: tracking only since 2026-11-03, still graded so it can earn its way back
         if not p.get("result"):
@@ -1047,11 +1056,42 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         passed today's rule, so every spread system pick left is one)."""
         seen = {}
         for p in sorted(graded, key=lambda p: p.get("first_seen") or ""):
-            if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, 130, 131, 132, 133, 134, 135):
+            if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, *range(130, 141)):
                 seen.setdefault((p["game_id"], p["side"]), p["result"])
         return _wl(seen.values())
+    def forward():
+        """FORWARD TRACKING, 2026-27 (Caden 2026-11-12): every bet type we bet, its size, its backtest and its record
+        this season every time its rule fired, whether or not it was the card's pick for that side. Graded at the last
+        line before tip (the players model alone: at the line it fired at), in units at -110."""
+        from .pricing import PAIR_REC, STACK_REC, MONEYBALL_REC, COMBO_REC
+        def side_once(ps):
+            seen = {}
+            for p in sorted(ps, key=lambda p: p.get("first_seen") or ""):
+                seen.setdefault((p["game_id"], p["side"]), p)
+            return list(seen.values())
+        sysp = [p for p in graded if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, *range(130, 141))]
+        openp = [p for p in picks if p.get("active") and not p.get("result") and p.get("line") is not None]
+        sys_open = [p for p in openp if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, *range(130, 141))]
+        def row(name, units, back, ps, open_ps):
+            r = _wl(p["result"] for p in ps)
+            return {"name": name, "units": units, "backtest": back, "w": r["w"], "l": r["l"], "p": r["p"],
+                    "win_pct": r["win_pct"], "units_won": round(r["units"] * units, 2), "open": len(open_ps)}
+        by = lambda sid, ps: [p for p in ps if p["system"] == sid]
+        thin = lambda ps: [p for p in ps if (p.get("meta") or {}).get("vs_thin")]
+        rows = [
+            row("MONEYBALL: 2+ systems + players model 3+", 2, f"{MONEYBALL_REC[0]}-{MONEYBALL_REC[1]} at the open", by(130, graded), by(130, openp)),
+            row("STACK: 6+ flags, or 5 with the players model and a system", 2, f"{STACK_REC[0]}-{STACK_REC[1]} (6+) / 46-26 (5+ with both)", by(131, graded), by(131, openp)),
+            row("Players model 4+ against a thin roster", 2, "40-17", thin(by(113, graded)), thin(by(113, openp))),
+            row("System + players model 3+ against a thin roster", 2, "22-9", thin(side_once(sysp)), thin(side_once(sys_open))),
+            row("System + players model 3+", 1, f"{COMBO_REC[0]}-{COMBO_REC[1]} at the open", side_once(sysp), side_once(sys_open)),
+            row("Players model alone 4+", 1, "217-157", by(113, graded), by(113, openp)),
+            row("SYS+X4: a system + X4 injury fade", 1, "42-18", by(132, graded), by(132, openp)),
+        ]
+        for sid, (w, l, what) in sorted(PAIR_REC.items()):
+            rows.append(row(f"{label(sid)}: {what}", 1, f"{w}-{l}", by(sid, graded), by(sid, openp)))
+        return rows
     def live_wl(row):
-        if row.get("bet") == "spread" and row["system"] < 300 and row["system"] not in (113, 130, 131, 132, 133, 134, 135):
+        if row.get("bet") == "spread" and row["system"] < 300 and row["system"] not in (113, *range(130, 141)):
             return combo_wl()
         return _wl(p["result"] for p in graded if p["system"] == row["system"])
     # records: graded picks already follow today's rule; open picks count as "open" only if the card would bet them
@@ -1133,6 +1173,7 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         "tracking": tracking(picks), "stacks": live_stacks(live),
         "report_card": report_card(),
         "combo_live": combo_wl(),                 # this season's "system + players model 3+" bets, one per side
+        "forward": forward(),                     # every bet type we bet, tracked forward this season
         "shadow_systems": _records(SHADOW_SYSTEMS, picks),
         "generated_at": now.isoformat(), "today": t, "line_source": source,
         "odds_api": usage, "notes": log, "slate": slate,

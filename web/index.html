@@ -271,7 +271,7 @@ const units = u => `<span class="n ${u > 0 ? "pos" : u < 0 ? "neg" : ""}">${u > 
 let BOARD = {};
 const SEASONS = ["2024-25", "2025-26"];
 const rc = () => BOARD.report_card || {};
-const COMBO_TAGS = ["T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN"];
+const COMBO_TAGS = ["T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE"];
 const pctOf = r => r && (r.w + r.l) ? Math.round(r.w / (r.w + r.l) * 100) : null;
 const recCell = r => r && (r.w + r.l) ? `<b>${wl(r)}</b><span class="pc muted"> ${pctOf(r)}%</span>` : `<span class="muted">—</span>`;
 const recCellTone = r => { const p = pctOf(r); return p == null || r.w + r.l < 20 ? "" : p >= 55 ? "good" : p < 52.4 ? "bad" : ""; };
@@ -374,7 +374,7 @@ function plainWhy(o) {
     else S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
   if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet"
-    : o.thinSystem ? ` (1.5 units) because ${esc(o.thinSystem.team)} leans on players the model barely knows (${Math.round(o.thinSystem.share * 100)}% of its minutes vs ${Math.round(o.thinSystem.ours * 100)}%): a system plus the player ratings went 22-9 betting against teams like that`
+    : o.thinSystem ? ` (2 units) because ${esc(o.thinSystem.team)} leans on players the model barely knows (${Math.round(o.thinSystem.share * 100)}% of its minutes vs ${Math.round(o.thinSystem.ours * 100)}%): a system plus the player ratings went 22-9 betting against teams like that`
     : o.tag === "STACK" ? " (2 units): every STACK bet is 2 units"
     : o.thinFade ? ` (2 units) because ${esc(o.thinFade.team)} leans on players the model barely knows (${Math.round(o.thinFade.share * 100)}% of its minutes vs ${Math.round(o.thinFade.ours * 100)}%): the players model went 40-17 betting against teams like that` : ""}.`);
   const N = o.now;
@@ -393,7 +393,10 @@ function plainWhy(o) {
 }
 
 const PAIR_TXT = { "X4+B2B": ["X4 + back-to-back", "42-18 (70%)"], "X2+B2B": ["X2 + back-to-back", "62-31 (67%)"],
-  "MOVE+THIN": ["line move + unknown players", "79-44 (64%)"] };
+  "MOVE+THIN": ["line move + unknown players", "79-44 (64%)"],
+  "RIM+PM": ["rim matchup + player ratings", "36-14 (72%)"], "SQ+X3": ["better by the shots + X3", "29-12 (71%)"],
+  "UNLUCKY+X4": ["unlucky by the shots + X4", "30-15 (67%)"], "SQ+THIN": ["better by the shots + unknown players", "66-37 (64%)"],
+  "3HOT+MOVE": ["their 3s running hot + line move", "91-58 (61%)"] };
 function whyHead(tag, tags, gap, side) {
   if (PAIR_TXT[tag]) return `${esc(tag)}: ${PAIR_TXT[tag][0]} on ${esc(side)}`;
   const sys = [...new Set(tags)].filter(t => t && t !== "T13" && !COMBO_TAGS.includes(t));
@@ -404,7 +407,7 @@ function whyHead(tag, tags, gap, side) {
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL, STACK with the players model and a system, and players-model bets against a thin roster: $40; a system bet against a thin roster: $30)";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20, except 2-unit bets at $40: MONEYBALL, STACK, and the players model or a system bet against a thin roster";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];
@@ -796,8 +799,17 @@ function renderLab(b) {
           : (x.kind === "jump_hist" || x.kind === "hidden") ? `In ${x.n_wo} games without ${esc(x.split_of)} he played ${x.min_wo} minutes (${x.min_with} with him).`
           : `Players model gives him ${x.model_min} minutes (averages ${x.mpg}).`}
         Our number ${x.proj_stat}${x.clv != null ? `, line moved ${x.clv > 0 ? "+" : ""}${x.clv} our way` : ""}.</div></div><div></div></div>`).join("") : "");
+  const FW = b.forward || [];
+  const fwT = FW.reduce((a, x) => ({w: a.w + x.w, l: a.l + x.l, u: a.u + (x.units_won || 0), o: a.o + x.open}), {w: 0, l: 0, u: 0, o: 0});
+  const fwd = !FW.length ? `<div class="muted">Fills in on the next model run.</div>` :
+    `<p class="muted" style="font-size:14px">Every kind of bet we make, tracked forward from this season: each time its rule fires, whether or not it was the bet we took for that side. Units at -110 (a 2-unit bet wins or loses 2).</p>
+     <table><tr><th>Bet</th><th class="r">Size</th><th class="r">Backtest</th><th class="r">This season</th><th class="r">Win %</th><th class="r">Units</th><th class="r">Open</th></tr>` +
+    FW.map(x => `<tr><td>${esc(x.name)}</td><td class="r">${x.units}u</td><td class="r">${esc(x.backtest)}</td>
+      <td class="r">${x.w}-${x.l}${x.p ? `-${x.p}` : ""}</td><td class="r">${x.win_pct == null ? "—" : Math.round(x.win_pct * 100) + "%"}</td>
+      <td class="r">${x.w + x.l ? `${x.units_won > 0 ? "+" : ""}${x.units_won}u` : "—"}</td><td class="r">${x.open || ""}</td></tr>`).join("") + `</table>`;
   const sc = b.scoring;
   $("tab-lab").innerHTML = `<h2>Model lab</h2><p class="lede">Everything the model tracks behind the card. Open a section to dig in.</p>` +
+    box("Forward tracking, 2026-27", FW.length ? `${FW.length} bet types · ${fwT.w}-${fwT.l} so far` : "every bet type we make", fwd, true) +
     box("Testing side", TS.length ? `${TS.length} ideas on paper, ${TS.filter(x => x.ready).length} ready` : "tracking only", tstAll) +
     box("Injury desk", D ? `${D.events} news events, ${D.paper.bets} paper bets, tracking only` : "tracking only", desk) +
     box("Today and tomorrow", `${(b.slate || []).length} games, lines from ${esc(b.line_source)}`, slate) +

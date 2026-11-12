@@ -213,3 +213,98 @@ def pair_picks(game, picks: list, view, hs, at, home_spread, first_home_spread) 
                 out.append(Pick(135, game.id, "spread", side, line,
                                 fl + ["2 seasons at the close: 79-44 (64.2%; 36-17 / 43-27)"], {"flags": fl}))
     return out
+
+
+# ---------------------------------------------------------------- shot-quality pairs (Caden 2026-11-12)
+# cut-offs from engine/measure_stack2.py (both seasons pooled): top 15% / bottom 15% / top 30%
+SQ_DIFF, SQ_UNLUCKY, SQ_3HOT, SQ_RIM, SQ_DRIM = 6.843, -7.194, 4.668, 0.284, 0.282
+THREES = ("corner3", "above3")
+
+
+def team_sq(shots: dict, finals: list) -> dict[str, dict]:
+    """team -> shot-quality read from this season's finished games (the same numbers as engine/measure_stack2.py):
+    xnet10   what its shots were worth minus what it allowed, a game, last 10 (league zone rates, season to date)
+    luck_net10  real margin minus that, a game, last 10 (negative = results ran behind the shots)
+    three_luck5 made-3 points above what its 3s were worth, a game, last 5
+    rrim / drim  share of its shots / of its opponents' shots at the rim, last 10. Needs 5+ games with shots."""
+    order = sorted((g for g in finals if str(g.id) in shots), key=lambda g: (g.game_date, str(g.id)))
+    zl = {z: [0, 0] for z in ZONES}
+    hist: dict[str, list] = {}
+    for g in order:
+        rows = counts_to_shots(shots[str(g.id)])
+        L = {z: (v[1] / v[0] if v[0] else 0.0) for z, v in zl.items()}
+        per = {t: {"xf": 0.0, "af": 0.0, "z": {z: 0 for z in ZONES}, "t3": 0.0} for t in (g.home, g.away)}
+        for team, _, z, pts in rows:
+            if team in per:
+                per[team]["xf"] += L[z]; per[team]["af"] += pts; per[team]["z"][z] += 1
+                if z in THREES:
+                    per[team]["t3"] += pts - L[z]
+        if (sum(v[0] for v in zl.values()) > 2000 and all(sum(per[t]["z"].values()) >= 50 for t in per)
+                and g.home_score is not None and g.away_score is not None):
+            sc = {g.home: g.home_score, g.away: g.away_score}
+            for team, opp in ((g.home, g.away), (g.away, g.home)):
+                a, b = per[team], per[opp]
+                hist.setdefault(team, []).append({"xf": a["xf"], "xa": b["xf"], "af": a["af"], "aa": b["af"],
+                                                  "margin": sc[team] - sc[opp], "zf": a["z"], "za": b["z"], "t3": a["t3"]})
+        for _, _, z, pts in rows:
+            zl[z][0] += 1; zl[z][1] += pts
+    out = {}
+    for team, h in hist.items():
+        h = h[-10:]
+        if len(h) < 5:
+            continue
+        tf = sum(sum(x["zf"].values()) for x in h) or 1
+        ta = sum(sum(x["za"].values()) for x in h) or 1
+        out[team] = {"games": len(h),
+                     "xnet10": sum(x["xf"] - x["xa"] for x in h) / len(h),
+                     "luck_net10": sum((x["af"] - x["xf"]) - (x["aa"] - x["xa"]) for x in h) / len(h),
+                     "three_luck5": sum(x["t3"] for x in h[-5:]) / len(h[-5:]),
+                     "rrim": sum(x["zf"]["rim"] for x in h) / tf, "drim": sum(x["za"]["rim"] for x in h) / ta}
+    return out
+
+
+def sq_pair_picks(game, picks: list, view, home_spread, first_home_spread, sq: dict) -> list[Pick]:
+    """The five shot-quality pairs (136-140), 1 unit each. Every flag says its own number."""
+    if home_spread is None or not sq:
+        return []
+    out = []
+    for side in (game.home, game.away):
+        home = side == game.home
+        opp = game.away if home else game.home
+        f, o = sq.get(side), sq.get(opp)
+        if not f or not o:
+            continue
+        line = home_spread if home else -home_spread
+        on = {p.system: p for p in picks if p.bet == "spread" and p.side == side}
+        gap = (view or {}).get("gap")
+        pm = gap is not None and (gap if home else -gap) >= 3
+        th = (view or {}).get("thin_share") or {}
+        me, them = ("home", "away") if home else ("away", "home")
+        thin = bool(th) and th.get(them, 0) > th.get(me, 0) + 0.05
+        mv = None if first_home_spread is None else ((first_home_spread - home_spread) if home else (home_spread - first_home_spread))
+        better = f["xnet10"] - o["xnet10"]
+        T = {
+            "rim": (f["rrim"] >= SQ_RIM and o["drim"] >= SQ_DRIM,
+                    f"{side} takes {f['rrim']:.0%} of its shots at the rim and {opp} allows {o['drim']:.0%} there (last 10)"),
+            "pm": (pm, f"players model likes {side} by {abs(gap or 0):.1f}"),
+            "better": (better >= SQ_DIFF, f"{side}'s shots have been worth {better:+.1f} a game more than {opp}'s, "
+                                          f"net of what each allows (last 10)"),
+            "unlucky": (f["luck_net10"] <= SQ_UNLUCKY, f"{side}'s real margins ran {f['luck_net10']:+.1f} a game behind "
+                                                       f"what its shots said (last 10)"),
+            "hot3": (o["three_luck5"] >= SQ_3HOT, f"{opp} has made 3s worth {o['three_luck5']:+.1f} a game more than "
+                                                  f"its 3s were worth (last 5)"),
+            "thin": (thin, f"{opp} leans on players the model barely knows ({th.get(them, 0):.0%} of its minutes vs "
+                           f"{th.get(me, 0):.0%})"),
+            "move": (mv is not None and mv >= 1, f"line moved {mv or 0:g} toward {side} since the first line"),
+        }
+        if 303 in on:
+            T["x3"] = (True, on[303].evidence[0])
+        if 304 in on:
+            T["x4"] = (True, on[304].evidence[0])
+        for sid, a, b, rec in ((136, "rim", "pm", "36-14 (72.0%; 24-8 / 12-6)"), (137, "better", "x3", "29-12 (70.7%; 14-7 / 15-5)"),
+                               (138, "unlucky", "x4", "30-15 (66.7%; 18-9 / 12-6)"), (139, "better", "thin", "66-37 (64.1%; 35-15 / 31-22)"),
+                               (140, "hot3", "move", "91-58 (61.1%; 39-24 / 52-34)")):
+            if T.get(a, (False,))[0] and T.get(b, (False,))[0]:
+                fl = [T[a][1], T[b][1]]
+                out.append(Pick(sid, game.id, "spread", side, line, fl + [f"2 seasons at the close: {rec}"], {"flags": fl}))
+    return out

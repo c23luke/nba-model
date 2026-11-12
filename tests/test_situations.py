@@ -113,3 +113,21 @@ def test_pair_bets_fire_only_when_both_edges_are_on_the_same_side():
                                                                       (135, "MOVE+THIN", "BOS")]
     assert all(len(p.meta["flags"]) == 2 for p in ps)
     assert pair_picks(G, [x4, x2], thin, st(old), st(old), -4.0, -3.0) == []  # no back-to-back, move only 1
+
+
+def test_shot_quality_pairs_fire_only_with_both_flags_and_say_their_numbers():
+    from engine.situations import sq_pair_picks
+    from engine.systems import Pick, label
+    bos = {"games": 10, "xnet10": 5.0, "luck_net10": -8.0, "three_luck5": 0.0, "rrim": 0.30, "drim": 0.25}
+    nyk = {"games": 10, "xnet10": -3.0, "luck_net10": 2.0, "three_luck5": 5.0, "rrim": 0.25, "drim": 0.30}
+    x4 = Pick(304, "g", "spread", "BOS", -4.0, ["CHI is missing 2 rotation players at different positions"])
+    x3 = Pick(303, "g", "spread", "BOS", -4.0, ["CHI is missing 2 fresh rotation players"])
+    view = {"gap": 3.5, "thin_share": {"home": 0.0, "away": 0.2}}
+    ps = sq_pair_picks(G, [x3, x4], view, -4.0, -3.0, {"BOS": bos, "CHI": nyk})
+    got = sorted((label(p.system), p.side) for p in ps)
+    # rim 30% / 30% + players 3.5; better by 8.0 + X3; unlucky -8.0 + X4; better + thin; CHI 3s +5.0 + moved 1
+    assert got == [("3HOT+MOVE", "BOS"), ("RIM+PM", "BOS"), ("SQ+THIN", "BOS"), ("SQ+X3", "BOS"), ("UNLUCKY+X4", "BOS")]
+    assert all(len(p.meta["flags"]) == 2 for p in ps)
+    rim = next(p for p in ps if label(p.system) == "RIM+PM")
+    assert "30% of its shots at the rim" in rim.meta["flags"][0] and "by 3.5" in rim.meta["flags"][1]
+    assert sq_pair_picks(G, [], {"gap": 0.0}, -4.0, -4.0, {"BOS": bos, "CHI": nyk}) == []   # no second flag anywhere

@@ -146,6 +146,24 @@ TEST_SYSTEMS.update({
           "bet": "spread", "idea": "stack", "rule": "The spread moved 2+ points toward our side since the first line AND "
           "the other team gets 5+ points more of its minutes from players the model barely knows. 79-44 (64.2%; "
           "36-17 / 43-27). Forms late (needs the move). $20."},
+    # five shot-quality pairs (Caden 2026-11-12: "we definitely need to bet these"), 1 unit each, no players-model
+    # read needed except RIM+PM. engine/measure_stack2.py, 2 seasons at the close. Best of 111 pairs searched, and the
+    # shot-quality cut-offs were set on both seasons: expect them a few points lower live.
+    136: {"win_est": 0.575, "name": "RIM+PM: rim matchup + the players model 3+", "bet": "spread", "idea": "stack",
+          "rule": "We take a top-30% share of our shots at the rim (last 10) AND they allow a top-30% share at the rim, "
+          "AND the players model likes us by 3+. 36-14 (72.0%; 24-8 / 12-6). $20."},
+    137: {"win_est": 0.575, "name": "SQ+X3: better by the shots + X3", "bet": "spread", "idea": "stack",
+          "rule": "Our shot-quality margin (what our shots were worth minus what we allowed, last 10) beats theirs by "
+          "6.8+ AND X3 fires (they're missing 2+ fresh rotation players). 29-12 (70.7%; 14-7 / 15-5). $20."},
+    138: {"win_est": 0.575, "name": "UNLUCKY+X4: unlucky by the shots + X4", "bet": "spread", "idea": "stack",
+          "rule": "Our real margins ran 7.2+ a game below our shot-quality margins (last 10) AND X4 fires. "
+          "30-15 (66.7%; 18-9 / 12-6). $20."},
+    139: {"win_est": 0.575, "name": "SQ+THIN: better by the shots + they lean on unknown players", "bet": "spread",
+          "idea": "stack", "rule": "Better by the shots (6.8+) AND the other team gets 5+ points more of its minutes from "
+          "players the model barely knows. 66-37 (64.1%; 35-15 / 31-22). $20."},
+    140: {"win_est": 0.575, "name": "3HOT+MOVE: they've hit 3s way above their value + the line moved our way",
+          "bet": "spread", "idea": "stack", "rule": "Their made 3s ran 4.7+ points a game above what their 3s were "
+          "worth (last 5) AND the spread moved 1+ toward us. 91-58 (61.1%; 39-24 / 52-34). Forms late. $20."},
     125: {"win_est": 0.532, "name": "Fade the tanker, last 3 weeks", "bet": "spread", "idea": "late season",
           "rule": "Last 3 weeks of the season, opponent is .350 or worse after 40+ games (and we aren't) → bet us. "
                   "6 seasons: 212-164 (56.4%) vs the close"},
@@ -158,7 +176,7 @@ TEST_SYSTEMS[112]["win_est"] = 0.525      # T12: 86-70 (55.1%)
 # FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
 #   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
 # T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
-FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125, 130, 131, 132, 133, 134, 135}
+FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125, *range(130, 141)}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
@@ -188,7 +206,9 @@ EARLY_SYSTEMS = {
 MONEYBALL = 130
 STACK = 131
 SYS_X4 = 132
-PAIRS = {133: "X4+B2B", 134: "X2+B2B", 135: "MOVE+THIN"}
+PAIRS = {133: "X4+B2B", 134: "X2+B2B", 135: "MOVE+THIN",
+         # shot-quality pairs (Caden 2026-11-12), engine/measure_stack2.py
+         136: "RIM+PM", 137: "SQ+X3", 138: "UNLUCKY+X4", 139: "SQ+THIN", 140: "3HOT+MOVE"}
 COMBO_BETS = (MONEYBALL, STACK, SYS_X4, *PAIRS)       # bets built from other picks: never count as "a system"
 
 
