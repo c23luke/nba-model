@@ -58,6 +58,9 @@ THIN_FADE_TO_WIN = 40
 # close over 2 seasons (12-3 / 10-6; engine/measure_stack_flags.py, pm3 + sys + thin). Too few bets for 2 units.
 THIN_SYSTEM_TO_WIN = 30
 SYS_X4_REC = (42, 18)       # SYS+X4, 2 seasons at the close
+# three more pairs Caden added Nov 11 (engine/measure_stack_flags.py, 2 seasons at the close), 1 unit each
+PAIR_REC = {133: (42, 18, "X4 + the opponent on a back-to-back"), 134: (62, 31, "X2 + the opponent on a back-to-back"),
+            135: (79, 44, "line moved 2+ our way + the opponent leans on players the model barely knows")}
 
 
 def thin_fade(pick: dict, slate: list[dict]) -> dict | None:
@@ -71,7 +74,7 @@ def thin_fade(pick: dict, slate: list[dict]) -> dict | None:
 def thin_system(pick: dict, slate: list[dict]) -> dict | None:
     """Same check for a system + players model 3+ bet (not MONEYBALL / STACK / SYS+X4 / T13)."""
     sid = pick.get("system")
-    if sid is None or sid >= 300 or sid in (113, 130, 131, 132) or pick.get("bet") != "spread":
+    if sid is None or sid >= 300 or sid in (113, 130, 131, 132, 133, 134, 135) or pick.get("bet") != "spread":
         return None
     return _thin(pick, slate)
 
@@ -172,7 +175,7 @@ def eligible(p: dict, slate: list[dict]) -> tuple[bool, str | None]:
     sid = p["system"]
     if sid >= 300:
         return False, "tracking only"
-    if sid in (113, 130, 131, 132):
+    if sid in (113, 130, 131, 132, 133, 134, 135):
         return True, None
     if p["bet"] == "total":
         # Caden 2026-11-03: only bets that hit a lot. S4 (56%) is a small-edge grind, so it's tracking only now.
@@ -250,9 +253,12 @@ def history(pick: dict, slate: list[dict]) -> dict | None:
         return {"w": STACK_REC[0], "l": STACK_REC[1], "label": "2 seasons at the close: 5+ flags on one side"}
     if sid == 132:
         return {"w": SYS_X4_REC[0], "l": SYS_X4_REC[1], "label": "2 seasons at the close: a system + the X4 injury fade"}
+    if sid in PAIR_REC:
+        w, l, what = PAIR_REC[sid]
+        return {"w": w, "l": l, "label": f"2 seasons at the close: {what}"}
     if sid == 4:
         return {"w": S4_REC[0], "l": S4_REC[1], "label": "2 seasons at the open, total above the season average"}
-    if pick.get("bet") == "spread" and sid not in (113, 130, 131, 132) and sid < 300:
+    if pick.get("bet") == "spread" and sid not in (113, 130, 131, 132, 133, 134, 135) and sid < 300:
         return {"w": COMBO_REC[0], "l": COMBO_REC[1], "label": "2 seasons at the open: a system + players model 3+"}
     if group(sid) == "EARLY":
         h = players_history("EARLY", EARLY_STACK_MIN_GAP)
@@ -313,6 +319,9 @@ PRICE_WIN = {
     130: _price_win(*MONEYBALL_REC),               # MONEYBALL -> 56.4%
     131: _price_win(*STACK_REC),                   # STACK     -> 56.9%
     132: _price_win(*SYS_X4_REC),                  # SYS+X4    -> 57.5%
+    133: _price_win(42, 18),                       # X4+B2B    -> 57.5%
+    134: _price_win(62, 31),                       # X2+B2B    -> 58.0%
+    135: _price_win(79, 44),                       # MOVE+THIN -> 57.8%
 }
 COMBO_WIN = _price_win(*COMBO_REC)                 # any one system + players model 3+ -> 56.1%
 
@@ -322,7 +331,7 @@ def win_and_line(pick: dict, slate: list[dict]) -> tuple[float | None, float | N
     the personnel case is rebuilt every run at the CURRENT market line, so a T13 bet that locked at an
     earlier number is shopped from where the market is now, not from the old number."""
     sid = pick["system"]
-    if pick.get("bet") == "spread" and sid not in (113, 130, 131, 132) and sid < 300:
+    if pick.get("bet") == "spread" and sid not in (113, 130, 131, 132, 133, 134, 135) and sid < 300:
         # a spread system is only ever bet as "system + players model 3+": priced at that combo's record
         ok, _ = eligible(pick, slate)
         return (COMBO_WIN, pick.get("line")) if ok else (None, None)
@@ -539,7 +548,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
     # ONE card bet per game side (Caden 2026-11-02): MONEYBALL first, then a system + players-model combo, then
     # the players model alone. The other systems on that side ride along in "with".
     # STACK (5+ flags) after MONEYBALL ($40), ahead of a single system + players model (both $20)
-    rank = lambda p: 0 if p["system"] == 130 else 0.5 if p["system"] == 131 else 0.75 if p["system"] == 132 else 2 if p["system"] == 113 else 1
+    rank = lambda p: 0 if p["system"] == 130 else 0.5 if p["system"] == 131 else 0.75 if p["system"] in (132, 133, 134, 135) else 2 if p["system"] == 113 else 1
     gorder = {"OG": 0, "FAV": 1, "EARLY": 2, "TEST": 3}
     chosen, skipped = {}, {}
     for p in sorted(live, key=lambda p: (rank(p), gorder.get(group(p["system"]), 4), p["system"])):
@@ -609,7 +618,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
         edge = best["ev"] if best else win - BREAK_EVEN_110
         from .systems import EARLY_SYSTEMS
         name = (SYSTEMS.get(p["system"]) or TEST_SYSTEMS.get(p["system"]) or EARLY_SYSTEMS.get(p["system"]) or {}).get("name", "")
-        if p["bet"] == "spread" and p["system"] not in (113, 130, 131, 132) and pg is not None:
+        if p["bet"] == "spread" and p["system"] not in (113, 130, 131, 132, 133, 134, 135) and pg is not None:
             name += f" + players model agrees by {pg:g}"
         k = p.get("kalshi") or {}
         rows.append({"key": p["key"], "label": p["label"], "away": p["away"], "home": p["home"],
@@ -627,7 +636,7 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                                THIN_SYSTEM_TO_WIN if thin_system(p, slate) else TO_WIN,
                      "thin_system": thin_system(p, slate),
                      "thin_fade": thin_fade(p, slate),
-                     "flags": (p.get("meta") or {}).get("flags") if p["system"] == 131 else None,
+                     "flags": (p.get("meta") or {}).get("flags") if p["system"] in (131, 132, 133, 134, 135) else None,
                      # what an order placer needs to price ANY number on this bet (e.g. P2P offers)
                      "model": {"win0": round(win, 4), "base": base, "bet": p["bet"], "side": p["side"],
                                "sd": TOTAL_SD if p["bet"] == "total" else SPREAD_SD,

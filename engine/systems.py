@@ -132,6 +132,18 @@ TEST_SYSTEMS.update({
           "idea": "stack", "rule": "A card system fires on a side AND the other team is missing 2+ rotation players at "
                   "different positions (1+ of them fresh). 2 seasons at the close: 42-18 (70.0%; 22-10 / 20-8). "
                   "No players-model read needed. Sized to win $20."},
+    # three pairs Caden added Nov 11 ("add"), 1 unit each, no players-model read needed. 2 seasons at the close
+    # (engine/measure_stack_flags.py). Best pairs out of 68 searched: expect a few points lower live.
+    133: {"win_est": 0.575, "name": "X4+B2B: fade a team missing 2+ players at different positions, on a back-to-back",
+          "bet": "spread", "idea": "stack", "rule": "X4 fires (the other team missing 2+ rotation players at different "
+          "positions, 1+ fresh) AND that team is on a back-to-back and we aren't. 42-18 (70.0%; 23-9 / 19-9). $20."},
+    134: {"win_est": 0.580, "name": "X2+B2B: fade a team missing 2+ players, on a back-to-back", "bet": "spread",
+          "idea": "stack", "rule": "X2 fires (the other team missing 2+ rotation players, 1+ fresh) AND that team is on a "
+          "back-to-back and we aren't. 62-31 (66.7%; 33-16 / 29-15). $20."},
+    135: {"win_est": 0.578, "name": "MOVE+THIN: line moved 2+ our way against a team leaning on unknown players",
+          "bet": "spread", "idea": "stack", "rule": "The spread moved 2+ points toward our side since the first line AND "
+          "the other team gets 5+ points more of its minutes from players the model barely knows. 79-44 (64.2%; "
+          "36-17 / 43-27). Forms late (needs the move). $20."},
     125: {"win_est": 0.532, "name": "Fade the tanker, last 3 weeks", "bet": "spread", "idea": "late season",
           "rule": "Last 3 weeks of the season, opponent is .350 or worse after 40+ games (and we aren't) → bet us. "
                   "6 seasons: 212-164 (56.4%) vs the close"},
@@ -144,7 +156,7 @@ TEST_SYSTEMS[112]["win_est"] = 0.525      # T12: 86-70 (55.1%)
 # FAV = held up when replayed on 2024-25 + 2025-26 (engine/backtest_og.py, graded vs the close):
 #   T2 55-43 (56%, both seasons 56%), T12 86-70 (55%, both seasons 55%), T13 (opening-line test).
 # T1 3-4, T3 13-14, T10 32-36 did not → moved to TEST (2026-10-20).
-FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125, 130, 131, 132}
+FAVORITES = {102, 112, 113, 121, 122, 123, 124, 125, 130, 131, 132, 133, 134, 135}
 
 
 # Early-season systems: only run in the first 2-3 weeks, while books are still pricing
@@ -174,6 +186,8 @@ EARLY_SYSTEMS = {
 MONEYBALL = 130
 STACK = 131
 SYS_X4 = 132
+PAIRS = {133: "X4+B2B", 134: "X2+B2B", 135: "MOVE+THIN"}
+COMBO_BETS = (MONEYBALL, STACK, SYS_X4, *PAIRS)       # bets built from other picks: never count as "a system"
 
 
 def label(system: int) -> str:
@@ -183,6 +197,8 @@ def label(system: int) -> str:
         return "STACK"
     if system == SYS_X4:
         return "SYS+X4"
+    if system in PAIRS:
+        return PAIRS[system]
     if system >= 300:
         return f"X{system - 300}"
     if system >= 200:
@@ -567,7 +583,7 @@ def evaluate_moneyball(game: Game, picks: list[Pick], view: dict | None) -> list
     out = []
     for side, sign in ((game.home, 1), (game.away, -1)):
         ps = [p for p in picks if p.bet == "spread" and p.side == side and p.line is not None
-              and p.system < 300 and p.system not in (113, MONEYBALL, STACK, SYS_X4)]
+              and p.system < 300 and p.system not in (113, *COMBO_BETS)]
         systems = sorted({p.system for p in ps})
         worst = min(sign * g for g in gaps)
         if len(systems) >= 2 and worst >= 3:

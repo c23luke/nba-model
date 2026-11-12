@@ -95,7 +95,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
                 luck: dict) -> list[str]:
     """Every flag on one side of a game, each with its own evidence. The SAME flags, counted the same way, as
     engine/measure_stack_flags.py (sys + sys2, move1 + move2 and x2 / x3 / x4 each count)."""
-    from .systems import MONEYBALL, STACK, SYS_X4
+    from .systems import COMBO_BETS
     home = side == game.home
     opp = game.away if home else game.home
     out = []
@@ -103,7 +103,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
     if gap is not None and (gap if home else -gap) >= 3:
         out.append(f"players model likes {side} by {abs(gap):.1f}")
     sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == side and p.system < 300
-                   and p.system not in (113, 301, MONEYBALL, STACK, SYS_X4)})
+                   and p.system not in (113, 301, *COMBO_BETS)})
     if sysd:
         out.append(f"{len(sysd)} card system{'s' if len(sysd) > 1 else ''} on {side}")
     if len(sysd) >= 2:
@@ -159,16 +159,57 @@ def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread,
 def system_x4_picks(game, picks: list) -> list[Pick]:
     """SYS+X4 (132), a card bet: a card system on a side AND X4 (the other team missing 2+ rotation players at different
     positions) on that same side. 42-18 (70.0%) at the close over 2 seasons (Caden 2026-11-11)."""
-    from .systems import MONEYBALL, STACK, SYS_X4, SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, label
+    from .systems import COMBO_BETS, SYS_X4, SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, label
     names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
     out = []
     for x4 in [p for p in picks if p.system == 304 and p.bet == "spread"]:
         sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == x4.side and p.system < 300
-                       and p.system not in (113, MONEYBALL, STACK, SYS_X4)})
+                       and p.system not in (113, *COMBO_BETS)})
         if sysd:
             out.append(Pick(SYS_X4, game.id, "spread", x4.side, x4.line,
                             [f"{label(s)} ({names.get(s, {}).get('name', '')}) fired on {x4.side}" for s in sysd]
                             + list(x4.evidence)
                             + ["2 seasons at the close: a system + this injury fade went 42-18 (70.0%; 22-10 / 20-8)"],
                             {"systems": [label(s) for s in sysd]}))
+    for p in out:
+        p.meta["flags"] = p.evidence[:-1]
+    return out
+
+
+def _b2b_edge(game, side, hs, at):
+    """The other team is on a back-to-back and this side isn't (the stack study's opp_b2b flag)."""
+    home = side == game.home
+    so, sm = (at, hs) if home else (hs, at)
+    lgo, lgm = getattr(so, "last_game", None), getattr(sm, "last_game", None)
+    return bool(lgo and (game.game_date - lgo.game_date).days == 1
+                and not (lgm and (game.game_date - lgm.game_date).days == 1))
+
+
+def pair_picks(game, picks: list, view, hs, at, home_spread, first_home_spread) -> list[Pick]:
+    """Three pairs from the stack study, bet at 1 unit (Caden 2026-11-11). Each flag is listed with its reason.
+    133 X4+B2B 42-18, 134 X2+B2B 62-31, 135 MOVE+THIN 79-44 (2 seasons at the close)."""
+    if home_spread is None:
+        return []
+    out = []
+    for side in (game.home, game.away):
+        home = side == game.home
+        opp = game.away if home else game.home
+        line = home_spread if home else -home_spread
+        on = {p.system: p for p in picks if p.bet == "spread" and p.side == side}
+        b2b = _b2b_edge(game, side, hs, at)
+        b2b_txt = f"{opp} is on a back-to-back, {side} isn't"
+        for sid, xs, rec in ((133, 304, "42-18 (70.0%; 23-9 / 19-9)"), (134, 302, "62-31 (66.7%; 33-16 / 29-15)")):
+            if xs in on and b2b:
+                fl = [on[xs].evidence[0], b2b_txt]
+                out.append(Pick(sid, game.id, "spread", side, line,
+                                fl + [f"2 seasons at the close: {rec}"], {"flags": fl}))
+        th = (view or {}).get("thin_share") or {}
+        me, them = ("home", "away") if home else ("away", "home")
+        if first_home_spread is not None and th and th.get(them, 0) > th.get(me, 0) + 0.05:
+            mv = (first_home_spread - home_spread) if home else (home_spread - first_home_spread)
+            if mv >= 2:
+                fl = [f"line moved {mv:g} toward {side} since the first line",
+                      f"{opp} leans on players the model barely knows ({th[them]:.0%} of its minutes vs {th.get(me, 0):.0%})"]
+                out.append(Pick(135, game.id, "spread", side, line,
+                                fl + ["2 seasons at the close: 79-44 (64.2%; 36-17 / 43-27)"], {"flags": fl}))
     return out

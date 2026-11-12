@@ -271,6 +271,7 @@ const units = u => `<span class="n ${u > 0 ? "pos" : u < 0 ? "neg" : ""}">${u > 
 let BOARD = {};
 const SEASONS = ["2024-25", "2025-26"];
 const rc = () => BOARD.report_card || {};
+const COMBO_TAGS = ["T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN"];
 const pctOf = r => r && (r.w + r.l) ? Math.round(r.w / (r.w + r.l) * 100) : null;
 const recCell = r => r && (r.w + r.l) ? `<b>${wl(r)}</b><span class="pc muted"> ${pctOf(r)}%</span>` : `<span class="muted">—</span>`;
 const recCellTone = r => { const p = pctOf(r); return p == null || r.w + r.l < 20 ? "" : p >= 55 ? "good" : p < 52.4 ? "bad" : ""; };
@@ -290,7 +291,7 @@ function playersSeason(bucket) {
 // tags: every system on this side; gap: players model points on this side (null = no read)
 function whyBets(tags, gap, side, bet) {
   // totals: only S4 is even tracked as a candidate, so other total systems don't belong behind a total
-  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && t !== "SYS+X4" && (bet !== "total" || t === "S4"));
+  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && !COMBO_TAGS.includes(t) && (bet !== "total" || t === "S4"));
   const rows = [];
   for (const t of sys) {
     const p3 = t !== "S4" && (R.systems_p3 || {})[t];
@@ -328,7 +329,7 @@ const amerOf = p => p > 0 && p < 1 ? (p <= 0.5 ? "+" + Math.round(100 * (1 - p) 
 function plainWhy(o) {
   // o: {tag, tags, gap, side, bet, line (number we hold or the card's), market (line now), price (cost per $1), ev, toWin, away, home}
   const total = o.bet === "total";
-  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && t !== "SYS+X4" && (!total || t === "S4"));
+  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && !COMBO_TAGS.includes(t) && (!total || t === "S4"));
   const who = total ? `the ${o.side.toLowerCase()} in ${team(o.away)} at ${team(o.home)}` : `the ${team(o.side)}`;
   const two = h => { if (!h) return null; const a = h[SEASONS[0]] || {}, b = h[SEASONS[1]] || {}; const w = (a.w || 0) + (b.w || 0), l = (a.l || 0) + (b.l || 0);
     return w + l ? { w, l, p: Math.round(w / (w + l) * 100) } : null; };
@@ -346,7 +347,9 @@ function plainWhy(o) {
     S.push(main ? `${sys.length > 1 ? "The betting systems behind it" : "The betting system behind it"}: ${parts.join("; ")}.`
       : `${sys.length > 1 ? "These betting systems" : "A betting system"} also point${sys.length > 1 ? "" : "s"} this way: ${parts.join("; ")}.`);
   }
-  if (o.tag === "SYS+X4") {
+  if (PAIR_TXT[o.tag]) {
+    S.push(`Two edges line up on this side: ${(o.flags || []).join("; ")}. Together that went ${PAIR_TXT[o.tag][1]} over the last two seasons at the closing line, winning both seasons. It doesn't need the player ratings to agree.`);
+  } else if (o.tag === "SYS+X4") {
     S.push(`A betting system is on this side and the other team is missing 2 or more rotation players at different positions. Together that went 42-18 (70%) over the last two seasons at the closing line (22-10 and 20-8). It doesn't need the player ratings to agree.`);
   } else if (o.tag === "STACK") {
     const f = o.flags || [];
@@ -387,8 +390,11 @@ function plainWhy(o) {
   return `<p class="plain">${S.map(esc).join(" ")}</p>`;
 }
 
+const PAIR_TXT = { "X4+B2B": ["X4 + back-to-back", "42-18 (70%)"], "X2+B2B": ["X2 + back-to-back", "62-31 (67%)"],
+  "MOVE+THIN": ["line move + unknown players", "79-44 (64%)"] };
 function whyHead(tag, tags, gap, side) {
-  const sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && t !== "SYS+X4");
+  if (PAIR_TXT[tag]) return `${esc(tag)}: ${PAIR_TXT[tag][0]} on ${esc(side)}`;
+  const sys = [...new Set(tags)].filter(t => t && t !== "T13" && !COMBO_TAGS.includes(t));
   if (tag === "SYS+X4") return `SYS+X4: ${sys.length ? sys.map(esc).join(", ") : "a system"} on ${esc(side)}, and the other team is missing 2+ players at different positions`;
   if (tag === "STACK") return `STACK: 5+ separate edges line up on ${esc(side)}`;
   if (tag === "MONEYBALL") return `MONEYBALL: ${sys.length} systems on ${esc(side)} and the players model agrees by ${gap != null ? gap.toFixed(1) : "3+"}`;

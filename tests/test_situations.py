@@ -96,3 +96,18 @@ def test_sys_x4_needs_a_card_system_and_x4_on_the_same_side_and_thin_system_bets
     sysbet = {"system": 5, "bet": "spread", "side": "BOS", "game_id": "g"}
     assert thin_system(sysbet, slate)["team"] == "NYK" and thin_fade(sysbet, slate) is None
     assert thin_system({**sysbet, "system": 130}, slate) is None                  # MONEYBALL keeps its own size
+
+
+def test_pair_bets_fire_only_when_both_edges_are_on_the_same_side():
+    from engine.situations import pair_picks
+    from engine.systems import Pick, label
+    yday = Game(id="y", game_date=date(2026, 11, 11), away="NYK", home="Y", home_score=100, away_score=90, periods=4, final=True)
+    old = Game(id="o", game_date=date(2026, 11, 8), away="BOS", home="Z", home_score=100, away_score=90, periods=4, final=True)
+    x4 = Pick(304, "g", "spread", "BOS", -4.0, ["NYK is missing 2 rotation players at different positions"])
+    x2 = Pick(302, "g", "spread", "BOS", -4.0, ["NYK is missing 2 rotation players"])
+    thin = {"gap": 0.0, "thin_share": {"home": 0.0, "away": 0.2}}
+    ps = pair_picks(G, [x4, x2], thin, st(old), st(yday), -4.0, -1.5)       # NYK (away) on a b2b, line moved 2.5 to BOS
+    assert sorted((p.system, label(p.system), p.side) for p in ps) == [(133, "X4+B2B", "BOS"), (134, "X2+B2B", "BOS"),
+                                                                      (135, "MOVE+THIN", "BOS")]
+    assert all(len(p.meta["flags"]) == 2 for p in ps)
+    assert pair_picks(G, [x4, x2], thin, st(old), st(old), -4.0, -3.0) == []  # no back-to-back, move only 1
