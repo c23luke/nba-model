@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/nba-model/nba-model/engine/peek_board.py", line 18, in <module>
+    main()
+  File "/home/runner/work/nba-model/nba-model/engine/peek_board.py", line 10, in main
+    st = SupabaseStore()
+         ^^^^^^^^^^^^^^^
+TypeError: SupabaseStore.__init__() missing 2 required positional arguments: 'url' and 'key'
