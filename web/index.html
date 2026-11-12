@@ -765,7 +765,11 @@ function renderLab(b) {
   const evList = EVR.length ? `<h3 style="margin-top:14px">Props priced better than Pinnacle (paper)</h3>` + EVR.map(x => `<div class="game"><div>
       <div class="t">${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(({pts: "points", reb: "rebounds", ast: "assists"})[x.stat] || x.stat)} · ${esc(x.venue)} ${x.price > 0 ? "+" : ""}${x.price}${x.stacked ? " · <b>our minutes read agrees</b>" : ""}${x.result ? ` · ${x.result === "W" ? "won" : x.result === "L" ? "lost" : x.result === "VOID" ? "void" : "push"}` : ""}</div>
       <div class="muted" style="font-size:14px">${esc(x.away)} @ ${esc(x.home)}. Pinnacle ${x.pin_price > 0 ? "+" : ""}${x.pin_price} (fair ${(x.fair * 100).toFixed(1)}%) → expected return +${(x.ev * 100).toFixed(1)}%${x.clv != null ? `; vs Pinnacle's latest: ${x.clv > 0 ? "+" : ""}${(x.clv * 100).toFixed(1)}¢ per $1` : ""}.</div></div><div></div></div>`).join("") : "";
-  const tstAll = evList + tst + (PR.length ? `<h3 style="margin-top:14px">Latest props paper bets</h3>` + PR.map(x => `<div class="game"><div>
+  const RD = Object.values(((b.props_ev || {}).ready) || {}).flatMap(g => (g.list || []).map(x => ({...x, game: `${g.away} @ ${g.home}`})));
+  const readyList = RD.length ? `<h3 style="margin-top:14px">Ready if a questionable player is ruled out (paper)</h3>` + RD.slice(0, 20).map(x => `<div class="game"><div>
+      <div class="t">If ${esc(x.if_out)} sits: ${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(({pts: "points", reb: "rebounds", ast: "assists"})[x.stat] || x.stat)} · ${esc(x.venue)} ${x.price > 0 ? "+" : ""}${x.price}</div>
+      <div class="muted" style="font-size:14px">${esc(x.game)}. Our number now ${x.proj_now}; if he sits ${x.proj_if_out}.</div></div><div></div></div>`).join("") : "";
+  const tstAll = readyList + evList + tst + (PR.length ? `<h3 style="margin-top:14px">Latest props paper bets</h3>` + PR.map(x => `<div class="game"><div>
       <div class="t">${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(statName[x.stat] || x.stat)} (${x.price > 0 ? "+" : ""}${x.price})${x.result ? ` · ${x.result === "W" ? "won" : x.result === "L" ? "lost" : x.result === "VOID" ? "void, he sat" : "push"}` : ""}</div>
       <div class="muted" style="font-size:14px">${esc(x.team)}, ${esc(when(x.tip_utc))}. Out: ${(x.because || []).map(esc).join(", ")}.
         ${x.kind === "returning" ? `Back after ${x.missed} games out; usually plays ${x.mpg} minutes, first games back average about 5 fewer.`

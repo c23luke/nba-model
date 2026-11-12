@@ -30,6 +30,8 @@ MIN_EV = 0.03
 READ_EVERY = timedelta(minutes=60)
 CLOSE = timedelta(minutes=25)
 WINDOW = timedelta(hours=12)
+OPEN_WINDOW = timedelta(hours=30)     # opening-lines model: read games tipping within 30 hours...
+OPEN_EVERY = timedelta(hours=3)       # ...every 3 hours while they're more than 12 hours away
 MARKETS = {"player_points": "pts", "player_rebounds": "reb", "player_assists": "ast"}
 EVENTS = "https://api.the-odds-api.com/v4/sports/basketball_nba/events?apiKey={key}"
 ODDS = ("https://api.the-odds-api.com/v4/sports/basketball_nba/events/{eid}/odds?apiKey={key}"
@@ -152,25 +154,81 @@ def closing_fair(js: dict, bet: dict) -> float | None:
     return f["Over" if bet["side"] == "over" else "Under"] if f else None
 
 
+def _venue_line(js_px: dict, venue: str, player: str, stat: str):
+    """A venue's current line for a player / stat: the one priced closest to even (its main line)."""
+    best = None
+    for (p, s_, ln), q in (js_px.get(venue) or {}).items():
+        if p == player and s_ == stat and "Over" in q and "Under" in q:
+            d = abs(q["Over"] - q["Under"])
+            if best is None or d < best[0]:
+                best = (d, ln, q)
+    return (best[1], best[2]) if best else (None, None)
+
+
 def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], finals: dict, desk_bets: list[dict],
-         proj: dict | None = None) -> dict:
-    """One pass. fetch(game) -> the event's odds json or None."""
-    state = {"bets": [dict(b) for b in state.get("bets") or []], "fetched": dict(state.get("fetched") or {})}
+         proj: dict | None = None, news: dict | None = None, if_out: dict | None = None) -> dict:
+    """One pass. fetch(game) -> the event's odds json or None.
+    news: game_id -> [players newly ruled out this run] (news desk; forces a read of that game's props now).
+    if_out: (game_id, questionable player) -> projections for his teammates if he sits (the ready list)."""
+    state = {"bets": [dict(b) for b in state.get("bets") or []], "fetched": dict(state.get("fetched") or {}),
+             "opened": dict(state.get("opened") or {}), "ready": dict(state.get("ready") or {})}
+    news = news or {}
     stacked = {(b["game_id"], norm(b["player"]), b.get("stat", "pts"), b.get("side", "over")) for b in desk_bets}
     for g in games:
         tip = datetime.fromisoformat(str(g.tip_utc).replace("Z", "+00:00")) if g.tip_utc else None
-        if not tip or tip <= now or tip - now > WINDOW:
+        if not tip or tip <= now or tip - now > OPEN_WINDOW:
             continue
         last = state["fetched"].get(g.id)
-        if last:
+        forced = bool(news.get(g.id))
+        if last and not forced:
             last_t = datetime.fromisoformat(last)
             closing = tip - now <= CLOSE and last_t < tip - CLOSE
-            if now - last_t < READ_EVERY and not closing:
+            every = READ_EVERY if tip - now <= WINDOW else OPEN_EVERY
+            if now - last_t < every and not closing:
                 continue
         js = fetch(g)
         state["fetched"][g.id] = now.isoformat()
         if not js:
             continue
+        px = prices(js)
+        # line movement for every open bet at its own venue (points; + = moved our way)
+        for b in state["bets"]:
+            if b["game_id"] == g.id and not b.get("result") and b.get("venue") in VENUES:
+                ln, q = _venue_line(px, b["venue"], b["key"][0], b["stat"])
+                if ln is not None:
+                    b["last_line"], b["last_at"] = ln, now.isoformat()
+                    b["move"] = round((ln - b["line"]) if b["side"] == "over" else (b["line"] - ln), 1)
+        base = {"game_id": g.id, "away": g.away, "home": g.home, "tip_utc": g.tip_utc, "at": now.isoformat()}
+        # A. OPENING LINES: the first time this game's props are on the board
+        if g.id not in state["opened"] and any(px.get(v) for v in VENUES):
+            state["opened"][g.id] = now.isoformat()
+            for e in venue_model_edges(js, g.id, proj or {}):
+                state["bets"].append({**e, **base, "kind": "open", "hours_before": round((tip - now).total_seconds() / 3600, 1),
+                                      "close_fair": e["fair"]})
+        # B. NEWS DESK: a rotation player was just ruled out -> his teammates, at lines that may not have moved yet
+        for out_name, team in news.get(g.id) or []:
+            for e in venue_model_edges(js, g.id, proj or {}):
+                pr = (proj or {}).get((g.id, e["key"][0])) or {}
+                if pr.get("team") != team:
+                    continue
+                state["bets"].append({**e, **base, "kind": "news", "news_player": out_name,
+                                      "hours_before": round((tip - now).total_seconds() / 3600, 1), "close_fair": e["fair"]})
+        # B2. READY LIST: if a questionable player sits, which teammate lines would be 3+ off our number
+        ready = []
+        for (gid, who), alt in (if_out or {}).items():
+            if gid != g.id:
+                continue
+            for e in venue_model_edges(js, g.id, alt):
+                now_pr = ((proj or {}).get((g.id, e["key"][0])) or {}).get(e["stat"])
+                if now_pr is not None and abs(now_pr - e["line"]) >= MODEL_EDGE[e["stat"]]:
+                    continue                          # already a bet without the news
+                ready.append({"if_out": who, "player": e["player"], "stat": e["stat"], "side": e["side"],
+                              "line": e["line"], "venue": e["venue"], "price": e["price"], "proj_if_out": e["proj"],
+                              "proj_now": now_pr})
+        state["ready"][g.id] = {"at": now.isoformat(), "tip_utc": g.tip_utc, "away": g.away, "home": g.home,
+                                "list": ready[:40]}
+        if tip - now > WINDOW:
+            continue                                  # the other trackers start 12 hours before tip
         for b in state["bets"]:                               # the latest Pinnacle read before tip = the close
             if b["game_id"] == g.id and not b.get("result"):
                 cf = closing_fair(js, b)
@@ -204,8 +262,16 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
             b["result"] = grade({"game_id": b["game_id"], "player": b["player"], "stat": b["stat"], "side": b["side"],
                                  "line": b["line"]}, box_rows)
         b["clv"] = None if b.get("close_fair") is None else round(b["close_fair"] - 1 / dec(b["price"]), 4)   # + = beat Pinnacle's close
-    state["bets"] = state["bets"][-1500:]
+    state["bets"] = state["bets"][-2500:]
+    state["ready"] = {k: v for k, v in state["ready"].items()
+                      if v.get("tip_utc") and datetime.fromisoformat(str(v["tip_utc"]).replace("Z", "+00:00")) > now}
     return state
+
+
+def _move(bets):
+    mv = [b["move"] for b in bets if b.get("move") is not None and b.get("result")]
+    return {"avg_move": round(sum(mv) / len(mv), 2) if mv else None, "moved_our_way": sum(m > 0 for m in mv),
+            "moved_against": sum(m < 0 for m in mv)}
 
 
 def _rec(bets):
@@ -226,6 +292,12 @@ def summary(state: dict) -> dict:
     return {**_rec(bets), "stacked": _rec([b for b in bets if b.get("stacked")]),
             "model": {**_rec(model), "recent": sorted(model, key=lambda b: b["at"], reverse=True)[:40]},
             "model_and_ev": _rec([b for b in model if b["ev"] > 0]),
+            # the three props models (Caden 2026-11-11), points + rebounds + assists, each judged on its own
+            "open_lines": {**_rec(ob := [b for b in allb if b.get("kind") == "open"]), **_move(ob),
+                           "recent": sorted(ob, key=lambda b: b["at"], reverse=True)[:30]},
+            "news_desk": {**_rec(nb := [b for b in allb if b.get("kind") == "news"]), **_move(nb),
+                          "recent": sorted(nb, key=lambda b: b["at"], reverse=True)[:30]},
+            "ready": state.get("ready") or {},
             "model_venue": {**_rec(mv := [b for b in allb if b.get("kind") == "model_venue" and b["stat"] == "pts"]),
                             "by_venue": {v: _rec([b for b in mv if b["venue"] == v]) for v in VENUES},
                             "recent": sorted(mv, key=lambda b: b["at"], reverse=True)[:30]},
@@ -257,13 +329,13 @@ def make_fetch(api_key: str, get_json):
     return fetch
 
 
-def run(store, now, games, box_rows, api_key, get_json, finals, proj=None) -> dict | None:
+def run(store, now, games, box_rows, api_key, get_json, finals, proj=None, news=None, if_out=None) -> dict | None:
     if not api_key or not hasattr(store, "load_state"):
         return None
     st = store.load_state(["props_ev", "props_desk"])
     old = st.get("props_ev") or {}
     new = step(old, now, games, make_fetch(api_key, get_json), box_rows, finals, (st.get("props_desk") or {}).get("bets") or [],
-               proj)
+               proj, news, if_out)
     if json.dumps(new, sort_keys=True, default=str) != json.dumps(old, sort_keys=True, default=str):
         store.save_state({"props_ev": new})
     return summary(new)

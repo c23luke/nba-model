@@ -345,10 +345,7 @@ class History:
         return out
 
 
-def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict, shots: dict | None = None) -> dict:
-    """(game_id, normalised name) -> projection for every player on tonight's reads who isn't ruled out,
-    using this season's box scores (engine.boxscore rows) and the TUNED weights."""
-    from .personnel import norm
+def build_history(box_rows: list[dict], pos: dict, shots: dict | None = None) -> "History":
     by_game = _dd(lambda: _dd(dict))
     meta = {}
     for r in box_rows:
@@ -362,18 +359,48 @@ def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict, 
             if shots and shots.get(gid):
                 H.add_shots(teams[0], teams[1], counts_to_shots(shots[gid]))
             H.add(teams[0], teams[1], by_game[gid])
+    return H
+
+
+def project_games(H: "History", games: list, reads: dict, extra_out: dict | None = None) -> dict:
+    """(game_id, normalised name) -> projection for every player on the reads who isn't ruled out.
+    extra_out: team -> names to treat as OUT as well (the "if he sits" version)."""
+    from .personnel import norm
     out = {}
     for g in games:
         for team, opp in ((g.home, g.away), (g.away, g.home)):
             r = reads.get(team)
             if r is None:
                 continue
-            playing = {p.name for p in r.players if p.status != "out"}
-            absent = {p.name for p in r.players if p.status == "out"}
+            more = set((extra_out or {}).get(team) or ())
+            playing = {p.name for p in r.players if p.status != "out" and p.name not in more}
+            absent = {p.name for p in r.players if p.status == "out"} | more
             for f in H.features(team, opp, playing, absent, None, None, team == g.home):
                 pr = project(f, TUNED)
                 out[(g.id, norm(f["name"]))] = {**{k: round(v, 1) for k, v in pr.items()}, "name": f["name"],
                                                 "team": team, "l10": {s: round(f[f"{s}_l10avg"], 1) for s in STATS},
                                                 "fresh_out": f["fresh_names"], "returning": f["returning"],
                                                 "mpg": round(f["m10"], 1)}
+    return out
+
+
+def live_projections(box_rows: list[dict], games: list, reads: dict, pos: dict, shots: dict | None = None) -> dict:
+    """(game_id, normalised name) -> projection for every player on tonight's reads who isn't ruled out,
+    using this season's box scores (engine.boxscore rows) and the TUNED weights."""
+    return project_games(build_history(box_rows, pos, shots), games, reads)
+
+
+def if_out_projections(H: "History", games: list, reads: dict, rotations: dict) -> dict:
+    """(game_id, questionable rotation player) -> his teammates' projections if he sits (the news desk's ready list)."""
+    from .personnel import norm
+    out = {}
+    for g in games:
+        for team in (g.home, g.away):
+            r = reads.get(team)
+            rot = rotations.get(team) or {}
+            if r is None:
+                continue
+            for p in r.players:
+                if p.status == "day-to-day" and norm(p.name) in rot:
+                    out[(g.id, p.name)] = project_games(H, [g], reads, {team: [p.name]})
     return out

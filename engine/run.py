@@ -444,19 +444,39 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         # props +EV vs Pinnacle (tracking only)
         try:
             from . import props_ev
-            from .prop_model import live_projections
-            proj = None
+            proj = news = if_out = None
             if key and hasattr(store, "load_state"):
                 try:
                     pos = personnel_mod.roster_positions()
                 except Exception as e:
                     pos = {}
                     log.append(f"props model: no roster positions ({str(e)[:80]}), everyone counted as a wing")
-                from .prop_model import load_shots
+                from .prop_model import build_history, if_out_projections, load_shots, project_games
                 shots = load_shots(store, [g for g in games if g.final], sources.get_json, log)
-                proj = live_projections(box_rows, upcoming, reads, pos, shots)
+                H_ = build_history(box_rows, pos, shots)
+                proj = project_games(H_, upcoming, reads)
+                if_out = if_out_projections(H_, upcoming, reads, rotations)
+                # news desk: rotation players newly ruled out since the last run (first sight of a game = no news)
+                seen = store.load_state(["props_news_seen"]).get("props_news_seen") or {}
+                news, seen_now = {}, {}
+                for g in upcoming:
+                    outs = []
+                    for t in (g.home, g.away):
+                        rd = reads.get(t)
+                        rot = rotations.get(t) or {}
+                        if rd is not None:
+                            outs += [[p.name, t] for p in rd.players if p.status == "out" and personnel_mod.norm(p.name) in rot]
+                    seen_now[g.id] = outs
+                    if g.id in seen:
+                        before = {n for n, _ in seen[g.id]}
+                        new = [(n, t) for n, t in outs if n not in before]
+                        if new:
+                            news[g.id] = new
+                            log.append(f"News desk: {', '.join(n for n, _ in new)} newly out ({g.away} @ {g.home})")
+                if seen_now != {k: v for k, v in seen.items() if k in seen_now}:
+                    store.save_state({"props_news_seen": {**{k: v for k, v in seen.items() if k in seen_now}, **seen_now}})
             board["props_ev"] = props_ev.run(store, now, upcoming, box_rows, key, sources.get_json,
-                                             {g.id: {"final": g.final} for g in games}, proj)
+                                             {g.id: {"final": g.final} for g in games}, proj, news, if_out)
             if board["props_ev"] is not None:
                 board["props_ev"]["projected"] = len(proj or {})
                 board["props_ev"]["sample_proj"] = sorted(((v["name"], v["team"], v["pts"], v["l10"]["pts"])
@@ -611,9 +631,20 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                          "jump_model": "minutes study: the naive bump came in at +1.5 min, +2.8 pts (1,368 cases); no prop-line history"}[k],
                         x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "on the prop line", x.get("open", 0)))
     E = board.get("props_ev") or {}
-    for nm, x, hw in (("Props: +EV vs Pinnacle (any prop)", E,
+    for nm, x, hw, bt in (
+            ("Props A: opening lines", E.get("open_lines") or {},
+             "The first time a game's props post (often the night before): our model 3+ points (1.5 reb / ast) off a "
+             "venue's line, at that venue's price. Judged by the record and whether the line then moves our way.",
+             "history: our model vs soft books 6 h before tip was about break-even (-1%); opening lines are earlier and softer, untested"),
+            ("Props B: news desk", E.get("news_desk") or {},
+             "A rotation player is newly ruled out: his teammates' lines at the venues, at that moment, vs our re-run "
+             "projection. Judged by the record and how far the lines move after the news.",
+             "history: early lines in games where a teammate then got ruled out won both halves of 2025-26 (+4.3%, +3.0%)")):
+        out.append(item(nm, hw, bt, x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_move"),
+                        "points of line movement our way", x.get("open", 0)))
+    for nm, x, hw in (("Props C: price-shopping vs Pinnacle (any prop)", E,
                        "A ProphetX / Novig / BetOpenly prop price pays 3%+ more than Pinnacle's fair odds at the same line."),
-                      ("Props: +EV vs Pinnacle AND our minutes read agrees", E.get("stacked") or {},
+                      ("Props C: price-shopping AND our minutes read agrees", E.get("stacked") or {},
                        "Same, and our props desk (injury / minutes) is on the same player, stat and side.")):
         out.append(item(nm, hw, "beating Pinnacle's closing price is the test; prop lines with Pinnacle exist back to 2023 for a backtest",
                         x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"), "cents per $1 vs Pinnacle's close",

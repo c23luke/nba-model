@@ -74,3 +74,27 @@ def test_model_vs_a_venues_own_line_even_when_pinnacle_has_a_different_number():
     assert len(e) == 1 and (e[0]["venue"], e[0]["line"], e[0]["side"], e[0]["fair"], e[0]["pin_line"]) == ("novig", 12.5, "over", None, 14.5)
     st = E.step({}, NOW, [G], lambda g: js, [], {}, [], proj)
     assert E.summary(st)["model_venue"]["bets"] == 1 and st["bets"][0]["clv"] is None
+
+
+def test_opening_lines_news_desk_and_the_ready_list():
+    js = {"bookmakers": [book("novig", -110, -110, point=12.5, name="Sub Guy", market="player_points")]}
+    proj = {("g1", "sub guy"): {"pts": 16.0, "mpg": 25.0, "team": "TOR"}}
+    early = NOW - timedelta(hours=14)                       # 20 hours before tip: only the opening model reads
+    st = E.step({}, early, [G], lambda g: js, [], {}, [], proj)
+    assert [b["kind"] for b in st["bets"]] == ["open"] and st["bets"][0]["hours_before"] == 20.2
+    # 3 hours later the line moved to 14.5: our over moved +2 our way
+    moved = {"bookmakers": [book("novig", -110, -110, point=14.5, name="Sub Guy", market="player_points")]}
+    st = E.step(st, early + timedelta(hours=3), [G], lambda g: moved, [], {}, [], proj)
+    assert st["bets"][0]["move"] == 2.0 and len([b for b in st["bets"] if b["kind"] == "open"]) == 1
+    # news: a TOR rotation player is ruled out -> forced read, teammates bet at the line right now
+    st = E.step(st, NOW, [G], lambda g: js, [], {}, [], proj, {"g1": [("Starter", "TOR")]})
+    nb = [b for b in st["bets"] if b["kind"] == "news"]
+    assert len(nb) == 1 and nb[0]["news_player"] == "Starter"
+    # the ready list: if a questionable player sits, Sub Guy's line would be 3+ off (and isn't now)
+    calm = {("g1", "sub guy"): {"pts": 13.0, "mpg": 25.0, "team": "TOR"}}
+    st = E.step(st, NOW + timedelta(minutes=5), [G], lambda g: js, [], {}, [], calm, {"g1": [("Other", "TOR")]},
+                {("g1", "Starter"): {("g1", "sub guy"): {"pts": 17.0, "mpg": 25.0, "team": "TOR"}}})
+    r = st["ready"]["g1"]["list"]
+    assert r and r[0]["if_out"] == "Starter" and r[0]["side"] == "over" and r[0]["proj_now"] == 13.0
+    s = E.summary(st)
+    assert s["open_lines"]["bets"] == 1 and s["news_desk"]["bets"] == 1      # "Other" out: 13.0 vs 12.5, no bet
