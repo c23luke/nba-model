@@ -83,8 +83,7 @@ def main():
     for f in rows:
         by_game[(f["date"], f["home"], f["away"])].append(f)
     keys = sorted(by_game)
-    step_ = max(1, len(keys) // N)
-    sample = keys[::step_][:N]
+    sample = [keys[int(i * len(keys) / N)] for i in range(min(N, len(keys)))]      # evenly across the season
     saved = json.loads(SAVE.read_text()) if SAVE.exists() else {}
     print(f"sample {len(sample)} games, {sample[0][0]} to {sample[-1][0]}", flush=True)
     day_events, bets = {}, []
