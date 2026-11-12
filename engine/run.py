@@ -25,6 +25,7 @@ from .systems import (SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, Pick, evaluate, eval
                       evaluate_mined, evaluate_moneyball,
                       SHADOW_SYSTEMS, T13_GAP, grade, label, group)
 from . import personnel as personnel_mod
+from . import situations as situations_mod
 from . import boxscore
 from . import case as case_mod
 from . import cluster as cluster_mod
@@ -148,7 +149,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     # ---- 2a. this season's box scores (only games not stored yet)
     live, played, recent, results = {}, {}, {}, {}
     box_rows = []
-    x_pos = {}
+    x_pos, x_luck = {}, {}
     try:
         box_rows = store.load_player_games()
         # games with a 0-minute (coach's decision) row were parsed with DNPs; recent games without one are
@@ -190,6 +191,13 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
             x_pos = personnel_mod.roster_positions() if key else {}     # X4 needs positions (ESPN rosters, free)
         except Exception:
             x_pos = {}
+        try:                                                                # X7 needs shot locations (ESPN, free)
+            if key and hasattr(store, "load_state"):
+                from .prop_model import load_shots
+                from .situations import team_luck
+                x_luck = team_luck(load_shots(store, finals, sources.get_json, log), finals)
+        except Exception as e:
+            log.append(f"shooting luck: {str(e)[:120]}")
     except Exception as e:
         rotations = {}
         log.append(f"rotations for X2: {e}")
@@ -284,7 +292,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                  + evaluate_personnel(g, row.get("home_spread"), views.get(g.id),
                                       season_day=(g.game_date - season_start).days)
                  + evaluate_personnel_shadow(g, row.get("home_spread"), views.get(g.id))
-                 + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads, x_pos))
+                 + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads, x_pos)
+                 + situations_mod.picks(g, hs, at, row.get("home_spread"), row.get("total"), x_luck))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
         keys = []
         for p in picks:
@@ -323,7 +332,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 bet_line = row["home_spread"] if side == g.home else -row["home_spread"]
                 names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
                 others = sorted({f"{label(p.system)} {names[p.system]['name']} ({group(p.system)})" for p in picks
-                                 if p.side == side and p.bet == "spread" and p.system not in (113, 301)})
+                                 # tracking-only systems (300+) aren't reasons for a real bet
+                                 if p.side == side and p.bet == "spread" and p.system != 113 and p.system < 300})
                 pview["case"] = case_mod.build_case(g.away, g.home, side, bet_line, row["home_spread"], pview,
                                                     reads, stress.get(g.id), cal, others, t13_record,
                                                     (g.game_date - season_start).days)
@@ -615,6 +625,19 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                             (304, "X4: fade the team missing 2+ rotation players at different positions",
                              "Like X2, and the missing players are all at different positions (guard / wing / big).",
                              "139-103 (57.4%) over two seasons vs the close; 142-101 at the open")):
+        x = sh.get(sid) or sh.get(str(sid)) or {}
+        f_ = x.get("if_first") or {}
+        out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),
+                        x.get("avg_clv"), "pts", x.get("open", 0)))
+    for sid, nm, hw, bt in ((305, "X5: back the team that won its last game by 25+",
+                             "The market expects a letdown after a blowout win; bet the team that won big.",
+                             "169-134 (55.8%) at the open, 159-122 (56.6%) at the close, both seasons"),
+                            (306, "X6: fade the team coming off overtime (first line only)",
+                             "Its last game went to overtime: bet the opponent at the first line we see.",
+                             "117-90 (56.5%) at the open; only 105-95 at the close"),
+                            (307, "X7: both teams shooting below their shot quality -> over",
+                             "Both teams' field-goal points ran 2+ a game below what their shots were worth (last 5).",
+                             "121-102 (54.3%) at the open, 114-98 (53.8%) at the close")):
         x = sh.get(sid) or sh.get(str(sid)) or {}
         f_ = x.get("if_first") or {}
         out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),

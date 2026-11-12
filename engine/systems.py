@@ -74,6 +74,15 @@ SHADOW_SYSTEMS = {
           "rule": "Like X2 (1+ fresh), and the missing players are all at different positions (guard / wing / big): "
                   "the team can't just slide the next man in. 2 seasons vs the close: 139-103 (57.4%; 59.5% / 55.0%), "
                   "at the open 142-101 (engine/measure_cluster.py, Nov 11). Tracking only."},
+    305: {"name": "Back the team that won its last game by 25+", "bet": "spread", "idea": "overreaction (testing)",
+          "rule": "The market expects a letdown after a blowout win; it doesn't come. 2 seasons: 169-134 at the "
+                  "open, 159-122 at the close, both seasons (engine/measure_ideas.py, Nov 11). Tracking only."},
+    306: {"name": "Fade the team coming off an overtime game (early line)", "bet": "spread", "idea": "fatigue (testing)",
+          "rule": "Its last game went to overtime: bet the opponent at the FIRST line. 2 seasons: 117-90 at the open, "
+                  "only 105-95 at the close (engine/measure_ideas.py, Nov 11). Tracking only."},
+    307: {"name": "Both teams shooting below their shot quality: over", "bet": "total", "idea": "shooting luck (testing)",
+          "rule": "Both teams' field-goal points ran 2+ a game below what their shots were worth (shot locations, last "
+                  "5 games). 2 seasons: 121-102 at the open, 114-98 at the close (engine/measure_ideas.py). Tracking only."},
 }
 
 # Bets made at the first line and kept there: once one of these fires, it stays a bet even if the
