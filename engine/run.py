@@ -295,6 +295,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                  + cluster_mod.cluster_pick(g, row.get("home_spread"), rotations, reads, x_pos)
                  + situations_mod.picks(g, hs, at, row.get("home_spread"), row.get("total"), x_luck, o_hs))
         picks += evaluate_moneyball(g, picks, views.get(g.id))
+        picks += situations_mod.stack_picks(g, picks, views.get(g.id), hs, at, row.get("home_spread"), o_hs, x_luck)
         keys = []
         for p in picks:
             prev = old.get(p.key, {})
@@ -643,7 +644,14 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                              "279-223 (55.6%) at the closing number, both seasons"),
                             (309, "X9: home team with 2+ more days of rest",
                              "Home team rested 2+ more days than the visitor: bet the home team.",
-                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close")):
+                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close"),
+                            (310, "STACK 5+: five or more flags on one side",
+                             "5+ flags line up on one side (players model, systems, injury fades, line moves, rest, "
+                             "unknown players, shooting luck, back-to-back). Every flag is listed on the pick.",
+                             "213-149 (58.8%) at the close, both seasons (59.3% / 58.4%)"),
+                            (311, "STACK 4: four flags on one side",
+                             "Exactly 4 flags line up on one side.",
+                             "225-184 (55.0%) at the close, both seasons")):
         x = sh.get(sid) or sh.get(str(sid)) or {}
         f_ = x.get("if_first") or {}
         out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),

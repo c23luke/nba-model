@@ -84,3 +84,69 @@ def picks(game, hs, at, home_spread, total, luck: dict, first_home_spread: float
                                  "points a game (last 5)", "2 seasons: 121-102 at the open, 114-98 at the close"],
                                 {"luck_home": round(h, 1), "luck_away": round(a, 1)}))
     return out
+
+
+STACK_FLAGS_RECORD = ("2 seasons at the close: 4 flags 225-184 (55.0%), 5+ flags 213-149 (58.8%; 59.3% / 58.4%) "
+                      "(engine/measure_stack_flags.py, Nov 11)")
+
+
+def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_spread, first_home_spread,
+                luck: dict) -> list[str]:
+    """Every flag on one side of a game, each with its own evidence. The SAME flags, counted the same way, as
+    engine/measure_stack_flags.py (sys + sys2, move1 + move2 and x2 / x3 / x4 each count)."""
+    from .systems import MONEYBALL
+    home = side == game.home
+    opp = game.away if home else game.home
+    out = []
+    gap = (view or {}).get("gap")
+    if gap is not None and (gap if home else -gap) >= 3:
+        out.append(f"players model likes {side} by {abs(gap):.1f}")
+    sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == side and p.system < 300
+                   and p.system not in (113, 301, MONEYBALL)})
+    if sysd:
+        out.append(f"{len(sysd)} card system{'s' if len(sysd) > 1 else ''} on {side}")
+    if len(sysd) >= 2:
+        out.append("2+ card systems")
+    tracked = {p.system: p for p in picks if p.bet == "spread" and p.side == side and p.system >= 302}
+    for sid in (302, 303, 304, 305, 306):
+        if sid in tracked:
+            out.append(tracked[sid].evidence[0])
+    if home_spread is not None and first_home_spread is not None:
+        mv = (first_home_spread - home_spread) if home else (home_spread - first_home_spread)
+        if mv >= 1:
+            out.append(f"line moved {mv:g} toward {side}")
+        if mv >= 2:
+            out.append("line moved 2+")
+    if 309 in tracked:
+        out.append(tracked[309].evidence[0])
+    th = (view or {}).get("thin_share") or {}
+    me, them = ("home", "away") if home else ("away", "home")
+    if th and th.get(them, 0) > th.get(me, 0) + 0.05:
+        out.append(f"{opp} leans on players the model barely knows ({th[them]:.0%} of its minutes vs {th.get(me, 0):.0%})")
+    lo, lm = (luck.get(opp) or [])[-5:], (luck.get(side) or [])[-5:]
+    if len(lo) >= 3 and sum(lo) / len(lo) >= 3:
+        out.append(f"{opp} has shot {sum(lo) / len(lo):+.1f} a game above its shot quality (last 5)")
+    if len(lm) >= 3 and sum(lm) / len(lm) <= -3:
+        out.append(f"{side} has shot {sum(lm) / len(lm):+.1f} a game below its shot quality (last 5)")
+    so, sm = (at, hs) if home else (hs, at)
+    lgo, lgm = getattr(so, "last_game", None), getattr(sm, "last_game", None)
+    if lgo and (game.game_date - lgo.game_date).days == 1 and not (lgm and (game.game_date - lgm.game_date).days == 1):
+        out.append(f"{opp} is on a back-to-back, {side} isn't")
+    return out
+
+
+def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread, luck: dict) -> list[Pick]:
+    """310: 5+ flags on one side. 311: exactly 4. Tracking only."""
+    if home_spread is None:
+        return []
+    out = []
+    for side in (game.home, game.away):
+        fl = stack_flags(game, side, picks, view, hs, at, home_spread, first_home_spread, luck)
+        line = home_spread if side == game.home else -home_spread
+        if len(fl) >= 5:
+            out.append(Pick(310, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
+                                                               STACK_FLAGS_RECORD], {"flags": fl, "n_flags": len(fl)}))
+        elif len(fl) == 4:
+            out.append(Pick(311, game.id, "spread", side, line, [f"4 flags on {side}: " + "; ".join(fl),
+                                                               STACK_FLAGS_RECORD], {"flags": fl, "n_flags": 4}))
+    return out

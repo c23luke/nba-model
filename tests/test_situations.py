@@ -39,3 +39,22 @@ def test_follow_a_2_point_line_move_and_home_rest_edge():
     yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=4, final=True)
     ps = P_(G, st(old), st(yday), -4.0, None, {}, None)
     assert [(p.system, p.side) for p in ps] == [(309, "BOS")]       # 4 days vs 1
+
+
+def test_stack_counts_every_flag_with_its_evidence_and_fires_at_4_and_5():
+    from engine.situations import stack_flags, stack_picks
+    from engine.systems import Pick
+    big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=130, away_score=100, periods=4, final=True)
+    yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=4, final=True)
+    picks = [Pick(5, "g", "spread", "BOS", -4.0), Pick(7, "g", "spread", "BOS", -4.0),
+             Pick(305, "g", "spread", "BOS", -4.0, ["BOS won its last game by 30"])]
+    view = {"gap": 4.0, "thin_share": {"home": 0.0, "away": 0.2}}
+    fl = stack_flags(G, "BOS", picks, view, st(big), st(yday), -4.0, -2.5, {})
+    # players model, 1 system, 2+ systems, X5, moved 1.5, CHI thin, CHI on a back-to-back = 7
+    assert len(fl) == 7 and fl[0] == "players model likes BOS by 4.0" and "BOS won its last game by 30" in fl
+    ps = stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.5, {})
+    assert [(p.system, p.side, p.meta["n_flags"]) for p in ps] == [(310, "BOS", 7)]
+    view["gap"] = 0.0
+    picks = picks[:1]
+    ps = stack_picks(G, picks, {"gap": 0.0, "thin_share": {"home": 0.0, "away": 0.2}}, st(big), st(yday), -4.0, -2.5, {})
+    assert [(p.system, p.meta["n_flags"]) for p in ps] == [(311, 4)]     # 1 system, moved 1.5, thin, back-to-back

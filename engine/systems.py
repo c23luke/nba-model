@@ -86,6 +86,13 @@ SHADOW_SYSTEMS = {
     308: {"name": "Follow a 2+ point line move", "bet": "spread", "idea": "market (testing)",
           "rule": "The spread moved 2+ points from the first line we saw: bet the side it moved toward, at the price "
                   "after the move. 2 seasons at the close: 279-223 (55.6%), both seasons (engine/measure_ideas2.py). Tracking only."},
+    310: {"name": "STACK: 5+ flags on one side", "bet": "spread", "idea": "stacking (testing)",
+          "rule": "5+ of these on one side: players model 3+, card systems (1 / 2+), X2-X6, line moved 1+ / 2+ toward "
+                  "it, home rest edge, opponent leans on unknown players, opponent shooting hot / we shooting cold vs "
+                  "shot quality, opponent on a back-to-back. 2 seasons at the close: 213-149 (58.8%; 59.3% / 58.4%) "
+                  "(engine/measure_stack_flags.py, Nov 11). Tracking only."},
+    311: {"name": "STACK: 4 flags on one side", "bet": "spread", "idea": "stacking (testing)",
+          "rule": "Exactly 4 of the stack flags on one side. 2 seasons at the close: 225-184 (55.0%; 55.2% / 54.8%). Tracking only."},
     309: {"name": "Home team with 2+ more days of rest", "bet": "spread", "idea": "rest (testing)",
           "rule": "Home team rested 2+ more days than the visitor -> home. 2 seasons: 66-41 at the open, 63-43 at the "
                   "close (engine/measure_ideas2.py). Tracking only."},
