@@ -94,7 +94,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
                 luck: dict) -> list[str]:
     """Every flag on one side of a game, each with its own evidence. The SAME flags, counted the same way, as
     engine/measure_stack_flags.py (sys + sys2, move1 + move2 and x2 / x3 / x4 each count)."""
-    from .systems import MONEYBALL
+    from .systems import MONEYBALL, STACK
     home = side == game.home
     opp = game.away if home else game.home
     out = []
@@ -102,7 +102,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
     if gap is not None and (gap if home else -gap) >= 3:
         out.append(f"players model likes {side} by {abs(gap):.1f}")
     sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == side and p.system < 300
-                   and p.system not in (113, 301, MONEYBALL)})
+                   and p.system not in (113, 301, MONEYBALL, STACK)})
     if sysd:
         out.append(f"{len(sysd)} card system{'s' if len(sysd) > 1 else ''} on {side}")
     if len(sysd) >= 2:
@@ -136,7 +136,8 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
 
 
 def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread, luck: dict) -> list[Pick]:
-    """310: 5+ flags on one side. Tracking only. (4 flags, 225-184, dropped by Caden Nov 11.)"""
+    """STACK (131), a card bet: 5+ flags on one side (Caden 2026-11-11). 4 flags (225-184) was dropped by Caden."""
+    from .systems import STACK
     if home_spread is None:
         return []
     out = []
@@ -144,6 +145,6 @@ def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread,
         fl = stack_flags(game, side, picks, view, hs, at, home_spread, first_home_spread, luck)
         line = home_spread if side == game.home else -home_spread
         if len(fl) >= 5:
-            out.append(Pick(310, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
+            out.append(Pick(STACK, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
                                                                STACK_FLAGS_RECORD], {"flags": fl, "n_flags": len(fl)}))
     return out

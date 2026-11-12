@@ -53,8 +53,17 @@ def test_stack_counts_every_flag_with_its_evidence_and_fires_at_5_plus():
     # players model, 1 system, 2+ systems, X5, moved 1.5, CHI thin, CHI on a back-to-back = 7
     assert len(fl) == 7 and fl[0] == "players model likes BOS by 4.0" and "BOS won its last game by 30" in fl
     ps = stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.5, {})
-    assert [(p.system, p.side, p.meta["n_flags"]) for p in ps] == [(310, "BOS", 7)]
+    assert [(p.system, p.side, p.meta["n_flags"]) for p in ps] == [(131, "BOS", 7)]     # STACK: a card bet
     view["gap"] = 0.0
     picks = picks[:1]
     ps = stack_picks(G, picks, {"gap": 0.0, "thin_share": {"home": 0.0, "away": 0.2}}, st(big), st(yday), -4.0, -2.5, {})
     assert ps == []                     # 4 flags (1 system, moved 1.5, thin, back-to-back): no longer a pick
+
+
+def test_stack_is_a_card_bet_without_needing_a_players_read():
+    from engine.pricing import eligible, history, PRICE_WIN as WIN, TO_WIN
+    from engine.systems import label, group, STACK
+    p = {"system": STACK, "bet": "spread", "side": "BOS", "game_id": "g"}
+    assert eligible(p, []) == (True, None)                    # no players-model read needed: the flags are the case
+    assert history(p, [])["w"] == 213 and label(STACK) == "STACK" and group(STACK) == "FAV"
+    assert abs(WIN[STACK] - 0.569) < 0.001 and TO_WIN == 20   # (213 + 50) / (362 + 100), one unit

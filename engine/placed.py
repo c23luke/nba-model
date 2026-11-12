@@ -16,7 +16,7 @@ VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "P
                "polymarket": "Polymarket", "prophetx": "ProphetX", "novig": "Novig", "manual": "Other book"}
 
 # what the website needs from a card row to explain a bet later, after the row has left the card
-SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "win", "players", "players_bucket", "players_history",
+SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "flags", "win", "players", "players_bucket", "players_history",
              "also_combo", "with", "label", "line")
 
 
@@ -39,7 +39,7 @@ def stale_snap(meta: dict, snap: dict, o: dict) -> bool:
     """A system bet placed under today's rules whose saved card text now says it wouldn't bet: that text is from
     after the bet, not from when we bet."""
     return (not meta.get("bet_snap") and (o.get("created_at") or "") >= RULES_LIVE_UTC
-            and o.get("system") not in ("T13", "MONEYBALL") and str(snap.get("why") or "").startswith("No bet"))
+            and o.get("system") not in ("T13", "MONEYBALL", "STACK") and str(snap.get("why") or "").startswith("No bet"))
 
 
 def all_in(risk: float, to_win: float):
@@ -244,6 +244,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "s4_bar": ((p.get("meta") or {}).get("bar") or (s4_bars or {}).get(str(p.get("game_date")))) if o.get("system") == "S4" else None,
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
             "thin_fade": snap.get("thin_fade"),
+            "flags": snap.get("flags"),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
             "clv_pts": clv_pts,
@@ -305,7 +306,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = "totals aren't bet now (S4 is tracking only)"
         elif r.get("under_rules"):
             pass        # the card applied today's players rule when this bet was placed (it was a BET then)
-        elif r["system"] not in ("T13", "MONEYBALL"):
+        elif r["system"] not in ("T13", "MONEYBALL", "STACK"):
             if r.get("bet") == "total":
                 why = "totals aren't bet now"
             else:

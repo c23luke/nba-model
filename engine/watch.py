@@ -74,6 +74,8 @@ def message(c: dict, pick: dict) -> tuple[str, str, str]:
         title = f"{c['verdict']}: {c['label']} — {c['away']} @ {c['home']}"
     if c.get("tag") == "MONEYBALL":
         title = "MONEYBALL 🏀 " + title             # our strongest setup: make it impossible to miss
+    if c.get("tag") == "STACK":
+        title = f"STACK {len(c.get('flags') or [])} 🧱 " + title
     lines = [f"{c['tag']} ({c['group']}) · expected win rate {c['win']:.1%}", c["why"]]
     if c.get("max") is not None:
         from .pricing import amer_txt

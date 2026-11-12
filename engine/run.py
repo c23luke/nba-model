@@ -30,7 +30,7 @@ from . import boxscore
 from . import case as case_mod
 from . import cluster as cluster_mod
 
-PRICED = {113, 121, 122, 123, 124, 125, 130}          # test systems that also get a live Kalshi price (the main 4 always do)
+PRICED = {113, 121, 122, 123, 124, 125, 130, 131}          # test systems that also get a live Kalshi price (the main 4 always do)
 SEASON_START = date.fromisoformat(os.environ.get("SEASON_START", "2026-10-20"))
 SEASON_END = date.fromisoformat(os.environ.get("SEASON_END", "2027-04-11"))      # NBA release
 ALL_STAR = date.fromisoformat(os.environ.get("ALL_STAR", "2027-02-21"))          # All-Star Sunday
@@ -366,7 +366,7 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                    or unplayed_before(g.away, g.game_date, games)}
     for k, p in old.items():
         if p["game_id"] in upcoming_ids and k not in seen_now and p.get("active"):
-            if p["game_id"] in waiting_ids and p["system"] < 300 and p["system"] not in (113, 130):
+            if p["game_id"] in waiting_ids and p["system"] < 300 and p["system"] not in (113, 130, 131):
                 # judged before a team's previous game finished: not a real pick (see unplayed_before)
                 pick_rows.append({**p, "active": False, "last_checked": now.isoformat(),
                                   "dropped_reason": "Judged before a team's previous game finished"})
@@ -644,11 +644,7 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                              "279-223 (55.6%) at the closing number, both seasons"),
                             (309, "X9: home team with 2+ more days of rest",
                              "Home team rested 2+ more days than the visitor: bet the home team.",
-                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close"),
-                            (310, "STACK 5+: five or more flags on one side",
-                             "5+ flags line up on one side (players model, systems, injury fades, line moves, rest, "
-                             "unknown players, shooting luck, back-to-back). Every flag is listed on the pick.",
-                             "213-149 (58.8%) at the close, both seasons (59.3% / 58.4%)")):
+                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close")):
         x = sh.get(sid) or sh.get(str(sid)) or {}
         f_ = x.get("if_first") or {}
         out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),
@@ -797,7 +793,7 @@ def tracking(picks: list[dict]) -> dict:
     every pair), each group AND each system vs the players model in fine buckets, stacks + players model,
     and the players model by gap size and status. history (2 seasons, vs the open) sits next to each."""
     graded = [p for p in picks if p.get("result") and p.get("active")]
-    real = [p for p in graded if p["system"] < 300 and p["system"] != 130]   # MONEYBALL is itself a stack
+    real = [p for p in graded if p["system"] < 300 and p["system"] not in (130, 131)]   # MONEYBALL and STACK are stacks
     shadow = {p["game_id"]: p for p in graded if p["system"] == 301}
 
     def gap_for(gid, side):
@@ -991,7 +987,7 @@ def counts_today(p: dict, bars: dict, agree=None) -> bool:
     if not _counts_now(p):
         return False
     sid = p["system"]
-    if sid >= 300 or sid in (113, 130):
+    if sid >= 300 or sid in (113, 130, 131):
         return True
     if sid == 4:                         # S4: tracking only since 2026-11-03, still graded so it can earn its way back
         if not p.get("result"):
@@ -1049,11 +1045,11 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
         passed today's rule, so every spread system pick left is one)."""
         seen = {}
         for p in sorted(graded, key=lambda p: p.get("first_seen") or ""):
-            if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, 130):
+            if p["bet"] == "spread" and p["system"] < 300 and p["system"] not in (113, 130, 131):
                 seen.setdefault((p["game_id"], p["side"]), p["result"])
         return _wl(seen.values())
     def live_wl(row):
-        if row.get("bet") == "spread" and row["system"] < 300 and row["system"] not in (113, 130):
+        if row.get("bet") == "spread" and row["system"] < 300 and row["system"] not in (113, 130, 131):
             return combo_wl()
         return _wl(p["result"] for p in graded if p["system"] == row["system"])
     # records: graded picks already follow today's rule; open picks count as "open" only if the card would bet them
