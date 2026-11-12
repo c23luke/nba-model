@@ -769,7 +769,7 @@ function renderLab(b) {
   const readyList = RD.length ? `<h3 style="margin-top:14px">Ready if a questionable player is ruled out (paper)</h3>` + RD.slice(0, 20).map(x => `<div class="game"><div>
       <div class="t">If ${esc(x.if_out)} sits: ${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(({pts: "points", reb: "rebounds", ast: "assists"})[x.stat] || x.stat)} · ${esc(x.venue)} ${x.price > 0 ? "+" : ""}${x.price}</div>
       <div class="muted" style="font-size:14px">${esc(x.game)}. Our number now ${x.proj_now}; if he sits ${x.proj_if_out}.</div></div><div></div></div>`).join("") : "";
-  const tstAll = readyList + evList + tst + (PR.length ? `<h3 style="margin-top:14px">Latest props paper bets</h3>` + PR.map(x => `<div class="game"><div>
+  const tstAll = tst + readyList + evList + (PR.length ? `<h3 style="margin-top:14px">Latest props paper bets</h3>` + PR.map(x => `<div class="game"><div>
       <div class="t">${esc(x.player)} ${esc(x.side)} ${x.line} ${esc(statName[x.stat] || x.stat)} (${x.price > 0 ? "+" : ""}${x.price})${x.result ? ` · ${x.result === "W" ? "won" : x.result === "L" ? "lost" : x.result === "VOID" ? "void, he sat" : "push"}` : ""}</div>
       <div class="muted" style="font-size:14px">${esc(x.team)}, ${esc(when(x.tip_utc))}. Out: ${(x.because || []).map(esc).join(", ")}.
         ${x.kind === "returning" ? `Back after ${x.missed} games out; usually plays ${x.mpg} minutes, first games back average about 5 fewer.`
