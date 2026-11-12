@@ -16,7 +16,7 @@ VENUE_NAMES = {"kalshi": "Kalshi", "betopenly": "BetOpenly", "polymarket_us": "P
                "polymarket": "Polymarket", "prophetx": "ProphetX", "novig": "Novig", "manual": "Other book"}
 
 # what the website needs from a card row to explain a bet later, after the row has left the card
-SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "flags", "win", "players", "players_bucket", "players_history",
+SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "thin_system", "flags", "win", "players", "players_bucket", "players_history",
              "also_combo", "with", "label", "line")
 
 
@@ -39,7 +39,7 @@ def stale_snap(meta: dict, snap: dict, o: dict) -> bool:
     """A system bet placed under today's rules whose saved card text now says it wouldn't bet: that text is from
     after the bet, not from when we bet."""
     return (not meta.get("bet_snap") and (o.get("created_at") or "") >= RULES_LIVE_UTC
-            and o.get("system") not in ("T13", "MONEYBALL", "STACK") and str(snap.get("why") or "").startswith("No bet"))
+            and o.get("system") not in ("T13", "MONEYBALL", "STACK", "SYS+X4") and str(snap.get("why") or "").startswith("No bet"))
 
 
 def all_in(risk: float, to_win: float):
@@ -245,6 +245,7 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "target": snap.get("to_win") or (10 if snap.get("confidence") == "Low" else 20),
             "thin_fade": snap.get("thin_fade"),
             "flags": snap.get("flags"),
+            "thin_system": snap.get("thin_system"),
             "record": {"history": hist, "season": season,
                        "w": (hist or {}).get("w", 0) + season["w"], "l": (hist or {}).get("l", 0) + season["l"]},
             "clv_pts": clv_pts,
@@ -306,7 +307,7 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = "totals aren't bet now (S4 is tracking only)"
         elif r.get("under_rules"):
             pass        # the card applied today's players rule when this bet was placed (it was a BET then)
-        elif r["system"] not in ("T13", "MONEYBALL", "STACK"):
+        elif r["system"] not in ("T13", "MONEYBALL", "STACK", "SYS+X4"):
             if r.get("bet") == "total":
                 why = "totals aren't bet now"
             else:
@@ -345,8 +346,10 @@ def rules_now(rows: list[dict], agree=None) -> dict:
                                    "status": r["status"], "pnl": r["pnl"], "why": why})
             continue
         # 2 units: MONEYBALL, and (from 2026-11-11) a T13 bet sized at $40 because it fades a thin roster
-        # and (from 2026-11-11) a STACK bet sized at $40 because the players model and a system are among its flags
-        target = 40.0 if r["system"] == "MONEYBALL" or (r["system"] in ("T13", "STACK") and r.get("target") == 40) else 20.0
+        # and (from 2026-11-11) a STACK bet sized at $40 because the players model and a system are among its flags.
+        # 1.5 units ($30, from 2026-11-11): a system + players model 3+ bet against a thin roster.
+        target = (40.0 if r["system"] == "MONEYBALL" or (r["system"] in ("T13", "STACK") and r.get("target") == 40)
+                  else 30.0 if r.get("target") == 30 else 20.0)
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)
         pnl = None

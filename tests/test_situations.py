@@ -80,3 +80,19 @@ def test_stack_is_two_units_only_with_the_players_model_and_a_system():
     assert both[0].meta["n_flags"] == 6 and both[0].meta["two_units"] is True      # players model + 1 system
     no_pm = stack_picks(G, picks, {"gap": 0.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
     assert no_pm[0].meta["n_flags"] == 5 and no_pm[0].meta["two_units"] is False   # 5 flags, no players model: 1 unit
+
+
+def test_sys_x4_needs_a_card_system_and_x4_on_the_same_side_and_thin_system_bets_are_30():
+    from engine.situations import system_x4_picks
+    from engine.systems import Pick
+    from engine.pricing import eligible, thin_system, thin_fade
+    x4 = Pick(304, "g", "spread", "BOS", -4.0, ["NYK is missing 2 rotation players at different positions"])
+    assert system_x4_picks(G, [x4]) == []                                        # no system: nothing
+    assert system_x4_picks(G, [x4, Pick(5, "g", "spread", "NYK", 4.0)]) == []   # system on the other side
+    ps = system_x4_picks(G, [x4, Pick(5, "g", "spread", "BOS", -4.0)])
+    assert [(p.system, p.side) for p in ps] == [(132, "BOS")] and "NYK is missing" in ps[0].evidence[1]
+    assert eligible({"system": 132, "bet": "spread", "side": "BOS", "game_id": "g"}, []) == (True, None)
+    slate = [{"game_id": "g", "home": "BOS", "away": "NYK", "personnel": {"thin_share": {"home": 0.0, "away": 0.2}}}]
+    sysbet = {"system": 5, "bet": "spread", "side": "BOS", "game_id": "g"}
+    assert thin_system(sysbet, slate)["team"] == "NYK" and thin_fade(sysbet, slate) is None
+    assert thin_system({**sysbet, "system": 130}, slate) is None                  # MONEYBALL keeps its own size

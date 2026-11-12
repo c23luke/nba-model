@@ -95,7 +95,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
                 luck: dict) -> list[str]:
     """Every flag on one side of a game, each with its own evidence. The SAME flags, counted the same way, as
     engine/measure_stack_flags.py (sys + sys2, move1 + move2 and x2 / x3 / x4 each count)."""
-    from .systems import MONEYBALL, STACK
+    from .systems import MONEYBALL, STACK, SYS_X4
     home = side == game.home
     opp = game.away if home else game.home
     out = []
@@ -103,7 +103,7 @@ def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_sp
     if gap is not None and (gap if home else -gap) >= 3:
         out.append(f"players model likes {side} by {abs(gap):.1f}")
     sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == side and p.system < 300
-                   and p.system not in (113, 301, MONEYBALL, STACK)})
+                   and p.system not in (113, 301, MONEYBALL, STACK, SYS_X4)})
     if sysd:
         out.append(f"{len(sysd)} card system{'s' if len(sysd) > 1 else ''} on {side}")
     if len(sysd) >= 2:
@@ -153,4 +153,22 @@ def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread,
             out.append(Pick(STACK, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
                                                                STACK_FLAGS_RECORD],
                             {"flags": fl, "n_flags": len(fl), "two_units": pm and sy}))
+    return out
+
+
+def system_x4_picks(game, picks: list) -> list[Pick]:
+    """SYS+X4 (132), a card bet: a card system on a side AND X4 (the other team missing 2+ rotation players at different
+    positions) on that same side. 42-18 (70.0%) at the close over 2 seasons (Caden 2026-11-11)."""
+    from .systems import MONEYBALL, STACK, SYS_X4, SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, label
+    names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
+    out = []
+    for x4 in [p for p in picks if p.system == 304 and p.bet == "spread"]:
+        sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == x4.side and p.system < 300
+                       and p.system not in (113, MONEYBALL, STACK, SYS_X4)})
+        if sysd:
+            out.append(Pick(SYS_X4, game.id, "spread", x4.side, x4.line,
+                            [f"{label(s)} ({names.get(s, {}).get('name', '')}) fired on {x4.side}" for s in sysd]
+                            + list(x4.evidence)
+                            + ["2 seasons at the close: a system + this injury fade went 42-18 (70.0%; 22-10 / 20-8)"],
+                            {"systems": [label(s) for s in sysd]}))
     return out

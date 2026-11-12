@@ -290,7 +290,7 @@ function playersSeason(bucket) {
 // tags: every system on this side; gap: players model points on this side (null = no read)
 function whyBets(tags, gap, side, bet) {
   // totals: only S4 is even tracked as a candidate, so other total systems don't belong behind a total
-  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && (bet !== "total" || t === "S4"));
+  const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && t !== "SYS+X4" && (bet !== "total" || t === "S4"));
   const rows = [];
   for (const t of sys) {
     const p3 = t !== "S4" && (R.systems_p3 || {})[t];
@@ -328,7 +328,7 @@ const amerOf = p => p > 0 && p < 1 ? (p <= 0.5 ? "+" + Math.round(100 * (1 - p) 
 function plainWhy(o) {
   // o: {tag, tags, gap, side, bet, line (number we hold or the card's), market (line now), price (cost per $1), ev, toWin, away, home}
   const total = o.bet === "total";
-  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && (!total || t === "S4"));
+  const S = [], R = rc(), sys = [...new Set(o.tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && t !== "SYS+X4" && (!total || t === "S4"));
   const who = total ? `the ${o.side.toLowerCase()} in ${team(o.away)} at ${team(o.home)}` : `the ${team(o.side)}`;
   const two = h => { if (!h) return null; const a = h[SEASONS[0]] || {}, b = h[SEASONS[1]] || {}; const w = (a.w || 0) + (b.w || 0), l = (a.l || 0) + (b.l || 0);
     return w + l ? { w, l, p: Math.round(w / (w + l) * 100) } : null; };
@@ -346,7 +346,9 @@ function plainWhy(o) {
     S.push(main ? `${sys.length > 1 ? "The betting systems behind it" : "The betting system behind it"}: ${parts.join("; ")}.`
       : `${sys.length > 1 ? "These betting systems" : "A betting system"} also point${sys.length > 1 ? "" : "s"} this way: ${parts.join("; ")}.`);
   }
-  if (o.tag === "STACK") {
+  if (o.tag === "SYS+X4") {
+    S.push(`A betting system is on this side and the other team is missing 2 or more rotation players at different positions. Together that went 42-18 (70%) over the last two seasons at the closing line (22-10 and 20-8). It doesn't need the player ratings to agree.`);
+  } else if (o.tag === "STACK") {
     const f = o.flags || [];
     S.push(`${f.length || "5+"} separate edges line up on this side${f.length ? ": " + f.join("; ") : ""}. Sides with 5 or more went 213-149 (58.8%) over the last two seasons, graded at the closing line (59% and 58%).`
       + (o.toWin === 40 ? " The player ratings and a betting system are both among them: those went 46-26 (64%), so it's 2 units." : ""));
@@ -367,6 +369,7 @@ function plainWhy(o) {
     else S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
   if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet"
+    : o.thinSystem ? ` (1.5 units) because ${esc(o.thinSystem.team)} leans on players the model barely knows (${Math.round(o.thinSystem.share * 100)}% of its minutes vs ${Math.round(o.thinSystem.ours * 100)}%): a system plus the player ratings went 22-9 betting against teams like that`
     : o.tag === "STACK" && o.toWin === 40 ? " (2 units) because the player ratings and a betting system are both in the stack"
     : o.thinFade ? ` (2 units) because ${esc(o.thinFade.team)} leans on players the model barely knows (${Math.round(o.thinFade.share * 100)}% of its minutes vs ${Math.round(o.thinFade.ours * 100)}%): the players model went 40-17 betting against teams like that` : ""}.`);
   const N = o.now;
@@ -385,14 +388,15 @@ function plainWhy(o) {
 }
 
 function whyHead(tag, tags, gap, side) {
-  const sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK");
+  const sys = [...new Set(tags)].filter(t => t && t !== "T13" && t !== "MONEYBALL" && t !== "STACK" && t !== "SYS+X4");
+  if (tag === "SYS+X4") return `SYS+X4: ${sys.length ? sys.map(esc).join(", ") : "a system"} on ${esc(side)}, and the other team is missing 2+ players at different positions`;
   if (tag === "STACK") return `STACK: 5+ separate edges line up on ${esc(side)}`;
   if (tag === "MONEYBALL") return `MONEYBALL: ${sys.length} systems on ${esc(side)} and the players model agrees by ${gap != null ? gap.toFixed(1) : "3+"}`;
   if (tag === "T13") return `Players model: rates ${esc(side)} ${gap != null ? gap.toFixed(1) + " pts" : ""} better than the market${sys.length ? `, and ${sys.map(esc).join(", ")} agree${sys.length === 1 ? "s" : ""}` : ""}`;
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL, STACK with the players model and a system, and players-model bets against a thin roster: $40)";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "every card bet is sized to win $20 (MONEYBALL, STACK with the players model and a system, and players-model bets against a thin roster: $40; a system bet against a thin roster: $30)";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];
@@ -482,7 +486,7 @@ function ticket(x) {
       ${unitNote}
       ${marketLine(x)}
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
-        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, thinFade: x.thin_fade, flags: x.flags, away: x.away, home: x.home })}
+        market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, thinFade: x.thin_fade, thinSystem: x.thin_system, flags: x.flags, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
       ${whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
@@ -638,7 +642,7 @@ function cardRow(c, reason) {
         <div class="why-h">${esc(status)}</div>
         <div class="sub">${esc(reason || c.why || "")}</div>
         ${plainWhy({ verdict: c.verdict, tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
-          market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, thinFade: c.thin_fade, flags: c.flags, away: c.away, home: c.home })}
+          market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, thinFade: c.thin_fade, thinSystem: c.thin_system, flags: c.flags, away: c.away, home: c.home })}
 
         ${whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet)}
       </div>
