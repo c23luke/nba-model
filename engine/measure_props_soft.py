@@ -89,6 +89,8 @@ def main():
     day_events, bets = {}, []
     for d, home, away in sample:
         k = f"{d}|{away}|{home}"
+        if k not in saved and not KEY:
+            continue
         if k not in saved:
             if d not in day_events:
                 js = get(f"{H}/events?apiKey={urllib.parse.quote(KEY)}&date={d}T16:00:00Z")
@@ -135,7 +137,8 @@ def main():
                                  "side": side, "price": q[1] if side == "over" else q[2], "res": grade(act, q[0], side),
                                  "big": abs(gap) >= 2.5, "fresh": f["fresh_out"] > 0, "bench": f["m10"] < 20,
                                  "model_agrees": agrees})
-    SAVE.write_text(json.dumps(saved))
+    if KEY:
+        SAVE.write_text(json.dumps(saved))
     print(f"credits spent: {spent['credits']} | left: {spent['left']}", flush=True)
     for test in ("model vs early line", "model vs close line", "stale soft line (1.5+ off Pinnacle at the close)"):
         bs = [b for b in bets if b["test"] == test]
