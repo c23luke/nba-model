@@ -98,3 +98,10 @@ def test_opening_lines_news_desk_and_the_ready_list():
     assert r and r[0]["if_out"] == "Starter" and r[0]["side"] == "over" and r[0]["proj_now"] == 13.0
     s = E.summary(st)
     assert s["open_lines"]["bets"] == 1 and s["news_desk"]["bets"] == 1      # "Other" out: 13.0 vs 12.5, no bet
+
+
+def test_a_first_read_close_to_tip_is_not_an_opening_line():
+    js = {"bookmakers": [book("novig", -110, -110, point=12.5, name="Sub Guy", market="player_points")]}
+    proj = {("g1", "sub guy"): {"pts": 16.0, "mpg": 25.0, "team": "TOR"}}
+    st = E.step({}, NOW, [G], lambda g: js, [], {}, [], proj)          # 6 hours before tip
+    assert not [b for b in st["bets"] if b["kind"] == "open"] and "g1" in st["opened"]

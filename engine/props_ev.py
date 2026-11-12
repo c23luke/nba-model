@@ -32,6 +32,7 @@ CLOSE = timedelta(minutes=25)
 WINDOW = timedelta(hours=12)
 OPEN_WINDOW = timedelta(hours=30)     # opening-lines model: read games tipping within 30 hours...
 OPEN_EVERY = timedelta(hours=3)       # ...every 3 hours while they're more than 12 hours away
+OPEN_MIN = timedelta(hours=8)         # a first read closer to tip than this isn't an opening line
 MARKETS = {"player_points": "pts", "player_rebounds": "reb", "player_assists": "ast"}
 EVENTS = "https://api.the-odds-api.com/v4/sports/basketball_nba/events?apiKey={key}"
 ODDS = ("https://api.the-odds-api.com/v4/sports/basketball_nba/events/{eid}/odds?apiKey={key}"
@@ -202,7 +203,8 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
         # A. OPENING LINES: the first time this game's props are on the board
         if g.id not in state["opened"] and any(px.get(v) for v in VENUES):
             state["opened"][g.id] = now.isoformat()
-            for e in venue_model_edges(js, g.id, proj or {}):
+            # only a real opening read counts: 8+ hours before tip (a first read near tip isn't an opening line)
+            for e in (venue_model_edges(js, g.id, proj or {}) if tip - now >= OPEN_MIN else []):
                 state["bets"].append({**e, **base, "kind": "open", "hours_before": round((tip - now).total_seconds() / 3600, 1),
                                       "close_fair": e["fair"]})
         # B. NEWS DESK: a rotation player was just ruled out -> his teammates, at lines that may not have moved yet
@@ -263,6 +265,7 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
                                  "line": b["line"]}, box_rows)
         b["clv"] = None if b.get("close_fair") is None else round(b["close_fair"] - 1 / dec(b["price"]), 4)   # + = beat Pinnacle's close
     state["bets"] = state["bets"][-2500:]
+    state["opened"] = {k: v for k, v in state["opened"].items() if now - datetime.fromisoformat(v) < timedelta(days=3)}
     state["ready"] = {k: v for k, v in state["ready"].items()
                       if v.get("tip_utc") and datetime.fromisoformat(str(v["tip_utc"]).replace("Z", "+00:00")) > now}
     return state
