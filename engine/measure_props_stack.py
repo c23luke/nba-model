@@ -27,6 +27,7 @@ from pathlib import Path
 from .measure_prop_model import features
 from .personnel import norm
 from .prop_model import TUNED, project
+from .props_stack import flags
 
 REPORTS = Path(__file__).resolve().parent.parent / "reports"
 FILES = ("engine.measure_props_lines.json", "engine.measure_props_lines_h2.json")
@@ -43,56 +44,6 @@ def rec(bs):
     return f"{w}-{l} ({w / (w + l):.1%}, {units / max(1, w + l):+.1%}/bet)" if w + l else "-"
 
 
-def flags(f, m, proj):
-    o, u = set(), set()
-    ln = m["line"]
-    if proj - ln >= 2:
-        o.add("model")
-    if ln - proj >= 2:
-        u.add("model")
-    if f["fresh_out"] > 0 and (f.get("share_gain") or 0) >= 2:
-        o.add("fresh")
-    if (f.get("split_gain") or 0) >= 3:
-        o.add("split")
-    if f.get("returning"):
-        u.add("returning")
-    lp = f.get("luck_pm")
-    if lp is not None:
-        if lp * 30 <= -2:
-            o.add("luck")
-        if lp * 30 >= 2:
-            u.add("luck")
-    sm = f.get("shot_match")
-    if sm is not None:
-        if sm >= 1.05:
-            o.add("match")
-        if sm <= 0.95:
-            u.add("match")
-    po = f.get("pts_opp")
-    if po is not None:
-        if po >= 1.08:
-            o.add("opp")
-        if po <= 0.92:
-            u.add("opp")
-    if f["m5"] - f["m10"] >= 3:
-        o.add("trend")
-    if f["m10"] - f["m5"] >= 3:
-        u.add("trend")
-    if f.get("pts_savg") is not None:
-        if f["pts_savg"] - ln >= 2:
-            o.add("vs_avg")
-        if ln - f["pts_savg"] >= 2:
-            u.add("vs_avg")
-    if f.get("team_total") is not None and f.get("team_avg") is not None:
-        if f["team_total"] - f["team_avg"] >= 4:
-            o.add("team_tot")
-        if f["team_avg"] - f["team_total"] >= 4:
-            u.add("team_tot")
-    if (f.get("abs_spread") or 0) >= 10 and f["m10"] >= 28:
-        u.add("blowout")
-    return o, u
-
-
 def main():
     saved = {}
     for fn in FILES:
@@ -107,7 +58,7 @@ def main():
         if not m or m.get("over") is None or m.get("under") is None:
             continue
         proj = project(f, TUNED)["pts"]
-        o, u = flags(f, m, proj)
+        o, u = (set(x) for x in flags(f, m["line"], proj))      # the live trackers' definitions (engine/props_stack.py)
         act = f["pts_act"]
         half = "H1" if f["date"] < HALF else "H2"
         for side, fl in (("over", o), ("under", u)):

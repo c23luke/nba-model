@@ -149,6 +149,33 @@ def venue_model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
     return out
 
 
+def stack_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
+    """PROPS STACK TRACKERS (engine/props_stack.py): Pinnacle's points line for every player we project, his over /
+    under flags, and every tracker they set off. Priced at the best venue at Pinnacle's line (else Pinnacle's own)."""
+    from .props_stack import fire
+    px = prices(js)
+    out = []
+    for k, p in (px.get(SHARP) or {}).items():
+        if k[1] != "pts":
+            continue
+        pr = proj.get((game_id, k[0]))
+        f = fair(p)
+        if not f or not pr or not pr.get("feat"):
+            continue
+        for name, side, why in fire(pr["feat"], k[2], pr.get("pts")):
+            S = side.capitalize()
+            best, venue = p[S], "pinnacle"
+            for v in VENUES:
+                q = (px.get(v) or {}).get(k)
+                if q and S in q and q[S] > best:
+                    best, venue = q[S], v
+            out.append({"kind": "pstack", "tracker": name, "why": why, "player": p["name"], "key": list(k), "stat": "pts",
+                        "line": k[2], "side": side, "venue": venue, "price": best, "pin_price": p[S],
+                        "fair": round(f[S], 4), "ev": round(f[S] * dec(best) - 1, 4), "proj": pr.get("pts"),
+                        "mpg": pr.get("mpg")})
+    return out
+
+
 def closing_fair(js: dict, bet: dict) -> float | None:
     p = (prices(js).get(SHARP) or {}).get(tuple([bet["key"][0], bet["key"][1], float(bet["key"][2])]))
     f = fair(p) if p else None
@@ -237,6 +264,13 @@ def step(state: dict, now: datetime, games: list, fetch, box_rows: list[dict], f
                 if cf is not None:
                     b["close_fair"], b["close_at"] = round(cf, 4), now.isoformat()
         have = {(b["game_id"], tuple(b["key"]), b["side"], b["venue"]) for b in state["bets"]}
+        # props stack trackers: one paper bet per player, game and tracker (the first read inside 12 hours)
+        have_stack = {(b["game_id"], b["key"][0], b.get("tracker")) for b in state["bets"] if b.get("kind") == "pstack"}
+        for e in stack_edges(js, g.id, proj or {}):
+            if (g.id, e["key"][0], e["tracker"]) in have_stack:
+                continue
+            have_stack.add((g.id, e["key"][0], e["tracker"]))
+            state["bets"].append({**e, **base, "close_fair": e["fair"]})
         have_model = {(b["game_id"], tuple(b["key"][:2])) for b in state["bets"] if b.get("kind") == "model"}
         have_venue = {(b["game_id"], tuple(b["key"][:2]), b["venue"]) for b in state["bets"] if b.get("kind") == "model_venue"}
         for e in venue_model_edges(js, g.id, proj or {}):
@@ -310,7 +344,17 @@ def summary(state: dict) -> dict:
             "spot_bench": {**_rec(sb := [b for b in model if b.get("spot_bench") and b["stat"] == "pts"]),
                            "recent": sorted(sb, key=lambda b: b["at"], reverse=True)[:20]},
             "by_venue": {v: _rec([b for b in bets if b["venue"] == v]) for v in VENUES},
+            # props stack trackers (Caden 2026-11-12), each judged on its own
+            "stack_trackers": {name: {**_rec(tb := [b for b in allb if b.get("kind") == "pstack" and b.get("tracker") == name]),
+                                      "backtest": bt, "side": side,
+                                      "recent": sorted(tb, key=lambda b: b["at"], reverse=True)[:15]}
+                               for name, side, _, bt in _trackers()},
             "recent": sorted(bets, key=lambda b: (-b["ev"], b["at"]))[:40] if bets else []}
+
+
+def _trackers():
+    from .props_stack import TRACKERS
+    return TRACKERS
 
 
 def make_fetch(api_key: str, get_json):

@@ -362,9 +362,15 @@ def build_history(box_rows: list[dict], pos: dict, shots: dict | None = None) ->
     return H
 
 
-def project_games(H: "History", games: list, reads: dict, extra_out: dict | None = None) -> dict:
+FEAT_KEYS = ("name", "fresh_out", "share_gain", "split_gain", "returning", "mseason", "luck_pm", "shot_match", "pts_opp",
+             "m5", "m10", "pts_savg", "team_total", "team_avg", "abs_spread")
+
+
+def project_games(H: "History", games: list, reads: dict, extra_out: dict | None = None,
+                  lines: dict | None = None) -> dict:
     """(game_id, normalised name) -> projection for every player on the reads who isn't ruled out.
-    extra_out: team -> names to treat as OUT as well (the "if he sits" version)."""
+    extra_out: team -> names to treat as OUT as well (the "if he sits" version).
+    lines: game_id -> (home spread, total), so the spread / team-total features are live (the props stack trackers)."""
     from .personnel import norm
     out = {}
     for g in games:
@@ -375,12 +381,14 @@ def project_games(H: "History", games: list, reads: dict, extra_out: dict | None
             more = set((extra_out or {}).get(team) or ())
             playing = {p.name for p in r.players if p.status != "out" and p.name not in more}
             absent = {p.name for p in r.players if p.status == "out"} | more
-            for f in H.features(team, opp, playing, absent, None, None, team == g.home):
+            hs_, tot_ = (lines or {}).get(g.id) or (None, None)
+            for f in H.features(team, opp, playing, absent, hs_, tot_, team == g.home):
                 pr = project(f, TUNED)
                 out[(g.id, norm(f["name"]))] = {**{k: round(v, 1) for k, v in pr.items()}, "name": f["name"],
                                                 "team": team, "l10": {s: round(f[f"{s}_l10avg"], 1) for s in STATS},
                                                 "fresh_out": f["fresh_names"], "returning": f["returning"],
-                                                "mpg": round(f["m10"], 1)}
+                                                "mpg": round(f["m10"], 1),
+                                                "feat": {k: f.get(k) for k in FEAT_KEYS}}
     return out
 
 

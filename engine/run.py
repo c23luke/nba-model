@@ -481,7 +481,9 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
                 from .prop_model import build_history, if_out_projections, load_shots, project_games
                 shots = load_shots(store, [g for g in games if g.final], sources.get_json, log)
                 H_ = build_history(box_rows, pos, shots)
-                proj = project_games(H_, upcoming, reads)
+                lines_ = {g.id: ((stored.get(g.id) or {}).get("home_spread"), (stored.get(g.id) or {}).get("total"))
+                          for g in upcoming}
+                proj = project_games(H_, upcoming, reads, lines=lines_)
                 if_out = if_out_projections(H_, upcoming, reads, rotations)
                 # news desk: rotation players newly ruled out since the last run (first sight of a game = no news)
                 seen = store.load_state(["props_news_seen"]).get("props_news_seen") or {}
@@ -720,6 +722,12 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
              "Points 3+ off Pinnacle's line on a player averaging under 20 minutes over his last 10.",
              "vs Pinnacle's real closing lines, 2025-26: Oct-Jan 45-25, then Jan-Apr 36-35 (full season 81-60, 57.4%; not confirmed)")):
         out.append(item(nm, hw, bt, x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"),
+                        "cents per $1 vs Pinnacle's close", x.get("open", 0)))
+    for nm, x in (E.get("stack_trackers") or {}).items():
+        out.append(item(f"Props stack: {nm}", "Two flags on the same side of a player's points line (Pinnacle's line, "
+                        "before tip). Every bet lists both flags with their numbers.",
+                        "2025-26 vs Pinnacle's closing price: " + str(x.get("backtest")),
+                        x.get("w", 0), x.get("l", 0), x.get("bets", 0), x.get("avg_clv"),
                         "cents per $1 vs Pinnacle's close", x.get("open", 0)))
     x2_sides = {(p["game_id"], p["side"]) for p in picks if p.get("system") == 302}
     x2_sides |= {(str(x["paper"].get("game_id")), x["paper"]["side"])          # injury-desk paper bets too

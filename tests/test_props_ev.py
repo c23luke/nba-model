@@ -105,3 +105,25 @@ def test_a_first_read_close_to_tip_is_not_an_opening_line():
     proj = {("g1", "sub guy"): {"pts": 16.0, "mpg": 25.0, "team": "TOR"}}
     st = E.step({}, NOW, [G], lambda g: js, [], {}, [], proj)          # 6 hours before tip
     assert not [b for b in st["bets"] if b["kind"] == "open"] and "g1" in st["opened"]
+
+
+def test_props_stack_trackers_fire_on_both_flags_with_their_numbers_once_per_player():
+    from engine.props_stack import fire
+    # a 32 mpg starter on a 12-point underdog whose implied total is 6 below its average
+    feat = {"name": "Derrick White", "m5": 32.0, "m10": 32.0, "abs_spread": 12.0, "team_total": 104.0, "team_avg": 110.0,
+            "pts_savg": 15.0, "luck_pm": 0.0, "shot_match": 1.0, "pts_opp": 1.0}
+    got = fire(feat, 15.5, 15.0)
+    assert [(n, s) for n, s, _ in got] == [("Under: blowout + low team total", "under")]
+    assert "12.0-point spread" in got[0][2][0] and "-6.0 vs its average" in got[0][2][1]
+    assert fire({**feat, "abs_spread": 6.0}, 15.5, 15.0) == []                 # no blowout: nothing
+    js = {"bookmakers": [book("pinnacle", -110, -110, point=15.5, market="player_points"),
+                         book("novig", -105, 100, point=15.5, market="player_points")]}
+    proj = {("g1", "derrick white"): {"pts": 15.0, "mpg": 32.0, "feat": feat}}   # keyed by the normalised name
+    soon = datetime(2026, 11, 11, 20, 0, tzinfo=timezone.utc)                  # inside 12 hours of tip
+    st = E.step({}, soon, [G], lambda g: js, [], {}, [], proj)
+    pb = [b for b in st["bets"] if b.get("kind") == "pstack"]
+    assert len(pb) == 1 and (pb[0]["side"], pb[0]["venue"], pb[0]["price"]) == ("under", "novig", 100)
+    st = E.step(st, soon + timedelta(hours=2), [G], lambda g: js, [], {}, [], proj)
+    assert len([b for b in st["bets"] if b.get("kind") == "pstack"]) == 1      # once per player and tracker
+    s = E.summary(st)["stack_trackers"]
+    assert s["Under: blowout + low team total"]["open"] == 1 and len(s) == 9
