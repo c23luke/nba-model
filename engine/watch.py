@@ -198,8 +198,12 @@ def main():
             why = "first run"
         elif fp[0] != last_fp[0]:
             why = "injury report changed"
+            from . import personnel as _p
+            _p.clear_roster_cache()                    # news: read the rosters fresh, not the 15-minute copy
         elif fp[2] != last_fp[2]:
             why = "official NBA injury report changed"
+            from . import personnel as _p
+            _p.clear_roster_cache()
         elif fp[1] != last_fp[1]:
             why = "new Kalshi lines listed"
         elif time.time() - last_run >= RERUN_EVERY:

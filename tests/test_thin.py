@@ -53,3 +53,24 @@ def test_t13_against_a_thin_roster_is_sized_at_2_units_and_counted_that_way():
     assert thin_fade({**t13, "system": 130}, slate) is None          # MONEYBALL is already 2 units
     slate[0]["personnel"]["thin_share"]["away"] = 0.04
     assert thin_fade(t13, slate) is None                             # under 5 points apart
+
+
+def test_rosters_are_reused_for_15_minutes_and_cleared_by_news(monkeypatch):
+    import engine.personnel as P
+    calls = []
+
+    def fake(url):
+        calls.append(url)
+        if url == P.ESPN_TEAMS:
+            return {"sports": [{"leagues": [{"teams": [{"team": {"id": "2", "abbreviation": "BOS"}}]}]}]}
+        return {"athletes": [{"displayName": "Derrick White", "status": {"type": "active"}}]}
+    monkeypatch.setattr(P, "get_json", fake)
+    P.clear_roster_cache()
+    a = P.fetch_rosters(P.get_json)
+    a["BOS"][0]["status"] = "edited"                 # a caller editing its copy doesn't touch the cache
+    b = P.fetch_rosters(P.get_json)
+    assert len(calls) == 2 and b["BOS"][0]["status"] == {"type": "active"}
+    P.clear_roster_cache()                            # news came in: fresh read
+    P.fetch_rosters(P.get_json)
+    assert len(calls) == 4
+    P.clear_roster_cache()

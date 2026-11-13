@@ -466,3 +466,20 @@ def test_espn_failing_puts_the_card_on_hold_and_the_bettor_gets_nothing(tmp_path
     board = run(now=morning + timedelta(hours=1), fetch_day=ok, fetch_lines=fake_lines, fetch_kalshi=fake_kalshi,
                 store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
     assert board["data_hold"] == [] and next(c for c in board["card"] if c["side"] == "LAL")["verdict"] in ("BET", "LIMIT")
+
+
+def test_finished_past_days_are_not_asked_for_again(tmp_path):
+    store = LocalStore(tmp_path)
+    morning = datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc)
+    inner = make_fetch_day(date(2025, 11, 15), date(2025, 11, 14))
+    asked = []
+
+    def fd(d):
+        asked.append(d)
+        return inner(d)
+    kw = dict(fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store, season_start=START,
+              personnel_fetch=lal_reads(), fetch_box=None)
+    run(now=morning, fetch_day=fd, **kw)
+    asked.clear()
+    run(now=morning + timedelta(hours=1), fetch_day=fd, **kw)
+    assert asked == [date(2025, 11, 15), date(2025, 11, 16)]      # past days are all final: only today and tomorrow

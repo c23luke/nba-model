@@ -93,7 +93,15 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     days = [first + timedelta(i) for i in range((today + timedelta(1) - first).days + 1)]
     espn_lines = {}
     changed = []
+    # ESPN 403s, 2026-11-13: a past day whose games are all final in our store has nothing new on the scoreboard,
+    # so it isn't asked again (today and tomorrow always are; a backfill asks for everything)
+    done_days = {}
+    for r in stored.values():
+        gd = str(r.get("game_date"))
+        done_days[gd] = done_days.get(gd, True) and bool(r.get("final"))
     for d in days:
+        if not backfill and d < today and done_days.get(d.isoformat()):
+            continue
         try:
             for g, line in fetch_day(d):
                 if g.game_date < season_start:

@@ -307,12 +307,30 @@ def roster_positions(fetch=get_json) -> dict[str, str]:
     return _POS_CACHE["pos"]
 
 
+# ESPN refused our watcher's server on 2026-11-13 (HTTP 403 on everything) after ~500 requests an hour from it.
+# The 31 roster calls were most of that, every 5 minutes. Now: reuse the rosters for up to 15 minutes; the watcher
+# clears this the moment ESPN's injury feed changes, so news still gets a fresh read right away.
+ROSTER_MAX_AGE = 15 * 60
+_ROSTER_CACHE: dict = {}
+
+
+def clear_roster_cache() -> None:
+    _ROSTER_CACHE.clear()
+
+
 def fetch_rosters(fetch=get_json) -> dict[str, list[dict]]:
+    import copy
+    import time as _time
+    cacheable = fetch is get_json                  # tests pass their own fetch: never cached
+    if cacheable and _ROSTER_CACHE and _time.time() - _ROSTER_CACHE["at"] < ROSTER_MAX_AGE:
+        return copy.deepcopy(_ROSTER_CACHE["data"])   # callers edit statuses in place (the official report)
     teams = fetch(ESPN_TEAMS)["sports"][0]["leagues"][0]["teams"]
     out = {}
     for t in teams:
         tid, abbr = t["team"]["id"], t["team"]["abbreviation"]
         out[code(abbr)] = fetch(ESPN_ROSTER.format(tid)).get("athletes", [])
+    if cacheable:
+        _ROSTER_CACHE.update({"at": _time.time(), "data": copy.deepcopy(out)})
     return out
 
 
@@ -554,20 +572,32 @@ def add_draft_info(reads: dict[str, TeamRead], fetch=get_json) -> None:
                 pass
 
 
+_DRAFT_CACHE: dict = {}      # athlete id -> draft slot or None (a draft slot never changes): one lookup per process
+
+
 def lookup_drafts(rosters: dict[str, list[dict]], last: dict, fetch=get_json) -> dict[str, dict]:
     """Draft slot (ESPN) for every rostered player with no NBA numbers."""
     out = {}
+    cacheable = fetch is get_json
     for athletes in rosters.values():
         for a in athletes:
             name = a.get("displayName") or a.get("fullName") or ""
             if find(last, name) or not a.get("id"):
                 continue
+            aid = str(a["id"])
+            if cacheable and aid in _DRAFT_CACHE:
+                if _DRAFT_CACHE[aid]:
+                    out[aid] = _DRAFT_CACHE[aid]
+                continue
             try:
                 d = fetch(ESPN_ATHLETE.format(a["id"])).get("draft") or {}
-                if d.get("selection"):
-                    out[str(a["id"])] = {"year": d.get("year"), "pick": int(d["selection"])}
+                slot = {"year": d.get("year"), "pick": int(d["selection"])} if d.get("selection") else None
+                if slot:
+                    out[aid] = slot
+                if cacheable:
+                    _DRAFT_CACHE[aid] = slot
             except Exception:
-                pass
+                pass                                   # not cached: try again next run
     return out
 
 
