@@ -125,6 +125,7 @@ details.more dt { color: var(--haze); } details.more dd { margin: 0; }
 .verdict.LIMIT { background: var(--leather); color: var(--leather-ink); }
 .verdict.L { background: var(--loss); color: #2A0610; }
 .verdict.BENCHED, .verdict.CONFLICT { font-size: 13px; background: none; border: 1.5px dashed var(--line); }
+.verdict.HOLD { font-size: 13px; background: none; border: 1.5px dashed #d97706; color: #d97706; }
 .row .pick { font: 800 30px/1.05 var(--display); }
 .row .sub { font-size: 14px; color: var(--haze); }
 .row .px { text-align: right; font-size: 14px; color: var(--haze); white-space: nowrap; }
@@ -610,7 +611,12 @@ function renderBets(placed, b) {
       <circle cx="200" cy="100" r="34"/><circle cx="200" cy="100" r="10"/><line x1="200" y1="-10" x2="200" y2="210"/>
       <path d="M-40 10 A120 120 0 0 1 -40 190"/><path d="M440 10 A120 120 0 0 0 440 190"/>
       <rect x="-10" y="64" width="70" height="72"/><rect x="340" y="64" width="70" height="72"/></svg>`;
-  $("tab-bets").innerHTML = `<div class="board">${court}
+  const hold = b.data_hold || [];
+  const holdBox = hold.length ? `<div class="row" style="border:2px solid #d97706;margin-bottom:14px;padding:12px 14px">
+      <b style="color:#d97706">Betting on hold.</b> This run couldn't load the data the bets depend on, so nothing new is being bet.
+      Bets already placed aren't affected. It goes back to normal on the first clean run.
+      <div class="muted" style="font-size:13px;margin-top:6px">${hold.slice(0, 4).map(esc).join("<br>")}${hold.length > 4 ? `<br>+${hold.length - 4} more` : ""}</div></div>` : "";
+  $("tab-bets").innerHTML = holdBox + `<div class="board">${court}
       <div class="board-main">
         <div><span class="big n">${w}-${l}${pu ? "-" + pu : ""}</span><span class="lbl">Record${w + l ? `, ${Math.round(w / (w + l) * 100)}% won` : ""}</span></div>
         <div class="profit"><span class="big n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</span><span class="lbl">${risked ? pct(pnl / risked) + " return on " + money(risked) : "Profit"}</span></div>
@@ -642,6 +648,7 @@ function renderBets(placed, b) {
 function cardRow(c, reason) {
   const best = c.best;
   const status = c.verdict === "LIMIT" || c.verdict === "BET" ? "Looking for a price"
+    : c.verdict === "HOLD" ? "On hold: today's data didn't load, nothing new is bet until it does"
     : c.verdict === "CONFLICT" ? "No bet: our systems are on both sides" : c.verdict === "BENCHED" ? "No bet: system benched"
     : c.rule_pass ? "No bet: the players model doesn't back it" : "No bet: price isn't good enough";
   const mb = c.tag === "MONEYBALL";

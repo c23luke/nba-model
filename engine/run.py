@@ -557,6 +557,20 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         if miss:
             board.setdefault("notes", []).append("Roster check — playing but not on the roster we used: " + "; ".join(miss))
     board["placer"] = placer
+    # DATA HOLD (Caden 2026-11-13, ESPN 403s: "we can't place more bets until it's fixed, it could place wrong
+    # bets"): if this run couldn't read ESPN (schedules, scores, box scores) or the rosters, nothing new is bet.
+    # BET / LIMIT rows become HOLD; the bettor only acts on "bet" and "limit", so it sends nothing. Bets already
+    # placed are untouched. Clears on its own on the first clean run.
+    hold = data_problems(board.get("notes") or [])
+    board["data_hold"] = hold
+    if hold:
+        for c in board["card"]:
+            if c["verdict"] in ("BET", "LIMIT"):
+                c["held_verdict"] = c["verdict"]
+                c["verdict"] = "HOLD"
+                c["why"] = ("On hold, not bet: this run couldn't read the data the bet depends on ("
+                            + "; ".join(hold[:3]) + (f"; +{len(hold) - 3} more" if len(hold) > 3 else "")
+                            + "). It goes back to normal on the first clean run. " + (c.get("why") or ""))
     # keep each card bet's reasoning on its pick, so a placed bet can still explain itself after it tips
     from .placed import snapshot
     snaps = {}
@@ -617,6 +631,15 @@ def _wl(results) -> dict:
 
 TESTING_BAR = 50      # paper bets before an idea can move to real money (with positive CLV and a winning record)
 
+
+
+DATA_FAILS = ("ESPN ", "Box score ", "Personnel read failed")
+
+
+def data_problems(notes: list) -> list[str]:
+    """This run's data failures that make a new bet unsafe: an ESPN schedule / score day, a box score, or the
+    roster read (who's playing). Returned as short reasons; empty = clean."""
+    return [str(n)[:120] for n in notes if str(n).startswith(DATA_FAILS)]
 
 def testing_side(board: dict, picks: list[dict]) -> list[dict]:
     """Every idea being paper-tested (Caden 2026-11-10: "a testing side"): its record, CLV, and whether it has earned

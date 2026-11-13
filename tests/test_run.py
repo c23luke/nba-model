@@ -436,3 +436,33 @@ def test_graded_system_picks_count_only_when_the_players_model_agreed_3_plus():
     assert not {"g2-S102-NYK", "g3-S102-HOU", "g4-S102-LAL", "g1-S208-OVER"} & kept
     left, _ = since_restart(picks, [], {})
     assert {p["key"] for p in left if p["system"] < 300} == {"g1-S102-WAS", "g1-S130-WAS"}
+
+
+def test_a_data_failure_puts_every_new_bet_on_hold():
+    from engine.run import data_problems
+    assert data_problems(["ESPN 2026-11-13: HTTP Error 403: Forbidden", "odds ok"]) == ["ESPN 2026-11-13: HTTP Error 403: Forbidden"]
+    assert data_problems(["Personnel read failed: HTTP Error 403: Forbidden"])
+    assert data_problems(["Box score 401909958: HTTP Error 403: Forbidden"])
+    assert data_problems(["Official injury report: none found in the last 3 hours (using ESPN)"]) == []
+
+
+def test_espn_failing_puts_the_card_on_hold_and_the_bettor_gets_nothing(tmp_path):
+    store = LocalStore(tmp_path)
+    morning = datetime(2025, 11, 15, 15, 0, tzinfo=timezone.utc)
+    ok = make_fetch_day(date(2025, 11, 15), date(2025, 11, 14))
+
+    def blocked(d):                                   # ESPN refuses tomorrow's schedule (the Nov 13 403s)
+        if d == date(2025, 11, 16):
+            raise RuntimeError("HTTP Error 403: Forbidden")
+        return ok(d)
+    board = run(now=morning, fetch_day=blocked, fetch_lines=fake_lines, fetch_kalshi=fake_kalshi, store=store,
+                season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
+    assert board["data_hold"] == ["ESPN 2025-11-16: HTTP Error 403: Forbidden"]
+    lal = next(c for c in board["card"] if c["side"] == "LAL")
+    assert lal["verdict"] == "HOLD" and lal["held_verdict"] in ("BET", "LIMIT") and lal["why"].startswith("On hold")
+    feed = store._read("bet_feed", [])
+    assert feed and all(r["status"] not in ("bet", "limit") for r in feed)       # the bettor only acts on these
+    # the next clean run goes straight back to normal
+    board = run(now=morning + timedelta(hours=1), fetch_day=ok, fetch_lines=fake_lines, fetch_kalshi=fake_kalshi,
+                store=store, season_start=START, personnel_fetch=lal_reads(), fetch_box=None)
+    assert board["data_hold"] == [] and next(c for c in board["card"] if c["side"] == "LAL")["verdict"] in ("BET", "LIMIT")
