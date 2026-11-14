@@ -281,7 +281,8 @@ def team_sq(shots: dict, finals: list) -> dict[str, dict]:
 
 
 def sq_pair_picks(game, picks: list, view, home_spread, first_home_spread, sq: dict) -> list[Pick]:
-    """The five shot-quality pairs (136-140), 1 unit each. Every flag says its own number."""
+    """The shot-quality pairs: 136-139 are card bets, 1 unit each; 3HOT+MOVE fires as 310, paper only (Nov 14).
+    Every flag says its own number."""
     if home_spread is None or not sq:
         return []
     out = []
@@ -320,7 +321,7 @@ def sq_pair_picks(game, picks: list, view, home_spread, first_home_spread, sq: d
             T["x4"] = (True, on[304].evidence[0])
         for sid, a, b, rec in ((136, "rim", "pm", "36-14 (72.0%; 24-8 / 12-6)"), (137, "better", "x3", "29-12 (70.7%; 14-7 / 15-5)"),
                                (138, "unlucky", "x4", "30-15 (66.7%; 18-9 / 12-6)"), (139, "better", "thin", "66-37 (64.1%; 35-15 / 31-22)"),
-                               (140, "hot3", "move", "91-58 (61.1%; 39-24 / 52-34)")):
+                               (310, "hot3", "move", "91-58 (61.1%; 39-24 / 52-34)")):
             if T.get(a, (False,))[0] and T.get(b, (False,))[0]:
                 fl = [T[a][1], T[b][1]]
                 out.append(Pick(sid, game.id, "spread", side, line, fl + [f"2 seasons at the close: {rec}"], {"flags": fl}))

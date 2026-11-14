@@ -272,7 +272,7 @@ const units = u => `<span class="n ${u > 0 ? "pos" : u < 0 ? "neg" : ""}">${u > 
 let BOARD = {};
 const SEASONS = ["2024-25", "2025-26"];
 const rc = () => BOARD.report_card || {};
-const COMBO_TAGS = ["T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN", "3HOT+MOVE"];
+const COMBO_TAGS = ["T13", "MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN"];
 const pctOf = r => r && (r.w + r.l) ? Math.round(r.w / (r.w + r.l) * 100) : null;
 const recCell = r => r && (r.w + r.l) ? `<b>${wl(r)}</b><span class="pc muted"> ${pctOf(r)}%</span>` : `<span class="muted">—</span>`;
 const recCellTone = r => { const p = pctOf(r); return p == null || r.w + r.l < 20 ? "" : p >= 55 ? "good" : p < 52.4 ? "bad" : ""; };

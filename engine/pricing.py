@@ -72,8 +72,7 @@ SYS_X4_REC = (42, 18)       # SYS+X4, 2 seasons at the close
 PAIR_REC = {133: (42, 18, "X4 + the opponent on a back-to-back"), 134: (62, 31, "X2 + the opponent on a back-to-back"),
             135: (79, 44, "line moved 2+ our way + the opponent leans on players the model barely knows"),
             136: (36, 14, "rim matchup + the players model 3+"), 137: (29, 12, "better by the shots + X3"),
-            138: (30, 15, "unlucky by the shots + X4"), 139: (66, 37, "better by the shots + unknown players"),
-            140: (91, 58, "they hit 3s above their value + the line moved our way")}
+            138: (30, 15, "unlucky by the shots + X4"), 139: (66, 37, "better by the shots + unknown players")}   # 140 3HOT+MOVE: paper since Nov 14
 
 
 def thin_fade(pick: dict, slate: list[dict]) -> dict | None:

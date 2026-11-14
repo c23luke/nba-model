@@ -128,7 +128,8 @@ def test_shot_quality_pairs_fire_only_with_both_flags_and_say_their_numbers():
     ps = sq_pair_picks(G, [x3, x4], view, -4.0, -3.0, {"BOS": bos, "CHI": nyk})
     got = sorted((label(p.system), p.side) for p in ps)
     # rim 30% / 30% + players 3.5; better by 8.0 + X3; unlucky -8.0 + X4; better + thin; CHI 3s +5.0 + moved 1
-    assert got == [("3HOT+MOVE", "BOS"), ("RIM+PM", "BOS"), ("SQ+THIN", "BOS"), ("SQ+X3", "BOS"), ("UNLUCKY+X4", "BOS")]
+    assert got == [("RIM+PM", "BOS"), ("SQ+THIN", "BOS"), ("SQ+X3", "BOS"), ("UNLUCKY+X4", "BOS"), ("X10", "BOS")]
+    assert next(p for p in ps if p.system == 310)      # 3HOT+MOVE still fires, on paper (310) since Nov 14
     assert all(len(p.meta["flags"]) == 2 for p in ps)
     rim = next(p for p in ps if label(p.system) == "RIM+PM")
     assert "30% of its shots at the rim" in rim.meta["flags"][0] and "by 3.5" in rim.meta["flags"][1]

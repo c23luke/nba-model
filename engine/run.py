@@ -688,7 +688,10 @@ def testing_side(board: dict, picks: list[dict]) -> list[dict]:
                              "279-223 (55.6%) at the closing number, both seasons"),
                             (309, "X9: home team with 2+ more days of rest",
                              "Home team rested 2+ more days than the visitor: bet the home team.",
-                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close")):
+                             "66-41 (61.7%) at the open, 63-43 (59.4%) at the close"),
+                            (310, "3HOT+MOVE (paper): their 3s running hot + the line moved our way",
+                             "Their 3s ran 4.7+ a game above their value (last 5) and the spread moved 1+ toward us. Off the card Nov 14.",
+                             "91-58 (61.1%) at the close")):
         x = sh.get(sid) or sh.get(str(sid)) or {}
         f_ = x.get("if_first") or {}
         out.append(item(nm, hw, bt, f_.get("w", 0), f_.get("l", 0), f_.get("w", 0) + f_.get("l", 0) + f_.get("p", 0),

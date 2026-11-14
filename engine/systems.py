@@ -58,6 +58,10 @@ TEST_SYSTEMS = {
 # Tracking only: never shown as a bet. Lets every variation be graded (e.g. the personnel
 # side on every game, so we can see how it does at each gap size, waiting vs clean, blind or not).
 SHADOW_SYSTEMS = {
+    310: {"name": "3HOT+MOVE (paper): their 3s running hot + the line moved our way", "bet": "spread", "idea": "stacking (testing)",
+          "rule": "Their made 3s ran 4.7+ points a game above what their 3s were worth (last 5) AND the spread moved 1+ "
+                  "toward us. 91-58 (61.1%) at the close, but a coin flip bet early and from a 111-pair search: off the "
+                  "card Nov 14 (Caden: 64%+ bets only), tracked on paper."},
     301: {"name": "Personnel side, every game", "bet": "spread", "idea": "tracking",
           "rule": "Whichever side the personnel line likes, every game, any gap. Graded so the "
                   "record can be split by gap size, day-to-day status and blind spots."},
@@ -161,9 +165,6 @@ TEST_SYSTEMS.update({
     139: {"win_est": 0.575, "name": "SQ+THIN: better by the shots + they lean on unknown players", "bet": "spread",
           "idea": "stack", "rule": "Better by the shots (6.8+) AND the other team gets 5+ points more of its minutes from "
           "players the model barely knows. 66-37 (64.1%; 35-15 / 31-22). $20."},
-    140: {"win_est": 0.575, "name": "3HOT+MOVE: they've hit 3s way above their value + the line moved our way",
-          "bet": "spread", "idea": "stack", "rule": "Their made 3s ran 4.7+ points a game above what their 3s were "
-          "worth (last 5) AND the spread moved 1+ toward us. 91-58 (61.1%; 39-24 / 52-34). Forms late. $20."},
     125: {"win_est": 0.532, "name": "Fade the tanker, last 3 weeks", "bet": "spread", "idea": "late season",
           "rule": "Last 3 weeks of the season, opponent is .350 or worse after 40+ games (and we aren't) → bet us. "
                   "6 seasons: 212-164 (56.4%) vs the close"},
@@ -208,7 +209,7 @@ STACK = 131
 SYS_X4 = 132
 PAIRS = {133: "X4+B2B", 134: "X2+B2B", 135: "MOVE+THIN",
          # shot-quality pairs (Caden 2026-11-12), engine/measure_stack2.py
-         136: "RIM+PM", 137: "SQ+X3", 138: "UNLUCKY+X4", 139: "SQ+THIN", 140: "3HOT+MOVE"}
+         136: "RIM+PM", 137: "SQ+X3", 138: "UNLUCKY+X4", 139: "SQ+THIN"}   # 140 3HOT+MOVE moved to paper (310), Nov 14
 COMBO_BETS = (MONEYBALL, STACK, SYS_X4, *PAIRS)       # bets built from other picks: never count as "a system"
 
 
