@@ -1125,9 +1125,12 @@ def build_board(now, today, slate, picks, usage, log, source, season_day: int = 
                     "win_pct": r["win_pct"], "units_won": round(r["units"] * units, 2), "open": len(open_ps)}
         by = lambda sid, ps: [p for p in ps if p["system"] == sid]
         thin = lambda ps: [p for p in ps if (p.get("meta") or {}).get("vs_thin")]
+        # STACK picks from before the Nov 14 rule (flags, not "fact: evidence") don't count: Caden, "pretend we never bet it"
+        new_stack = lambda ps: [p for p in ps if all(": " in str(f) for f in (p.get("meta") or {}).get("flags") or [""])]
         rows = [
             row("MONEYBALL: 2+ systems + players model 3+", 2, f"{MONEYBALL_REC[0]}-{MONEYBALL_REC[1]} at the open", by(130, graded), by(130, openp)),
-            row("STACK: 4+ separate facts on one side", 2, f"{STACK_REC[0]}-{STACK_REC[1]} at the opening line", by(131, graded), by(131, openp)),
+            row("STACK: 4+ separate facts on one side", 2, f"{STACK_REC[0]}-{STACK_REC[1]} at the opening line",
+                new_stack(by(131, graded)), new_stack(by(131, openp))),
             row("Players model 4+ against a thin roster", 2, "40-17", thin(by(113, graded)), thin(by(113, openp))),
             row("System + players model 3+ against a thin roster", 1, "22-9", thin(side_once(sysp)), thin(side_once(sys_open))),
             row("System + players model 3+", 1, f"{COMBO_REC[0]}-{COMBO_REC[1]} at the open", side_once(sysp), side_once(sys_open)),

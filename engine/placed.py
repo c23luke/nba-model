@@ -343,6 +343,11 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = f"bought {off:g} points off the card's number: today the limit is {3 if r.get('bet') == 'total' else 2}"
         if len({sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}) > 1:
             why = "we held both sides of this game: today neither is bet"
+        # Caden 2026-11-14 (MIN -13.5): "delete it, pretend like we never bet it". STACK tickets placed under the old
+        # rule (flags counted more than once; their flags have no "fact: evidence" form) aren't today's STACK, which
+        # needs 4 separate facts known before the line moves. Out of today's record; the real money stays on the row.
+        if r["system"] == "STACK" and r.get("flags") and not all(": " in str(f) for f in r["flags"]):
+            why = "placed under the old STACK rule (one fact counted several times): today's STACK needs 4 separate facts"
         if why:
             r["rules"] = {"counted": False, "why": why}
             out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],

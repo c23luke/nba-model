@@ -342,3 +342,17 @@ def test_rules_now_counts_a_t13_thin_fade_bet_at_40():
              "t13_gap": 4.5, "holding": "DET -3", "result": "W", "pnl": 20.0, "risk": 22.0, "to_win": 20.0, "target": 20}]
     r = rules_now(rows)
     assert rows[0]["rules"]["to_win"] == 40.0 and rows[1]["rules"]["to_win"] == 20.0 and r["pnl"] == 60.0
+
+
+def test_an_old_rule_stack_ticket_is_out_of_todays_record_but_its_money_stays():
+    from engine.placed import rules_now
+    old = {"game_id": "g", "bet": "spread", "side": "MIN", "system": "STACK", "holding": "MIN -13.5", "status": "OPEN",
+           "result": None, "pnl": None, "risk": 48.99, "to_win": 40.09, "line": -13.5, "card_pick": "MIN -14.5",
+           "ev": 0.115, "under_rules": True, "target": 40,
+           "flags": ["2 card systems on MIN", "2+ card systems", "MIN won its last game by 39"]}
+    new = {**old, "game_id": "h", "side": "BOS", "holding": "BOS -3", "line": -3.0, "card_pick": "BOS -3",
+           "flags": ["tired opponent: CHI is on a back-to-back", "injuries: CHI is missing 2", "systems: S2",
+                     "blowout win: BOS won by 30"]}
+    s = rules_now([old, new])
+    assert old["rules"]["counted"] is False and "old STACK rule" in old["rules"]["why"]
+    assert new["rules"]["counted"] is True and old["risk"] == 48.99            # the real money stays on the row
