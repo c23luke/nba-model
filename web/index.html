@@ -293,7 +293,7 @@ function playersSeason(bucket) {
 // STACK and the pair bets: what's behind them is their own list of facts, not the systems' "players model agreed" records
 function whyFacts(tag, flags) {
   if (!flags || !flags.length) return "";
-  const rec = tag === "STACK" ? "4+ separate facts: 217-148 (59.5%) at the close; 136-75 (64.5%) at the open without line moves"
+  const rec = tag === "STACK" ? "4+ separate facts known before the line moves: 136-75 (64.5%) at the opening line"
     : (PAIR_TXT[tag] ? PAIR_TXT[tag][1] : "");
   const facts = tag === "STACK" && flags.every(f => f.includes(": "));     // bets from Nov 14 on list facts, older ones flags
   return `<table class="why-t"><tr><th>What's behind it (${flags.length} ${facts ? "separate facts" : "flags"})</th></tr>` +
@@ -365,7 +365,7 @@ function plainWhy(o) {
   } else if (o.tag === "STACK") {
     const f = o.flags || [];
     S.push(`${f.length || "4+"} separate reasons line up on this side, each counted once${f.length ? ": " + f.join("; ") : ""}. `
-      + "Sides with 4 or more went 217-148 (59.5%) over the last two seasons at the closing line, and 136-75 (64.5%) at the opening line when the reasons were known before the line moved. It's 2 units.");
+      + "Only reasons known before the line moves count. Sides with 4 or more went 136-75 (64.5%) over the last two seasons at the opening line. It's 2 units.");
   } else if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
     const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
     S.push(`Two or more systems plus the player ratings on the same side is our strongest setup${h ? `: ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);

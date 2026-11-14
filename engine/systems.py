@@ -118,14 +118,15 @@ TEST_SYSTEMS.update({
                   "(either way day-to-day players go). 2 seasons at the open: 29-11 (72.5%), both seasons 72-73%. "
                   "Sized to win $40 (2 units)."},
     # STACK (Caden 2026-11-11 "lets bet anything stack 5+"; Nov 12 exactly 5 not bet; Nov 14 count each fact once).
-    #   4+ separate facts: 217-148 (59.5%; 59.1% / 59.8%) at the close; no line moves, at the open: 136-75 (64.5%).
+    #   4+ separate facts known before the line moves, at the opening line: 136-75 (64.5%; 67.0% / 61.8%). No line-move
+    #   fact (Caden Nov 14: bet opening lines, not after the market moves).
     #   3 or fewer separate facts (even with 6+ flags, like MIN Nov 14): not bet. Not yet tested live.
-    131: {"win_est": 0.581, "name": "STACK: 4+ separate facts on one side", "bet": "spread", "idea": "stack",
+    131: {"win_est": 0.598, "name": "STACK: 4+ separate facts on one side", "bet": "spread", "idea": "stack",
           "rule": "4 or more SEPARATE reasons on the same side, each counted once: the players model 3+ (in every version "
                   "of tonight), card systems, a tired opponent (back-to-back / overtime / rest and the systems built on "
-                  "them), injuries (X2-X4), the line moving our way, a 25+ blowout win, the other team leaning on unknown "
-                  "players, shooting luck. 2 seasons: 217-148 (59.5%) at the close; 136-75 (64.5%) at the open without "
-                  "line moves. Every fact is listed on the bet. Sized to win $40 (2 units)."},
+                  "them), injuries (X2-X4), a 25+ blowout win, the other team leaning on unknown players, shooting luck. "
+                  "Only facts known before the line moves. 2 seasons at the opening line: 136-75 (64.5%). Every fact "
+                  "is listed on the bet. Sized to win $40 (2 units)."},
     # SYS+X4 (Caden 2026-11-11: "its really good ... id still like to bet it"; engine/measure_stack_flags.py, close):
     #   a card system on the side fading a team missing 2+ rotation players at different positions: 42-18 (70.0%),
     #   2024-25 22-10, 2025-26 20-8. Bet WITHOUT needing the players model. Not yet tested live.

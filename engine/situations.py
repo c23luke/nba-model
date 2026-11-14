@@ -86,9 +86,8 @@ def picks(game, hs, at, home_spread, total, luck: dict, first_home_spread: float
     return out
 
 
-STACK_FLAGS_RECORD = ("2 seasons, each separate fact counted once: 4+ facts 217-148 (59.5%; 59.1% / 59.8%) at the "
-                      "close; without line moves, 4+ facts 136-75 (64.5%) at the opening line (engine/measure_stack_flags.py, "
-                      "Nov 14)")
+STACK_FLAGS_RECORD = ("2 seasons, each separate fact counted once, only facts known before the line moves: 4+ facts "
+                      "136-75 (64.5%; 67.0% / 61.8%) at the opening line (engine/measure_stack_flags.py, Nov 14)")
 
 # card systems built on the other team being tired (rest / overtime / back-to-back): part of the "tired opponent" fact
 TIRED_SYSTEMS = {1, 3, 101, 102, 103, 104, 112, 124}
@@ -103,7 +102,8 @@ def stack_facts(game, side: str, picks: list, view: dict | None, hs, at, home_sp
       systems         card systems that aren't about rest (1 or more, one fact)
       tired opponent  back-to-back, off overtime (X6), home rest edge (X9) and the rest / overtime systems
       injuries        X2 / X3 / X4 (only players already ruled out)
-      line move       moved 1+ toward this side since the first line (one fact however far)
+      (NO line move: Caden 2026-11-14, "betting opening lines was way more profitable ... line moving means we're
+       betting closing lines and I don't like that". STACK only uses what's known before the line moves.)
       blowout win, unknown players, their shooting luck, our shooting luck: one each"""
     from .systems import COMBO_BETS, SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, label
     names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
@@ -139,10 +139,6 @@ def stack_facts(game, side: str, picks: list, view: dict | None, hs, at, home_sp
         if sid in tracked:
             out["injuries"] = tracked[sid].evidence[0]
             break
-    if home_spread is not None and first_home_spread is not None:
-        mv = (first_home_spread - home_spread) if home else (home_spread - first_home_spread)
-        if mv >= 1:
-            out["line move"] = f"line moved {mv:g} toward {side} since the first line"
     if 305 in tracked:
         out["blowout win"] = tracked[305].evidence[0]
     th = v.get("thin_share") or {}
@@ -160,8 +156,8 @@ def stack_facts(game, side: str, picks: list, view: dict | None, hs, at, home_sp
 
 def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread, luck: dict) -> list[Pick]:
     """STACK (131), a card bet at 2 units: 4+ SEPARATE facts on one side (Caden 2026-11-14). Replaces "6+ flags, or 5
-    with the players model and a system", which counted one fact several times (MIN: 7 flags, 3 facts). In the
-    morning it can only see what's known before the line moves (opening prices); later a line move can be a fact."""
+    with the players model and a system", which counted one fact several times (MIN: 7 flags, 3 facts). Only facts
+    known before the line moves count, so it fires at opening prices, not after the market has moved."""
     from .systems import STACK
     if home_spread is None:
         return []

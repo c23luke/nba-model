@@ -43,7 +43,7 @@ def test_follow_a_2_point_line_move_and_home_rest_edge():
 
 def test_stack_counts_each_fact_once_and_a_min_like_pile_of_one_fact_is_not_a_bet():
     """Nov 14 MIN: S1 + T12 + CHI off overtime + CHI on a back-to-back + a 39-point win + the line moving 2 = 7 old
-    flags, but 3 facts: tired opponent, blowout win, line move. Not a STACK bet any more."""
+    flags, but 2 facts known before the line moves: tired opponent, blowout win. Not a STACK bet any more."""
     from engine.situations import stack_facts, stack_picks
     from engine.systems import Pick
     big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=139, away_score=100, periods=4, final=True)
@@ -53,15 +53,16 @@ def test_stack_counts_each_fact_once_and_a_min_like_pile_of_one_fact_is_not_a_be
              Pick(305, "g", "spread", "BOS", -4.0, ["BOS won its last game by 39"])]
     view = {"gap": -1.0, "thin_share": {}}
     f = stack_facts(G, "BOS", picks, view, st(big), st(yday), -4.0, -2.0, {})
-    assert list(f) == ["tired opponent", "line move", "blowout win"]
+    assert list(f) == ["tired opponent", "blowout win"]                      # the line move is never a fact
     assert "CHI is on a back-to-back, BOS isn't" in f["tired opponent"] and "S1" in f["tired opponent"] \
         and "T12" in f["tired opponent"] and "overtime" in f["tired opponent"]
     assert stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.0, {}) == []
-    # add a system that isn't about rest and an opponent leaning on unknown players: 5 separate facts -> STACK
+    # add a system that isn't about rest and an opponent leaning on unknown players: 4 separate facts -> STACK
     picks.append(Pick(2, "g", "spread", "BOS", -4.0))                     # S2, road favorite on a losing streak
     view = {"gap": -1.0, "thin_share": {"home": 0.0, "away": 0.2}}
     ps = stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.0, {})
-    assert [(p.system, p.side, p.meta["n_flags"], p.meta["two_units"]) for p in ps] == [(131, "BOS", 5, True)]
+    assert [(p.system, p.side, p.meta["n_flags"], p.meta["two_units"]) for p in ps] == [(131, "BOS", 4, True)]
+    assert not any(x.startswith("line move") for x in ps[0].meta["flags"])
     assert all(": " in x for x in ps[0].meta["flags"]) and ps[0].meta["flags"][0] == "systems: card system: S2 (Road favorite on 4+ game losing streak)"
 
 
@@ -81,8 +82,8 @@ def test_stack_is_a_card_bet_without_needing_a_players_read():
     from engine.systems import label, group, STACK
     p = {"system": STACK, "bet": "spread", "side": "BOS", "game_id": "g"}
     assert eligible(p, []) == (True, None)                    # no players-model read needed: the facts are the case
-    assert history(p, [])["w"] == 217 and label(STACK) == "STACK" and group(STACK) == "FAV"   # 4+ facts, 217-148
-    assert abs(WIN[STACK] - (217 + 50) / (365 + 100)) < 0.001
+    assert history(p, [])["w"] == 136 and label(STACK) == "STACK" and group(STACK) == "FAV"   # 4+ facts at the open
+    assert abs(WIN[STACK] - (136 + 50) / (211 + 100)) < 0.001
 
 
 def test_sys_x4_needs_a_card_system_and_x4_on_the_same_side_and_thin_system_bets_are_30():

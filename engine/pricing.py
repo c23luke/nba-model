@@ -31,8 +31,8 @@ from .systems import SYSTEMS, TEST_SYSTEMS, label, group
 
 BREAK_EVEN_110 = 110 / 210
 TO_WIN = 20          # every bet is sized to win this many dollars
-STACK_REC = (217, 148)  # STACK: 4+ separate facts, 2 seasons at the close (measure_stack_flags.py, Nov 14). Without
-                        # line moves at the opening line: 136-75 (64.5%)
+STACK_REC = (136, 75)   # STACK: 4+ separate facts known before the line moves, 2 seasons at the OPENING line
+                        # (measure_stack_flags.py, Nov 14; the injury flags there knew late scratches: a bit optimistic)
 STACK_2U_TO_WIN = 40  # every STACK bet is 2 units since 2026-11-12
 MONEYBALL_TO_WIN = 40  # 2 units (Caden 2026-11-05). MONEYBALL stacks: 2+ systems + players model 3+ (29-11 over 2 seasons at the open)
 # the order placer's bar (bet_settings.min_ev): BET on the card means it WILL be bet.
@@ -263,7 +263,7 @@ def history(pick: dict, slate: list[dict]) -> dict | None:
     if sid == 130:
         return {"w": MONEYBALL_REC[0], "l": MONEYBALL_REC[1], "label": "2 seasons at the open: 2+ systems + players model 3+"}
     if sid == 131:
-        return {"w": STACK_REC[0], "l": STACK_REC[1], "label": "2 seasons at the close: 4+ separate facts on one side"}
+        return {"w": STACK_REC[0], "l": STACK_REC[1], "label": "2 seasons at the opening line: 4+ separate facts on one side"}
     if sid == 132:
         return {"w": SYS_X4_REC[0], "l": SYS_X4_REC[1], "label": "2 seasons at the close: a system + the X4 injury fade"}
     if sid in PAIR_REC:
@@ -330,7 +330,7 @@ PRICE_WIN = {
     124: _price_win(25, 10),                       # T24 -> 55.6%
     125: _price_win(86, 58),                       # T25 -> 55.7%
     130: _price_win(*MONEYBALL_REC),               # MONEYBALL -> 56.4%
-    131: _price_win(*STACK_REC),                   # STACK     -> 58.1%
+    131: _price_win(*STACK_REC),                   # STACK     -> 59.8%
     132: _price_win(*SYS_X4_REC),                  # SYS+X4    -> 57.5%
     133: _price_win(42, 18),                       # X4+B2B    -> 57.5%
     134: _price_win(62, 31),                       # X2+B2B    -> 58.0%
