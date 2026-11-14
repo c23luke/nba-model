@@ -110,6 +110,7 @@ def season(season):
             m = r["margin"] if side == home else -r["margin"]
             res = {w: (m + (r[w] if side == home else -r[w])) if r.get(w) is not None else None for w in ("open", "close")}
             out.append({"season": season, "flags": f, "res": res, "key": k, "side": side, "opp": opp, "home": home,
+                        "sys_ids": sorted(systems.get((k, side)) or ()),
                         # raw inputs, for the follow-up studies (measure_stack2)
                         "mi": i, "mi2": r, "outs": (c or {}).get("outs") or {}, "th": th, "gap": g_})
     return out
@@ -145,6 +146,54 @@ def main():
             allo += o; allc += c
             line += f"   {s}: open {rec(o)[1]:>17}  close {rec(c)[1]:>17}"
         print(line + f"   BOTH: open {rec(allo)[1]}  close {rec(allc)[1]}")
+    # ---- DISTINCT FACTS (Caden 2026-11-14, the MIN STACK: 7 flags but really ~3 things). Each underlying fact counts
+    # once: systems about rest / overtime (S1, S3, T1-T4, T12, T24) are part of "tired opponent" with the back-to-back,
+    # overtime (X6) and rest (X9) flags; 1 or 2+ other systems = one fact; X2/X3/X4 = one injury fact; moved 1+ / 2+ =
+    # one line-move fact; the players model, X5, thin, shooting luck each one.
+    TIRED_SYS = {1, 3, 101, 102, 103, 104, 112, 124}
+    def facts(r):
+        fl, ids = r["flags"], set(r.get("sys_ids") or ())
+        g = set()
+        if "pm3" in fl:
+            g.add("players model")
+        if ids - TIRED_SYS:
+            g.add("systems")
+        if ids & TIRED_SYS or {"opp_b2b", "x6", "x9"} & fl:
+            g.add("tired opponent")
+        if {"x2", "x3", "x4"} & fl:
+            g.add("injuries")
+        if {"move1", "move2"} & fl:
+            g.add("line move")
+        for x, nm in (("x5", "blowout win"), ("thin", "unknown players"), ("opp_hot", "their shooting luck"),
+                      ("we_cold", "our shooting luck")):
+            if x in fl:
+                g.add(nm)
+        return g
+    print("\n=== DISTINCT FACTS: each underlying fact counted once (close)")
+    for n in range(1, 7):
+        keep = (lambda r, n=n: len(facts(r)) >= n) if n == 6 else (lambda r, n=n: len(facts(r)) == n)
+        line = f"  {n}{'+' if n == 6 else ' '} distinct facts"
+        allc = []
+        for s_ in seasons:
+            c = [r['res']['close'] for r in data[s_] if keep(r)]
+            allc += c
+            line += f"   {s_}: {rec(c)[1]:>17}"
+        print(line + f"   BOTH: {rec(allc)[1]}")
+    print("  -- today's STACK rule (6+ flags, or 5 with players model + system), split by distinct facts --")
+    live = lambda r: len(r["flags"]) >= 6 or (len(r["flags"]) == 5 and {"pm3", "sys"} <= r["flags"])
+    for nm, keep in (("STACK, 5+ distinct facts", lambda r: live(r) and len(facts(r)) >= 5),
+                     ("STACK, exactly 4 distinct facts", lambda r: live(r) and len(facts(r)) == 4),
+                     ("STACK, 3 or fewer distinct facts", lambda r: live(r) and len(facts(r)) <= 3),
+                     ("STACK, all of it", live),
+                     ("STACK with the players model leaning the OTHER way", lambda r: live(r) and "pm3" not in r["flags"]
+                      and r.get("gap") is not None and r["gap"] < 0)):
+        line = f"  {nm:52}"
+        allc = []
+        for s_ in seasons:
+            c = [r['res']['close'] for r in data[s_] if keep(r)]
+            allc += c
+            line += f"   {s_}: {rec(c)[1]:>17}"
+        print(line + f"   BOTH: {rec(allc)[1]}")
     print("\n=== single flags")
     for fl in FLAGS:
         line = f"  {fl:9}"
