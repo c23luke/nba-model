@@ -22,7 +22,8 @@ SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "thin_system", 
 
 # Caden 2026-11-14: "it shouldn't be in results or show anywhere; it can show on ProphetX of course but nowhere else".
 # MIN -13.5 (STACK under the old rule, one fact counted several times; today's STACK wouldn't bet it).
-HIDDEN = {"401909984-S131-MIN"}
+HIDDEN = {"401909984-S131-MIN",      # MIN -13.5, STACK under the old rule
+          "401909983-S131-BKN"}      # BKN +4, STACK under the old rule (Caden 2026-11-14: same as MIN)
 
 
 def snapshot(card_row: dict) -> dict:
