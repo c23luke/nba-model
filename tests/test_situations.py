@@ -41,47 +41,48 @@ def test_follow_a_2_point_line_move_and_home_rest_edge():
     assert [(p.system, p.side) for p in ps] == [(309, "BOS")]       # 4 days vs 1
 
 
-def test_stack_counts_every_flag_with_its_evidence_and_fires_at_5_plus():
-    from engine.situations import stack_flags, stack_picks
+def test_stack_counts_each_fact_once_and_a_min_like_pile_of_one_fact_is_not_a_bet():
+    """Nov 14 MIN: S1 + T12 + CHI off overtime + CHI on a back-to-back + a 39-point win + the line moving 2 = 7 old
+    flags, but 3 facts: tired opponent, blowout win, line move. Not a STACK bet any more."""
+    from engine.situations import stack_facts, stack_picks
     from engine.systems import Pick
-    big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=130, away_score=100, periods=4, final=True)
-    yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=4, final=True)
-    picks = [Pick(5, "g", "spread", "BOS", -4.0), Pick(7, "g", "spread", "BOS", -4.0),
-             Pick(305, "g", "spread", "BOS", -4.0, ["BOS won its last game by 30"])]
-    view = {"gap": 4.0, "thin_share": {"home": 0.0, "away": 0.2}}
-    fl = stack_flags(G, "BOS", picks, view, st(big), st(yday), -4.0, -2.5, {})
-    # players model, 1 system, 2+ systems, X5, moved 1.5, CHI thin, CHI on a back-to-back = 7
-    assert len(fl) == 7 and fl[0] == "players model likes BOS by 4.0" and "BOS won its last game by 30" in fl
-    ps = stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.5, {})
-    assert [(p.system, p.side, p.meta["n_flags"]) for p in ps] == [(131, "BOS", 7)]     # STACK: a card bet
-    view["gap"] = 0.0
-    picks = picks[:1]
-    ps = stack_picks(G, picks, {"gap": 0.0, "thin_share": {"home": 0.0, "away": 0.2}}, st(big), st(yday), -4.0, -2.5, {})
-    assert ps == []                     # 4 flags (1 system, moved 1.5, thin, back-to-back): no longer a pick
+    big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=139, away_score=100, periods=4, final=True)
+    yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=5, final=True)
+    picks = [Pick(1, "g", "spread", "BOS", -4.0), Pick(112, "g", "spread", "BOS", -4.0),
+             Pick(306, "g", "spread", "BOS", -4.0, ["CHI's last game went to overtime"]),
+             Pick(305, "g", "spread", "BOS", -4.0, ["BOS won its last game by 39"])]
+    view = {"gap": -1.0, "thin_share": {}}
+    f = stack_facts(G, "BOS", picks, view, st(big), st(yday), -4.0, -2.0, {})
+    assert list(f) == ["tired opponent", "line move", "blowout win"]
+    assert "CHI is on a back-to-back, BOS isn't" in f["tired opponent"] and "S1" in f["tired opponent"] \
+        and "T12" in f["tired opponent"] and "overtime" in f["tired opponent"]
+    assert stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.0, {}) == []
+    # add a system that isn't about rest and an opponent leaning on unknown players: 5 separate facts -> STACK
+    picks.append(Pick(2, "g", "spread", "BOS", -4.0))                     # S2, road favorite on a losing streak
+    view = {"gap": -1.0, "thin_share": {"home": 0.0, "away": 0.2}}
+    ps = stack_picks(G, picks, view, st(big), st(yday), -4.0, -2.0, {})
+    assert [(p.system, p.side, p.meta["n_flags"], p.meta["two_units"]) for p in ps] == [(131, "BOS", 5, True)]
+    assert all(": " in x for x in ps[0].meta["flags"]) and ps[0].meta["flags"][0] == "systems: card system: S2 (Road favorite on 4+ game losing streak)"
+
+
+def test_the_players_model_counts_for_stack_only_if_it_holds_whoever_plays():
+    from engine.situations import stack_facts
+    from engine.systems import Pick
+    picks = [Pick(5, "g", "spread", "BOS", -4.0)]
+    solid = {"gap": 4.0, "scenarios": [{"gap": 4.0}, {"gap": 3.4}], "thin_share": {}}
+    shaky = {"gap": 4.0, "scenarios": [{"gap": 4.0}, {"gap": 1.5}], "thin_share": {}}     # 3+ only if someone sits
+    assert "players model" in stack_facts(G, "BOS", picks, solid, None, None, -4.0, -4.0, {})
+    assert "players model likes BOS by 3.4 to 4.0" in stack_facts(G, "BOS", picks, solid, None, None, -4.0, -4.0, {})["players model"]
+    assert "players model" not in stack_facts(G, "BOS", picks, shaky, None, None, -4.0, -4.0, {})
 
 
 def test_stack_is_a_card_bet_without_needing_a_players_read():
-    from engine.pricing import eligible, history, PRICE_WIN as WIN, TO_WIN
+    from engine.pricing import eligible, history, PRICE_WIN as WIN
     from engine.systems import label, group, STACK
     p = {"system": STACK, "bet": "spread", "side": "BOS", "game_id": "g"}
-    assert eligible(p, []) == (True, None)                    # no players-model read needed: the flags are the case
-    assert history(p, [])["w"] == 118 and label(STACK) == "STACK" and group(STACK) == "FAV"   # 6+ flags, 118-73
-    assert abs(WIN[STACK] - (118 + 50) / (191 + 100)) < 0.001
-
-
-def test_stack_needs_6_flags_or_5_with_the_players_model_and_a_system_and_is_always_two_units():
-    from engine.situations import stack_picks
-    from engine.systems import Pick
-    big = Game(id="p1", game_date=date(2026, 11, 10), away="NYK", home="BOS", home_score=130, away_score=100, periods=4, final=True)
-    yday = Game(id="y", game_date=date(2026, 11, 11), away="CHI", home="Y", home_score=100, away_score=90, periods=4, final=True)
-    picks = [Pick(5, "g", "spread", "BOS", -4.0), Pick(305, "g", "spread", "BOS", -4.0, ["BOS won its last game by 30"])]
-    thin = {"home": 0.0, "away": 0.2}
-    both = stack_picks(G, picks, {"gap": 4.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
-    assert both[0].meta["n_flags"] == 6 and both[0].meta["two_units"] is True      # players model + 1 system
-    no_pm = stack_picks(G, picks, {"gap": 0.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
-    assert no_pm == []      # exactly 5 flags without the players model: not bet (Caden 2026-11-12, 96-79 is 54.9%)
-    five = stack_picks(G, picks[:1], {"gap": 4.0, "thin_share": thin}, st(big), st(yday), -4.0, -2.5, {})
-    assert [(p.system, p.meta["n_flags"]) for p in five] == [(131, 5)]   # players model, 1 system, moved, thin, b2b
+    assert eligible(p, []) == (True, None)                    # no players-model read needed: the facts are the case
+    assert history(p, [])["w"] == 217 and label(STACK) == "STACK" and group(STACK) == "FAV"   # 4+ facts, 217-148
+    assert abs(WIN[STACK] - (217 + 50) / (365 + 100)) < 0.001
 
 
 def test_sys_x4_needs_a_card_system_and_x4_on_the_same_side_and_thin_system_bets_are_30():

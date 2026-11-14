@@ -86,73 +86,94 @@ def picks(game, hs, at, home_spread, total, luck: dict, first_home_spread: float
     return out
 
 
-STACK_FLAGS_RECORD = ("2 seasons at the close: 6+ flags 118-73 (61.8%; 60.0% / 63.7%); 5+ with the players model 3+ AND a "
-                      "card system among them 46-26 (63.9%; 64.7% / 63.2%). Both bet at 2 units. Exactly 5 without both: "
-                      "not bet (5 flags went 96-79, 54.9%) (engine/measure_stack_flags.py, Nov 11-12)")
+STACK_FLAGS_RECORD = ("2 seasons, each separate fact counted once: 4+ facts 217-148 (59.5%; 59.1% / 59.8%) at the "
+                      "close; without line moves, 4+ facts 136-75 (64.5%) at the opening line (engine/measure_stack_flags.py, "
+                      "Nov 14)")
+
+# card systems built on the other team being tired (rest / overtime / back-to-back): part of the "tired opponent" fact
+TIRED_SYSTEMS = {1, 3, 101, 102, 103, 104, 112, 124}
 
 
-def stack_flags(game, side: str, picks: list, view: dict | None, hs, at, home_spread, first_home_spread,
-                luck: dict) -> list[str]:
-    """Every flag on one side of a game, each with its own evidence. The SAME flags, counted the same way, as
-    engine/measure_stack_flags.py (sys + sys2, move1 + move2 and x2 / x3 / x4 each count)."""
-    from .systems import COMBO_BETS
+def stack_facts(game, side: str, picks: list, view: dict | None, hs, at, home_spread, first_home_spread,
+                luck: dict) -> dict[str, str]:
+    """The SEPARATE facts behind one side, each once, each with its own evidence (Caden 2026-11-14: the MIN STACK
+    had 7 flags but 3 real things). The same grouping engine/measure_stack_flags.py tested:
+      players model   3+ in EVERY version of tonight (each team's day-to-day players all play / all sit); a lean
+                      that depends on an injury call doesn't count until the news settles it
+      systems         card systems that aren't about rest (1 or more, one fact)
+      tired opponent  back-to-back, off overtime (X6), home rest edge (X9) and the rest / overtime systems
+      injuries        X2 / X3 / X4 (only players already ruled out)
+      line move       moved 1+ toward this side since the first line (one fact however far)
+      blowout win, unknown players, their shooting luck, our shooting luck: one each"""
+    from .systems import COMBO_BETS, SYSTEMS, TEST_SYSTEMS, EARLY_SYSTEMS, label
+    names = {**SYSTEMS, **TEST_SYSTEMS, **EARLY_SYSTEMS}
     home = side == game.home
     opp = game.away if home else game.home
-    out = []
-    gap = (view or {}).get("gap")
-    if gap is not None and (gap if home else -gap) >= 3:
-        out.append(f"players model likes {side} by {abs(gap):.1f}")
+    sign = 1 if home else -1
+    out: dict[str, str] = {}
+    v = view or {}
+    gaps = [sc["gap"] for sc in v.get("scenarios") or [] if sc.get("gap") is not None] or \
+           ([v["gap"]] if v.get("gap") is not None else [])
+    if gaps and min(sign * g for g in gaps) >= 3:
+        lo, hi = min(sign * g for g in gaps), max(sign * g for g in gaps)
+        out["players model"] = (f"players model likes {side} by {lo:.1f}" if len(gaps) == 1 or hi - lo < 0.05 else
+                                f"players model likes {side} by {lo:.1f} to {hi:.1f}, whoever of the day-to-day players plays")
     sysd = sorted({p.system for p in picks if p.bet == "spread" and p.side == side and p.system < 300
                    and p.system not in (113, 301, *COMBO_BETS)})
-    if sysd:
-        out.append(f"{len(sysd)} card system{'s' if len(sysd) > 1 else ''} on {side}")
-    if len(sysd) >= 2:
-        out.append("2+ card systems")
+    other = [s_ for s_ in sysd if s_ not in TIRED_SYSTEMS]
+    if other:
+        out["systems"] = "card system" + ("s" if len(other) > 1 else "") + ": " + ", ".join(
+            f"{label(s_)} ({names.get(s_, {}).get('name', '')})" for s_ in other)
     tracked = {p.system: p for p in picks if p.bet == "spread" and p.side == side and p.system >= 302}
-    for sid in (302, 303, 304, 305, 306):
-        if sid in tracked:
-            out.append(tracked[sid].evidence[0])
-    if home_spread is not None and first_home_spread is not None:
-        mv = (first_home_spread - home_spread) if home else (home_spread - first_home_spread)
-        if mv >= 1:
-            out.append(f"line moved {mv:g} toward {side}")
-        if mv >= 2:
-            out.append("line moved 2+")
-    if 309 in tracked:
-        out.append(tracked[309].evidence[0])
-    th = (view or {}).get("thin_share") or {}
-    me, them = ("home", "away") if home else ("away", "home")
-    if th and th.get(them, 0) > th.get(me, 0) + 0.05:
-        out.append(f"{opp} leans on players the model barely knows ({th[them]:.0%} of its minutes vs {th.get(me, 0):.0%})")
-    lo, lm = (luck.get(opp) or [])[-5:], (luck.get(side) or [])[-5:]
-    if len(lo) >= 3 and sum(lo) / len(lo) >= 3:
-        out.append(f"{opp} has shot {sum(lo) / len(lo):+.1f} a game above its shot quality (last 5)")
-    if len(lm) >= 3 and sum(lm) / len(lm) <= -3:
-        out.append(f"{side} has shot {sum(lm) / len(lm):+.1f} a game below its shot quality (last 5)")
+    tired = [f"{label(s_)} ({names.get(s_, {}).get('name', '')})" for s_ in sysd if s_ in TIRED_SYSTEMS]
     so, sm = (at, hs) if home else (hs, at)
     lgo, lgm = getattr(so, "last_game", None), getattr(sm, "last_game", None)
     if lgo and (game.game_date - lgo.game_date).days == 1 and not (lgm and (game.game_date - lgm.game_date).days == 1):
-        out.append(f"{opp} is on a back-to-back, {side} isn't")
+        tired.insert(0, f"{opp} is on a back-to-back, {side} isn't")
+    for sid in (306, 309):
+        if sid in tracked:
+            tired.append(tracked[sid].evidence[0])
+    if tired:
+        out["tired opponent"] = "; ".join(tired)
+    for sid in (304, 303, 302):                       # the most specific injury fade says it best
+        if sid in tracked:
+            out["injuries"] = tracked[sid].evidence[0]
+            break
+    if home_spread is not None and first_home_spread is not None:
+        mv = (first_home_spread - home_spread) if home else (home_spread - first_home_spread)
+        if mv >= 1:
+            out["line move"] = f"line moved {mv:g} toward {side} since the first line"
+    if 305 in tracked:
+        out["blowout win"] = tracked[305].evidence[0]
+    th = v.get("thin_share") or {}
+    me, them = ("home", "away") if home else ("away", "home")
+    if th and th.get(them, 0) > th.get(me, 0) + 0.05:
+        out["unknown players"] = (f"{opp} leans on players the model barely knows ({th[them]:.0%} of its minutes "
+                                  f"vs {th.get(me, 0):.0%})")
+    lo5, lm5 = (luck.get(opp) or [])[-5:], (luck.get(side) or [])[-5:]
+    if len(lo5) >= 3 and sum(lo5) / len(lo5) >= 3:
+        out["their shooting luck"] = f"{opp} has shot {sum(lo5) / len(lo5):+.1f} a game above its shot quality (last 5)"
+    if len(lm5) >= 3 and sum(lm5) / len(lm5) <= -3:
+        out["our shooting luck"] = f"{side} has shot {sum(lm5) / len(lm5):+.1f} a game below its shot quality (last 5)"
     return out
 
 
 def stack_picks(game, picks: list, view, hs, at, home_spread, first_home_spread, luck: dict) -> list[Pick]:
-    """STACK (131), a card bet at 2 units: 6+ flags on one side, or 5 flags when the players model (3+) AND a card
-    system are among them. Caden 2026-11-12: exactly 5 otherwise is not bet ("54% isn't good enough"); 4 was dropped
-    Nov 11."""
+    """STACK (131), a card bet at 2 units: 4+ SEPARATE facts on one side (Caden 2026-11-14). Replaces "6+ flags, or 5
+    with the players model and a system", which counted one fact several times (MIN: 7 flags, 3 facts). In the
+    morning it can only see what's known before the line moves (opening prices); later a line move can be a fact."""
     from .systems import STACK
     if home_spread is None:
         return []
     out = []
     for side in (game.home, game.away):
-        fl = stack_flags(game, side, picks, view, hs, at, home_spread, first_home_spread, luck)
+        f = stack_facts(game, side, picks, view, hs, at, home_spread, first_home_spread, luck)
         line = home_spread if side == game.home else -home_spread
-        pm = bool(fl) and fl[0].startswith("players model likes")
-        sy = any(" card system" in f for f in fl)
-        if len(fl) >= 6 or (len(fl) == 5 and pm and sy):
-            out.append(Pick(STACK, game.id, "spread", side, line, [f"{len(fl)} flags on {side}: " + "; ".join(fl),
-                                                               STACK_FLAGS_RECORD],
-                            {"flags": fl, "n_flags": len(fl), "two_units": True}))
+        if len(f) >= 4:
+            fl = [f"{k}: {v}" for k, v in f.items()]
+            out.append(Pick(STACK, game.id, "spread", side, line,
+                            [f"{len(f)} separate facts on {side}: " + " | ".join(fl), STACK_FLAGS_RECORD],
+                            {"flags": fl, "n_flags": len(f), "two_units": True}))
     return out
 
 

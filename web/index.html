@@ -290,6 +290,16 @@ function playersSeason(bucket) {
   return t[k] || null;
 }
 // tags: every system on this side; gap: players model points on this side (null = no read)
+// STACK and the pair bets: what's behind them is their own list of facts, not the systems' "players model agreed" records
+function whyFacts(tag, flags) {
+  if (!flags || !flags.length) return "";
+  const rec = tag === "STACK" ? "4+ separate facts: 217-148 (59.5%) at the close; 136-75 (64.5%) at the open without line moves"
+    : (PAIR_TXT[tag] ? PAIR_TXT[tag][1] : "");
+  const facts = tag === "STACK" && flags.every(f => f.includes(": "));     // bets from Nov 14 on list facts, older ones flags
+  return `<table class="why-t"><tr><th>What's behind it (${flags.length} ${facts ? "separate facts" : "flags"})</th></tr>` +
+    flags.map(f => `<tr><td>${esc(f)}</td></tr>`).join("") +
+    `</table>${rec ? `<div class="why-note">${esc(tag)} backtest, 2 seasons: ${esc(rec)}.</div>` : ""}`;
+}
 function whyBets(tags, gap, side, bet) {
   // totals: only S4 is even tracked as a candidate, so other total systems don't belong behind a total
   const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && !COMBO_TAGS.includes(t) && (bet !== "total" || t === "S4"));
@@ -354,10 +364,8 @@ function plainWhy(o) {
     S.push(`A betting system is on this side and the other team is missing 2 or more rotation players at different positions. Together that went 42-18 (70%) over the last two seasons at the closing line (22-10 and 20-8). It doesn't need the player ratings to agree.`);
   } else if (o.tag === "STACK") {
     const f = o.flags || [];
-    S.push(`${f.length || "6+"} separate edges line up on this side${f.length ? ": " + f.join("; ") : ""}. `
-      + (f.length >= 6 ? "Sides with 6 or more went 118-73 (62%) over the last two seasons, graded at the closing line (60% and 64%)."
-         : "The player ratings and a betting system are both among them: sides like that went 46-26 (64%) over the last two seasons.")
-      + " It's 2 units.");
+    S.push(`${f.length || "4+"} separate reasons line up on this side, each counted once${f.length ? ": " + f.join("; ") : ""}. `
+      + "Sides with 4 or more went 217-148 (59.5%) over the last two seasons at the closing line, and 136-75 (64.5%) at the opening line when the reasons were known before the line moved. It's 2 units.");
   } else if (o.tag === "MONEYBALL" || (sys.length >= 2 && o.gap != null && o.gap >= 3 && !total)) {
     const h = two({ [SEASONS[0]]: (R.moneyball || {})[SEASONS[0]], [SEASONS[1]]: (R.moneyball || {})[SEASONS[1]] });
     S.push(`Two or more systems plus the player ratings on the same side is our strongest setup${h ? `: ${h.w}-${h.l} (${h.p}%) over two seasons` : ""}.`);
@@ -500,7 +508,7 @@ function ticket(x) {
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, thinFade: x.thin_fade, thinSystem: x.thin_system, flags: x.flags, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
-      ${whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
+      ${COMBO_TAGS.includes(x.system) && x.system !== "T13" && x.system !== "MONEYBALL" && (x.flags || []).length ? whyFacts(x.system, x.flags) : whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
       <details class="more"><summary>Order details</summary><dl>
         <dt>Bought</dt><dd>${esc(x.contract)}</dd>
@@ -662,7 +670,7 @@ function cardRow(c, reason) {
         ${plainWhy({ verdict: c.verdict, tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
           market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, thinFade: c.thin_fade, thinSystem: c.thin_system, flags: c.flags, away: c.away, home: c.home })}
 
-        ${whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet)}
+        ${COMBO_TAGS.includes(c.tag) && c.tag !== "T13" && c.tag !== "MONEYBALL" && (c.flags || []).length ? whyFacts(c.tag, c.flags) : whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet)}
       </div>
       <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} edge` : "no price yet"}</div>
       ${(c.shop || []).length > 1 ? `<details class="shop"><summary>Every price (${c.shop.length})</summary><table>${c.shop.map(q =>
