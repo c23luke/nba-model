@@ -219,6 +219,40 @@ def main():
                     allc += c
                     line += f"   {s_}: {rec(c)[1]:>17}"
                 print(line + f"   BOTH: {rec(allc)[1]}")
+    # ---- EARLY + ADD (Caden 2026-11-14: "keep them for both closing and opening lines ... bet early and then maybe
+    # add another unit, or wait, or bet early if we have enough info"). MOVE+THIN and 3HOT+MOVE without the move:
+    # bet the other half at the OPEN, then see what happened when the line moved our way / against us.
+    def mv_of(r):
+        i2 = r.get("mi2") or {}
+        first = i2.get("eve") if i2.get("eve") is not None else i2.get("open")
+        if first is None or i2.get("close") is None:
+            return None
+        return (first - i2["close"]) if r["side"] == r["home"] else (i2["close"] - first)
+    units = lambda xs: sum(1.0 if x > 0 else -1.1 if x < 0 else 0 for x in xs)
+    print("\n=== EARLY + ADD: the non-move half bet at the OPEN, then what the line did (-110, units)")
+    for nm, fl, need in (("MOVE+THIN without the move: opponent leans on unknown players", "thin", 2),
+                         ("3HOT+MOVE without the move: opponent's 3s running hot", "opp_hot", 1)):
+        print(f"  {nm}")
+        for lab, keep, when in (
+                ("A. bet everything at the open", lambda r, m: True, "open"),
+                (f"   ... the ones where the line then moved {need}+ OUR way (graded at the open)", lambda r, m: m is not None and m >= need, "open"),
+                (f"   ... the ones where it moved {need}+ AGAINST us (graded at the open)", lambda r, m: m is not None and m <= -need, "open"),
+                ("   ... the ones where it barely moved (graded at the open)", lambda r, m: m is not None and -need < m < need, "open"),
+                (f"B. wait: bet only after a {need}+ move our way, at the close (today's pair bet)", lambda r, m: m is not None and m >= need, "close")):
+            line = f"    {lab:78}"
+            allc = []
+            for s_ in seasons:
+                c = [r['res'][when] for r in data[s_] if fl in r["flags"] and keep(r, mv_of(r)) and r['res'][when] is not None]
+                allc += c
+                line += f"   {s_}: {rec(c)[1]:>17}"
+            print(line + f"   BOTH: {rec(allc)[1]}  {units(allc):+.1f}u")
+        # C. bet 1 unit at the open, add 1 more at the close only if the line moved our way
+        for s_ in list(seasons) + ["both"]:
+            rows_ = [r for x in (seasons if s_ == "both" else [s_]) for r in data[x] if fl in r["flags"]]
+            a_ = [r['res']['open'] for r in rows_ if r['res']['open'] is not None]
+            b_ = [r['res']['close'] for r in rows_ if (mv_of(r) or 0) >= need]
+            print(f"    C. 1u at the open on all + 1u more after the move, {s_:8}: {len(a_)} + {len(b_)} bets, "
+                  f"{units(a_) + units(b_):+.1f}u")
     two("TEST 1. OPENING LINE: only what's known before the line moves (no line-move flags), graded at the OPEN. "
         "Caveat: the injury flags use who actually sat, which includes late scratches.", False, "open")
     two("TEST 2. CLOSING LINE: everything, including how the line moved, graded at the CLOSE", True, "close")
