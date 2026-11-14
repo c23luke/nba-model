@@ -194,6 +194,34 @@ def main():
             allc += c
             line += f"   {s_}: {rec(c)[1]:>17}"
         print(line + f"   BOTH: {rec(allc)[1]}")
+    # ---- TWO TESTS (Caden 2026-11-14: "we are betting opening lines ... one on opening lines without the move, another
+    # with closing lines after all information and the line move")
+    def two(title, use_moves, when):
+        print(f"\n=== {title}")
+        cnt = (lambda r: len(r["flags"])) if use_moves else (lambda r: len(r["flags"] - {"move1", "move2"}))
+        dis = (lambda r: len(facts(r))) if use_moves else (lambda r: len(facts(r) - {"line move"}))
+        for label_, f_ in (("flags (as counted today)", cnt), ("distinct facts", dis)):
+            print(f"  by {label_}:")
+            for n in range(3, 8):
+                keep = (lambda r, n=n: f_(r) >= n) if n == 7 else (lambda r, n=n: f_(r) == n)
+                line = f"    {n}{'+' if n == 7 else ' '}"
+                allc = []
+                for s_ in seasons:
+                    c = [r['res'][when] for r in data[s_] if keep(r) and r['res'][when] is not None]
+                    allc += c
+                    line += f"   {s_}: {rec(c)[1]:>17}"
+                print(line + f"   BOTH: {rec(allc)[1]}")
+            for n in (4, 5, 6):
+                allc = []
+                line = f"    {n}+ (cumulative)"
+                for s_ in seasons:
+                    c = [r['res'][when] for r in data[s_] if f_(r) >= n and r['res'][when] is not None]
+                    allc += c
+                    line += f"   {s_}: {rec(c)[1]:>17}"
+                print(line + f"   BOTH: {rec(allc)[1]}")
+    two("TEST 1. OPENING LINE: only what's known before the line moves (no line-move flags), graded at the OPEN. "
+        "Caveat: the injury flags use who actually sat, which includes late scratches.", False, "open")
+    two("TEST 2. CLOSING LINE: everything, including how the line moved, graded at the CLOSE", True, "close")
     print("\n=== single flags")
     for fl in FLAGS:
         line = f"  {fl:9}"
