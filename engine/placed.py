@@ -20,6 +20,11 @@ SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "thin_system", 
              "also_combo", "with", "label", "line")
 
 
+# Caden 2026-11-14: "it shouldn't be in results or show anywhere; it can show on ProphetX of course but nowhere else".
+# MIN -13.5 (STACK under the old rule, one fact counted several times; today's STACK wouldn't bet it).
+HIDDEN = {"401909984-S131-MIN"}
+
+
 def snapshot(card_row: dict) -> dict:
     s = {k: card_row.get(k) for k in SNAP_KEYS}
     s["history"] = (card_row.get("record") or {}).get("history") or card_row.get("history")
@@ -254,6 +259,8 @@ def placed_bets(orders: list[dict], picks: dict, games: dict, card: dict, season
             "score": {"home": g.get("home_score"), "away": g.get("away_score")} if status != "OPEN" and g else None,
         })
     rows = merge_fills(rows)
+    # tickets Caden asked to remove from every record and page (they stay on the exchange, nowhere else)
+    rows = [r for r in rows if r.get("key") not in HIDDEN]
     rows.sort(key=lambda r: (r["status"] == "FINAL", r["tip_utc"] or "", r["placed_at"] or ""))
     settled = [r for r in rows if r["status"] == "FINAL"]
     open_ = [r for r in rows if r["status"] != "FINAL"]

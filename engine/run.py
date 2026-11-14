@@ -426,6 +426,8 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
 
     # ---- 6. board
     all_picks = {p["key"]: p for p in store.load_picks()}
+    from .placed import HIDDEN as _hidden            # tickets Caden removed from every record (Nov 14: MIN -13.5)
+    all_picks = {k: v for k, v in all_picks.items() if k not in _hidden}
     for r in pick_rows:                       # venue prices aren't stored with the pick; carry them to the card
         if r.get("shop") is not None and r["key"] in all_picks:
             all_picks[r["key"]]["shop"] = r["shop"]
