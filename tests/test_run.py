@@ -220,14 +220,15 @@ def test_card_line_shops_kalshi_and_exchanges(tmp_path):
     assert c["best"]["venue"] == "prophetx" and c["best"]["line"] == 7.0      # a point better at -105
     assert all("shop" not in p for p in board["bets"])                         # prices only on the card
     feed = store._read("bet_feed", [])
-    assert feed and feed[0]["best_venue"] == "prophetx" and feed[0]["status"] == c["verdict"].lower()
+    f_lal = next(r for r in feed if r.get("side") == "LAL")                    # the card is sorted strongest first
+    assert f_lal["best_venue"] == "prophetx" and f_lal["status"] == c["verdict"].lower()
     # forward tracking (2026-11-12): every bet type we bet is on the board with its size and a this-season record
     fw = {r["name"].split(":")[0]: r for r in board["forward"]}
     assert {"MONEYBALL", "STACK", "SYS+X4", "X4+B2B", "X2+B2B", "MOVE+THIN", "RIM+PM", "SQ+X3", "UNLUCKY+X4", "SQ+THIN",
             "System + players model 3+", "Players model alone 4+"} <= set(fw) and "3HOT+MOVE" not in fw
-    assert fw["MONEYBALL"]["units"] == 2 and fw["System + players model 3+ against a thin roster"]["units"] == 2
+    assert fw["MONEYBALL"]["units"] == 2 and fw["System + players model 3+ against a thin roster"]["units"] == 1   # Nov 14
     assert fw["SQ+THIN"]["units"] == 1 and fw["MONEYBALL"]["open"] >= 1        # LAL MONEYBALL is open tonight
-    assert fw["System + players model 3+"]["units"] == 2
+    assert fw["System + players model 3+"]["units"] == 1 and [r["units"] for r in board["forward"]][:3] == [2, 2, 2]
 
 
 def test_tipped_card_bets_stay_up_with_their_result(tmp_path):

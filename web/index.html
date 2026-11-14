@@ -383,7 +383,7 @@ function plainWhy(o) {
     else S.push(`At ${amerOf(o.price)} we need to win ${be}% of the time to break even; the model has it winning about ${win}%.`);
   }
   if (o.placed || o.verdict === "BET") S.push(`It's sized to win $${o.toWin || 20}${o.tag === "MONEYBALL" ? " because it's a MONEYBALL bet"
-    : o.thinSystem ? ` (2 units) because ${esc(o.thinSystem.team)} leans on players the model barely knows (${Math.round(o.thinSystem.share * 100)}% of its minutes vs ${Math.round(o.thinSystem.ours * 100)}%): a system plus the player ratings went 22-9 betting against teams like that`
+    : o.thinSystem && o.toWin === 40 ? ` (2 units) because ${esc(o.thinSystem.team)} leans on players the model barely knows (${Math.round(o.thinSystem.share * 100)}% of its minutes vs ${Math.round(o.thinSystem.ours * 100)}%): a system plus the player ratings went 22-9 betting against teams like that`
     : o.tag === "STACK" ? " (2 units): every STACK bet is 2 units"
     : o.thinFade ? ` (2 units) because ${esc(o.thinFade.team)} leans on players the model barely knows (${Math.round(o.thinFade.share * 100)}% of its minutes vs ${Math.round(o.thinFade.ours * 100)}%): the players model went 40-17 betting against teams like that` : ""}.`);
   const N = o.now;
@@ -416,7 +416,7 @@ function whyHead(tag, tags, gap, side) {
   if (tag && tag[0] === "E") return `${esc(tag)} (early-season system) with the players model agreeing by 3+`;
   return `${esc(tag)} fired${sys.length > 1 ? `, with ${sys.filter(t => t !== tag).map(esc).join(", ")} on the same side` : ""}`;
 }
-const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "bets are sized to win $40 (2 units) for MONEYBALL, STACK, a system + the player ratings, and the players model against a thin roster; everything else $20";
+const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "bets are sized to win $40 (2 units) for MONEYBALL, STACK and the players model against a thin roster; everything else $20";
 
 // ---------- tabs (remembered per viewer; works without storage too)
 const TABS = ["bets", "rankings", "systems", "lab"];

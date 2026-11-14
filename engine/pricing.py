@@ -57,10 +57,12 @@ AGREE = [("players model disagrees", -99, 0), ("agrees by 0-3", 0, 3), ("agrees 
 THIN_FADE_TO_WIN = 40
 # 1.5 units on a SYSTEM bet (a system + players model 3+) against a thin roster (Caden 2026-11-11): 22-9 (71%) at the
 # close over 2 seasons (12-3 / 10-6; engine/measure_stack_flags.py, pm3 + sys + thin). Too few bets for 2 units.
-THIN_SYSTEM_TO_WIN = 40   # 2 units since Caden 2026-11-12 (was 1.5)
+# Nov 14 (Caden, "make those changes"): sized by the sorted estimate (record + 25 wins and 25 losses): 22-9 sorts to
+# 58.0% on 31 bets, under the 60% bar for 2 units. Back to 1 unit (was 2u Nov 12, 1.5u Nov 11).
+THIN_SYSTEM_TO_WIN = 20
 # 2 units on every system + players model 3+ bet (Caden 2026-11-12, "make those changes"): 77-49 (61.1%) at the close,
 # 61.3% / 60.9% by season, 126 bets; 79-51 at the open. A planned rule, not from a search.
-COMBO_TO_WIN = 40
+COMBO_TO_WIN = 20   # Nov 14: 77-49 sorts to 58.0%, under the 60% bar for 2 units. Back to 1 unit (was 2u Nov 12)
 
 
 def _is_combo(pick: dict) -> bool:
@@ -673,7 +675,8 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
             r["why"] = ("Not bet: " + ", ".join(f"{x['tag']} ({x['label']})" for x in other)
                         + " is on the other side of this game. Betting both sides only pays the vig twice.")
     order = {"BET": 0, "LIMIT": 1, "PASS": 2, "CONFLICT": 3}
-    rows.sort(key=lambda r: (order[r["verdict"]], -r["edge"]))
+    # strongest first (Nov 14): bets before limits before passes; within them 2-unit bets first, then by edge
+    rows.sort(key=lambda r: (order.get(r["verdict"], 9), -(r.get("to_win") or 0), -r["edge"]))
     return rows
 
 

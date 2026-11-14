@@ -136,7 +136,13 @@ def test_shot_quality_pairs_fire_only_with_both_flags_and_say_their_numbers():
     assert sq_pair_picks(G, [], {"gap": 0.0}, -4.0, -4.0, {"BOS": bos, "CHI": nyk}) == []   # no second flag anywhere
 
 
-def test_a_system_plus_players_model_bet_is_two_units_and_t13_alone_is_one():
+def test_a_system_plus_players_model_bet_is_a_combo_and_t13_alone_is_not():
     from engine.pricing import _is_combo
     assert _is_combo({"system": 5, "bet": "spread"}) and not _is_combo({"system": 113, "bet": "spread"})
     assert not _is_combo({"system": 130, "bet": "spread"}) and not _is_combo({"system": 136, "bet": "spread"})
+
+
+def test_units_follow_the_sorted_estimate_from_nov_14():
+    from engine.pricing import COMBO_TO_WIN, THIN_SYSTEM_TO_WIN, THIN_FADE_TO_WIN, MONEYBALL_TO_WIN, STACK_2U_TO_WIN
+    assert (COMBO_TO_WIN, THIN_SYSTEM_TO_WIN) == (20, 20)                          # 58.0% sorted: 1 unit
+    assert (THIN_FADE_TO_WIN, MONEYBALL_TO_WIN, STACK_2U_TO_WIN) == (40, 40, 40)   # 60%+ sorted, planned tests: 2 units
