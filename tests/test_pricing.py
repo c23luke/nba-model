@@ -33,8 +33,8 @@ def test_card_ranks_bets_first_and_prices_them():
     slate = [{"game_id": "g2", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}, agree_away("g1")]
     live = [pk(4, "OVER", [kq("OVER", 231.5, 0.50, "total")], bet="total", line=231.5),   # S4: tracking only, off the card
             pk(113, "NOP", [kq("NOP", 3.5, 0.60)], game="g2", line=3.5),                  # T13 56% at 60c → LIMIT
-            pk(112, "BOS"),                                                               # T12 + players 4: no market → BET at a book
-            pk(106, "BOS", [kq("BOS", -3.0, 0.40)])]                                      # TEST on the same side: rides along
+            pk(112, "BOS", line=3.0),                                                     # T12 + players 4: no market → BET at a book
+            pk(106, "BOS", [kq("BOS", 3.0, 0.40)], line=3.0)]                                      # TEST on the same side: rides along
     card = build_card(live, slate, now=NOW)
     assert [c["tag"] for c in card] == ["T12", "T13"]                                     # one row per side
     assert card[0]["verdict"] == "BET" and card[1]["verdict"] == "LIMIT"
@@ -87,7 +87,7 @@ def test_tipped_games_leave_the_card():
 def test_pass_when_no_edge_and_no_market(monkeypatch):
     import engine.pricing as P                    # a spread system is priced at the combo's win rate
     monkeypatch.setattr(P, "COMBO_WIN", 0.51)
-    card = build_card([pk(112, "BOS")], [agree_away()], now=NOW)
+    card = build_card([pk(112, "BOS", line=3.0)], [agree_away()], now=NOW)
     assert card[0]["verdict"] == "PASS" and card[0]["win"] == 0.51
 
 
@@ -97,8 +97,8 @@ def test_systems_are_priced_at_recent_records_not_30_year_cards():
     assert PRICE_WIN[122] < 110 / 210                        # T22 held up worst on unseen seasons: below break-even
     # Caden 2026-11-02: a spread system alone is never bet; with the players model 3+ it's priced as the combo
     from engine.pricing import COMBO_WIN
-    assert win_estimate({"system": 2, "line": -3.0, "bet": "spread", "game_id": "g", "side": "A"}, []) is None
-    assert win_estimate({"system": 2, "line": -3.0, "bet": "spread", "game_id": "g", "side": "A"},
+    assert win_estimate({"system": 2, "line": 3.0, "bet": "spread", "game_id": "g", "side": "A"}, []) is None
+    assert win_estimate({"system": 2, "line": 3.0, "bet": "spread", "game_id": "g", "side": "A"},
                         [agree_away("g")]) == COMBO_WIN == round((79 + 50) / 230, 4)
 
 
@@ -156,10 +156,10 @@ def test_locked_bet_is_shopped_from_where_the_market_is_now():
 
 
 def test_quote_far_off_the_market_is_treated_as_bad_data():
-    slate = [{"game_id": "g1", "home": "H", "home_spread": -1.5, "personnel": {"gap": 4.0}}]   # H -1.5 consensus
-    shop = [xq("polymarket", "H", 1.5, +113),     # H +1.5 priced like H -1.5 (teams swapped in the feed)
-            xq("prophetx", "H", -1.5, +104)]
-    c = build_card([pk(102, "H", shop, line=-1.5)], slate, now=NOW)[0]       # T2: no line limits
+    slate = [{"game_id": "g1", "home": "H", "home_spread": 1.5, "personnel": {"gap": 4.0}}]   # H +1.5 consensus
+    shop = [xq("polymarket", "H", 4.5, +113),     # H +4.5, 3 points better than the market, priced like a coin flip: bad data
+            xq("prophetx", "H", 1.5, +104)]
+    c = build_card([pk(102, "H", shop, line=1.5)], slate, now=NOW)[0]       # T2: no line limits
     assert [q["venue"] for q in c["shop"]] == ["prophetx"]
 
 
@@ -280,7 +280,7 @@ def test_both_sides_of_a_game_are_never_bet():
     # the players model's case and its raw gap disagree here only so both sides qualify
     slate = [{"game_id": "g1", "home": "BOS", "away": "NYK",
               "personnel": {"gap": 5.0, "case": {"side": "NYK", "win_est": 0.56}}}, agree_away("g9")]
-    live = [pk(112, "BOS", game="g1"), pk(113, "NYK", game="g1"), pk(112, "LAL", game="g9")]
+    live = [pk(112, "BOS", game="g1", line=3.0), pk(113, "NYK", game="g1"), pk(112, "LAL", game="g9", line=3.0)]
     for p in live[:2]:
         p["away"], p["home"] = "NYK", "BOS"
     card = build_card(live, slate, now=NOW)
@@ -291,22 +291,39 @@ def test_both_sides_of_a_game_are_never_bet():
 
 def test_moneyball_replaces_the_other_bets_on_its_side_and_wins_30():
     slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
-    live = [pk(130, "BOS", game="g1"), pk(112, "BOS", game="g1"), pk(102, "BOS", game="g1")]
+    live = [pk(130, "BOS", game="g1", line=3.0), pk(112, "BOS", game="g1", line=3.0), pk(102, "BOS", game="g1", line=3.0)]
     card = build_card(live, slate, now=NOW)
     assert [c["tag"] for c in card] == ["MONEYBALL"] and card[0]["to_win"] == 40
     assert set(card[0]["with"]) == {"T12", "T2"}
+
+
+def test_moneyball_is_2_units_only_as_the_underdog():
+    # Caden 2026-11-19 (measure_fav_dog): MONEYBALL went 27-10 as the underdog, 2-1 as a favorite: 1 unit there
+    slate = [{"game_id": "g1", "personnel": {"case": {"side": "NOP", "win_est": 0.56}}}]
+    fav = build_card([pk(130, "BOS", game="g1", line=-9.5)], slate, now=NOW)[0]
+    dog = build_card([pk(130, "BOS", game="g1", line=6.5)], slate, now=NOW)[0]
+    assert fav["tag"] == dog["tag"] == "MONEYBALL" and fav["to_win"] == 20 and dog["to_win"] == 40
+
+
+def test_a_system_with_the_players_model_bets_only_the_underdog():
+    # Caden 2026-11-19 (measure_fav_dog): 69-41 as the underdog, 10-9 as a favorite (6-4, then 4-5)
+    sl = [agree_away()]
+    fav = build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -105)], line=-3.0)], sl, now=NOW)[0]
+    dog = build_card([pk(102, "BOS", [xq("prophetx", "BOS", 3.0, -105)], line=3.0)], sl, now=NOW)[0]
+    assert fav["verdict"] == "PASS" and "only bets the underdog" in fav["why"]
+    assert dog["verdict"] == "BET"
 
 
 def test_never_bets_a_price_worse_than_minus_150_or_far_from_the_number(monkeypatch):
     import engine.pricing as P
     monkeypatch.setattr(P, "COMBO_WIN", 0.70)           # huge edge on paper: the guards must still hold
     sl = [agree_away()]
-    pricey = build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -160)])], sl, now=NOW)[0]
+    pricey = build_card([pk(102, "BOS", [xq("prophetx", "BOS", 3.0, -160)], line=3.0)], sl, now=NOW)[0]
     assert pricey["verdict"] != "BET" and pricey["best"]["too_pricey"]
-    far = build_card([pk(102, "BOS", [xq("prophetx", "BOS", 0.5, -110)])], sl, now=NOW)[0]   # 3.5 pts bought
-    assert not far["shop"] or all(abs(q["line"] - -3.0) <= 2.0 for q in far["shop"])
-    fine = build_card([pk(102, "BOS", [xq("prophetx", "BOS", -2.0, -140)])], sl, now=NOW)[0]
-    assert fine["verdict"] == "BET" and fine["best"]["line"] == -2.0
+    far = build_card([pk(102, "BOS", [xq("prophetx", "BOS", 6.5, -110)], line=3.0)], sl, now=NOW)[0]   # 3.5 pts bought
+    assert not far["shop"] or all(abs(q["line"] - 3.0) <= 2.0 for q in far["shop"])
+    fine = build_card([pk(102, "BOS", [xq("prophetx", "BOS", 4.0, -140)], line=3.0)], sl, now=NOW)[0]
+    assert fine["verdict"] == "BET" and fine["best"]["line"] == 4.0
 
 
 def test_a_3_percent_edge_is_not_a_bet_any_more(monkeypatch):
@@ -314,8 +331,8 @@ def test_a_3_percent_edge_is_not_a_bet_any_more(monkeypatch):
     assert P.MIN_EV == 0.04
     monkeypatch.setattr(P, "COMBO_WIN", 0.545)
     sl = [agree_away()]   # 54.5% at -105 (cost 0.5122): +6.4% -> BET; at -115 (0.5349): +1.9% -> not a bet
-    assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -105)])], sl, now=NOW)[0]["verdict"] == "BET"
-    assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", -3.0, -112)])], sl, now=NOW)[0]["verdict"] != "BET"
+    assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", 3.0, -105)], line=3.0)], sl, now=NOW)[0]["verdict"] == "BET"
+    assert build_card([pk(102, "BOS", [xq("prophetx", "BOS", 3.0, -112)], line=3.0)], sl, now=NOW)[0]["verdict"] != "BET"
 
 
 def test_no_totals_are_bet_s4_is_tracking_only():

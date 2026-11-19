@@ -165,7 +165,7 @@ def test_rules_now_drops_small_t13_and_both_sides_and_resizes_to_20():
 def test_rules_now_marks_every_row_and_projects_open_bets_at_20():
     from engine.placed import rules_now
     rows = [{"status": "OPEN", "bet": "spread", "game_id": "g9", "side": "BOS", "system": "MONEYBALL", "t13_gap": None,
-             "holding": "BOS -7.5", "result": None, "pnl": None, "risk": 12.0, "to_win": 11.51},
+             "holding": "BOS +7.5", "line": 7.5, "result": None, "pnl": None, "risk": 12.0, "to_win": 11.51},
             {"status": "OPEN", "bet": "spread", "game_id": "g8", "side": "DET", "system": "T13", "t13_gap": 3.2,
              "holding": "DET +4", "result": None, "pnl": None, "risk": 24.6, "to_win": 20.0}]
     r = rules_now(rows)
@@ -219,10 +219,11 @@ def test_split_fills_are_one_bet_and_systems_need_the_players_model():
     lal = next(r for r in out["bets"] if r["side"] == "LAL")
     assert len([r for r in out["bets"] if r["side"] == "LAL"]) == 1 and len(lal["fills"]) == 2
     assert lal["count"] == 39.98 and lal["cost"] == 19.09 and lal["result"] == "W"
-    assert lal["rules"]["counted"] and lal["rules"]["to_win"] == 20.0      # a system + players model 3+: 1 unit again since 2026-11-14
+    # LAL -2.5 is a system + players model bet on a FAVORITE: since 2026-11-19 those aren't bet (10-9 over 2 seasons)
+    assert not lal["rules"]["counted"] and "favorite" in lal["rules"]["why"]
     was = next(r for r in out["bets"] if r["side"] == "WAS")
     assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
-    assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 0)
+    assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (0, 0)      # neither counts under today's rules
 
 
 
@@ -356,3 +357,23 @@ def test_an_old_rule_stack_ticket_is_out_of_todays_record_but_its_money_stays():
     s = rules_now([old, new])
     assert old["rules"]["counted"] is False and "old STACK rule" in old["rules"]["why"]
     assert new["rules"]["counted"] is True and old["risk"] == 48.99            # the real money stays on the row
+
+
+def test_rules_now_moneyball_favorite_counts_1_unit_and_the_new_skips():
+    # Caden 2026-11-19 (engine/measure_fav_dog.py): MONEYBALL is 2 units only as the underdog; a system + players model
+    # only bets the underdog; T13 skips 10+ underdogs; MOVE+THIN skips 5 to 9.5 underdogs
+    from engine.placed import rules_now
+    base = {"status": "OPEN", "bet": "spread", "t13_gap": 5.0, "result": None, "pnl": None, "risk": 21.0, "to_win": 20.0}
+    rows = [{**base, "game_id": "a", "side": "DET", "system": "MONEYBALL", "holding": "DET -9.5", "line": -9.5},
+            {**base, "game_id": "b", "side": "WAS", "system": "MONEYBALL", "holding": "WAS +6.5", "line": 6.5},
+            {**base, "game_id": "c", "side": "GSW", "system": "T6", "holding": "GSW -2.5", "line": -2.5, "players": 4.0},
+            {**base, "game_id": "d", "side": "UTA", "system": "T13", "holding": "UTA +11.5", "line": 11.5},
+            {**base, "game_id": "e", "side": "TOR", "system": "MOVE+THIN", "holding": "TOR +6.5", "line": 6.5},
+            {**base, "game_id": "f", "side": "TOR", "system": "MOVE+THIN", "holding": "TOR +3.5", "line": 3.5}]
+    rules_now(rows)
+    assert rows[0]["rules"]["counted"] and rows[0]["rules"]["to_win"] == 20.0
+    assert rows[1]["rules"]["counted"] and rows[1]["rules"]["to_win"] == 40.0
+    assert not rows[2]["rules"]["counted"] and "favorite" in rows[2]["rules"]["why"]
+    assert not rows[3]["rules"]["counted"] and "10+" in rows[3]["rules"]["why"]
+    assert not rows[4]["rules"]["counted"] and "5 to 9.5" in rows[4]["rules"]["why"]
+    assert rows[5]["rules"]["counted"]

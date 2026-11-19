@@ -224,7 +224,7 @@ def pair_picks(game, picks: list, view, hs, at, home_spread, first_home_spread) 
         me, them = ("home", "away") if home else ("away", "home")
         if first_home_spread is not None and th and th.get(them, 0) > th.get(me, 0) + 0.05:
             mv = (first_home_spread - home_spread) if home else (home_spread - first_home_spread)
-            if mv >= 2:
+            if mv >= 2 and not (5 <= line < 10):     # Caden 2026-11-19: as a 5 to 9.5 underdog it went 4-11 (1-3, 3-8)
                 fl = [f"line moved {mv:g} toward {side} since the first line",
                       f"{opp} leans on players the model barely knows ({th[them]:.0%} of its minutes vs {th.get(me, 0):.0%})"]
                 out.append(Pick(135, game.id, "spread", side, line,

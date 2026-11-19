@@ -194,6 +194,11 @@ def eligible(p: dict, slate: list[dict]) -> tuple[bool, str | None]:
     if p["bet"] == "total":
         # Caden 2026-11-03: only bets that hit a lot. S4 (56%) is a small-edge grind, so it's tracking only now.
         return False, "Totals aren't bet now (S4 is tracking only)"
+    if _is_combo(p) and p.get("line") is not None and p["line"] <= 0:
+        # Caden 2026-11-19 (engine/measure_fav_dog.py, 2 seasons at the open): a system + players model 3+ won
+        # 69-41 as the underdog but 10-9 as the favorite (6-4, then 4-5)
+        return False, ("No bet: a system + the players model only bets the underdog "
+                       "(as a favorite it went 10-9 over two seasons)")
     g = players_agree(p, slate)
     if g is None:
         return False, "No bet: the players model has no clean read on this game, and a system needs it to agree by 3+"
@@ -645,7 +650,9 @@ def build_card(live: list[dict], slate: list[dict], now: datetime | None = None)
                      "verdict": verdict, "why": why, "edge": round(edge, 4),
                      # bet size: every card bet wins $20; MONEYBALL wins $40 (2 units). (Confidence sizing removed
                      # 2026-10-27: T13 now needs a 4+ gap, so the small, weak edges it shrank are gone.)
-                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 else
+                     # MONEYBALL 2u only as the underdog (Caden 2026-11-19, engine/measure_fav_dog.py: 27-10 as a dog,
+                     # 2-1 as a favorite — never proven there). As a favorite it is 1 unit.
+                     "to_win": MONEYBALL_TO_WIN if p["system"] == 130 and (p.get("line") or 0) > 0 else
                                STACK_2U_TO_WIN if p["system"] == 131 and (p.get("meta") or {}).get("two_units") else
                                THIN_FADE_TO_WIN if thin_fade(p, slate) else
                                THIN_SYSTEM_TO_WIN if thin_system(p, slate) else

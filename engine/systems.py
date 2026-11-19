@@ -513,6 +513,7 @@ def personnel_call(view: dict | None, gap_to_fire: float = 3.0) -> dict:
     return {"call": "none"}
 
 
+T13_MAX_DOG = 10.0   # T13 doesn't bet a side getting this many points or more (42-46 over 2 seasons at the open)
 T13_GAP = 4.0   # MEASURED (engine/measure_moneyball_stack.py, 2 seasons at the open, live players model):
                 # gap 3-4 went 131-116 (53.0%: 2024-25 62-65, 2025-26 69-51) — about break-even after the vig;
                 # gap 4-6 went 164-120 (57.7%), up both seasons. A 3-4 gap is only bet as part of a MONEYBALL
@@ -529,6 +530,8 @@ def evaluate_personnel(game: Game, home_spread: float | None, view: dict | None,
     if c["call"] != "now":
         return []
     side, line = (game.home, home_spread) if c["side"] == "home" else (game.away, -home_spread)
+    if line >= T13_MAX_DOG:
+        return []      # Caden 2026-11-19 (engine/measure_fav_dog.py): T13 getting 10+ went 42-46 (21-17, then 21-29)
     meta = {"gap": abs(view["gap"]), "worst_gap": abs(c["worst_gap"]), "call": "now"}
     either = (f"Holds whether day-to-day players play or sit (smallest gap {c['worst_gap']:+.1f})"
               if view.get("waiting_on") else "No day-to-day players in either rotation")

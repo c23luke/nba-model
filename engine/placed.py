@@ -367,6 +367,15 @@ def rules_now(rows: list[dict], agree=None) -> dict:
         # needs 4 separate facts known before the line moves. Out of today's record; the real money stays on the row.
         if r["system"] == "STACK" and r.get("flags") and not all(": " in str(f) for f in r["flags"]):
             why = "placed under the old STACK rule (one fact counted several times): today's STACK needs 4 separate facts"
+        # Caden 2026-11-19 (engine/measure_fav_dog.py, 2 seasons at the open): favorites / big dogs that lose
+        ln = float(r["line"]) if r.get("line") is not None and r.get("bet") == "spread" and "ML" not in str(r.get("holding")) else None
+        if ln is not None and not why:
+            if r["system"] not in SPECIAL_TAGS and ln <= 0:
+                why = "a system + the players model on a favorite: today it only bets the underdog (10-9 as a favorite)"
+            elif r["system"] == "T13" and ln >= 10:
+                why = "T13 getting 10+ points: today it skips those (42-46 over two seasons)"
+            elif r["system"] == "MOVE+THIN" and 5 <= ln < 10:
+                why = "MOVE+THIN as a 5 to 9.5 underdog: today it skips those (4-11 over two seasons)"
         if why:
             r["rules"] = {"counted": False, "why": why}
             out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
@@ -378,7 +387,9 @@ def rules_now(rows: list[dict], agree=None) -> dict:
         # (2026-11-12) a system bet against a thin roster is 2 units too: any bet sized at $40 when placed keeps it
         # (2026-11-14) units by the sorted estimate: 2 units only for MONEYBALL, STACK and the players model against a
         # thin roster. System bets (with or without a thin roster) count at $20 under today's rules, even if placed at $40.
-        target = 40.0 if r["system"] == "MONEYBALL" or (r["system"] in ("T13", "STACK") and r.get("target") == 40) else 20.0
+        # (2026-11-19) MONEYBALL is 2 units only as the underdog; as a favorite it counts at 1 unit
+        mb_dog = r["system"] == "MONEYBALL" and r.get("line") is not None and float(r["line"]) > 0
+        target = 40.0 if mb_dog or (r["system"] in ("T13", "STACK") and r.get("target") == 40) else 20.0
         odds = r["risk"] / r["to_win"] if r["to_win"] else 1.0         # risk per $1 of winnings, at our price
         risk = round(target * odds, 2)
         pnl = None
