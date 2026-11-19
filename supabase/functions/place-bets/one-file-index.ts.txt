@@ -143,7 +143,7 @@ export interface Venue {
   order(o: OrderRow, clientId: string, q?: Quote): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
   /** Resting limit orders (Kalshi): place a good-till-canceled order, read it back, cancel it. */
   rest?(o: OrderRow, clientId: string, expiresUnix: number): Promise<{ order_id: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
-  getOrder?(orderId: string): Promise<{ status: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
+  getOrder?(orderId: string, o?: OrderRow): Promise<{ status: string; fill_count: number; fill_cost: number; fees: number; raw: unknown }>;
   cancel?(orderId: string, market?: string): Promise<void>;
   /** Venues with a peer-to-peer book build their own quotes from live offers, priced with the model. */
   offers?(row: FeedRow): Promise<Quote[]>;
@@ -342,6 +342,7 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
   // money committed on each site during THIS run: a site's reported balance can lag right after a fill
   const spent: Record<string, number> = {};
   const available = async (vn: string) => (await venues[vn].balance()) - (spent[vn] ?? 0);
+  if (live) await confirmUnseen(db, venues, recent, now, res);
   if (live) await manageResting(db, venues, recent, allFeed, now, res);
   await placeResting(db, venues, s, live, on, limits, recent, counted, openNow, gameDollars, now, res, available, spent);
 
@@ -559,6 +560,36 @@ export async function runOnce(db: Db, venues: Record<string, Venue>, now = new D
   return res;
 }
 
+
+/** An order the site took but never showed us (ProphetX: "status not visible after 20 s") stays 'error', which
+ * blocks the bet so it can't be placed twice. Every run, look each one up again by its order id until the site
+ * shows it, then record what really happened: filled → counted like any bet; nothing filled → 'unfilled', so the
+ * bet can be tried again if it still qualifies. Until the site answers, nothing changes (no double bet). */
+export async function confirmUnseen(db: Db, venues: Record<string, Venue>, recent: OrderRow[], now: Date, res: RunResult) {
+  for (const o of recent) {
+    if (o.mode !== "live" || o.status !== "error" || o.fill_count != null) continue;
+    const id = o.order_id || (String(o.reason ?? "").match(/order (\S+): status not visible/) ?? [])[1];
+    const v = venues[o.venue];
+    if (!id || !v?.getOrder) continue;
+    if (Date.parse(o.tip_utc) < now.getTime() - 24 * 3600e3) continue;
+    try {
+      const st = await v.getOrder(id, o);
+      if (st.status === "unknown") continue;            // still not visible: keep blocking, look again next minute
+      if (st.status === "resting") continue;            // still matching: look again next minute
+      const status = st.fill_count >= o.count ? "filled" : st.fill_count > 0 ? "partial" : "unfilled";
+      await db.updateOrder(o.id!, { status, order_id: id, fill_count: st.fill_count, fill_cost: st.fill_cost, fees: st.fees,
+        response: st.raw, reason: status === "unfilled" ? `confirmed later on ${v.name}: nothing filled` : `confirmed later on ${v.name}` });
+      await db.updateFeed(o.bet_key, { order_status: status, order_venue: o.venue, order_id: id,
+        order_fill_count: st.fill_count, order_fill_cost: st.fill_cost });
+      await db.log(status === "unfilled" ? "warn" : "info", `CONFIRMED LATER (${status.toUpperCase()}): ${o.contract} for ${o.pick} on ${v.name}` +
+        ` — ${st.fill_count} for ${money(st.fill_cost)}`);
+      res.actions.push(`confirmed later, ${status}: ${o.pick}`);
+      Object.assign(o, { status, order_id: id, fill_count: st.fill_count, fill_cost: st.fill_cost });
+    } catch (e) {
+      await db.log("error", `Unconfirmed order check failed for ${o.pick} (${id}): ${msg(e)}`);
+    }
+  }
+}
 
 const REST_STOP_BEFORE_TIP_MIN = 5;   // resting orders expire this many minutes before tip
 
@@ -1287,6 +1318,26 @@ export class ProphetX implements Venue {
     if (!x || x.value < 1) return { ask: null, market, detail: { gone: true } };
     return { ask: round4(americanCost(x.price)), market, detail: { price: x.price, value: x.value } };
   }
+  /** Look an order up by id. 'unknown' = ProphetX doesn't show it yet; 'resting' = still matching. */
+  async getOrder(orderId: string, o?: OrderRow) {
+    const r = await this.raw("GET", `/v4/mm/get_order/${orderId}`);
+    if (r.status === 404) return { status: "unknown", fill_count: 0, fill_cost: 0, fees: 0, raw: null };
+    if (r.status !== 200) throw new Error(`ProphetX get_order → ${r.status}`);
+    const ord = r.js?.data ?? r.js;
+    if (!ord || !Object.keys(ord).length) return { status: "unknown", fill_count: 0, fill_cost: 0, fees: 0, raw: r.js };
+    const open = Number(ord.open_quantity ?? 0) > 0 && !/cancel|closed|settled/i.test(String(ord.status));
+    if (open) return { status: "resting", fill_count: 0, fill_cost: 0, fees: 0, raw: ord };
+    const filled = Number(ord.filled_quantity ?? (ord.matching_status === "fully_matched" ? ord.quantity : 0)) || 0;
+    let profit = 0;
+    if (filled > 0) {
+      const md = await this.call("GET", `/v4/mm/get_order_matched_detail?order_id=${orderId}`);
+      profit = (md?.matching_details ?? []).reduce((t: number, m: any) => t + Number(m.profit ?? 0), 0);
+      const cost = Number(o?.limit_price ?? 0);
+      if (!profit && cost > 0) profit = filled * (1 / cost - 1);
+    }
+    return { status: "done", fill_count: filled > 0 ? Math.round((filled + profit) * 100) / 100 : 0, fill_cost: filled,
+             fees: Math.round(PROPHETX_FEE * profit * 100) / 100, raw: { order: ord, profit } };
+  }
   /** ~2% of winnings (c = payout dollars, p = price per $1 payout). */
   fee(p: number, c: number) { return Math.round(PROPHETX_FEE * c * (1 - p) * 100) / 100; }
   async balance() { return Number((await this.call("GET", "/v4/mm/get_balance"))?.balance); }
@@ -1678,7 +1729,6 @@ export async function buildVenues(s: Settings, db?: Db): Promise<Record<string, 
     novig: new Novig(Deno.env.get("NOVIG_KEY_ID"), novigPem ? await novigSigner(novigPem).catch(() => undefined) : undefined),
   };
 }
-
 // place-bets entry point. All logic lives in core.ts (tested in core_test.ts).
 
 Deno.serve(async (req) => {

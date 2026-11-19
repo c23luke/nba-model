@@ -968,3 +968,27 @@ Deno.test("Novig: a game it doesn't list says how many games Novig does have (so
   eq(await nv.offers(row), []);
   eq(nv.explain(row), "Novig on this game: game not listed (Novig has 2 NBA games open in the next 2 days, 3 markets)");
 });
+
+Deno.test("an order ProphetX never confirmed is looked up again: filled is recorded, still-unseen keeps blocking", async () => {
+  const { confirmUnseen } = await import("./core.ts");
+  const updates: any[] = [], feeds: any[] = [], logs: string[] = [];
+  const db: any = { updateOrder: async (id: string, p: any) => { updates.push([id, p]); },
+    updateFeed: async (k: string, p: any) => { feeds.push([k, p]); }, log: async (_l: string, m: string) => { logs.push(m); } };
+  const base = { mode: "live", status: "error", fill_count: null, venue: "prophetx", count: 34, tip_utc: "2026-11-19T03:00:00Z",
+    contract: "LAL -12.5", pick: "LAL -12", bet_key: "k1", limit_price: 0.4 };
+  const seen: any = { id: "a", ...base, reason: "ProphetX order partner_x1: status not visible after 20 s (check it on ProphetX)" };
+  const unseen: any = { id: "b", ...base, bet_key: "k2", reason: "ProphetX order partner_x2: status not visible after 20 s (check it on ProphetX)" };
+  const other: any = { id: "c", ...base, bet_key: "k3", reason: "ProphetX get_order → 500" };
+  const asked: string[] = [];
+  const venues: any = { prophetx: { name: "ProphetX", getOrder: async (id: string) => {
+    asked.push(id);
+    return id === "partner_x1" ? { status: "done", fill_count: 34, fill_cost: 13.6, fees: 0.4, raw: {} }
+      : { status: "unknown", fill_count: 0, fill_cost: 0, fees: 0, raw: null };
+  } } };
+  const res: any = { actions: [] };
+  await confirmUnseen(db, venues, [seen, unseen, other], new Date("2026-11-19T02:30:00Z"), res);
+  if (asked.join() !== "partner_x1,partner_x2") throw new Error(`asked ${asked}`);
+  if (updates.length !== 1 || updates[0][0] !== "a" || updates[0][1].status !== "filled" || updates[0][1].order_id !== "partner_x1")
+    throw new Error(JSON.stringify(updates));
+  if (unseen.status !== "error") throw new Error("unseen order must keep blocking the bet");
+});
