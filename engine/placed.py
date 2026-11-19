@@ -32,8 +32,9 @@ HIDDEN = {"401909984-S131-MIN",      # MIN -13.5, STACK under the old rule
           "401909927-S113-MEM",      # MEM -4.5 1H, Nov 5
           "401909971-S112-LAL",      # LAL -9.5 1H, Nov 12
           "401909300-S113-MEM",      # MEM -3.5 1H, Nov 14
-          "401910010-S137-ORL",      # ORL -1.5 1H, Nov 18
-          "401910017-S113-LAL"}      # LAL -12.5 1H, Nov 18
+          "401910010-S137-ORL"}      # ORL -1.5 1H, Nov 18
+# LAL -12.5 1H (Nov 18, 401910017-S113-LAL) is not hidden by key: its order was marked unfilled with no fill
+# (reason "WRONG MARKET") so the real full-game LAL -11.5 bet placed at 9:55 PM shows under that key.
 
 
 def snapshot(card_row: dict) -> dict:
