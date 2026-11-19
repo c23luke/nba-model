@@ -23,7 +23,17 @@ SNAP_KEYS = ("name", "why", "confidence", "to_win", "thin_fade", "thin_system", 
 # Caden 2026-11-14: "it shouldn't be in results or show anywhere; it can show on ProphetX of course but nowhere else".
 # MIN -13.5 (STACK under the old rule, one fact counted several times; today's STACK wouldn't bet it).
 HIDDEN = {"401909984-S131-MIN",      # MIN -13.5, STACK under the old rule
-          "401909983-S131-BKN"}      # BKN +4, STACK under the old rule (Caden 2026-11-14: same as MIN)
+          "401909983-S131-BKN",      # BKN +4, STACK under the old rule (Caden 2026-11-14: same as MIN)
+          # Caden 2026-11-18: "remove them from the model like they never happened". ProphetX FIRST-HALF spreads
+          # (market 66) the bettor bought by mistake as if they were full-game bets.
+          "401909834-S113-ORL",      # ORL -1   1H, Oct 21
+          "401909877-S113-BOS",      # BOS -7.5 1H, Oct 27
+          "401909906-S204-LAL",      # LAL -2.5 1H, Nov 2
+          "401909927-S113-MEM",      # MEM -4.5 1H, Nov 5
+          "401909971-S112-LAL",      # LAL -9.5 1H, Nov 12
+          "401909300-S113-MEM",      # MEM -3.5 1H, Nov 14
+          "401910010-S137-ORL",      # ORL -1.5 1H, Nov 18
+          "401910017-S113-LAL"}      # LAL -12.5 1H, Nov 18
 
 
 def snapshot(card_row: dict) -> dict:

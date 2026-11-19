@@ -1256,7 +1256,18 @@ export class ProphetX implements Venue {
       }
       for (const sub of m.market_strikes ?? []) if (sub && typeof sub === "object") walk({ ...sub, type: sub.type ?? m.type });
     };
-    for (const m of markets) if (["moneyline", "spread", "total"].includes(m.type) && (!m.status || /active|open/i.test(m.status))) walk(m);
+    // FULL GAME ONLY. ProphetX lists first-half (and other period) lines under the same "spread"/"total" types; on
+    // Nov 18 the bettor bought LAL -12.5 FIRST HALF (market 66) believing it was the full game. Only the three
+    // full-game markets we have actually traded and graded are allowed: 219 moneyline, 223 spread, 225 total.
+    // Anything else, including a market whose name mentions a half/quarter/period, is skipped.
+    const FULL_GAME: Record<string, number> = { moneyline: 219, spread: 223, total: 225 };
+    const period = /half|1h|2h|quarter|q[1-4]\b|period|1st|2nd|3rd|4th|first|second|inning/i;
+    for (const m of markets) {
+      if (!["moneyline", "spread", "total"].includes(m.type) || (m.status && !/active|open/i.test(m.status))) continue;
+      if (Number(m.id ?? m.market_id) !== FULL_GAME[m.type]) continue;
+      if (period.test(`${m.name ?? ""} ${m.display_name ?? ""} ${m.description ?? ""}`)) continue;
+      walk(m);
+    }
     return out;
   }
 

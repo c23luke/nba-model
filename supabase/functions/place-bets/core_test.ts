@@ -509,7 +509,7 @@ function fakePX(markets: unknown[], opts: { orderStatus?: Record<string, unknown
   }) as unknown as typeof fetch;
   return { http, calls };
 }
-const pxMarkets = [{ id: 1, type: "spread", status: "active", selections: [
+const pxMarkets = [{ id: 223, type: "spread", status: "active", selections: [
   [{ competitor_id: 2, name: "New Orleans Pelicans", strike: 4, price: 100, value: 300, strike_id: "nop4" },
    { competitor_id: 2, name: "New Orleans Pelicans", strike: 8.5, price: 250, value: 300, strike_id: "nop85" }],
   [{ competitor_id: 1, name: "Indiana Pacers", strike: -4, price: -120, value: 300, strike_id: "ind4" }]] }];
@@ -554,7 +554,7 @@ Deno.test("test-only sites log WOULD HAVE PLACED while live betting is on, and n
 
 
 Deno.test("ProphetX: a spread number that's signed backwards vs the market is skipped", async () => {
-  const flipped = [{ id: 1, type: "spread", status: "active", selections: [
+  const flipped = [{ id: 223, type: "spread", status: "active", selections: [
     [{ competitor_id: 2, name: "New Orleans Pelicans", strike: -3.5, price: 100, value: 300, strike_id: "nopm35" }]] }];
   const { http } = fakePX(flipped);
   const px = new ProphetX("a", "s", undefined, http, () => NOW.getTime(), async () => {});
@@ -991,4 +991,17 @@ Deno.test("an order ProphetX never confirmed is looked up again: filled is recor
   if (updates.length !== 1 || updates[0][0] !== "a" || updates[0][1].status !== "filled" || updates[0][1].order_id !== "partner_x1")
     throw new Error(JSON.stringify(updates));
   if (unseen.status !== "error") throw new Error("unseen order must keep blocking the bet");
+});
+
+Deno.test("ProphetX: only full-game markets are bet; a first-half spread (market 66) is never offered", () => {
+  const px = new ProphetX();
+  const ev = { competitors: [{ id: 1, name: "Utah Jazz", abbreviation: "UTA", side: "away" }, { id: 2, name: "Los Angeles Lakers", abbreviation: "LAL", side: "home" }] };
+  const sel = (id: string, strike: number) => [{ competitor_id: 2, name: "Los Angeles Lakers", strike, price: 156, value: 300, strike_id: id }];
+  const markets = [
+    { id: 66, type: "spread", status: "active", name: "1st Half Spread", selections: [sel("half", -12.5)] },
+    { id: 223, type: "spread", status: "active", name: "Spread", selections: [sel("full", -12.5)] },
+    { id: 999, type: "spread", status: "active", name: "Spread", selections: [sel("unknown", -12.5)] },
+  ];
+  const got = px.selections(markets, ev).map((s) => s.strike_id);
+  if (got.join() !== "full") throw new Error(`got ${got}`);
 });
