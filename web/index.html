@@ -300,7 +300,7 @@ function whyFacts(tag, flags) {
     flags.map(f => `<tr><td>${esc(f)}</td></tr>`).join("") +
     `</table>${rec ? `<div class="why-note">${esc(tag)} backtest, 2 seasons: ${esc(rec)}.</div>` : ""}`;
 }
-function whyBets(tags, gap, side, bet) {
+function whyBets(tags, gap, side, bet, thinFade) {
   // totals: only S4 is even tracked as a candidate, so other total systems don't belong behind a total
   const R = rc(), sys = [...new Set(tags)].filter(t => t && t !== "T13" && !COMBO_TAGS.includes(t) && (bet !== "total" || t === "S4"));
   const rows = [];
@@ -317,6 +317,12 @@ function whyBets(tags, gap, side, bet) {
     if (b) { const h = (R.players_gap || {})[b] || {};
       rows.push({ name: `Players model <span class="muted">· ${txt} (gap ${b})</span>`, cells: [h[SEASONS[0]], h[SEASONS[1]], playersSeason(b)] }); }
     else rows.push({ name: `Players model <span class="muted">· ${txt}, under our 3-point bar</span>`, cells: null });
+  }
+  if (thinFade && thinFade.team) {
+    rows.push({ name: `Thin roster <span class="muted">· ${esc(thinFade.team)} leans on players with no real NBA track record (${Math.round(thinFade.share * 100)}% of its minutes vs ${Math.round((thinFade.ours || 0) * 100)}%)</span>`,
+                cells: null });
+    rows.push({ name: `<b>All together</b> <span class="muted">· players model 4+ against a thin roster (the bet, 2 units)</span>`,
+                cells: [{ w: 17, l: 9 }, { w: 23, l: 8 }, null], combo: true });
   }
   if (sys.length >= 2 && gap != null && gap >= 3) {
     const h = R.moneyball || {};
@@ -486,7 +492,7 @@ function ticket(x) {
   // the ticket shows the money really bet (Caden 2026-11-06: a $2.74 fill shown as "$18.78 to win $20" is a lie);
   // the record above still counts every bet at its unit size, and the ticket says so when the two differ
   const real = x.actual || x, unitT = x.rules && x.rules.counted ? x.rules.to_win : null;
-  const pl = x.status === "FINAL" ? `<span class="pl ${real.pnl > 0 ? "pos" : real.pnl < 0 ? "neg" : ""}">${signed$(real.pnl)}</span>` : "";
+  const pl = x.status === "FINAL" ? `<span class="pl ${real.pnl > 0 ? "pos" : real.pnl < 0 ? "neg" : ""}">${signed$(real.pnl)} (${signedU(real.pnl)})</span>` : "";
   const unitNote = unitT && Math.abs(real.to_win - unitT) >= 1
     ? `<div class="mkt">The record counts this as one full bet: ${unitT >= 39 ? "2 units, $40" : "1 unit, $20"} to win${x.status === "FINAL" && x.pnl != null ? ` (${signed$(x.pnl)} in the record)` : ""}. ${real.to_win < (x.target || unitT) - 1 ? "Only part of the order filled at our price." : `It was placed when this kind of bet was sized to win ${money(x.target)}.`}</div>` : "";
   const top = x.status === "OPEN" ? `Tips ${esc(until(x.tip_utc))}, ${esc(when(x.tip_utc))}` : score ? esc(score) + (x.status === "LIVE" ? " (live)" : "") : esc(tipDay(x.tip_utc));
@@ -499,6 +505,7 @@ function ticket(x) {
         <div>Price<strong>${price}</strong></div>
         <div>Risked<strong>${money(real.risk)}</strong></div>
         <div>To win<strong>${money(real.to_win)}</strong></div>
+        <div>Units<strong>${unitsOf(unitT != null ? unitT : real.to_win)}</strong></div>
         <div>Edge<strong class="${x.ev > 0 ? "pos" : ""}">${pct(x.ev)}</strong></div>
         ${clvBox(x)}
       </div>
@@ -508,7 +515,7 @@ function ticket(x) {
       ${plainWhy({ placed: true, tag: x.system, tags: [x.system, ...(x.with || [])], gap: x.players, now: x.status === "FINAL" ? null : x.now, side: x.side, bet: x.bet, line: x.line,
         market: x.market && !x.market.closed ? x.market.line : x.market ? x.market.at_bet : null, price: x.price + (x.venue === "kalshi" ? ((x.pieces || []).length > 1 ? (x.pieces[0].fees || 0) / x.pieces[0].count : x.count ? (x.fees || 0) / x.count : 0) : 0), ev: x.ev, toWin: x.to_win, thinFade: x.thin_fade, thinSystem: x.thin_system, flags: x.flags, away: x.away, home: x.home })}
       ${x.status === "OPEN" && x.actual && x.actual.to_win < (x.system === "MONEYBALL" ? 29 : 19) ? `<div class="size-l">${sizeLine(x)}</div>` : ""}
-      ${COMBO_TAGS.includes(x.system) && x.system !== "T13" && x.system !== "MONEYBALL" && (x.flags || []).length ? whyFacts(x.system, x.flags) : whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet)}
+      ${COMBO_TAGS.includes(x.system) && x.system !== "T13" && x.system !== "MONEYBALL" && (x.flags || []).length ? whyFacts(x.system, x.flags) : whyBets([x.system, ...(x.with || [])], x.players, x.side, x.bet, x.thin_fade)}
       ${(x.evidence || []).length ? `<details class="more"><summary>The model's notes</summary><ul class="why">${x.evidence.map(e => `<li>${esc(e)}</li>`).join("")}</ul></details>` : ""}
       <details class="more"><summary>Order details</summary><dl>
         <dt>Bought</dt><dd>${esc(x.contract)}</dd>
@@ -590,6 +597,10 @@ function notPlaced(b, placed) {
 let fSite = "", fSys = "";
 // Caden 2026-10-27: show every bet as if today's rules ran all season (full $20 size, T13 only at 4+,
 // never both sides). The real account money rides along on each bet as x.actual.
+// units (Caden Nov 23): 1 unit = a bet to win $20, so $40 to win = 2u and +$276 = +13.8u
+const UNIT$ = 20;
+const unitsOf = d => `${Math.round((d || 0) / UNIT$ * 10) / 10}u`;
+const signedU = d => `${(d || 0) >= 0 ? "+" : "−"}${Math.round(Math.abs(d || 0) / UNIT$ * 10) / 10}u`;
 const asRules = x => { const R = x.rules; if (!R || R.counted === false) return x;
   return { ...x, actual: { pnl: x.pnl, risk: x.risk, to_win: x.to_win }, pnl: R.pnl ?? x.pnl, risk: R.risk ?? x.risk, to_win: R.to_win ?? x.to_win }; };
 function renderBets(placed, b) {
@@ -627,9 +638,9 @@ function renderBets(placed, b) {
   $("tab-bets").innerHTML = holdBox + `<div class="board">${court}
       <div class="board-main">
         <div><span class="big n">${w}-${l}${pu ? "-" + pu : ""}</span><span class="lbl">Record${w + l ? `, ${Math.round(w / (w + l) * 100)}% won` : ""}</span></div>
-        <div class="profit"><span class="big n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)}</span><span class="lbl">${risked ? pct(pnl / risked) + " return on " + money(risked) : "Profit"}</span></div>
+        <div class="profit"><span class="big n ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : ""}">${signed$(pnl)} <span style="font-size:.6em">${signedU(pnl)}</span></span><span class="lbl">${risked ? pct(pnl / risked) + " return on " + money(risked) : "Profit"}</span></div>
       </div>
-      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))}</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets</span>${clvAvg != null ? `<span><b class="${clvAvg > 0 ? "pos" : clvAvg < 0 ? "neg" : ""}">${clvAvg > 0 ? "+" : ""}${clvAvg}¢</b>average CLV per $1, price included: beat the close ${clvBeat} of ${clvs.length}</span>` : ""}</div>
+      <div class="board-row"><span><b>${open.length}</b>open, ${money(sum(open, "risk"))} risked to win ${money(sum(open, "to_win"))} (${unitsOf(sum(open, "to_win"))})</span><span><b class="${expOpen > 0 ? "pos" : ""}">${signed$(expOpen)}</b>expected on open bets (${signedU(expOpen)})</span>${clvAvg != null ? `<span><b class="${clvAvg > 0 ? "pos" : clvAvg < 0 ? "neg" : ""}">${clvAvg > 0 ? "+" : ""}${clvAvg}¢</b>average CLV per $1, price included: beat the close ${clvBeat} of ${clvs.length}</span>` : ""}</div>
     </div>
     ${allBets.length ? `${profitChart(bets)}
     <div class="filters">Show
@@ -670,7 +681,7 @@ function cardRow(c, reason) {
         ${plainWhy({ verdict: c.verdict, tag: c.tag, tags: [c.tag, ...(c.with || [])], gap: c.players, side: c.side, bet: c.bet, line: c.best ? c.best.line : c.line,
           market: c.model ? c.model.market : null, price: c.best ? c.best.cost : null, ev: c.best ? c.best.ev : null, toWin: c.to_win, thinFade: c.thin_fade, thinSystem: c.thin_system, flags: c.flags, away: c.away, home: c.home })}
 
-        ${COMBO_TAGS.includes(c.tag) && c.tag !== "T13" && c.tag !== "MONEYBALL" && (c.flags || []).length ? whyFacts(c.tag, c.flags) : whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet)}
+        ${COMBO_TAGS.includes(c.tag) && c.tag !== "T13" && c.tag !== "MONEYBALL" && (c.flags || []).length ? whyFacts(c.tag, c.flags) : whyBets([c.tag, ...(c.with || [])], c.players, c.side, c.bet, c.thin_fade)}
       </div>
       <div class="px">${best ? `<b>${esc(best.venue_name)} ${esc(best.price_txt)}</b>${esc(best.contract)}<br>${pct(best.ev)} edge` : "no price yet"}</div>
       ${(c.shop || []).length > 1 ? `<details class="shop"><summary>Every price (${c.shop.length})</summary><table>${c.shop.map(q =>
