@@ -71,3 +71,17 @@ def test_grade_totals_and_pushes():
 def test_every_trend_has_our_record():
     for name, *_ in TL.trends():
         assert name in TL.OURS_6, name
+
+
+def test_stack_needs_two_trends_on_one_side_and_none_on_the_other(monkeypatch):
+    finals, stored = _season()
+    up = Game(id="u3", game_date=date(2026, 11, 10), away="MIA", home="BOS")
+    one = [("A", "s", "", "spread", None, lambda r: r["home"])]
+    two = one + [("B", "s", "", "spread", None, lambda r: r["home"])]
+    split = two + [("C", "s", "", "spread", None, lambda r: not r["home"])]
+    for rules, want in ((one, 0), (two, 1), (split, 0)):
+        monkeypatch.setattr(TL, "trends", lambda rules=rules: rules)
+        out = TL.run(FakeStore(), datetime(2026, 11, 10, tzinfo=timezone.utc), finals, stored, [up],
+                     {"u3": (-4.0, 220.0, -4.0)}, START, {})
+        st = next(x for x in out["trends"] if x["name"] == TL.STACK)
+        assert len(st["open"]) == want and all(o["side"] == "BOS" for o in st["open"])

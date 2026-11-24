@@ -13,6 +13,12 @@ from datetime import date, datetime
 
 from . import measure_trends as T
 
+# Caden 2026-11-24: a game side with 2+ spread trends and none on the other side. Paper only: 56.4% over 6 seasons
+# but 2020-21 (52%) and 2024-25 (49.5%) miss the bar. The nested "... and it's the favorite" and the line-move trend
+# don't count toward it (the first double-counts "scored 90 or less"; the second has no 6-season test).
+STACK = "STACK: 2+ trends on one side, none on the other"
+NOT_IN_STACK = {"... and it's the favorite today"}
+
 # our 6-season check (engine.measure_trends, 2020-21 to 2025-26, closing line), shown next to theirs
 OURS_6 = {
     "Away team on an 8+ game losing streak vs a sub-.500 opponent": ("32-32", "5-7 3-4 4-10 8-3 5-1 7-7"),
@@ -36,6 +42,7 @@ OURS_6 = {
     "OVER: heavy favorite (-9+) vs a team on a back-to-back": ("244-213", "40-25 35-33 29-35 40-42 52-43 48-35"),
     "Home team on an 8+ game losing streak vs a sub-.500 opponent": ("38-27", "3-7 4-3 4-3 10-6 9-3 8-5"),
     "Line moved 2.5+ toward the team since the first line we saw": ("194-148", "2 seasons only: 98-83 96-65"),
+    STACK: ("306-237", "51-47 60-38 42-23 44-33 50-51 59-45"),
 }
 
 _sub500 = lambda c: c["wp"] is not None and c["n"] >= 5 and c["wp"] < 0.5
@@ -128,7 +135,19 @@ def grade(e: dict, g) -> str | None:
 def run(store, now: datetime, finals, stored, upcoming, lines, season_start: date, games_by_id: dict) -> dict:
     state = (store.load_state(["trends_fired"]).get("trends_fired") or {}) if hasattr(store, "load_state") else {}
     kinds = {name: kind for name, _s, _t, kind, _o, _k in trends()}
-    for name, g, side, line in evaluate(finals, stored, upcoming, lines, season_start):
+    kinds[STACK] = "spread"
+    fired = evaluate(finals, stored, upcoming, lines, season_start)
+    per = defaultdict(lambda: defaultdict(set))           # game id -> side -> spread trends (stack-eligible)
+    for name, g, side, line in fired:
+        if kinds[name] == "spread" and name not in NOT_IN_STACK and name not in AT_CURRENT:
+            per[g.id][side].add(name)
+    stacks = []
+    for name, g, side, line in fired:
+        sides = per.get(g.id, {})
+        if (name not in NOT_IN_STACK and name not in AT_CURRENT and len(sides.get(side, ())) >= 2
+                and not any(v for k, v in sides.items() if k != side)):
+            stacks.append((STACK, g, side, line))
+    for name, g, side, line in fired + stacks:
         k = f"{name}|{g.id}|{side}"
         if k not in state:
             state[k] = {"trend": name, "game_id": str(g.id), "side": side, "line": line, "kind": kinds[name],
@@ -141,7 +160,7 @@ def run(store, now: datetime, finals, stored, upcoming, lines, season_start: dat
     if hasattr(store, "save_state"):
         store.save_state({"trends_fired": state})
     out = []
-    for name, src, theirs, kind, over, _k in trends():
+    for name, src, theirs, kind, over, _k in [(STACK, "Ours (Caden's stack rule)", "", "spread", None, None)] + trends():
         es = [e for e in state.values() if e["trend"] == name]
         w = sum(e.get("result") == "W" for e in es)
         l = sum(e.get("result") == "L" for e in es)
