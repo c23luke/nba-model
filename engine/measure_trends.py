@@ -49,7 +49,8 @@ def ctx(h, day, home_today):
         else:
             break
     return {"cs": cs, "ncs": ncs, "in6": sum(1 for x in h if 1 <= (day - x["date"]).days <= 5) + 1,
-            "rest": (day - last["date"]).days - 1 if last else None, "hist": list(h), "n": n,     # a COPY: no later games "wp": (sum(x["won"] for x in h) / n) if n else None, "wins": sum(x["won"] for x in h),
+            "rest": (day - last["date"]).days - 1 if last else None, "hist": list(h), "n": n,     # hist is a COPY: no later games
+            "wp": (sum(x["won"] for x in h) / n) if n else None, "wins": sum(x["won"] for x in h),
             "ws": ws, "ls": ls, "b2b": bool(last and (day - last["date"]).days == 1),
             "in4": sum(1 for x in h if 1 <= (day - x["date"]).days <= 3) + 1,
             "last": last, "stretch": stretch + 1, "prev_road": prev_road}

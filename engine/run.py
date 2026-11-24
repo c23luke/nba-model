@@ -535,6 +535,20 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
         board["testing"] = testing_side(board, list(all_picks.values()))
     except Exception as e:
         log.append(f"testing side: {str(e)[:160]}")
+    # Trends tab (Caden 2026-11-24): Trends Center's trends + ours, paper only, judged at the first line we saw
+    try:
+        from . import trends_live
+        tl = {}
+        for g in upcoming:
+            f = firsts.get(str(g.id)) or {}
+            row = stored.get(g.id) or {}
+            tl[g.id] = (f.get("home_spread") if f.get("home_spread") is not None else row.get("home_spread"),
+                        f.get("total") if f.get("total") is not None else row.get("total"),
+                        row.get("home_spread"))
+        board["trends"] = trends_live.run(store, now, finals, stored, upcoming, tl, season_start,
+                                          {str(g.id): g for g in games})
+    except Exception as e:
+        log.append(f"trends: {str(e)[:160]}")
     # stale-price research: what the books' consensus said and what the exchanges offered, this run
     if hasattr(store, "save_price_log") and upcoming:
         try:
