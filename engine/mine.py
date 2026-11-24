@@ -106,6 +106,7 @@ def team_flags(hist, team, day, game, opp):
         else:
             break
     f["wstreak3"], f["wstreak5"], f["lstreak3"], f["lstreak5"] = ws >= 3, ws >= 5, ls >= 3, ls >= 5
+    f["wstreak8"], f["lstreak8"] = ws >= 8, ls >= 8          # Trends Center-style long streaks (Caden 2026-11-24)
     cov = [x["covered"] for x in h if x["covered"] is not None]
     f["covered_last"] = bool(cov and cov[-1] is True)
     f["no_cover_last"] = bool(cov and cov[-1] is False)
@@ -118,6 +119,8 @@ def team_flags(hist, team, day, game, opp):
     n = len(h)
     wp = sum(x["won"] for x in h) / n if n else None
     f["tank35"] = n >= 40 and wp <= 0.35          # T25's tanking range
+    f["sub500"] = n >= 5 and wp < 0.5                         # record under / over .500 so far (Trends Center style)
+    f["over500"] = n >= 5 and wp > 0.5
     f["good_rec"] = n >= 10 and wp >= 0.6
     f["bad_rec"] = n >= 10 and wp <= 0.4
     f["home_last"] = bool(last and last["home"])
