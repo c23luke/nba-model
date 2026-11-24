@@ -143,89 +143,6 @@ def test_resting_orders_are_listed_as_waiting_for_a_price():
     assert out["bets"] == [] and out["resting"][0]["holding"] == "NOP +3.5" and out["resting"][0]["american"] == -117
 
 
-def test_rules_now_drops_small_t13_and_both_sides_and_resizes_to_20():
-    from engine.placed import rules_now
-    base = {"status": "FINAL", "bet": "spread", "manual": False}
-    rows = [
-        {**base, "game_id": "g1", "side": "DET", "system": "T13", "t13_gap": 3.4, "holding": "DET +4",
-         "result": "W", "pnl": 20.0, "risk": 24.6, "to_win": 20.0},                     # gap under 4 -> dropped
-        {**base, "game_id": "g2", "side": "BOS", "system": "T13", "t13_gap": 5.0, "holding": "BOS -7",
-         "result": "L", "pnl": -11.0, "risk": 11.0, "to_win": 10.0},                     # $10 bet -> $20 at -110
-        {**base, "game_id": "g3", "side": "MIA", "system": "S4", "t13_gap": None, "holding": "MIA +3",
-         "result": "W", "pnl": 20.0, "risk": 22.0, "to_win": 20.0},
-        {**base, "game_id": "g3", "side": "NYK", "system": "T2", "t13_gap": None, "holding": "NYK -3",
-         "result": "L", "pnl": -22.0, "risk": 22.0, "to_win": 20.0},                     # both sides of g3 -> both dropped
-    ]
-    r = rules_now(rows)
-    assert (r["w"], r["l"]) == (0, 1)
-    assert r["pnl"] == -22.0 and len(r["dropped"]) == 3
-    assert r["resized"][0]["had"] == 10.0 and r["resized"][0]["pnl_now"] == -22.0
-
-
-def test_rules_now_marks_every_row_and_projects_open_bets_at_20():
-    from engine.placed import rules_now
-    rows = [{"status": "OPEN", "bet": "spread", "game_id": "g9", "side": "BOS", "system": "MONEYBALL", "t13_gap": None,
-             "holding": "BOS +7.5", "line": 7.5, "result": None, "pnl": None, "risk": 12.0, "to_win": 11.51},
-            {"status": "OPEN", "bet": "spread", "game_id": "g8", "side": "DET", "system": "T13", "t13_gap": 3.2,
-             "holding": "DET +4", "result": None, "pnl": None, "risk": 24.6, "to_win": 20.0}]
-    r = rules_now(rows)
-    assert rows[0]["rules"] == {"counted": True, "to_win": 40.0, "risk": round(40 * 12.0 / 11.51, 2), "pnl": None}
-    assert rows[1]["rules"]["counted"] is False and r["open"] == 1 and r["open_to_win"] == 40.0
-
-
-def test_rules_now_no_totals_count_s4_is_tracking_only():
-    # Caden 2026-11-03: only bets that hit a lot; S4 (56%) is tracking only, so no total counts in the record
-    from engine.placed import rules_now
-    base = {"status": "FINAL", "bet": "total", "side": "OVER", "system": "S4", "t13_gap": None, "result": "W", "pnl": 20,
-            "risk": 19.0, "to_win": 20.0, "ev": 0.1, "s4_bar": 230.0}
-    rows = [{**base, "game_id": "a", "holding": "OVER 233.5", "line": 233.5, "card_pick": "OVER 233.5"}]
-    out = rules_now(rows)
-    assert rows[0]["rules"]["counted"] is False and "totals" in rows[0]["rules"]["why"] and out["w"] == 0
-
-
-def test_rules_now_applies_todays_price_rules():
-    from engine.placed import rules_now
-    base = {"status": "OPEN", "bet": "spread", "side": "BOS", "system": "MONEYBALL", "t13_gap": None, "result": None,
-            "pnl": None, "risk": 20.0, "to_win": 20.0}
-    rows = [{**base, "game_id": "a", "holding": "BOS +3.5", "line": 3.5, "card_pick": "BOS +3.5", "ev": 0.038},   # under 4%
-            {**base, "game_id": "b", "holding": "BOS +3", "line": 3.0, "card_pick": "BOS +5.5", "ev": 0.06,
-             "resting_fill": True},                                          # standing, 2.5 pts off: past the bettor's 2
-            {**base, "game_id": "c", "holding": "BOS +4.5", "line": 4.5, "card_pick": "BOS +5.5", "ev": 0.06,
-             "risk": 22.0}]                                                                                 # fine
-    rules_now(rows)
-    assert [r["rules"]["counted"] for r in rows] == [False, False, True]
-    assert "4%" in rows[0]["rules"]["why"] and "limit is 2" in rows[1]["rules"]["why"]
-
-
-def test_split_fills_are_one_bet_and_systems_need_the_players_model():
-    # Nov 1: LAL -2.5 filled in two pieces on ProphetX (8.99 then 30.99 contracts): ONE bet.
-    # Nov 2: WAS +1.5 (T2) with the players model liking the other side: not counted under today's rule.
-    from engine.placed import placed_bets
-    now = datetime(2026, 11, 3, 15, 0, tzinfo=timezone.utc)
-    games = {"g1": {"final": True, "home": "LAL", "away": "TOR", "home_score": 131, "away_score": 125},
-             "g2": {"final": True, "home": "ORL", "away": "WAS", "home_score": 94, "away_score": 103}}
-    o = lambda **k: {"mode": "live", "venue": "prophetx", "bet": "spread", "status": "filled", "ev": 0.30,
-                     "tip_utc": "2026-11-02T02:00:00+00:00", **k}
-    orders = [o(id="a", bet_key="g1-S204-LAL", game_id="g1", side="LAL", line=-2.5, pick="LAL -4.5", system="E4",
-                fill_count=8.99, fill_cost=4.26, fees=0.09, created_at="2026-11-01T15:01:05Z"),
-              o(id="b", bet_key="g1-S204-LAL", game_id="g1", side="LAL", line=-2.5, pick="LAL -4.5", system="E4",
-                fill_count=30.99, fill_cost=14.83, fees=0.32, created_at="2026-11-01T15:02:05Z"),
-              o(id="c", bet_key="g2-S102-WAS", game_id="g2", side="WAS", line=1.5, pick="WAS +1.5", system="T2",
-                fill_count=41, fill_cost=20.5, fees=0.41, ev=0.0445, created_at="2026-11-02T01:11:06Z",
-                tip_utc="2026-11-03T00:30:00+00:00")]
-    picks = {"g1-S204-LAL": {"key": "g1-S204-LAL", "system": 204, "away": "TOR", "home": "LAL", "meta": {"card_snap": {"players": 3.1}}},
-             "g2-S102-WAS": {"key": "g2-S102-WAS", "system": 102, "away": "WAS", "home": "ORL", "meta": {"card_snap": {"players": -0.7}}}}
-    out = placed_bets(orders, picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)
-    lal = next(r for r in out["bets"] if r["side"] == "LAL")
-    assert len([r for r in out["bets"] if r["side"] == "LAL"]) == 1 and len(lal["fills"]) == 2
-    assert lal["count"] == 39.98 and lal["cost"] == 19.09 and lal["result"] == "W"
-    # LAL -2.5 is a system + players model bet on a FAVORITE: since 2026-11-19 those aren't bet (10-9 over 2 seasons)
-    assert not lal["rules"]["counted"] and "favorite" in lal["rules"]["why"]
-    was = next(r for r in out["bets"] if r["side"] == "WAS")
-    assert not was["rules"]["counted"] and "other side by 0.7" in was["rules"]["why"]
-    assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (0, 0)      # neither counts under today's rules
-
-
 
 def test_a_bet_bought_at_two_numbers_is_graded_where_most_of_the_money_is():
     # Nov 3: CHI +12 card pick; 6 contracts at +12.5 (53c), then 32 at +10.5 (43-44c)
@@ -307,20 +224,6 @@ def test_a_bet_placed_under_todays_rules_stays_in_the_record_when_a_later_read_c
     assert (out["rules_now"]["w"], out["rules_now"]["l"]) == (1, 1)
 
 
-def test_a_bet_from_before_the_rule_is_still_judged_by_it():
-    # Nov 2 bets were placed before the card applied the players rule: those are still re-judged (Caden 2026-11-02)
-    from engine.placed import placed_bets
-    now = datetime(2026, 11, 3, 15, 0, tzinfo=timezone.utc)
-    games = {"g": {"final": True, "home": "ORL", "away": "WAS", "home_score": 94, "away_score": 103}}
-    orders = [{"id": "c", "mode": "live", "venue": "kalshi", "bet": "spread", "status": "filled", "bet_key": "k",
-               "game_id": "g", "side": "WAS", "line": 1.5, "pick": "WAS +1.5", "system": "T2", "fill_count": 41,
-               "fill_cost": 20.5, "fees": 0.41, "ev": 0.0445, "created_at": "2026-11-02T01:11:06Z",
-               "tip_utc": "2026-11-03T00:30:00+00:00"}]
-    picks = {"k": {"key": "k", "system": 102, "away": "WAS", "home": "ORL", "meta": {"bet_snap": {"players": -0.7}}}}
-    r = placed_bets(orders, picks, games, {}, lambda p: {"w": 0, "l": 0, "p": 0}, now)["bets"][0]
-    assert not r["rules"]["counted"] and "other side by 0.7" in r["rules"]["why"]
-
-
 def test_an_old_ticket_never_shows_a_later_no_bet_reason_as_why_we_bet():
     # POR +1.5 (T7), placed Nov 10 03:01 UTC before snapshots were frozen; the card later said "No bet: players
     # model only likes POR by 1.2". That isn't why we bet. Still counted (it passed the rule when placed).
@@ -345,50 +248,26 @@ def test_rules_now_counts_a_t13_thin_fade_bet_at_40():
     assert rows[0]["rules"]["to_win"] == 40.0 and rows[1]["rules"]["to_win"] == 20.0 and r["pnl"] == 60.0
 
 
-def test_an_old_rule_stack_ticket_is_out_of_todays_record_but_its_money_stays():
-    from engine.placed import rules_now
-    old = {"game_id": "g", "bet": "spread", "side": "MIN", "system": "STACK", "holding": "MIN -13.5", "status": "OPEN",
-           "result": None, "pnl": None, "risk": 48.99, "to_win": 40.09, "line": -13.5, "card_pick": "MIN -14.5",
-           "ev": 0.115, "under_rules": True, "target": 40,
-           "flags": ["2 card systems on MIN", "2+ card systems", "MIN won its last game by 39"]}
-    new = {**old, "game_id": "h", "side": "BOS", "holding": "BOS -3", "line": -3.0, "card_pick": "BOS -3",
-           "flags": ["tired opponent: CHI is on a back-to-back", "injuries: CHI is missing 2", "systems: S2",
-                     "blowout win: BOS won by 30"]}
-    s = rules_now([old, new])
-    assert old["rules"]["counted"] is False and "old STACK rule" in old["rules"]["why"]
-    assert new["rules"]["counted"] is True and old["risk"] == 48.99            # the real money stays on the row
 
-
-def test_rules_now_moneyball_favorite_counts_1_unit_and_the_new_skips():
-    # Caden 2026-11-19 (engine/measure_fav_dog.py): MONEYBALL is 2 units only as the underdog; a system + players model
-    # only bets the underdog; T13 skips 10+ underdogs; MOVE+THIN skips 5 to 9.5 underdogs
+def test_every_placed_bet_counts_and_rules_only_change_its_size():
+    # Caden 2026-11-24: a placed bet always counts; a later rule change can't create "not counted" bets. Sizes still
+    # follow today's rules (MONEYBALL is 2 units only as the underdog).
     from engine.placed import rules_now
-    base = {"status": "OPEN", "bet": "spread", "t13_gap": 5.0, "result": None, "pnl": None, "risk": 21.0, "to_win": 20.0}
+    base = {"status": "FINAL", "bet": "spread", "t13_gap": 5.0, "result": "W", "pnl": 20.0, "risk": 21.0,
+            "to_win": 20.0, "ev": 0.01}
     rows = [{**base, "game_id": "a", "side": "DET", "system": "MONEYBALL", "holding": "DET -9.5", "line": -9.5},
             {**base, "game_id": "b", "side": "WAS", "system": "MONEYBALL", "holding": "WAS +6.5", "line": 6.5},
-            {**base, "game_id": "c", "side": "GSW", "system": "T6", "holding": "GSW -2.5", "line": -2.5, "players": 4.0},
-            {**base, "game_id": "d", "side": "UTA", "system": "T13", "holding": "UTA +11.5", "line": 11.5},
-            {**base, "game_id": "e", "side": "TOR", "system": "MOVE+THIN", "holding": "TOR +6.5", "line": 6.5},
-            {**base, "game_id": "f", "side": "TOR", "system": "MOVE+THIN", "holding": "TOR +3.5", "line": 3.5}]
-    rules_now(rows)
-    assert rows[0]["rules"]["counted"] and rows[0]["rules"]["to_win"] == 20.0
-    assert rows[1]["rules"]["counted"] and rows[1]["rules"]["to_win"] == 40.0
-    assert not rows[2]["rules"]["counted"] and "favorite" in rows[2]["rules"]["why"]
-    assert not rows[3]["rules"]["counted"] and "10+" in rows[3]["rules"]["why"]
-    assert not rows[4]["rules"]["counted"] and "5 to 9.5" in rows[4]["rules"]["why"]
-    assert rows[5]["rules"]["counted"]
+            {**base, "game_id": "c", "side": "GSW", "system": "T6", "holding": "GSW -2.5", "line": -2.5, "players": 0.5},
+            {**base, "game_id": "d", "side": "O", "system": "S4", "bet": "total", "holding": "OVER 231.5", "line": 231.5},
+            {**base, "game_id": "e", "side": "TOR", "system": "MOVE+THIN", "holding": "TOR +6.5", "line": 6.5,
+             "card_pick": "TOR +2.5", "resting_fill": True}]
+    out = rules_now(rows)
+    assert all(r["rules"]["counted"] for r in rows) and out["w"] == 5 and not out["dropped"]
+    assert rows[0]["rules"]["to_win"] == 20.0 and rows[1]["rules"]["to_win"] == 40.0
 
 
-def test_the_record_uses_the_bettors_rules_for_standing_orders():
-    # Nov 23: MEM -2.5 (T13) filled on a standing order against a card of MEM -4 and the record hid it under a
-    # "within 1 point" rule the bettor never had. The bettor allows 2 points either way (T13 also keeps its 4+ edge at
-    # the number it takes), so the record does too: 1.5 off counts, 2.5 off doesn't.
-    from engine.placed import rules_now
-    base = {"status": "FINAL", "bet": "spread", "system": "T13", "t13_gap": 5.0, "result": "W", "pnl": 40.4,
-            "risk": 44.2, "to_win": 40.8, "ev": 0.059, "resting_fill": True, "side": "MEM"}
-    rows = [{**base, "game_id": "a", "holding": "MEM -2.5", "line": -2.5, "card_pick": "MEM -4"},
-            {**base, "game_id": "b", "holding": "MEM -5.5", "line": -5.5, "card_pick": "MEM -4"},
-            {**base, "game_id": "c", "holding": "MEM -1.5", "line": -1.5, "card_pick": "MEM -4"}]
-    rules_now(rows)
-    assert rows[0]["rules"]["counted"] and rows[1]["rules"]["counted"]
-    assert not rows[2]["rules"]["counted"] and "limit is 2" in rows[2]["rules"]["why"]
+def test_the_13_not_counted_bets_are_deleted_from_courtside():
+    from engine.placed import HIDDEN
+    for k in ("401909899-S4-OVER", "401909910-S130-BKN", "401909910-S112-NYK", "401909921-S204-LAL",
+              "401909921-S102-MIA", "401909957-S113-DEN", "401910000-S106-GSW", "401910012-S135-WAS"):
+        assert k in HIDDEN

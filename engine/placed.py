@@ -32,7 +32,11 @@ HIDDEN = {"401909984-S131-MIN",      # MIN -13.5, STACK under the old rule
           "401909927-S113-MEM",      # MEM -4.5 1H, Nov 5
           "401909971-S112-LAL",      # LAL -9.5 1H, Nov 12
           "401909300-S113-MEM",      # MEM -3.5 1H, Nov 14
-          "401910010-S137-ORL"}      # ORL -1.5 1H, Nov 18
+          "401910010-S137-ORL",      # ORL -1.5 1H, Nov 18
+          # Caden 2026-11-24: delete every bet the record marked "not counted" (13), from everywhere on Courtside
+          "401909899-S4-OVER", "401909910-S130-BKN", "401909912-S4-OVER", "401909911-S102-WAS", "401909910-S112-NYK",
+          "401909913-S4-OVER", "401909916-S3-HOU", "401909917-S4-OVER", "401909921-S204-LAL", "401909921-S102-MIA",
+          "401909957-S113-DEN", "401910000-S106-GSW", "401910012-S135-WAS"}
 # LAL -12.5 1H (Nov 18, 401910017-S113-LAL) is not hidden by key: its order was marked unfilled with no fill
 # (reason "WRONG MARKET") so the real full-game LAL -11.5 bet placed at 9:55 PM shows under that key.
 
@@ -377,6 +381,10 @@ def rules_now(rows: list[dict], agree=None) -> dict:
                 why = "T13 getting 10+ points: today it skips those (42-46 over two seasons)"
             elif r["system"] == "MOVE+THIN" and 5 <= ln < 10:
                 why = "MOVE+THIN as a 5 to 9.5 underdog: today it skips those (4-11 over two seasons)"
+        # Caden 2026-11-24: a placed bet always counts. Rules decide what the bettor places, never whether a bet that
+        # was already placed counts, so a later rule change can't create "not counted" bets. (The 13 that were set
+        # aside before this are deleted above, in HIDDEN.)
+        why = None
         if why:
             r["rules"] = {"counted": False, "why": why}
             out["dropped"].append({"holding": r["holding"], "system": r["system"], "result": r["result"],
