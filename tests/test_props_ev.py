@@ -127,3 +127,18 @@ def test_props_stack_trackers_fire_on_both_flags_with_their_numbers_once_per_pla
     assert len([b for b in st["bets"] if b.get("kind") == "pstack"]) == 1      # once per player and tracker
     s = E.summary(st)["stack_trackers"]
     assert s["Under: blowout + low team total"]["open"] == 1 and len(s) == 9
+
+
+def test_venue_props_use_the_main_line_not_the_alternate_ladder():
+    # Nov 24: ProphetX posts a ladder (over 14.5 at -8750 ... over 26.5 at -110). The model must be judged only at the
+    # main line (both sides, closest to even); a ladder rung 10+ points away is not a 3-point edge.
+    from engine.props_ev import venue_model_edges
+    def oc(name, point, price):
+        return {"name": name, "description": "Jayson Tatum", "point": point, "price": price}
+    js = {"bookmakers": [{"key": "prophetx", "markets": [{"key": "player_points", "outcomes": [
+        oc("Over", 14.5, -8750), oc("Under", 14.5, 2400),
+        oc("Over", 26.5, -110), oc("Under", 26.5, -110),
+        oc("Over", 22.5, -260), oc("Under", 22.5, 200)]}]}]}
+    proj = {("g1", "jayson tatum"): {"pts": 30.0, "mpg": 36}}
+    got = venue_model_edges(js, "g1", proj)
+    assert [(e["line"], e["side"], e["price"]) for e in got] == [(26.5, "over", -110)]

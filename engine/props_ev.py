@@ -90,7 +90,9 @@ def edges(js: dict) -> list[dict]:
     return out
 
 
-MODEL_EDGE = {"pts": 3.0, "reb": 1.5, "ast": 1.5}   # our projection vs Pinnacle's line (2026-11-11 walk-forward)
+MODEL_EDGE = {"pts": 3.0, "reb": 1.5, "ast": 1.5}
+MAIN_MIN, MAIN_MAX = -200.0, 200.0      # a venue's main prop line is priced inside this; anything outside is a ladder rung
+LADDER = -250.0                          # paper bets priced worse than this were ladder rungs (the Nov 11-24 bug): not counted   # our projection vs Pinnacle's line (2026-11-11 walk-forward)
 
 
 def model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
@@ -129,7 +131,18 @@ def venue_model_edges(js: dict, game_id: str, proj: dict) -> list[dict]:
     pin = px.get(SHARP) or {}
     out = []
     for v in VENUES:
+        # MAIN LINE ONLY (Nov 24): ProphetX lists a ladder of alternate lines (Tatum over 14.5 at -8750 ...). Comparing the
+        # model to every rung "found" 3+ point edges on -9750 favourites: 397-108 and still -59 units. Each player / stat
+        # is judged only at the venue's main line, the one with both sides posted and priced closest to even.
+        main = {}
+        for (pl, st, ln), q in (px.get(v) or {}).items():
+            if "Over" in q and "Under" in q and MAIN_MIN <= min(q["Over"], q["Under"]) and max(q["Over"], q["Under"]) <= MAIN_MAX:
+                d = abs(q["Over"] - q["Under"])
+                if (pl, st) not in main or d < main[(pl, st)][0]:
+                    main[(pl, st)] = (d, ln)
         for k, q in (px.get(v) or {}).items():
+            if (k[0], k[1]) not in main or main[(k[0], k[1])][1] != k[2]:
+                continue
             pr = proj.get((game_id, k[0]))
             if not pr or k[1] not in pr:
                 continue
@@ -312,6 +325,8 @@ def _move(bets):
 
 
 def _rec(bets):
+    void = [b for b in bets if (b.get("price") or 0) <= LADDER]       # alternate-line rungs from before the Nov 24 fix
+    bets = [b for b in bets if (b.get("price") or 0) > LADDER]
     g = [b for b in bets if b.get("result") in ("W", "L")]
     units = sum((dec(b["price"]) - 1) if b["result"] == "W" else -1 for b in g)
     cl = [b["clv"] for b in bets if b.get("clv") is not None and b.get("result")]
@@ -319,7 +334,7 @@ def _rec(bets):
             "open": sum(1 for b in bets if not b.get("result")), "units": round(units, 2),
             "avg_ev": round(sum(b["ev"] for b in bets if b.get("ev") is not None) / max(1, sum(1 for b in bets if b.get("ev") is not None)), 4) if bets else None,
             "avg_clv": round(sum(cl) / len(cl) * 100, 2) if cl else None, "beat_close": sum(c > 0 for c in cl),
-            "n_clv": len(cl)}
+            "n_clv": len(cl), "void_ladder": len(void)}
 
 
 def summary(state: dict) -> dict:
