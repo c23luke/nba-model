@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import sys
 from datetime import date, datetime, timedelta, timezone
 
@@ -118,13 +119,21 @@ def run(now: datetime | None = None, backfill: bool = False, fetch_day=sources.e
     # ---- 2. lines
     odds_lines, usage = {}, {}
     key = "".join((os.environ.get("ODDS_API_KEY") or "").split())
+    real_odds_api = fetch_lines is None and bool(key)
     if fetch_lines is None and key:
         fetch_lines = lambda: sources.odds_api_lines(key)
     if fetch_lines:
-        try:
-            odds_lines, usage = fetch_lines()
-        except Exception as e:
-            log.append(f"Odds API: {e}")
+        # The Odds API sometimes answers 502/503 for a minute (Nov 19, Nov 23). Try 3 times before warning; if it still
+        # fails, this run uses the ESPN/DraftKings lines and the note says so.
+        for attempt in range(3):
+            try:
+                odds_lines, usage = fetch_lines()
+                break
+            except Exception as e:
+                if attempt == 2:
+                    log.append(f"Odds API: {e} (3 tries; this run used the ESPN/DraftKings lines instead)")
+                else:
+                    time.sleep(5 * (attempt + 1) if real_odds_api else 0)
 
     # exchange prices (Polymarket, ProphetX, BetOpenly, Novig) — fetched only once a pick needs shopping
     if fetch_exchanges is None and key:
