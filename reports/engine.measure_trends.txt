@@ -1,0 +1,36 @@
+2020-21: 2060 team-games with a closing spread
+2021-22: 2326 team-games with a closing spread
+2022-23: 2302 team-games with a closing spread
+2023-24: 2332 team-games with a closing spread
+2024-25: 2328 team-games with a closing spread
+2025-26: 2358 team-games with a closing spread
+
+=== TRENDS CENTER: away team on an 8+ game losing streak vs a sub-.500 opponent (their claim 182-127-5)
+  away, lost 8+ in a row, opponent under .500                        ALL:       32-32 (50.0%, -3.2u)   20-21: 5-7  21-22: 3-4  22-23: 4-10  23-24: 8-3  24-25: 5-1  25-26: 7-7
+
+=== Same idea, other cuts (is 8+ the real shape or a lucky slice?)
+  away, lost 3+ in a row, opponent under .500                        ALL:    216-214 (50.2%, -19.4u)   20-21: 28-33  21-22: 34-36  22-23: 37-34  23-24: 39-28  24-25: 38-41  25-26: 40-42
+  away, lost 4+ in a row, opponent under .500                        ALL:     138-127 (52.1%, -1.7u)   20-21: 18-23  21-22: 21-20  22-23: 21-24  23-24: 27-16  24-25: 29-19  25-26: 22-25
+  away, lost 5+ in a row, opponent under .500                        ALL:       86-81 (51.5%, -3.1u)   20-21: 11-18  21-22: 11-15  22-23: 14-15  23-24: 18-10  24-25: 15-7  25-26: 17-16
+  away, lost 6+ in a row, opponent under .500                        ALL:       60-63 (48.8%, -9.3u)   20-21: 7-13  21-22: 6-11  22-23: 9-14  23-24: 13-8  24-25: 10-3  25-26: 15-14
+  away, lost 7+ in a row, opponent under .500                        ALL:       42-47 (47.2%, -9.7u)   20-21: 5-9  21-22: 4-7  22-23: 5-12  23-24: 9-7  24-25: 7-1  25-26: 12-11
+  away, lost 8+ in a row, opponent under .500                        ALL:       32-32 (50.0%, -3.2u)   20-21: 5-7  21-22: 3-4  22-23: 4-10  23-24: 8-3  24-25: 5-1  25-26: 7-7
+  away, lost 10+ in a row, opponent under .500                       ALL:       14-14 (50.0%, -1.4u)   20-21: 2-1  21-22: 1-3  22-23: 2-5  23-24: 3-3  24-25: 2-0  25-26: 4-2
+  home, lost 5+ in a row, opponent under .500                        ALL:      81-90 (47.4%, -18.0u)   20-21: 5-12  21-22: 13-11  22-23: 12-17  23-24: 14-14  24-25: 19-20  25-26: 18-16
+  any, lost 5+ in a row, any opponent                                ALL:    422-423 (49.9%, -43.3u)   20-21: 44-56  21-22: 72-60  22-23: 58-65  23-24: 76-80  24-25: 80-73  25-26: 92-89
+  away, lost 5+ in a row, opponent .500 or better                    ALL:    128-130 (49.6%, -15.0u)   20-21: 16-13  21-22: 25-17  22-23: 15-15  23-24: 23-25  24-25: 19-27  25-26: 30-33
+  away, lost 5+ in a row, opponent under .500, getting 10+           ALL:       16-22 (42.1%, -8.2u)   20-21: 1-2  21-22: 4-6  22-23: 1-4  23-24: 4-2  24-25: 5-2  25-26: 1-6
+  away, lost 5+ in a row, opponent under .500, getting under 10      ALL:       70-59 (54.3%, +5.1u)   20-21: 10-16  21-22: 7-9  22-23: 13-11  23-24: 14-8  24-25: 10-5  25-26: 16-10
+  home, lost 8+ in a row, opponent under .500                        ALL:       38-27 (58.5%, +8.3u)   20-21: 3-7  21-22: 4-3  22-23: 4-3  23-24: 10-6  24-25: 9-3  25-26: 8-5
+  any, lost 8+ in a row, any opponent                                ALL:    154-151 (50.5%, -12.1u)   20-21: 16-22  21-22: 21-15  22-23: 16-24  23-24: 32-40  24-25: 31-21  25-26: 38-29
+  away, lost 8+ in a row, opponent .500 or better                    ALL:      43-49 (46.7%, -10.9u)   20-21: 4-2  21-22: 5-3  22-23: 4-6  23-24: 9-17  24-25: 7-11  25-26: 14-10
+  away, lost 8+ in a row, opponent under .500, getting 10+           ALL:         8-9 (47.1%, -1.9u)   20-21: 1-0  21-22: 1-2  22-23: 0-4  23-24: 2-1  24-25: 3-0  25-26: 1-2
+  away, lost 8+ in a row, opponent under .500, getting under 10      ALL:       24-23 (51.1%, -1.3u)   20-21: 4-7  21-22: 2-2  22-23: 4-6  23-24: 6-2  24-25: 2-1  25-26: 6-5
+
+Per season, for the Trends Center trend:
+  2020-21: 5-7 (41.7%, -2.7u)
+  2021-22: 3-4 (42.9%, -1.4u)
+  2022-23: 4-10 (28.6%, -7.0u)
+  2023-24: 8-3 (72.7%, +4.7u)
+  2024-25: 5-1 (83.3%, +3.9u)
+  2025-26: 7-7 (50.0%, -0.7u)
