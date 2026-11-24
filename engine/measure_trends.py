@@ -49,7 +49,7 @@ def ctx(h, day, home_today):
         else:
             break
     return {"cs": cs, "ncs": ncs, "in6": sum(1 for x in h if 1 <= (day - x["date"]).days <= 5) + 1,
-            "rest": (day - last["date"]).days - 1 if last else None, "hist": h, "n": n, "wp": (sum(x["won"] for x in h) / n) if n else None, "wins": sum(x["won"] for x in h),
+            "rest": (day - last["date"]).days - 1 if last else None, "hist": list(h), "n": n,     # a COPY: no later games "wp": (sum(x["won"] for x in h) / n) if n else None, "wins": sum(x["won"] for x in h),
             "ws": ws, "ls": ls, "b2b": bool(last and (day - last["date"]).days == 1),
             "in4": sum(1 for x in h if 1 <= (day - x["date"]).days <= 3) + 1,
             "last": last, "stretch": stretch + 1, "prev_road": prev_road}
@@ -102,6 +102,58 @@ def build(season, key):
     return rows, totals
 
 
+# Trends Center trends as general rules (shared with the live Trends tab, engine/trends_live.py)
+sub500 = lambda c: c["wp"] is not None and c["n"] >= 5 and c["wp"] < 0.5
+over500 = lambda c: c["wp"] is not None and c["n"] >= 5 and c["wp"] > 0.5
+L = lambda c: c["last"] or {}
+
+SPREADS_TC = [
+    ("Nov 23", "Away team on an 8+ game losing streak vs a sub-.500 opponent", "182-127",
+     lambda r: not r["home"] and r["me"]["ls"] >= 8 and sub500(r["op"])),
+    ("Nov 24", "Team that scored 90 or less in its last game (their version: Celtics only, 14-0)", "14-0",
+     lambda r: L(r["me"]).get("pts", 999) <= 90),
+    ("Nov 24", "... and it's the favorite today", "",
+     lambda r: L(r["me"]).get("pts", 999) <= 90 and r["line"] < 0),
+    ("Nov 21", "Facing a team playing its 5th+ straight home game", "61.2%",
+     lambda r: not r["home"] and r["op"]["stretch"] >= 5),
+    ("Nov 14", "Facing a team on a back-to-back after an overtime game", "88-37",
+     lambda r: r["op"]["b2b"] and L(r["op"]).get("ot")),
+    ("Nov 11", "Favorite that lost as the favorite to the same team yesterday", "33-13",
+     lambda r: r["line"] < 0 and r["me"]["b2b"] and L(r["me"]).get("opp") == r["opp"]
+     and L(r["me"]).get("fav") and not L(r["me"]).get("won")),
+    ("Nov 7", "Road favorite after losing its last game as a home favorite", "59.7%",
+     lambda r: not r["home"] and r["line"] < 0 and L(r["me"]).get("home") and L(r["me"]).get("fav")
+     and not L(r["me"]).get("won")),
+    ("Nov 5", "Facing a non-conference team on a back-to-back after an overtime WIN", "39-3",
+     lambda r: r["nonconf"] and r["op"]["b2b"] and L(r["op"]).get("ot") and L(r["op"]).get("won")),
+    ("Nov 4", "Road favorite on a 3+ game losing streak", "120-62",
+     lambda r: not r["home"] and r["line"] < 0 and r["me"]["ls"] >= 3),
+    ("Nov 2", "Above-.500 home favorite vs a team on a back-to-back riding a 4+ game win streak", "60.1%",
+     lambda r: r["home"] and r["line"] < 0 and over500(r["me"]) and r["op"]["b2b"] and r["op"]["ws"] >= 4),
+    ("Oct 29", "Heavy favorite (-9 or more) vs a team on a 4+ game win streak", "260-179",
+     lambda r: r["line"] <= -9 and r["op"]["ws"] >= 4),
+    ("Mar 24", "Away favorite of 7+ late in the season (March on)", "254-189",
+     lambda r: not r["home"] and r["line"] <= -7 and r["late"]),
+    ("Mar 4", "Underdog after scoring under 100, vs an above-.500 team", "50-12",
+     lambda r: r["line"] > 0 and L(r["me"]).get("pts", 999) < 100 and over500(r["op"])),
+    ("Mar 4", "Fade a home underdog playing its 3rd game in 4 nights", "93-37",
+     lambda r: not r["home"] and r["line"] < 0 and r["op"]["in4"] >= 3),
+    ("Mar 4", "Fade a home team on a back-to-back in its first game back from a 3+ game road trip", "237-147",
+     lambda r: not r["home"] and r["op"]["b2b"] and r["op"]["prev_road"] >= 3),
+    ("Mar 3", "Home favorite after a loss, vs a sub-.500 team", "45-13",
+     lambda r: r["home"] and r["line"] < 0 and L(r["me"]) and not L(r["me"]).get("won") and sub500(r["op"])),
+]
+TOTALS_TC = [
+    ("Oct 31", "UNDER: winless road team (1+ games) vs an above-.500 team", "83-43",
+     lambda t: t["a"]["n"] >= 1 and t["a"]["wins"] == 0 and over500(t["h"]), False),
+    ("Apr 4", "UNDER: close spread (3 or less) and a high total (top quarter so far)", "319-246",
+     lambda t: t["hs"] is not None and abs(t["hs"]) <= 3 and t["q3"] is not None and t["tot"] >= t["q3"], False),
+    ("Mar 15", "OVER: heavy favorite (-9+) vs a team on a back-to-back", "392-231",
+     lambda t: t["hs"] is not None and ((t["hs"] <= -9 and t["a"]["b2b"]) or (t["hs"] >= 9 and t["h"]["b2b"])), True),
+]
+
+
+
 def main():
     key = "".join((os.environ.get("ODDS_API_KEY") or "").split())
     rows, totals = [], []
@@ -111,55 +163,6 @@ def main():
         totals += t
         print(f"{s}: {len(r)} team-games with a closing spread, {len(t)} games with a closing total")
     seasons = list(M.SEASONS)
-    sub500 = lambda c: c["wp"] is not None and c["n"] >= 5 and c["wp"] < 0.5
-    over500 = lambda c: c["wp"] is not None and c["n"] >= 5 and c["wp"] > 0.5
-    L = lambda c: c["last"] or {}
-
-    spreads = [
-        ("Nov 23", "Away team on an 8+ game losing streak vs a sub-.500 opponent", "182-127",
-         lambda r: not r["home"] and r["me"]["ls"] >= 8 and sub500(r["op"])),
-        ("Nov 24", "Team that scored 90 or less in its last game (their version: Celtics only, 14-0)", "14-0",
-         lambda r: L(r["me"]).get("pts", 999) <= 90),
-        ("Nov 24", "... and it's the favorite today", "",
-         lambda r: L(r["me"]).get("pts", 999) <= 90 and r["line"] < 0),
-        ("Nov 21", "Facing a team playing its 5th+ straight home game", "61.2%",
-         lambda r: not r["home"] and r["op"]["stretch"] >= 5),
-        ("Nov 14", "Facing a team on a back-to-back after an overtime game", "88-37",
-         lambda r: r["op"]["b2b"] and L(r["op"]).get("ot")),
-        ("Nov 11", "Favorite that lost as the favorite to the same team yesterday", "33-13",
-         lambda r: r["line"] < 0 and r["me"]["b2b"] and L(r["me"]).get("opp") == r["opp"]
-         and L(r["me"]).get("fav") and not L(r["me"]).get("won")),
-        ("Nov 7", "Road favorite after losing its last game as a home favorite", "59.7%",
-         lambda r: not r["home"] and r["line"] < 0 and L(r["me"]).get("home") and L(r["me"]).get("fav")
-         and not L(r["me"]).get("won")),
-        ("Nov 5", "Facing a non-conference team on a back-to-back after an overtime WIN", "39-3",
-         lambda r: r["nonconf"] and r["op"]["b2b"] and L(r["op"]).get("ot") and L(r["op"]).get("won")),
-        ("Nov 4", "Road favorite on a 3+ game losing streak", "120-62",
-         lambda r: not r["home"] and r["line"] < 0 and r["me"]["ls"] >= 3),
-        ("Nov 2", "Above-.500 home favorite vs a team on a back-to-back riding a 4+ game win streak", "60.1%",
-         lambda r: r["home"] and r["line"] < 0 and over500(r["me"]) and r["op"]["b2b"] and r["op"]["ws"] >= 4),
-        ("Oct 29", "Heavy favorite (-9 or more) vs a team on a 4+ game win streak", "260-179",
-         lambda r: r["line"] <= -9 and r["op"]["ws"] >= 4),
-        ("Mar 24", "Away favorite of 7+ late in the season (March on)", "254-189",
-         lambda r: not r["home"] and r["line"] <= -7 and r["late"]),
-        ("Mar 4", "Underdog after scoring under 100, vs an above-.500 team", "50-12",
-         lambda r: r["line"] > 0 and L(r["me"]).get("pts", 999) < 100 and over500(r["op"])),
-        ("Mar 4", "Fade a home underdog playing its 3rd game in 4 nights", "93-37",
-         lambda r: not r["home"] and r["line"] < 0 and r["op"]["in4"] >= 3),
-        ("Mar 4", "Fade a home team on a back-to-back in its first game back from a 3+ game road trip", "237-147",
-         lambda r: not r["home"] and r["op"]["b2b"] and r["op"]["prev_road"] >= 3),
-        ("Mar 3", "Home favorite after a loss, vs a sub-.500 team", "45-13",
-         lambda r: r["home"] and r["line"] < 0 and L(r["me"]) and not L(r["me"]).get("won") and sub500(r["op"])),
-    ]
-    tots = [
-        ("Oct 31", "UNDER: winless road team (1+ games) vs an above-.500 team", "83-43",
-         lambda t: t["a"]["n"] >= 1 and t["a"]["wins"] == 0 and over500(t["h"]), False),
-        ("Apr 4", "UNDER: close spread (3 or less) and a high total (top quarter so far)", "319-246",
-         lambda t: t["hs"] is not None and abs(t["hs"]) <= 3 and t["q3"] is not None and t["tot"] >= t["q3"], False),
-        ("Mar 15", "OVER: heavy favorite (-9+) vs a team on a back-to-back", "392-231",
-         lambda t: t["hs"] is not None and ((t["hs"] <= -9 and t["a"]["b2b"]) or (t["hs"] >= 9 and t["h"]["b2b"])), True),
-    ]
-
     def line_for(rs, won):
         w = sum(won(r) for r in rs)
         n = len(rs)
@@ -176,12 +179,12 @@ def main():
 
     print("\nSPREADS (one row per team per game; we bet the team described)")
     print("seasons: " + "  ".join(s[2:] for s in seasons))
-    for when, name, theirs, keep in spreads:
+    for when, name, theirs, keep in SPREADS_TC:
         rs = [r for r in rows if keep(r)]
         allr, per, ok = line_for(rs, lambda r: r["win"])
         print(f"  [{when}] {name}\n      theirs: {theirs:10}  ours, 6 seasons: {allr:30} {per}   {'PASSES' if ok else 'fails'}")
     print("\nTOTALS")
-    for when, name, theirs, keep, over in tots:
+    for when, name, theirs, keep, over in TOTALS_TC:
         rs = [t for t in totals if keep(t)]
         allr, per, ok = line_for(rs, (lambda t: t["over"]) if over else (lambda t: not t["over"]))
         print(f"  [{when}] {name}\n      theirs: {theirs:10}  ours, 6 seasons: {allr:30} {per}   {'PASSES' if ok else 'fails'}")
