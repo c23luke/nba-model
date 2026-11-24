@@ -188,13 +188,13 @@ def test_rules_now_applies_todays_price_rules():
     base = {"status": "OPEN", "bet": "spread", "side": "BOS", "system": "MONEYBALL", "t13_gap": None, "result": None,
             "pnl": None, "risk": 20.0, "to_win": 20.0}
     rows = [{**base, "game_id": "a", "holding": "BOS +3.5", "line": 3.5, "card_pick": "BOS +3.5", "ev": 0.038},   # under 4%
-            {**base, "game_id": "b", "holding": "BOS +3.5", "line": 3.5, "card_pick": "BOS +5.5", "ev": 0.06,
-             "resting_fill": True},                                                                         # standing, 2 pts off
+            {**base, "game_id": "b", "holding": "BOS +3", "line": 3.0, "card_pick": "BOS +5.5", "ev": 0.06,
+             "resting_fill": True},                                          # standing, 2.5 pts off: past the bettor's 2
             {**base, "game_id": "c", "holding": "BOS +4.5", "line": 4.5, "card_pick": "BOS +5.5", "ev": 0.06,
              "risk": 22.0}]                                                                                 # fine
     rules_now(rows)
     assert [r["rules"]["counted"] for r in rows] == [False, False, True]
-    assert "4%" in rows[0]["rules"]["why"] and "within 1" in rows[1]["rules"]["why"]
+    assert "4%" in rows[0]["rules"]["why"] and "limit is 2" in rows[1]["rules"]["why"]
 
 
 def test_split_fills_are_one_bet_and_systems_need_the_players_model():
@@ -377,3 +377,18 @@ def test_rules_now_moneyball_favorite_counts_1_unit_and_the_new_skips():
     assert not rows[3]["rules"]["counted"] and "10+" in rows[3]["rules"]["why"]
     assert not rows[4]["rules"]["counted"] and "5 to 9.5" in rows[4]["rules"]["why"]
     assert rows[5]["rules"]["counted"]
+
+
+def test_the_record_uses_the_bettors_rules_for_standing_orders():
+    # Nov 23: MEM -2.5 (T13) filled on a standing order against a card of MEM -4 and the record hid it under a
+    # "within 1 point" rule the bettor never had. The bettor allows 2 points either way (T13 also keeps its 4+ edge at
+    # the number it takes), so the record does too: 1.5 off counts, 2.5 off doesn't.
+    from engine.placed import rules_now
+    base = {"status": "FINAL", "bet": "spread", "system": "T13", "t13_gap": 5.0, "result": "W", "pnl": 40.4,
+            "risk": 44.2, "to_win": 40.8, "ev": 0.059, "resting_fill": True, "side": "MEM"}
+    rows = [{**base, "game_id": "a", "holding": "MEM -2.5", "line": -2.5, "card_pick": "MEM -4"},
+            {**base, "game_id": "b", "holding": "MEM -5.5", "line": -5.5, "card_pick": "MEM -4"},
+            {**base, "game_id": "c", "holding": "MEM -1.5", "line": -1.5, "card_pick": "MEM -4"}]
+    rules_now(rows)
+    assert rows[0]["rules"]["counted"] and rows[1]["rules"]["counted"]
+    assert not rows[2]["rules"]["counted"] and "limit is 2" in rows[2]["rules"]["why"]

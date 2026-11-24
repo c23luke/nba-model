@@ -346,7 +346,10 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = (f"S4 total {float(r['line']):g} isn't above this season's average ({r['s4_bar']:.1f})" if r.get("s4_bar")
                    else "S4 before 30 games were played: today it waits for a season average")
         # today's price rules (2026-10-27): 4% edge, never worse than -150, at most 2 points (3 on totals) off the
-        # card's number; standing orders need 5% and must sit within 1 point of it
+        # card's number; standing orders need 5%. (Nov 23: the extra "standing orders within 1 point" rule is gone. The
+        # bettor never had it: it rests anywhere inside the same 2-point window, with T13's 4+ edge checked at the number
+        # it takes. The record judged MEM -2.5 against a card of MEM -4 by a rule the bettor never used, and hid a real
+        # bet. The record now uses the bettor's rules, so a bet the bettor places is a bet the record counts.)
         card_n = number(r.get("card_pick"))
         off = abs(float(r["line"]) - card_n) if card_n is not None and r.get("line") is not None and r.get("bet") != "moneyline" else 0.0
         all_in = r["risk"] / (r["risk"] + r["to_win"]) if r.get("risk") and r.get("to_win") else None
@@ -356,8 +359,6 @@ def rules_now(rows: list[dict], agree=None) -> dict:
             why = "price worse than -150: today's cap"
         elif r["system"] == "S4" and all_in is not None and all_in > S4_CAP + 0.005:
             why = f"paid {'+' if all_in < 0.5 else '−'}{round(100 * (1 - all_in) / all_in) if all_in < 0.5 else round(100 * all_in / (1 - all_in))}: S4 now bets only at -110 or better"
-        elif r.get("resting_fill") and off > 1 + 1e-9:
-            why = f"standing order {off:g} points off the card's number: today it only rests within 1"
         elif off > (3.0 if r.get("bet") == "total" else 2.0) + 1e-9 and "ML" not in str(r.get("holding")):
             why = f"bought {off:g} points off the card's number: today the limit is {3 if r.get('bet') == 'total' else 2}"
         if len({sd for bt, sd in sides.get(r["game_id"], set()) if bt == r.get("bet")}) > 1:
