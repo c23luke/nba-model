@@ -230,14 +230,12 @@ td .n { font-size: 19px; }
   <button role="tab" data-tab="bets" aria-selected="true">Bets<span class="long"> placed</span><span class="c" id="c-bets" hidden></span></button>
   <button role="tab" data-tab="rankings" aria-selected="false">Rank<span class="long">ings</span></button>
   <button role="tab" data-tab="systems" aria-selected="false">Systems</button>
-  <button role="tab" data-tab="trends" aria-selected="false">Trends</button>
   <button role="tab" data-tab="lab" aria-selected="false">Lab</button>
 </div></nav>
 <main class="wrap">
   <section id="tab-bets" role="tabpanel"></section>
   <section id="tab-rankings" role="tabpanel" hidden></section>
   <section id="tab-systems" role="tabpanel" hidden></section>
-  <section id="tab-trends" role="tabpanel" class="lab" hidden></section>
   <section id="tab-lab" role="tabpanel" class="lab" hidden></section>
   <p class="foot" id="foot"></p>
 </main>
@@ -427,7 +425,7 @@ function whyHead(tag, tags, gap, side) {
 const sizeRule = tag => tag === "MONEYBALL" ? "MONEYBALL bets are sized to win $40 (2 units)" : "bets are sized to win $40 (2 units) for MONEYBALL, STACK and the players model against a thin roster; everything else $20";
 
 // ---------- tabs (remembered per viewer; works without storage too)
-const TABS = ["bets", "rankings", "systems", "trends", "lab"];
+const TABS = ["bets", "rankings", "systems", "lab"];
 function show(tab, push = true) {
   if (tab === "card" || tab === "results") tab = "bets";     // both now live on the Bets tab
   if (!TABS.includes(tab)) tab = "bets";
@@ -850,30 +848,6 @@ function renderLab(b) {
     (sc && sc.season && sc.season.n ? `<p class="foot">Scoring vs closing totals this season: overs ${sc.season.overs}-${sc.season.unders}, ${sc.season.avg > 0 ? "+" : ""}${sc.season.avg} points a game.</p>` : "");
 }
 
-// ---------- trends (paper only: never bet, never in the record)
-function renderTrends(b) {
-  const T = (b.trends || {}).trends || [];
-  const ln = x => x.kind === "total" ? `${esc(x.side)} ${x.line}` : `${esc(x.side)} ${x.line > 0 ? "+" : ""}${x.line}`;
-  const res = r => r === "W" ? "won" : r === "L" ? "lost" : "push";
-  const pctOf = s => { const m = /^(\d+)-(\d+)$/.exec(s || ""); return m ? ` (${Math.round(+m[1] / (+m[1] + +m[2]) * 100)}%)` : ""; };
-  const today = T.flatMap(t => t.open.map(o => ({...o, kind: t.kind, name: t.name})));
-  const card = t => `<div class="game"><div>
-      <div class="t">${esc(t.name)}</div>
-      <div class="muted" style="font-size:14px">${esc(t.source)}${t.theirs ? ` · their record ${esc(t.theirs)}` : ""}</div>
-      <div style="font-size:14px">Our check: ${t.ours ? `${esc(t.ours)}${pctOf(t.ours)}` : "—"}${t.ours_seasons ? ` · by season ${esc(t.ours_seasons)}` : ""}</div>
-      <div style="font-size:14px"><b>Live: ${wl(t.live)}${t.live.w + t.live.l ? ` · ${t.live.units > 0 ? "+" : ""}${t.live.units}u` : ""}</b>${t.open.length ? ` · ${t.open.length} open` : ""}</div>
-      ${t.recent.length ? `<div class="muted" style="font-size:14px">Last: ${t.recent.map(r => `${esc(r.game)} ${ln({...r, kind: t.kind})} ${res(r.result)}`).join("; ")}</div>` : ""}
-    </div><div></div></div>`;
-  $("tab-trends").innerHTML = `<h2>Trends</h2>
-    <p class="lede">Betting trends tracked on paper: Trends Center's, written as general rules, plus our own. Never bet and never in
-    the record. "Our check" is 6 seasons of closing lines (2020-21 to 2025-26) at −110. Live counts from ${esc((b.trends || {}).since || "")},
-    graded at the line when the trend first showed up. Only the line-move trend passes our bar (56%+, no season under 53%), and only on the 2 seasons we have opening lines for.</p>` +
-    (!T.length ? `<div class="muted">Fills in on the next model run.</div>` :
-      `<h3>Today</h3>` + (today.length ? today.map(o => `<div class="game"><div><div class="t">${ln(o)} · ${esc(o.game)}</div>
-        <div class="muted" style="font-size:14px">${esc(o.name)}</div></div><div></div></div>`).join("") : `<div class="muted">No trends fire on today's games.</div>`) +
-      `<h3 style="margin-top:14px">Every trend</h3>` + T.map(card).join(""));
-}
-
 // ---------- power rankings
 function renderRankings(b) {
   const p = b.power || {};
@@ -907,7 +881,6 @@ function render(b) {
   renderBets(placed, b);
   renderRankings(b);
   renderSystems(b);
-  try { renderTrends(b); } catch (e) { $("tab-trends").textContent = "Trends couldn't load."; }
   renderLab(b);
   const all = document.querySelectorAll("main details");
   openNow.forEach(i => { if (all[i]) all[i].open = true; });
