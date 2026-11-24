@@ -1,99 +1,20 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/nba-model/nba-model/engine/measure_trends_ours.py", line 201, in <module>
+    main()
+  File "/home/runner/work/nba-model/nba-model/engine/measure_trends_ours.py", line 134, in main
+    sp_pass, sp = run(SPREADS, rows, "spread")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/nba-model/nba-model/engine/measure_trends_ours.py", line 124, in run
+    rs = [r for r in data if keep(r)]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/nba-model/nba-model/engine/measure_trends_ours.py", line 124, in <listcomp>
+    rs = [r for r in data if keep(r)]
+                             ^^^^^^^
+  File "/home/runner/work/nba-model/nba-model/engine/measure_trends_ours.py", line 62, in <lambda>
+    lambda r: r["home"] and r["line"] > 0 and r["me"]["wp"] is not None and r["me"]["n"] >= 10 and r["me"]["wp"] < 0.4
+                                              ~~~~~~~^^^^^^
+KeyError: 'wp'
 13706 team-games, 6904 totals, 6 seasons at the close. Bar: 60+ bets, 56%+, no season under 53%.
 
-=== SPREADS (we bet the team described)
-    seasons: 20-21  21-22  22-23  23-24  24-25  25-26
-  fails   Fade a team that covered 5 straight
-          why: the market chases hot ATS teams and over-adjusts
-          226-216 (51.1%, -11.6u)   33-30  43-34  33-39  41-36  40-44  36-33
-  fails   Back a team that failed to cover 5 straight
-          why: same overreaction, other side
-          194-202 (49.0%, -28.2u)   23-31  41-39  22-27  38-26  37-38  33-41
-  fails   Fade a team that covered 3 straight by 10+ each
-          why: lines move after blowout covers
-          37-45 (45.1%, -12.5u)   0-0  0-0  0-0  0-0  0-0  37-45
-  fails   Revenge: lost to this opponent by 20+ last time, this season
-          why: embarrassment + film; market anchors on the blowout
-          468-988 (32.1%, -618.8u)   53-133  83-178  81-142  68-129  64-171  119-235
-  fails   Letdown: favorite of 7+ after a 25+ point win
-          why: flat spot after a statement win; number inflated
-          128-128 (50.0%, -12.8u)   20-12  17-19  14-11  28-27  25-22  24-37
-  fails   Back a rested team (2+ days) vs a team on its 4th game in 6 nights
-          why: fatigue stacks over a week, not just one night
-          341-315 (52.0%, -5.5u)   50-48  62-51  57-72  55-55  52-48  65-41
-  fails   Fade a team on its 3rd road game in 4 nights
-          why: travel + no home bed
-          378-377 (50.1%, -36.7u)   68-83  59-62  70-69  70-53  58-52  53-58
-  fails   Back a home team in its first game back after a 4+ game road trip, with 1+ day rest
-          why: home bed, rested
-          256-284 (47.4%, -56.4u)   37-47  47-43  48-50  47-47  36-49  41-48
-  fails   Fade a road team on the last game of a 5+ game road trip
-          why: 'getaway game', worn down
-          214-212 (50.2%, -19.2u)   31-43  30-37  39-34  44-30  38-35  32-33
-  fails   Big underdog (+10 or more) that lost its last game by 20+
-          why: market over-punishes a blowout loss
-          144-125 (53.5%, +6.5u)   15-16  15-16  15-15  27-20  35-30  37-28
-  fails   Favorite after a loss as a 10+ point favorite
-          why: bounce-back after an upset; market cools on them
-          70-59 (54.3%, +5.1u)   9-9  10-14  11-5  11-10  12-10  17-11
-  fails   Underdog vs a team that just won by 15+
-          why: the number is inflated after a big win
-          689-716 (49.0%, -98.6u)   112-93  122-119  91-102  113-123  118-140  133-139
-  fails   Bad team (under .400) as a home underdog after 2+ days rest
-          why: rested bad teams play hard at home
-          104-106 (49.5%, -12.6u)   5-14  20-20  17-12  14-21  22-19  26-20
-  fails   Good team (over .600) as an underdog
-          why: market rarely makes good teams dogs; usually rest/injury noise
-          347-380 (47.7%, -71.0u)   34-47  67-68  54-62  61-75  44-60  87-68
-  fails   First 14 days: fade favorites of 8+
-          why: early lines lean on last season; rosters changed
-          79-68 (53.7%, +4.2u)   9-13  13-9  14-9  9-9  18-16  16-12
-  fails   Team after an overtime LOSS, not on a back-to-back
-          why: close loss, motivated, rested
-          142-142 (50.0%, -14.2u)   19-26  21-24  36-28  28-20  19-21  19-23
-  fails   Back a team whose opponent covered by 15+ last game
-          why: market overreacts to one big cover
-          854-871 (49.5%, -104.1u)   152-106  158-148  115-129  152-151  146-161  131-176
-  fails   Home team on a back-to-back vs a rested road team (2+ days)
-          why: the home edge can't cover tired legs
-          103-84 (55.1%, +10.6u)   11-9  28-11  11-19  19-16  20-14  14-15
-  fails   Road team after 3+ days rest
-          why: rest helps more on the road
-          123-132 (48.2%, -22.2u)   15-19  25-22  13-13  24-27  24-24  22-27
-
-=== TOTALS
-    seasons: 20-21  21-22  22-23  23-24  24-25  25-26
-  fails   UNDER: both teams on a back-to-back
-          why: tired legs, slower pace
-          174-187 (48.2%, -31.7u)   30-35  22-23  24-31  25-31  40-30  33-37
-  fails   UNDER: a team off an overtime game on a back-to-back
-          why: extra minutes last night
-          56-65 (46.3%, -15.5u)   8-9  12-12  6-14  5-12  13-10  12-8
-  fails   UNDER: both teams' last 3 games went over
-          why: the market chases overs
-          29-27 (51.8%, -0.7u)   0-0  0-0  0-0  0-0  0-0  29-27
-  fails   OVER: both teams' last 3 games went under
-          why: same, other side
-          12-11 (52.2%, -0.1u)   7-8  5-3  0-0  0-0  0-0  0-0
-  fails   OVER: both teams rested 2+ days
-          why: fresh legs, faster pace
-          214-195 (52.3%, -0.5u)   21-17  30-28  28-32  45-39  49-43  41-36
-  fails   UNDER: from March on, a bad team (under .400) at home
-          why: tanking teams give minutes to young players (reason unsure)
-          225-244 (48.0%, -43.4u)   47-57  38-34  23-21  44-51  33-35  40-46
-  fails   UNDER: first 14 days of the season
-          why: defenses ahead of offenses early; totals set off last season
-          292-310 (48.5%, -49.0u)   53-46  58-38  43-55  45-55  48-59  45-57
-  fails   OVER: big spread (12+) and a low total (bottom quarter so far)
-          why: garbage time scoring
-          121-102 (54.3%, +8.8u)   14-7  6-10  6-6  42-27  22-20  31-32
-
-=== LUCK CHECK: real ideas passing: 0 of 27. On shuffled results, 30 times: average 0.07 pass (max 1). Real passes well above that are worth tracking; at or below it, they could be luck.
-
-=== LINE MOVEMENT (2024-25 and 2025-26 only: the seasons with opening lines), graded at the close
-  Line moved 1.5+ toward the team (sharp money)        405-329 (55.2%, +43.1u)   24-25: 209-182  25-26: 196-147
-  Line moved 2.5+ toward the team                      194-148 (56.7%, +31.2u)   24-25: 98-83  25-26: 96-65
-  Line moved 2.5+ toward an underdog                   39-28 (58.2%, +8.2u)   24-25: 21-13  25-26: 18-15
-  Line moved 2.5+ toward a favorite                    155-120 (56.4%, +23.0u)   24-25: 77-70  25-26: 78-50
-  Total dropped 3+ -> under                            166-178 (48.3%, -29.8u)   24-25: 97-103  25-26: 69-75
-  Total rose 3+ -> over                                152-151 (50.2%, -14.1u)   24-25: 88-76  25-26: 64-75
-  Total rose 3+ -> under (fade the move)               151-152 (49.8%, -16.2u)   24-25: 76-88  25-26: 75-64
