@@ -39,7 +39,17 @@ def ctx(h, day, home_today):
             break
         prev_road += 1
     n = len(h)
-    return {"n": n, "wp": (sum(x["won"] for x in h) / n) if n else None, "wins": sum(x["won"] for x in h),
+    cov = [x["cov"] for x in h if x.get("cov") is not None]
+    cs = ncs = 0                                  # straight covers / straight non-covers
+    for c in reversed(cov):
+        if c and ncs == 0:
+            cs += 1
+        elif not c and cs == 0:
+            ncs += 1
+        else:
+            break
+    return {"cs": cs, "ncs": ncs, "in6": sum(1 for x in h if 1 <= (day - x["date"]).days <= 5) + 1,
+            "rest": (day - last["date"]).days - 1 if last else None, "hist": h, "n": n, "wp": (sum(x["won"] for x in h) / n) if n else None, "wins": sum(x["won"] for x in h),
             "ws": ws, "ls": ls, "b2b": bool(last and (day - last["date"]).days == 1),
             "in4": sum(1 for x in h if 1 <= (day - x["date"]).days <= 3) + 1,
             "last": last, "stretch": stretch + 1, "prev_road": prev_road}
@@ -68,10 +78,12 @@ def build(season, key):
                     res = (margin if home else -margin) + line
                     if res:
                         rows.append({"season": season, "home": home, "line": line, "me": me, "op": op, "team": team,
+                                     "day": day, "total": tot, "first14": (day - start).days < 14,
                                      "opp": g.away if home else g.home, "nonconf": nonconf, "late": late,
                                      "win": res > 0})
             if tot is not None and g.home_score + g.away_score != tot:
-                totals.append({"season": season, "hs": hs, "tot": tot, "q3": q3, "h": ch, "a": ca,
+                totals.append({"season": season, "hs": hs, "tot": tot, "q3": q3, "h": ch, "a": ca, "day": day,
+                               "home": g.home, "away": g.away, "late": late, "first14": (day - start).days < 14,
                                "over": g.home_score + g.away_score > tot})
         for g in by_day[day]:
             ln = lines.get(f"{day.isoformat()}|{g.away}|{g.home}") or {}
@@ -81,8 +93,12 @@ def build(season, key):
             m = g.home_score - g.away_score
             for team, opp, home, mg, pts in ((g.home, g.away, True, m, g.home_score), (g.away, g.home, False, -m, g.away_score)):
                 line = None if hs is None else (hs if home else -hs)
+                cv = None if line is None or mg + line == 0 else mg + line > 0
                 hist[team].append({"date": day, "won": mg > 0, "margin": mg, "pts": pts, "home": home, "opp": opp,
-                                   "ot": (g.periods or 4) > 4, "fav": line is not None and line < 0})
+                                   "ot": (g.periods or 4) > 4, "fav": line is not None and line < 0, "cov": cv,
+                                   "line": line, "allowed": pts - mg,
+                                   "total": ln.get("total"), "over": None if ln.get("total") is None or
+                                   g.home_score + g.away_score == ln["total"] else g.home_score + g.away_score > ln["total"]})
     return rows, totals
 
 
