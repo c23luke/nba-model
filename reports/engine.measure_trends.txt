@@ -1,36 +1,49 @@
-2020-21: 2060 team-games with a closing spread
-2021-22: 2326 team-games with a closing spread
-2022-23: 2302 team-games with a closing spread
-2023-24: 2332 team-games with a closing spread
-2024-25: 2328 team-games with a closing spread
-2025-26: 2358 team-games with a closing spread
+2020-21: 2060 team-games with a closing spread, 1034 games with a closing total
+2021-22: 2326 team-games with a closing spread, 1163 games with a closing total
+2022-23: 2302 team-games with a closing spread, 1175 games with a closing total
+2023-24: 2332 team-games with a closing spread, 1175 games with a closing total
+2024-25: 2328 team-games with a closing spread, 1175 games with a closing total
+2025-26: 2358 team-games with a closing spread, 1182 games with a closing total
 
-=== TRENDS CENTER: away team on an 8+ game losing streak vs a sub-.500 opponent (their claim 182-127-5)
-  away, lost 8+ in a row, opponent under .500                        ALL:       32-32 (50.0%, -3.2u)   20-21: 5-7  21-22: 3-4  22-23: 4-10  23-24: 8-3  24-25: 5-1  25-26: 7-7
+SPREADS (one row per team per game; we bet the team described)
+seasons: 20-21  21-22  22-23  23-24  24-25  25-26
+  [Nov 23] Away team on an 8+ game losing streak vs a sub-.500 opponent
+      theirs: 182-127     ours, 6 seasons: 32-32 (50.0%, -3.2u)           5-7  3-4  4-10  8-3  5-1  7-7   fails
+  [Nov 24] Team that scored 90 or less in its last game (their version: Celtics only, 14-0)
+      theirs: 14-0        ours, 6 seasons: 227-198 (53.4%, +9.2u)         42-37  68-57  27-13  31-31  33-38  26-22   fails
+  [Nov 24] ... and it's the favorite today
+      theirs:             ours, 6 seasons: 84-57 (59.6%, +21.3u)          19-11  20-17  12-4  14-8  9-12  10-5   fails
+  [Nov 21] Facing a team playing its 5th+ straight home game
+      theirs: 61.2%       ours, 6 seasons: 239-220 (52.1%, -3.0u)         36-35  35-35  44-32  53-41  40-44  31-33   fails
+  [Nov 14] Facing a team on a back-to-back after an overtime game
+      theirs: 88-37       ours, 6 seasons: 69-56 (55.2%, +7.4u)           10-10  16-9  10-8  13-4  13-11  7-14   fails
+  [Nov 11] Favorite that lost as the favorite to the same team yesterday
+      theirs: 33-13       ours, 6 seasons: 15-4 (78.9%, +10.6u)           6-2  1-0  1-0  2-1  2-1  3-0   PASSES
+  [Nov 7] Road favorite after losing its last game as a home favorite
+      theirs: 59.7%       ours, 6 seasons: 115-101 (53.2%, +3.9u)         17-11  20-20  13-12  23-16  23-22  19-20   fails
+  [Nov 5] Facing a non-conference team on a back-to-back after an overtime WIN
+      theirs: 39-3        ours, 6 seasons: 14-6 (70.0%, +7.4u)            2-1  6-1  1-1  2-1  2-2  1-0   PASSES
+  [Nov 4] Road favorite on a 3+ game losing streak
+      theirs: 120-62      ours, 6 seasons: 101-80 (55.8%, +13.0u)         22-18  15-7  15-11  14-10  13-20  22-14   fails
+  [Nov 2] Above-.500 home favorite vs a team on a back-to-back riding a 4+ game win streak
+      theirs: 60.1%       ours, 6 seasons: 25-17 (59.5%, +6.3u)           4-1  5-5  7-1  4-3  1-2  4-5   fails
+  [Oct 29] Heavy favorite (-9 or more) vs a team on a 4+ game win streak
+      theirs: 260-179     ours, 6 seasons: 18-11 (62.1%, +5.9u)           1-0  3-0  3-3  3-2  4-4  4-2   fails
+  [Mar 24] Away favorite of 7+ late in the season (March on)
+      theirs: 254-189     ours, 6 seasons: 188-144 (56.6%, +29.6u)        44-33  20-21  20-12  37-27  34-19  33-32   fails
+  [Mar 4] Underdog after scoring under 100, vs an above-.500 team
+      theirs: 50-12       ours, 6 seasons: 355-336 (51.4%, -14.6u)        59-63  97-72  28-38  59-62  59-63  53-38   fails
+  [Mar 4] Fade a home underdog playing its 3rd game in 4 nights
+      theirs: 93-37       ours, 6 seasons: 398-384 (50.9%, -24.4u)        75-81  63-43  65-50  63-59  55-72  77-79   fails
+  [Mar 4] Fade a home team on a back-to-back in its first game back from a 3+ game road trip
+      theirs: 237-147     ours, 6 seasons: 51-53 (49.0%, -7.3u)           10-7  8-12  9-9  10-5  9-11  5-9   fails
+  [Mar 3] Home favorite after a loss, vs a sub-.500 team
+      theirs: 45-13       ours, 6 seasons: 512-484 (51.4%, -20.4u)        85-70  85-83  78-87  75-82  86-82  103-80   fails
 
-=== Same idea, other cuts (is 8+ the real shape or a lucky slice?)
-  away, lost 3+ in a row, opponent under .500                        ALL:    216-214 (50.2%, -19.4u)   20-21: 28-33  21-22: 34-36  22-23: 37-34  23-24: 39-28  24-25: 38-41  25-26: 40-42
-  away, lost 4+ in a row, opponent under .500                        ALL:     138-127 (52.1%, -1.7u)   20-21: 18-23  21-22: 21-20  22-23: 21-24  23-24: 27-16  24-25: 29-19  25-26: 22-25
-  away, lost 5+ in a row, opponent under .500                        ALL:       86-81 (51.5%, -3.1u)   20-21: 11-18  21-22: 11-15  22-23: 14-15  23-24: 18-10  24-25: 15-7  25-26: 17-16
-  away, lost 6+ in a row, opponent under .500                        ALL:       60-63 (48.8%, -9.3u)   20-21: 7-13  21-22: 6-11  22-23: 9-14  23-24: 13-8  24-25: 10-3  25-26: 15-14
-  away, lost 7+ in a row, opponent under .500                        ALL:       42-47 (47.2%, -9.7u)   20-21: 5-9  21-22: 4-7  22-23: 5-12  23-24: 9-7  24-25: 7-1  25-26: 12-11
-  away, lost 8+ in a row, opponent under .500                        ALL:       32-32 (50.0%, -3.2u)   20-21: 5-7  21-22: 3-4  22-23: 4-10  23-24: 8-3  24-25: 5-1  25-26: 7-7
-  away, lost 10+ in a row, opponent under .500                       ALL:       14-14 (50.0%, -1.4u)   20-21: 2-1  21-22: 1-3  22-23: 2-5  23-24: 3-3  24-25: 2-0  25-26: 4-2
-  home, lost 5+ in a row, opponent under .500                        ALL:      81-90 (47.4%, -18.0u)   20-21: 5-12  21-22: 13-11  22-23: 12-17  23-24: 14-14  24-25: 19-20  25-26: 18-16
-  any, lost 5+ in a row, any opponent                                ALL:    422-423 (49.9%, -43.3u)   20-21: 44-56  21-22: 72-60  22-23: 58-65  23-24: 76-80  24-25: 80-73  25-26: 92-89
-  away, lost 5+ in a row, opponent .500 or better                    ALL:    128-130 (49.6%, -15.0u)   20-21: 16-13  21-22: 25-17  22-23: 15-15  23-24: 23-25  24-25: 19-27  25-26: 30-33
-  away, lost 5+ in a row, opponent under .500, getting 10+           ALL:       16-22 (42.1%, -8.2u)   20-21: 1-2  21-22: 4-6  22-23: 1-4  23-24: 4-2  24-25: 5-2  25-26: 1-6
-  away, lost 5+ in a row, opponent under .500, getting under 10      ALL:       70-59 (54.3%, +5.1u)   20-21: 10-16  21-22: 7-9  22-23: 13-11  23-24: 14-8  24-25: 10-5  25-26: 16-10
-  home, lost 8+ in a row, opponent under .500                        ALL:       38-27 (58.5%, +8.3u)   20-21: 3-7  21-22: 4-3  22-23: 4-3  23-24: 10-6  24-25: 9-3  25-26: 8-5
-  any, lost 8+ in a row, any opponent                                ALL:    154-151 (50.5%, -12.1u)   20-21: 16-22  21-22: 21-15  22-23: 16-24  23-24: 32-40  24-25: 31-21  25-26: 38-29
-  away, lost 8+ in a row, opponent .500 or better                    ALL:      43-49 (46.7%, -10.9u)   20-21: 4-2  21-22: 5-3  22-23: 4-6  23-24: 9-17  24-25: 7-11  25-26: 14-10
-  away, lost 8+ in a row, opponent under .500, getting 10+           ALL:         8-9 (47.1%, -1.9u)   20-21: 1-0  21-22: 1-2  22-23: 0-4  23-24: 2-1  24-25: 3-0  25-26: 1-2
-  away, lost 8+ in a row, opponent under .500, getting under 10      ALL:       24-23 (51.1%, -1.3u)   20-21: 4-7  21-22: 2-2  22-23: 4-6  23-24: 6-2  24-25: 2-1  25-26: 6-5
-
-Per season, for the Trends Center trend:
-  2020-21: 5-7 (41.7%, -2.7u)
-  2021-22: 3-4 (42.9%, -1.4u)
-  2022-23: 4-10 (28.6%, -7.0u)
-  2023-24: 8-3 (72.7%, +4.7u)
-  2024-25: 5-1 (83.3%, +3.9u)
-  2025-26: 7-7 (50.0%, -0.7u)
+TOTALS
+  [Oct 31] UNDER: winless road team (1+ games) vs an above-.500 team
+      theirs: 83-43       ours, 6 seasons: 2-0 (100.0%, +2.0u)            0-0  0-0  1-0  0-0  0-0  1-0   PASSES
+  [Apr 4] UNDER: close spread (3 or less) and a high total (top quarter so far)
+      theirs: 319-246     ours, 6 seasons: 283-231 (55.1%, +28.9u)        47-34  58-47  76-46  42-44  34-40  26-20   fails
+  [Mar 15] OVER: heavy favorite (-9+) vs a team on a back-to-back
+      theirs: 392-231     ours, 6 seasons: 244-213 (53.4%, +9.7u)         40-25  35-33  29-35  40-42  52-43  48-35   fails
