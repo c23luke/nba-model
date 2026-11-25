@@ -397,10 +397,15 @@ function plainWhy(o) {
     const who = (N.dtd || []).map(n => n.replace(/^[A-Z]+:\s*/, ""));
     let t = "Since we bet: ";
     t += who.length ? `${who.join(" and ")} ${who.length > 1 ? "are" : "is"} now listed day-to-day. ` : "the numbers have moved. ";
+    // which way "they play" cuts depends on whose players they are: ours playing helps us, theirs playing hurts us
+    const teamsOf = (N.dtd || []).map(n => (/^([A-Z]+):/.exec(n) || [])[1]);
+    const ours = teamsOf.length && teamsOf.every(x => x === o.side), theirs = teamsOf.length && teamsOf.every(x => x && x !== o.side);
+    const ifPlay = ours ? N.high : N.low, ifSit = ours ? N.low : N.high;
     t += N.low === N.high ? `The model now has the ${team(o.side)} ${N.low.toFixed(1)} points better than the market. `
-      : `If they play, the model has the ${team(o.side)} ${N.high.toFixed(1)} points better than the market; if they sit, ${N.low.toFixed(1)}. `;
+      : ours || theirs ? `If they play, the model has the ${team(o.side)} ${ifPlay.toFixed(1)} points better than the market; if they sit, ${ifSit.toFixed(1)}. `
+      : `Depending on who plays, the model has the ${team(o.side)} ${N.low.toFixed(1)} to ${N.high.toFixed(1)} points better than the market. `;
     const bar = o.tag === "T13" ? 4 : 3;      // the players model alone needs 4+; with a system it needs 3+
-    t += N.low >= bar ? `Either way it still clears our ${bar}-point bar.` : N.high >= bar ? `If they sit it would be under our ${bar}-point bar, so we wouldn't place it fresh, but we're still on the side the model likes.`
+    t += N.low >= bar ? `Either way it still clears our ${bar}-point bar.` : N.high >= bar ? `${ours || theirs ? `If they ${ours ? "sit" : "play"}` : "In the worst case"} it would be under our ${bar}-point bar, so we wouldn't place it fresh, but we're still on the side the model likes.`
       : N.low > 0 ? `It's under our ${bar}-point bar now, so we wouldn't place it fresh, but we're still on the side the model likes.` : "The model no longer likes this side; we keep the bet, it can't be undone.";
     S.push(t);
   }
