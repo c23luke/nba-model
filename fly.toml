@@ -1,0 +1,18 @@
+# NBA watcher: one small always-on machine (1 shared CPU, 1 GB), separate from the arb watcher so neither can slow
+# the other. No web address: it only reaches out (ESPN, the NBA injury report, Kalshi, the odds feed, Supabase, ntfy).
+# Keys are Fly secrets: ODDS_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY (set by Caden, never in this file).
+app = "nba-watch-caden"
+primary_region = "iad"
+
+[build]
+
+[processes]
+  app = "python -m engine.serve"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+
+[[restart]]
+  policy = "always"
+  processes = ["app"]

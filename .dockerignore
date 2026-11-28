@@ -1,0 +1,9 @@
+.git
+.github
+reports
+tests
+web
+supabase
+data
+**/__pycache__
+.env

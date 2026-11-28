@@ -1,6 +1,6 @@
 """The watcher: checks every minute, reruns the model the moment anything changes, pings your phone.
 
-Runs ~55 minutes per launch (Supabase starts it every hour, 10am-2am ET):
+Runs ~55 minutes per launch (engine.serve on the always-on server starts the next one as each ends):
   every 60 s   ESPN injury report (any status change on any team)
   every 60 s   the NBA's official injury report (a new one posts every 15 minutes)
                Kalshi spread / total events (a new game's lines just listed)
@@ -133,6 +133,8 @@ def alert_new(board: dict, store, topic: str | None, log) -> int:
 def restart_if_new_code(end: float, log) -> None:
     """Pull the repo; if new code landed, restart this process so the next model run uses it
     (otherwise a fix pushed mid-hour wouldn't reach the board until the next hourly launch)."""
+    if os.environ.get("WATCH_NO_PULL"):                # the always-on server has no git checkout: a deploy restarts it
+        return
     try:
         head = lambda: subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
         before = head()
